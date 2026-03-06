@@ -9,13 +9,13 @@ A specialist AI agent addon for [oh-my-opencode](https://github.com/code-yeongyu
 ## Install
 
 ```bash
-bunx wunderkind
+bunx @grant-vine/wunderkind
 ```
 
 or
 
 ```bash
-npx wunderkind
+npx @grant-vine/wunderkind
 ```
 
 The interactive installer will:
@@ -27,7 +27,7 @@ The interactive installer will:
 ## Non-interactive install
 
 ```bash
-bunx wunderkind install --no-tui \
+bunx @grant-vine/wunderkind install --no-tui \
   --region="South Africa" \
   --industry=SaaS \
   --primary-regulation=POPIA
