@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.log
 .DS_Store
+
+# oh-my-opencode / opencode runtime files
+AGENTS.md
+.sisyphus/
+.opencode/
