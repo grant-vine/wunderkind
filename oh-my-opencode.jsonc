@@ -1,0 +1,86 @@
+{
+  // Wunderkind oh-my-opencode configuration
+  // ─────────────────────────────────────────
+  // This file configures how oh-my-opencode surfaces the wunderkind plugin agents.
+  // Copy (or symlink) this file to your project's .opencode/oh-my-opencode.jsonc
+  // to activate the full wunderkind agent suite with recommended settings.
+  //
+  // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
+  //
+  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
+
+  "agents": {
+    // ── Marketing ──────────────────────────────────────────────────────────────
+    // CMO-calibre: go-to-market, brand, content, SEO/SEM, paid media, analytics
+    "wunderkind:marketing-wunderkind": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#FF6B35",
+      "description": "CMO-calibre marketing strategist. Brand, GTM, content, SEO/SEM, paid media, analytics, PR."
+    },
+
+    // ── Design ─────────────────────────────────────────────────────────────────
+    // Creative Director: brand identity, design systems, UI/UX, accessibility
+    "wunderkind:creative-director": {
+      "mode": "primary",
+      "model": "github-copilot/gemini-2.0-flash",
+      "color": "#A855F7",
+      "description": "Brand identity, design systems, UI/UX, typography, colour, accessibility, design tokens."
+    },
+
+    // ── Product ─────────────────────────────────────────────────────────────────
+    // VP Product-calibre: roadmaps, OKRs, PRDs, sprint planning, task decomposition
+    "wunderkind:product-wunderkind": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#3B82F6",
+      "description": "VP Product: roadmaps, OKRs, PRDs, user research, sprint planning, task decomposition."
+    },
+
+    // ── Engineering ─────────────────────────────────────────────────────────────
+    // CTO-calibre: full-stack, DB, Vercel/Next.js, architecture, code review, AI
+    "wunderkind:fullstack-wunderkind": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#10B981",
+      "description": "CTO-calibre full-stack engineer. Frontend, backend, DB, Vercel, architecture, AI integration."
+    },
+
+    // ── Brand & Community ───────────────────────────────────────────────────────
+    // Community strategy, thought leadership, PR, spend gating
+    "wunderkind:brand-builder": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#F59E0B",
+      "description": "Community strategy, thought leadership, PR narrative, forum targeting, ROI gating."
+    },
+
+    // ── Quality ─────────────────────────────────────────────────────────────────
+    // TDD, test writing, Playwright/Vitest, coverage analysis, story review
+    "wunderkind:qa-specialist": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#06B6D4",
+      "description": "TDD, test writing, Playwright, Vitest, coverage analysis, user story review, security boundary testing."
+    },
+
+    // ── Operations ──────────────────────────────────────────────────────────────
+    // SRE/SLO, admin tooling (build-first), runbooks, incident response, observability
+    "wunderkind:operations-lead": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#EF4444",
+      "description": "SRE/SLO, admin tooling (build-first), runbooks, incident response, observability."
+    },
+
+    // ── Security ────────────────────────────────────────────────────────────────
+    // CISO: security architecture, OWASP, threat modelling, compliance, pen testing
+    "wunderkind:ciso": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#EF4444",
+      "description": "CISO: security architecture, OWASP, threat modelling, GDPR/CCPA/POPIA, pen testing, breach response."
+    }
+  }
+}

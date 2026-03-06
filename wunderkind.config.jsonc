@@ -1,0 +1,85 @@
+{
+  // Wunderkind Regional Configuration
+  // ─────────────────────────────────
+  // All fields are optional. Leave blank (or omit) for world-neutral defaults.
+  // Agents treat absent/blank values as "Global" — regional guidance is always
+  // additive, never subtractive.
+  //
+  // HOW AGENTS USE THIS FILE
+  // 1. Read this file at the start of any region-sensitive task.
+  // 2. Parse the fields below.
+  // 3. If blank or "Global" — apply world-neutral, maximally-inclusive defaults.
+  // 4. If set — layer region-specific guidance on top of the global baseline.
+
+  // ── Regional Context ──────────────────────────────────────────────────────
+  // Examples: "South Africa" | "United Kingdom" | "United States" |
+  //           "European Union" | "Australia" | "Canada" | "Singapore" |
+  //           "Brazil" | "India" | "Global"
+  // Effects when set:
+  //   • Surfaces region-relevant data protection regulations (compliance-officer)
+  //   • Adjusts platform mix and content strategy (social-media-maven, marketing-wunderkind)
+  //   • Prioritises local conferences, forums, and networking events (brand-builder)
+  //   • Applies local consumer-law and tax considerations (brand-builder spend-gate)
+  "region": "",
+
+  // ── Locale ────────────────────────────────────────────────────────────────
+  // Examples: "en-ZA" | "en-GB" | "en-US" | "pt-BR" | "fr-FR" | "de-DE"
+  // Affects: date formats, currency symbols, spelling conventions in generated content.
+  "locale": "",
+
+  // ── Industry / Domain ─────────────────────────────────────────────────────
+  // Examples: "SaaS" | "E-commerce" | "FinTech" | "HealthTech" | "EdTech" |
+  //           "Media" | "Developer Tools" | "Marketplace"
+  // Effects when set:
+  //   • Industry-appropriate compliance frameworks (HIPAA for HealthTech, PCI-DSS for FinTech)
+  //   • Relevant product forums and communities (brand-builder)
+  //   • Adjusted marketing channel priorities (marketing-wunderkind)
+  //   • Sector-specific threat models (ciso)
+  "industry": "",
+
+  // ── Compliance Frameworks ─────────────────────────────────────────────────
+  // primaryRegulation examples:
+  //   "GDPR"   — European Union / United Kingdom
+  //   "POPIA"  — South Africa
+  //   "CCPA"   — California / United States
+  //   "PIPEDA" — Canada
+  //   "PDPA"   — Singapore / Thailand
+  //   "LGPD"   — Brazil
+  //   "APP"    — Australia Privacy Principles
+  //
+  // Leave blank to use GDPR as the global baseline (most comprehensive,
+  // widely adopted; compliance with it satisfies most other frameworks' core requirements).
+  // Set secondaryRegulation if your users span multiple jurisdictions.
+  "primaryRegulation": "",
+  "secondaryRegulation": ""
+
+  // ── Quick-start examples (uncomment one block) ────────────────────────────
+  //
+  // South African SaaS startup:
+  // "region": "South Africa",
+  // "locale": "en-ZA",
+  // "industry": "SaaS",
+  // "primaryRegulation": "POPIA",
+  // "secondaryRegulation": "GDPR"
+  //
+  // US FinTech:
+  // "region": "United States",
+  // "locale": "en-US",
+  // "industry": "FinTech",
+  // "primaryRegulation": "CCPA",
+  // "secondaryRegulation": "GDPR"
+  //
+  // EU HealthTech:
+  // "region": "European Union",
+  // "locale": "en-GB",
+  // "industry": "HealthTech",
+  // "primaryRegulation": "GDPR",
+  // "secondaryRegulation": ""
+  //
+  // Global / World (explicit):
+  // "region": "Global",
+  // "locale": "en",
+  // "industry": "",
+  // "primaryRegulation": "GDPR",
+  // "secondaryRegulation": ""
+}
