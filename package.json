@@ -1,10 +1,13 @@
 {
   "name": "wunderkind",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Wunderkind — a generic oh-my-opencode addon package with specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "wunderkind": "bin/wunderkind.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -16,6 +19,7 @@
     "agents/",
     "skills/",
     ".claude-plugin/",
+    "bin/",
     "wunderkind.config.jsonc",
     "oh-my-opencode.jsonc"
   ],
@@ -25,10 +29,15 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "@opencode-ai/plugin": "^1.2.18",
+    "commander": "^13.1.0",
+    "jsonc-parser": "^3.3.1",
     "oh-my-opencode": "^3.10.0",
-    "@opencode-ai/plugin": "^1.2.18"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.3"
   },
   "keywords": [
