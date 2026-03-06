@@ -2,6 +2,60 @@ import * as p from "@clack/prompts"
 import color from "picocolors"
 import { addPluginToOpenCodeConfig, detectCurrentConfig, writeWunderkindConfig } from "./config-manager/index.js"
 
+const COMMON_REGULATIONS = [
+  { value: "GDPR", label: "GDPR", hint: "EU General Data Protection Regulation" },
+  { value: "POPIA", label: "POPIA", hint: "South Africa Protection of Personal Information Act" },
+  { value: "CCPA", label: "CCPA", hint: "California Consumer Privacy Act" },
+  { value: "LGPD", label: "LGPD", hint: "Brazil Lei Geral de Proteção de Dados" },
+  { value: "HIPAA", label: "HIPAA", hint: "US Health Insurance Portability and Accountability Act" },
+  { value: "PIPEDA", label: "PIPEDA", hint: "Canada Personal Information Protection and Electronic Documents Act" },
+  { value: "PDPA", label: "PDPA", hint: "Thailand/Singapore Personal Data Protection Act" },
+  { value: "APPI", label: "APPI", hint: "Japan Act on the Protection of Personal Information" },
+  { value: "SOC2", label: "SOC 2", hint: "AICPA Service Organization Control 2" },
+  { value: "ISO27001", label: "ISO 27001", hint: "Information security management standard" },
+  { value: "__other__", label: "Enter manually…", hint: "Type a custom regulation name" },
+] as const
+
+async function promptRegulation(message: string, initialValue: string, isRequired: boolean): Promise<string | null> {
+  const knownValues = COMMON_REGULATIONS.map((r) => r.value).filter((v) => v !== "__other__")
+  const initial = knownValues.includes(initialValue as typeof knownValues[number]) ? initialValue : "__other__"
+
+  const selection = await p.select({
+    message,
+    options: COMMON_REGULATIONS as unknown as Array<{ value: string; label: string; hint?: string }>,
+    initialValue: initial,
+  })
+
+  if (p.isCancel(selection)) {
+    p.cancel("Installation cancelled.")
+    return null
+  }
+
+  if (selection !== "__other__") {
+    return selection as string
+  }
+
+  const custom = isRequired
+    ? await p.text({
+        message: "Enter regulation name:",
+        placeholder: "GDPR",
+        initialValue: knownValues.includes(initialValue as typeof knownValues[number]) ? "" : initialValue,
+        validate: (v) => (v.trim() ? undefined : "Regulation name is required"),
+      })
+    : await p.text({
+        message: "Enter regulation name:",
+        placeholder: "leave blank to skip",
+        initialValue: knownValues.includes(initialValue as typeof knownValues[number]) ? "" : initialValue,
+      })
+
+  if (p.isCancel(custom)) {
+    p.cancel("Installation cancelled.")
+    return null
+  }
+
+  return (custom as string).trim()
+}
+
 export async function runTuiInstaller(): Promise<number> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     console.error("Error: Interactive installer requires a TTY. Use --no-tui and pass flags directly.")
@@ -40,32 +94,25 @@ export async function runTuiInstaller(): Promise<number> {
     return 1
   }
 
-  const primaryRegulation = await p.text({
-    message: "What is your primary data-protection regulation?",
-    placeholder: "GDPR",
-    initialValue: detected.primaryRegulation,
-    validate: (v) => (v.trim() ? undefined : "Primary regulation is required"),
-  })
-  if (p.isCancel(primaryRegulation)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
+  const primaryRegulation = await promptRegulation(
+    "What is your primary data-protection regulation?",
+    detected.primaryRegulation,
+    true,
+  )
+  if (primaryRegulation === null) return 1
 
-  const secondaryRegulation = await p.text({
-    message: "Secondary regulation? (optional)",
-    placeholder: "leave blank to skip",
-    initialValue: detected.secondaryRegulation,
-  })
-  if (p.isCancel(secondaryRegulation)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
+  const secondaryRegulation = await promptRegulation(
+    "Secondary regulation? (optional)",
+    detected.secondaryRegulation,
+    false,
+  )
+  if (secondaryRegulation === null) return 1
 
   const config = {
     region: (region as string).trim() || "Global",
     industry: (industry as string).trim(),
-    primaryRegulation: (primaryRegulation as string).trim() || "GDPR",
-    secondaryRegulation: (secondaryRegulation as string).trim(),
+    primaryRegulation: primaryRegulation || "GDPR",
+    secondaryRegulation: secondaryRegulation,
   }
 
   const spinner = p.spinner()
