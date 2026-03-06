@@ -48,5 +48,9 @@
     "agents",
     "ai-agents"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grant-vine/wunderkind"
+  }
 }
