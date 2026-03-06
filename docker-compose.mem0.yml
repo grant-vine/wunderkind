@@ -1,0 +1,8 @@
+services:
+  mem0:
+    image: mem0/mem0-api-server:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./.wunderkind/mem0:/app/data
+    restart: unless-stopped

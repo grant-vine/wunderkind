@@ -26,13 +26,20 @@
   "scripts": {
     "build": "tsc && bun run dist/build-agents.js",
     "dev": "tsc --watch",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "test": "bun test tests/unit/",
+    "test:contract": "bun test tests/",
+    "bench": "bun run tests/perf/adapter-benchmark.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
+    "@huggingface/transformers": "^3.8.1",
     "@opencode-ai/plugin": "^1.2.18",
+    "@qdrant/js-client-rest": "^1.17.0",
     "commander": "^13.1.0",
+    "fflate": "^0.8.2",
     "jsonc-parser": "^3.3.1",
+    "mem0ai": "^2.2.4",
     "oh-my-opencode": "^3.10.0",
     "picocolors": "^1.1.1"
   },
@@ -52,5 +59,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/grant-vine/wunderkind"
-  }
+  },
+  "trustedDependencies": [
+    "onnxruntime-node"
+  ]
 }

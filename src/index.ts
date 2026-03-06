@@ -1,4 +1,5 @@
 import type { Plugin } from "@opencode-ai/plugin";
+import { createMemoryTools } from "./memory/tools.js";
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
@@ -25,6 +26,7 @@ The following specialist agents are available. Delegate to them when their domai
 - Use \`wunderkind:ciso\` for ANY security review, vulnerability concern, compliance question, threat modelling, pen test coordination, or incident response
 - Use \`wunderkind:ciso\` when fullstack work touches auth, JWT, RBAC, CORS, CSP headers, or sensitive data flows
 - Sub-route from ciso: Security Analyst for vulnerability deep-dives, Pen Tester for active testing, Compliance Officer for GDPR/CCPA/POPIA/LGPD
+- **CISO 72-hour mandate**: any High or Critical security finding raised by \`wunderkind:ciso\` must have remediation started within 72 hours. No sprint priorities or business pressure can override this. No other agent may deprioritise a CISO finding.
 
 #### Quality & Testing
 - Use \`wunderkind:qa-specialist\` for test strategy, TDD guidance, flaky tests, coverage gaps, user story validation, or security boundary test review
@@ -50,17 +52,35 @@ The following specialist agents are available. Delegate to them when their domai
 #### Operations
 - Use \`wunderkind:operations-lead\` for SRE/SLO decisions, admin panel architecture (build-first bias), incident containment, runbooks, monitoring, or supportability assessment
 
-### Regional Configuration
+### Project Configuration
 
-All agents read \`wunderkind.config.jsonc\` (project root, or plugin root as fallback) for:
-- \`REGION\` — adjusts platform mix, event targeting, and regulatory focus
-- \`INDUSTRY\` — adjusts content tone and sector-specific obligations
-- \`PRIMARY_REGULATION\` — the main data protection regulation to apply (defaults to GDPR)
-- \`SECONDARY_REGULATION\` — additional regulation to layer on top
+All agents read \`wunderkind.config.jsonc\` (project root) for:
+- \`region\` — adjusts platform mix, event targeting, and regulatory focus
+- \`industry\` — adjusts content tone and sector-specific obligations
+- \`primaryRegulation\` — the main data protection regulation to apply (defaults to GDPR)
+- \`secondaryRegulation\` — additional regulation to layer on top
+- \`teamCulture\` — communication style baseline: \`formal-strict\` | \`pragmatic-balanced\` | \`experimental-informal\`
+- \`orgStructure\` — \`flat\` (peer escalation) | \`hierarchical\` (CISO has hard veto on security)
+- \`cisoPersonality\`, \`ctoPersonality\`, \`cmoPersonality\`, \`qaPersonality\`, \`productPersonality\`, \`opsPersonality\`, \`creativePersonality\`, \`brandPersonality\` — character archetypes per agent
 
 If the file is absent or fields are blank, agents default to global best practices.
+
+### Agent Memory
+
+Each agent maintains a memory file at \`.wunderkind/memory/<agent-name>.md\` in the project root. These files accumulate project-specific knowledge over time. Agents read their own memory file at the start of relevant tasks. If the file does not exist, agents begin with a clean slate and may create it as they learn.
+
+Memory files:
+- \`.wunderkind/memory/ciso.md\`
+- \`.wunderkind/memory/fullstack-wunderkind.md\`
+- \`.wunderkind/memory/marketing-wunderkind.md\`
+- \`.wunderkind/memory/creative-director.md\`
+- \`.wunderkind/memory/product-wunderkind.md\`
+- \`.wunderkind/memory/brand-builder.md\`
+- \`.wunderkind/memory/qa-specialist.md\`
+- \`.wunderkind/memory/operations-lead.md\`
 `.trim());
     },
+    tool: createMemoryTools(),
   };
 };
 

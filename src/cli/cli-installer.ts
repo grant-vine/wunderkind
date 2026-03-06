@@ -1,6 +1,12 @@
 import color from "picocolors"
-import type { InstallArgs } from "./types.js"
-import { addPluginToOpenCodeConfig, detectCurrentConfig, writeWunderkindConfig } from "./config-manager/index.js"
+import { copyFile, mkdir } from "node:fs/promises"
+import { existsSync } from "node:fs"
+import { homedir } from "node:os"
+import { fileURLToPath } from "node:url"
+import path from "node:path"
+import type { InstallArgs, InstallConfig } from "./types.js"
+import { addPluginToOpenCodeConfig, detectCurrentConfig, detectLegacyConfig, writeWunderkindConfig } from "./config-manager/index.js"
+import { addAiTracesToGitignore } from "./gitignore-manager.js"
 
 export const SYMBOLS = {
   check: color.green("[OK]"),
@@ -95,22 +101,36 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
 
   const detected = detectCurrentConfig()
+  if (detectLegacyConfig()) {
+    printError("Legacy config found at project root wunderkind.config.jsonc — move it to .wunderkind/wunderkind.config.jsonc")
+    return 1
+  }
   const isUpdate = detected.isInstalled
 
   printHeader(isUpdate)
 
-  const totalSteps = 2
+  const totalSteps = 4
   let step = 1
 
-  const config = {
+  const config: InstallConfig = {
     region: args.region ?? "Global",
     industry: args.industry ?? "",
     primaryRegulation: args.primaryRegulation ?? "GDPR",
     secondaryRegulation: args.secondaryRegulation ?? "",
+    teamCulture: detected.teamCulture,
+    orgStructure: detected.orgStructure,
+    cisoPersonality: detected.cisoPersonality,
+    ctoPersonality: detected.ctoPersonality,
+    cmoPersonality: detected.cmoPersonality,
+    qaPersonality: detected.qaPersonality,
+    productPersonality: detected.productPersonality,
+    opsPersonality: detected.opsPersonality,
+    creativePersonality: detected.creativePersonality,
+    brandPersonality: detected.brandPersonality,
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")
-  const pluginResult = addPluginToOpenCodeConfig()
+  const pluginResult = addPluginToOpenCodeConfig(args.scope)
   if (!pluginResult.success) {
     printError(`Failed: ${pluginResult.error}`)
     return 1
@@ -118,12 +138,37 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   printSuccess(`Plugin ${isUpdate ? "verified" : "added"} ${SYMBOLS.arrow} ${color.dim(pluginResult.configPath)}`)
 
   printStep(step++, totalSteps, "Writing wunderkind configuration...")
-  const configResult = writeWunderkindConfig(config)
+  const configResult = writeWunderkindConfig(config, args.scope)
   if (!configResult.success) {
     printError(`Failed: ${configResult.error}`)
     return 1
   }
   printSuccess(`Config written ${SYMBOLS.arrow} ${color.dim(configResult.configPath)}`)
+
+  printStep(step++, totalSteps, "Updating .gitignore with AI tooling traces...")
+  const gitignoreResult = addAiTracesToGitignore()
+  if (gitignoreResult.added.length > 0) {
+    printSuccess(`Added to .gitignore: ${gitignoreResult.added.join(", ")}`)
+  }
+  if (gitignoreResult.error) {
+    printWarning(`Could not update .gitignore: ${gitignoreResult.error}`)
+  }
+
+  printStep(step++, totalSteps, "Copying docker-compose files...")
+  try {
+    const globalDir = path.join(homedir(), ".wunderkind")
+    await mkdir(globalDir, { recursive: true })
+    const pkgRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
+    for (const f of ["docker-compose.vector.yml", "docker-compose.mem0.yml"]) {
+      const dest = path.join(globalDir, f)
+      if (!existsSync(dest)) {
+        await copyFile(path.join(pkgRoot, f), dest)
+      }
+    }
+    printSuccess("Docker-compose files copied to ~/.wunderkind/")
+  } catch (err) {
+    printWarning(`Could not copy docker-compose files: ${String(err)}`)
+  }
 
   printBox(
     [
