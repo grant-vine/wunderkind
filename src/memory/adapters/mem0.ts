@@ -37,35 +37,36 @@ type Mem0Config = {
     provider: string
     config: {
       model: string
-      temperature?: number
-      max_tokens?: number
-      ollama_base_url?: string
+      baseURL?: string
     }
   }
   embedder?: {
     provider: string
     config: {
       model: string
-      embedding_dims?: number
-      ollama_base_url?: string
+      embeddingDims?: number
+      url?: string
     }
   }
-  vector_store?: {
+  vectorStore?: {
     provider: string
     config: {
-      collection_name?: string
+      collectionName?: string
       host?: string
       port?: number
-      embedding_model_dims?: number
+      dimension?: number
     }
-  }
-  graph_store?: {
-    provider: string
-    config: Record<string, string>
   }
 }
 
-function buildMem0Config(cfg: Mem0AdapterConfig): Mem0Config {
+function buildMem0Config(cfg: Mem0AdapterConfig): Mem0Config | undefined {
+  const hasAny =
+    cfg.llmProvider !== undefined ||
+    cfg.embedProvider !== undefined ||
+    cfg.vectorStore !== undefined
+
+  if (!hasAny) return undefined
+
   const result: Mem0Config = {}
 
   if (cfg.llmProvider) {
@@ -74,7 +75,7 @@ function buildMem0Config(cfg: Mem0AdapterConfig): Mem0Config {
       config: { model: cfg.llmModel ?? "llama3.1" },
     }
     if (cfg.llmBaseUrl) {
-      llmConfig.config.ollama_base_url = cfg.llmBaseUrl
+      llmConfig.config.baseURL = cfg.llmBaseUrl
     }
     result.llm = llmConfig
   }
@@ -85,33 +86,32 @@ function buildMem0Config(cfg: Mem0AdapterConfig): Mem0Config {
       config: { model: cfg.embedModel ?? "nomic-embed-text" },
     }
     if (cfg.embedDims) {
-      embedConfig.config.embedding_dims = cfg.embedDims
+      embedConfig.config.embeddingDims = cfg.embedDims
     }
     if (cfg.embedBaseUrl) {
-      embedConfig.config.ollama_base_url = cfg.embedBaseUrl
+      embedConfig.config.url = cfg.embedBaseUrl
     }
     result.embedder = embedConfig
   }
 
-  if (cfg.vectorStore && cfg.vectorStore !== "memory") {
-    const vsConfig: Mem0Config["vector_store"] = {
-      provider: cfg.vectorStore,
-      config: {},
-    }
-    if (cfg.vectorStoreCollection) {
-      vsConfig.config.collection_name = cfg.vectorStoreCollection
-    }
-    if (cfg.vectorStoreHost) {
-      vsConfig.config.host = cfg.vectorStoreHost
-    }
-    if (cfg.vectorStorePort) {
-      vsConfig.config.port = cfg.vectorStorePort
-    }
-    if (cfg.embedDims) {
-      vsConfig.config.embedding_model_dims = cfg.embedDims
-    }
-    result.vector_store = vsConfig
+  const vsProvider = cfg.vectorStore ?? "memory"
+  const vsConfig: Mem0Config["vectorStore"] = {
+    provider: vsProvider,
+    config: {},
   }
+  if (cfg.vectorStoreCollection) {
+    vsConfig.config.collectionName = cfg.vectorStoreCollection
+  }
+  if (cfg.vectorStoreHost) {
+    vsConfig.config.host = cfg.vectorStoreHost
+  }
+  if (cfg.vectorStorePort) {
+    vsConfig.config.port = cfg.vectorStorePort
+  }
+  if (cfg.embedDims) {
+    vsConfig.config.dimension = cfg.embedDims
+  }
+  result.vectorStore = vsConfig
 
   return result
 }
@@ -127,8 +127,7 @@ export class Mem0Adapter implements MemoryAdapter {
     this.#projectSlug = config.projectSlug
     this.#knownAgents = new Set()
     const mem0Config = buildMem0Config(config)
-    const hasConfig = Object.keys(mem0Config).length > 0
-    this.#memory = hasConfig ? Memory.fromConfig(mem0Config) : new Memory()
+    this.#memory = mem0Config !== undefined ? Memory.fromConfig(mem0Config) : new Memory()
   }
 
   #scopedAgent(agent: string): string {
