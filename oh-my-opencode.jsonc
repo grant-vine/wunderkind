@@ -81,6 +81,42 @@
       "model": "github-copilot/claude-sonnet-4-5",
       "color": "#EF4444",
       "description": "CISO: security architecture, OWASP, threat modelling, GDPR/CCPA/POPIA, pen testing, breach response."
+    },
+
+    // ── DevRel ──────────────────────────────────────────────────────────────────
+    // Developer relations, DX, API docs, tutorials, migration guides, OSS community
+    "wunderkind:devrel-wunderkind": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#8B5CF6",
+      "description": "Developer relations, DX, API docs, tutorials, migration guides, OSS community, getting started guides."
+    },
+
+    // ── Legal ────────────────────────────────────────────────────────────────────
+    // OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA obligations
+    "wunderkind:legal-counsel": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#6366F1",
+      "description": "OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA compliance obligations."
+    },
+
+    // ── Support ──────────────────────────────────────────────────────────────────
+    // Bug triage, issue classification, repro steps, severity rating, engineering handoff
+    "wunderkind:support-engineer": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#F97316",
+      "description": "Bug triage, issue classification, repro steps, severity rating, engineering handoff, support synthesis."
+    },
+
+    // ── Data Analyst ─────────────────────────────────────────────────────────────
+    // Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments
+    "wunderkind:data-analyst": {
+      "mode": "primary",
+      "model": "github-copilot/claude-sonnet-4-5",
+      "color": "#14B8A6",
+      "description": "Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments, metric definitions."
     }
   }
 }

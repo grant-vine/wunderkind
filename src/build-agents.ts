@@ -10,6 +10,10 @@ import {
   createQaSpecialistAgent,
   createOperationsLeadAgent,
   createCisoAgent,
+  createDevrelWunderkindAgent,
+  createLegalCounselAgent,
+  createDataAnalystAgent,
+  createSupportEngineerAgent,
 } from "./agents/index.js"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -29,6 +33,10 @@ const agents = [
   { name: "qa-specialist", factory: createQaSpecialistAgent },
   { name: "operations-lead", factory: createOperationsLeadAgent },
   { name: "ciso", factory: createCisoAgent },
+  { name: "devrel-wunderkind", factory: createDevrelWunderkindAgent },
+  { name: "legal-counsel", factory: createLegalCounselAgent },
+  { name: "data-analyst", factory: createDataAnalystAgent },
+  { name: "support-engineer", factory: createSupportEngineerAgent },
 ] as const
 
 for (const { name, factory } of agents) {
