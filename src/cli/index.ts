@@ -4,7 +4,6 @@ import { createRequire } from "node:module"
 import { runCliInstaller } from "./cli-installer.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
-import { createMemoryCommand } from "./memory-commands.js"
 import type { InstallArgs, InstallScope } from "./types.js"
 
 const require = createRequire(import.meta.url)
@@ -139,7 +138,5 @@ program
       console.log("Nothing to add — all AI trace entries already present.")
     }
   })
-
-program.addCommand(createMemoryCommand())
 
 program.parse()

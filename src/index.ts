@@ -1,5 +1,4 @@
 import type { Plugin } from "@opencode-ai/plugin";
-import { createMemoryTools } from "./memory/tools.js";
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
@@ -65,22 +64,8 @@ All agents read \`wunderkind.config.jsonc\` (project root) for:
 
 If the file is absent or fields are blank, agents default to global best practices.
 
-### Agent Memory
-
-Each agent maintains a memory file at \`.wunderkind/memory/<agent-name>.md\` in the project root. These files accumulate project-specific knowledge over time. Agents read their own memory file at the start of relevant tasks. If the file does not exist, agents begin with a clean slate and may create it as they learn.
-
-Memory files:
-- \`.wunderkind/memory/ciso.md\`
-- \`.wunderkind/memory/fullstack-wunderkind.md\`
-- \`.wunderkind/memory/marketing-wunderkind.md\`
-- \`.wunderkind/memory/creative-director.md\`
-- \`.wunderkind/memory/product-wunderkind.md\`
-- \`.wunderkind/memory/brand-builder.md\`
-- \`.wunderkind/memory/qa-specialist.md\`
-- \`.wunderkind/memory/operations-lead.md\`
 `.trim());
     },
-    tool: createMemoryTools(),
   };
 };
 

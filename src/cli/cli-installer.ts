@@ -1,9 +1,4 @@
 import color from "picocolors"
-import { copyFile, mkdir } from "node:fs/promises"
-import { existsSync } from "node:fs"
-import { homedir } from "node:os"
-import { fileURLToPath } from "node:url"
-import path from "node:path"
 import type { InstallArgs, InstallConfig } from "./types.js"
 import { addPluginToOpenCodeConfig, detectCurrentConfig, detectLegacyConfig, writeWunderkindConfig } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -47,9 +42,10 @@ export function printWarning(message: string): void {
 
 export function printBox(content: string, title?: string): void {
   const lines = content.split("\n")
+  const ansiPattern = new RegExp("\\u001b\\[[0-9;]*m", "g")
   const maxWidth =
     Math.max(
-      ...lines.map((line) => line.replace(/\u001b\[[0-9;]*m/g, "").length),
+      ...lines.map((line) => line.replace(ansiPattern, "").length),
       title?.length ?? 0,
     ) + 4
   const border = color.dim("─".repeat(maxWidth))
@@ -67,7 +63,7 @@ export function printBox(content: string, title?: string): void {
   }
 
   for (const line of lines) {
-    const stripped = line.replace(/\u001b\[[0-9;]*m/g, "")
+    const stripped = line.replace(ansiPattern, "")
     const padding = maxWidth - stripped.length
     console.log(color.dim("│") + ` ${line}${" ".repeat(padding - 1)}` + color.dim("│"))
   }
@@ -109,7 +105,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
 
   printHeader(isUpdate)
 
-  const totalSteps = 4
+  const totalSteps = 3
   let step = 1
 
   const config: InstallConfig = {
@@ -152,22 +148,6 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   if (gitignoreResult.error) {
     printWarning(`Could not update .gitignore: ${gitignoreResult.error}`)
-  }
-
-  printStep(step++, totalSteps, "Copying docker-compose files...")
-  try {
-    const globalDir = path.join(homedir(), ".wunderkind")
-    await mkdir(globalDir, { recursive: true })
-    const pkgRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
-    for (const f of ["docker-compose.vector.yml", "docker-compose.mem0.yml"]) {
-      const dest = path.join(globalDir, f)
-      if (!existsSync(dest)) {
-        await copyFile(path.join(pkgRoot, f), dest)
-      }
-    }
-    printSuccess("Docker-compose files copied to ~/.wunderkind/")
-  } catch (err) {
-    printWarning(`Could not copy docker-compose files: ${String(err)}`)
   }
 
   printBox(

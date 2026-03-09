@@ -1,13 +1,7 @@
-import { copyFile, mkdir } from "node:fs/promises"
-import { existsSync } from "node:fs"
-import { homedir } from "node:os"
-import { fileURLToPath } from "node:url"
-import path from "node:path"
 import * as p from "@clack/prompts"
 import color from "picocolors"
 import {
   addPluginToOpenCodeConfig,
-  createMemoryFiles,
   detectCurrentConfig,
   detectLegacyConfig,
   writeWunderkindConfig,
@@ -459,38 +453,12 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   }
   spinner.stop(`Config written to ${color.cyan(configResult.configPath)}`)
 
-  spinner.start("Creating agent memory files")
-  const memoryResult = createMemoryFiles()
-  if (!memoryResult.success) {
-    spinner.stop(`Warning: ${memoryResult.error}`)
-    p.log.warn("Memory files could not be created. Agents will work without persistent memory.")
-  } else {
-    spinner.stop(`Memory directory created at ${color.cyan(memoryResult.configPath)}`)
-  }
-
   const gitignoreResult = addAiTracesToGitignore()
   if (gitignoreResult.added.length > 0) {
     p.log.info(`Added to .gitignore: ${gitignoreResult.added.join(", ")}`)
   }
   if (gitignoreResult.error) {
     p.log.warn(`Could not update .gitignore: ${gitignoreResult.error}`)
-  }
-
-  spinner.start("Setting up global memory services")
-  try {
-    const globalDir = path.join(homedir(), ".wunderkind")
-    await mkdir(globalDir, { recursive: true })
-    const pkgRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..")
-    for (const f of ["docker-compose.vector.yml", "docker-compose.mem0.yml"]) {
-      const dest = path.join(globalDir, f)
-      if (!existsSync(dest)) {
-        await copyFile(path.join(pkgRoot, f), dest)
-      }
-    }
-    spinner.stop(`Global memory services ready at ${color.cyan(globalDir)}`)
-  } catch (err) {
-    spinner.stop("Global memory services setup skipped")
-    p.log.warn(`Could not copy docker-compose files: ${String(err)}`)
   }
 
   p.note(

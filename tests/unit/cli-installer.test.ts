@@ -23,14 +23,12 @@ const mockDetectCurrentConfig = mock(() => ({
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
-const mockCreateMemoryFiles = mock(() => ({ success: true, configPath: "/fake/.wunderkind/memory" }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
-  createMemoryFiles: mockCreateMemoryFiles,
 }))
 
 const mockAddAiTracesToGitignore = mock(() => ({

@@ -30,18 +30,6 @@ const GLOBAL_WUNDERKIND_CONFIG = join(GLOBAL_WUNDERKIND_DIR, "wunderkind.config.
 const WUNDERKIND_DIR = join(process.cwd(), ".wunderkind")
 const WUNDERKIND_CONFIG = join(WUNDERKIND_DIR, "wunderkind.config.jsonc")
 const LEGACY_WUNDERKIND_CONFIG = join(process.cwd(), "wunderkind.config.jsonc")
-const MEMORY_DIR = join(process.cwd(), ".wunderkind", "memory")
-
-const AGENT_MEMORY_FILES: ReadonlyArray<string> = [
-  "ciso",
-  "fullstack-wunderkind",
-  "marketing-wunderkind",
-  "creative-director",
-  "product-wunderkind",
-  "brand-builder",
-  "qa-specialist",
-  "operations-lead",
-]
 
 interface OpenCodeConfig {
   plugin?: string[]
@@ -66,25 +54,6 @@ function parseConfig(path: string): OpenCodeConfig | null {
   } catch {
     return null
   }
-}
-
-function memoryStub(agentName: string): string {
-  return [
-    `# ${agentName} — Project Memory`,
-    ``,
-    `> This file accumulates facts about the project that ${agentName} has learned over time.`,
-    `> Append new learnings as bullet points. When a pattern appears 3+ times, promote it to a top-level section.`,
-    `> Do not hand-edit. Updated automatically by the agent during sessions.`,
-    ``,
-    `## Promoted Facts`,
-    ``,
-    `_No promoted facts yet._`,
-    ``,
-    `## Recent Learnings`,
-    ``,
-    `_No learnings recorded yet._`,
-    ``,
-  ].join("\n")
 }
 
 export function detectCurrentConfig(): DetectedConfig {
@@ -195,22 +164,6 @@ export function addPluginToOpenCodeConfig(scope: InstallScope): ConfigMergeResul
     return { success: true, configPath: targetPath }
   } catch (err) {
     return { success: false, configPath: targetPath, error: String(err) }
-  }
-}
-
-export function createMemoryFiles(): ConfigMergeResult {
-  const memoryPath = MEMORY_DIR
-  try {
-    mkdirSync(memoryPath, { recursive: true })
-    for (const agentName of AGENT_MEMORY_FILES) {
-      const filePath = join(memoryPath, `${agentName}.md`)
-      if (!existsSync(filePath)) {
-        writeFileSync(filePath, memoryStub(agentName), "utf-8")
-      }
-    }
-    return { success: true, configPath: memoryPath }
-  } catch (err) {
-    return { success: false, configPath: memoryPath, error: String(err) }
   }
 }
 
