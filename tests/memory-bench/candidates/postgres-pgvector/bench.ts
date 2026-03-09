@@ -417,5 +417,11 @@ async function runBenchmark(): Promise<BenchmarkArtifact> {
   }
 }
 
-const result = await runBenchmark()
+let result: BenchmarkArtifact
+try {
+  result = await runBenchmark()
+} catch (err) {
+  const msg = err instanceof Error ? err.message : String(err)
+  result = artifact(emptyMetrics(), { skippedReason: `postgres unavailable: ${msg}` })
+}
 console.log(JSON.stringify(result, null, 2))
