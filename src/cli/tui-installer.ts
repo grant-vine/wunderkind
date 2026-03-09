@@ -13,11 +13,15 @@ import type {
   CmoPersonality,
   CreativePersonality,
   CtoPersonality,
+  DataAnalystPersonality,
+  DevrelPersonality,
   InstallScope,
+  LegalPersonality,
   OpsPersonality,
   OrgStructure,
   ProductPersonality,
   QaPersonality,
+  SupportPersonality,
   TeamCulture,
 } from "./types.js"
 
@@ -416,6 +420,110 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     return 1
   }
 
+  const devrelRaw = await p.select<DevrelPersonality>({
+    message: "DevRel Wunderkind personality:",
+    options: [
+      {
+        value: "dx-engineer",
+        label: "DX Engineer",
+        hint: "Developer experience as a product. Obsessed with time-to-first-value and reducing friction.",
+      },
+      {
+        value: "community-champion",
+        label: "Community Champion",
+        hint: "Builds trust through presence. Discord, GitHub Discussions, meetups — show up, help out.",
+      },
+      {
+        value: "docs-perfectionist",
+        label: "Docs Perfectionist",
+        hint: "If it isn't documented clearly, it doesn't ship. Every word earns its place.",
+      },
+    ],
+    initialValue: detected.devrelPersonality,
+  })
+  if (p.isCancel(devrelRaw)) {
+    p.cancel("Installation cancelled.")
+    return 1
+  }
+
+  const legalRaw = await p.select<LegalPersonality>({
+    message: "Legal Counsel personality:",
+    options: [
+      {
+        value: "pragmatic-advisor",
+        label: "Pragmatic Advisor",
+        hint: "Legal reality without legal paralysis. Clear risk levels, actionable recommendations.",
+      },
+      {
+        value: "cautious-gatekeeper",
+        label: "Cautious Gatekeeper",
+        hint: "When in doubt, don't. Legal certainty before any commitment.",
+      },
+      {
+        value: "plain-english-counselor",
+        label: "Plain-English Counselor",
+        hint: "No legalese. Plain summaries first, full legal language on request.",
+      },
+    ],
+    initialValue: detected.legalPersonality,
+  })
+  if (p.isCancel(legalRaw)) {
+    p.cancel("Installation cancelled.")
+    return 1
+  }
+
+  const supportRaw = await p.select<SupportPersonality>({
+    message: "Support Engineer personality:",
+    options: [
+      {
+        value: "systematic-triage",
+        label: "Systematic Triage",
+        hint: "Classify first, solve second. Severity → owner → response. Every time.",
+      },
+      {
+        value: "empathetic-resolver",
+        label: "Empathetic Resolver",
+        hint: "User pain is real. Acknowledge it, own it, close it. No robotic templates.",
+      },
+      {
+        value: "knowledge-builder",
+        label: "Knowledge Builder",
+        hint: "Every ticket is a docs gap. Fix the issue and prevent the next one.",
+      },
+    ],
+    initialValue: detected.supportPersonality,
+  })
+  if (p.isCancel(supportRaw)) {
+    p.cancel("Installation cancelled.")
+    return 1
+  }
+
+  const dataAnalystRaw = await p.select<DataAnalystPersonality>({
+    message: "Data Analyst personality:",
+    options: [
+      {
+        value: "insight-storyteller",
+        label: "Insight Storyteller",
+        hint: "Data is only valuable when it changes decisions. Lead with the insight, support with the numbers.",
+      },
+      {
+        value: "rigorous-statistician",
+        label: "Rigorous Statistician",
+        hint: "Statistical significance or it didn't happen. Confidence intervals on everything.",
+      },
+      {
+        value: "pragmatic-quant",
+        label: "Pragmatic Quant",
+        hint: "Good enough data, fast. 80% confident answer today beats 99% confident answer next quarter.",
+      },
+    ],
+    initialValue: detected.dataAnalystPersonality,
+  })
+  if (p.isCancel(dataAnalystRaw)) {
+    p.cancel("Installation cancelled.")
+    return 1
+  }
+
   const config = {
     region: (region as string).trim() || "Global",
     industry: (industry as string).trim(),
@@ -431,6 +539,10 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     opsPersonality: opsRaw,
     creativePersonality: creativeRaw,
     brandPersonality: brandRaw,
+    devrelPersonality: devrelRaw,
+    legalPersonality: legalRaw,
+    supportPersonality: supportRaw,
+    dataAnalystPersonality: dataAnalystRaw,
   }
 
   const spinner = p.spinner()
@@ -479,6 +591,10 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
       `Ops:                 ${color.cyan(config.opsPersonality)}`,
       `Creative:            ${color.cyan(config.creativePersonality)}`,
       `Brand:               ${color.cyan(config.brandPersonality)}`,
+      `DevRel:              ${color.cyan(config.devrelPersonality)}`,
+      `Legal:               ${color.cyan(config.legalPersonality)}`,
+      `Support:             ${color.cyan(config.supportPersonality)}`,
+      `Data Analyst:        ${color.cyan(config.dataAnalystPersonality)}`,
     ]
       .filter(Boolean)
       .join("\n"),

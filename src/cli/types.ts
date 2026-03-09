@@ -11,6 +11,10 @@ export type ProductPersonality = "user-advocate" | "velocity-optimizer" | "outco
 export type OpsPersonality = "on-call-veteran" | "efficiency-maximiser" | "process-purist"
 export type CreativePersonality = "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"
 export type BrandPersonality = "community-evangelist" | "pr-spinner" | "authentic-builder"
+export type DevrelPersonality = "community-champion" | "docs-perfectionist" | "dx-engineer"
+export type LegalPersonality = "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"
+export type SupportPersonality = "empathetic-resolver" | "systematic-triage" | "knowledge-builder"
+export type DataAnalystPersonality = "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"
 
 export interface InstallArgs {
   tui: boolean
@@ -29,6 +33,10 @@ export interface InstallArgs {
   opsPersonality?: string | undefined
   creativePersonality?: string | undefined
   brandPersonality?: string | undefined
+  devrelPersonality?: string | undefined
+  legalPersonality?: string | undefined
+  supportPersonality?: string | undefined
+  dataAnalystPersonality?: string | undefined
 }
 
 export interface InstallConfig {
@@ -46,6 +54,10 @@ export interface InstallConfig {
   opsPersonality: OpsPersonality
   creativePersonality: CreativePersonality
   brandPersonality: BrandPersonality
+  devrelPersonality: DevrelPersonality
+  legalPersonality: LegalPersonality
+  supportPersonality: SupportPersonality
+  dataAnalystPersonality: DataAnalystPersonality
 }
 
 export interface ConfigMergeResult {
@@ -71,4 +83,8 @@ export interface DetectedConfig {
   opsPersonality: OpsPersonality
   creativePersonality: CreativePersonality
   brandPersonality: BrandPersonality
+  devrelPersonality: DevrelPersonality
+  legalPersonality: LegalPersonality
+  supportPersonality: SupportPersonality
+  dataAnalystPersonality: DataAnalystPersonality
 }

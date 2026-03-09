@@ -18,6 +18,10 @@ const mockDetectCurrentConfig = mock(() => ({
   opsPersonality: "on-call-veteran" as const,
   creativePersonality: "pragmatic-problem-solver" as const,
   brandPersonality: "authentic-builder" as const,
+  devrelPersonality: "dx-engineer" as const,
+  legalPersonality: "pragmatic-advisor" as const,
+  supportPersonality: "systematic-triage" as const,
+  dataAnalystPersonality: "insight-storyteller" as const,
 }))
 
 const mockDetectLegacyConfig = mock(() => false)
@@ -118,6 +122,10 @@ describe("runCliInstaller", () => {
       opsPersonality: "on-call-veteran" as const,
       creativePersonality: "pragmatic-problem-solver" as const,
       brandPersonality: "authentic-builder" as const,
+      devrelPersonality: "dx-engineer" as const,
+      legalPersonality: "pragmatic-advisor" as const,
+      supportPersonality: "systematic-triage" as const,
+      dataAnalystPersonality: "insight-storyteller" as const,
     }))
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))

@@ -123,6 +123,10 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     opsPersonality: detected.opsPersonality,
     creativePersonality: detected.creativePersonality,
     brandPersonality: detected.brandPersonality,
+    devrelPersonality: detected.devrelPersonality,
+    legalPersonality: detected.legalPersonality,
+    supportPersonality: detected.supportPersonality,
+    dataAnalystPersonality: detected.dataAnalystPersonality,
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")

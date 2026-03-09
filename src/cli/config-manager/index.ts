@@ -9,13 +9,17 @@ import type {
   ConfigMergeResult,
   CreativePersonality,
   CtoPersonality,
+  DataAnalystPersonality,
   DetectedConfig,
+  DevrelPersonality,
   InstallConfig,
   InstallScope,
+  LegalPersonality,
   OpsPersonality,
   OrgStructure,
   ProductPersonality,
   QaPersonality,
+  SupportPersonality,
   TeamCulture,
 } from "../types.js"
 
@@ -74,6 +78,10 @@ export function detectCurrentConfig(): DetectedConfig {
     opsPersonality: "on-call-veteran" as OpsPersonality,
     creativePersonality: "pragmatic-problem-solver" as CreativePersonality,
     brandPersonality: "authentic-builder" as BrandPersonality,
+    devrelPersonality: "dx-engineer" as DevrelPersonality,
+    legalPersonality: "pragmatic-advisor" as LegalPersonality,
+    supportPersonality: "systematic-triage" as SupportPersonality,
+    dataAnalystPersonality: "insight-storyteller" as DataAnalystPersonality,
   }
 
   const { path, format } = getConfigPath()
@@ -114,6 +122,10 @@ export function detectCurrentConfig(): DetectedConfig {
         opsPersonality: typeof wk["opsPersonality"] === "string" ? (wk["opsPersonality"] as OpsPersonality) : defaults.opsPersonality,
         creativePersonality: typeof wk["creativePersonality"] === "string" ? (wk["creativePersonality"] as CreativePersonality) : defaults.creativePersonality,
         brandPersonality: typeof wk["brandPersonality"] === "string" ? (wk["brandPersonality"] as BrandPersonality) : defaults.brandPersonality,
+        devrelPersonality: typeof wk["devrelPersonality"] === "string" ? (wk["devrelPersonality"] as DevrelPersonality) : defaults.devrelPersonality,
+        legalPersonality: typeof wk["legalPersonality"] === "string" ? (wk["legalPersonality"] as LegalPersonality) : defaults.legalPersonality,
+        supportPersonality: typeof wk["supportPersonality"] === "string" ? (wk["supportPersonality"] as SupportPersonality) : defaults.supportPersonality,
+        dataAnalystPersonality: typeof wk["dataAnalystPersonality"] === "string" ? (wk["dataAnalystPersonality"] as DataAnalystPersonality) : defaults.dataAnalystPersonality,
       }
     } catch {
       return { ...defaults, isInstalled: true, scope: "global" as InstallScope }
@@ -214,7 +226,15 @@ export function writeWunderkindConfig(installConfig: InstallConfig, scope: Insta
       `  // Creative Director: "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"`,
       `  "creativePersonality": ${JSON.stringify(installConfig.creativePersonality)},`,
       `  // Brand Builder: "community-evangelist" | "pr-spinner" | "authentic-builder"`,
-      `  "brandPersonality": ${JSON.stringify(installConfig.brandPersonality)}`,
+      `  "brandPersonality": ${JSON.stringify(installConfig.brandPersonality)},`,
+      `  // DevRel Wunderkind: "community-champion" | "docs-perfectionist" | "dx-engineer"`,
+      `  "devrelPersonality": ${JSON.stringify(installConfig.devrelPersonality)},`,
+      `  // Legal Counsel: "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"`,
+      `  "legalPersonality": ${JSON.stringify(installConfig.legalPersonality)},`,
+      `  // Support Engineer: "empathetic-resolver" | "systematic-triage" | "knowledge-builder"`,
+      `  "supportPersonality": ${JSON.stringify(installConfig.supportPersonality)},`,
+      `  // Data Analyst: "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"`,
+      `  "dataAnalystPersonality": ${JSON.stringify(installConfig.dataAnalystPersonality)}`,
       `}`,
       ``,
     ].join("\n")
