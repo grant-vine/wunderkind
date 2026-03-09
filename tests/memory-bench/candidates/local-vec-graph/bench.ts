@@ -12,7 +12,7 @@ import {
   type SupersedeCase,
   type WrongAgentLeakageCase,
 } from "../../harness/score.js"
-import { LocalVecGraphAdapter } from "./adapter.js"
+import { LocalVecGraphAdapter, type BenchmarkSeedEntry } from "./adapter.js"
 
 interface BenchmarkArtifact {
   candidate: string
@@ -70,7 +70,7 @@ function createArtifact(metrics: BenchmarkMetrics, options?: { skippedReason?: s
   }
 }
 
-function toBenchMemory(entry: CorpusEntry) {
+function toBenchMemory(entry: CorpusEntry): BenchmarkSeedEntry {
   return {
     agent: entry.agent,
     slug: entry.id,
@@ -85,9 +85,7 @@ function toBenchMemory(entry: CorpusEntry) {
 }
 
 async function ingestCorpus(corpus: CorpusResult, adapter: LocalVecGraphAdapter): Promise<void> {
-  for (const entry of corpus.entries) {
-    await adapter.write(entry.agent, toBenchMemory(entry))
-  }
+  await adapter.seedCorpus(corpus.entries.map((entry) => toBenchMemory(entry)))
 }
 
 function relationshipPairs(weakSeedPairs: WeakSeedPair[]): WeakSeedPair[] {

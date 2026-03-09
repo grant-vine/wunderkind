@@ -96,8 +96,10 @@ function wrongAgentLeakagePairs(weakSeedPairs: WeakSeedPair[], wrongAgentEntries
 }
 
 async function ingestCorpus(adapter: QdrantNeo4jAdapter, corpus: CorpusResult): Promise<void> {
-  for (const entry of corpus.entries) {
-    await adapter.write(entry.agent, toMemoryEntry(entry))
+  const BATCH_SIZE = 50
+  for (let i = 0; i < corpus.entries.length; i += BATCH_SIZE) {
+    const batch = corpus.entries.slice(i, i + BATCH_SIZE)
+    await Promise.all(batch.map((entry) => adapter.write(entry.agent, toMemoryEntry(entry))))
   }
 }
 

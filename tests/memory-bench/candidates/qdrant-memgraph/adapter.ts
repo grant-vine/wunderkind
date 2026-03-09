@@ -52,6 +52,7 @@ const DEFAULT_EXPANDED_LIMIT = 10
 const DEFAULT_GRAPH_DEPTH = 2
 const MIN_TAG_OVERLAP = 2
 const GENERIC_TAG_PREFIXES = ["agent:", "period:"]
+const GRAPH_TAG_PREFIXES = ["module:", "related:", "artifact:"]
 
 function normalize(text: string): string {
   return text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim()
@@ -195,6 +196,7 @@ function parseTags(metadata: Record<string, string>): string[] {
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0)
     .filter((tag) => !GENERIC_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)))
+    .filter((tag) => GRAPH_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix)))
 
   return Array.from(new Set(tags)).sort()
 }
@@ -253,6 +255,7 @@ export class QdrantMemgraphAdapter implements MemoryAdapter {
     this.#qdrant = new QdrantClient({ url: this.#config.qdrantUrl, checkCompatibility: false })
     this.#driver = neo4j.driver(this.#config.memgraphUrl, neo4j.auth.basic("", ""), {
       disableLosslessIntegers: true,
+      encrypted: "ENCRYPTION_OFF",
     })
   }
 
@@ -262,9 +265,15 @@ export class QdrantMemgraphAdapter implements MemoryAdapter {
 
   async reset(): Promise<void> {
     await this.#ensureCollection()
-    await this.#qdrant.delete(this.#config.collectionName, {
-      filter: { must: [{ key: "slug", match: { except: "__never__" } }] },
+    const page = await this.#qdrant.scroll(this.#config.collectionName, {
+      with_payload: false,
+      with_vector: false,
+      limit: 10_000,
     })
+    const ids = page.points.map((point) => String(point.id))
+    if (ids.length > 0) {
+      await this.#qdrant.delete(this.#config.collectionName, { points: ids })
+    }
     await this.#withSession("WRITE", async (session) => {
       await session.run("MATCH (node:Memory) DETACH DELETE node")
     })

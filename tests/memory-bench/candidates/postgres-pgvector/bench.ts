@@ -319,9 +319,13 @@ async function buildWrongAgentLeakageCases(
 
 async function ingestCorpus(corpus: CorpusResult, adapter: PostgresPgvectorAdapter): Promise<void> {
   const memoryIdBySlug = new Map<string, string>()
-  for (const entry of corpus.entries) {
-    const written = await adapter.write(entry.agent, toBenchMemory(entry))
-    memoryIdBySlug.set(entry.id, written.id)
+  const BATCH_SIZE = 50
+  for (let i = 0; i < corpus.entries.length; i += BATCH_SIZE) {
+    const batch = corpus.entries.slice(i, i + BATCH_SIZE)
+    const results = await Promise.all(batch.map((entry) => adapter.write(entry.agent, toBenchMemory(entry))))
+    results.forEach((result, idx) => {
+      memoryIdBySlug.set(batch[idx].id, result.id)
+    })
   }
   await adapter.addEdges(buildEdges(corpus, memoryIdBySlug))
 }
@@ -376,8 +380,10 @@ async function runBenchmark(): Promise<BenchmarkArtifact> {
 
     await adapter.reset()
     const corpus = generateCorpus({ scale: SCALE })
+    console.error(`[postgres-pgvector] ingesting ${corpus.entries.length} memories`)
     await ingestCorpus(corpus, adapter)
 
+    console.error("[postgres-pgvector] scoring retrieval metrics")
     const weakSeedCases = await buildWeakSeedCases(adapter, corpus.weakSeedQueryPairs)
     const graphWeakSeedCases = await buildGraphWeakSeedCases(adapter, corpus.weakSeedQueryPairs)
     const graphNeighborhoodCases = await buildGraphNeighborhoodCases(adapter, corpus.weakSeedQueryPairs)

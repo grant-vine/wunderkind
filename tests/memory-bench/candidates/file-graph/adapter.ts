@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs"
+import { writeFile } from "node:fs/promises"
 import path from "node:path"
 import { Database } from "bun:sqlite"
 import { FileAdapter } from "../../../../src/memory/adapters/file.js"
@@ -28,6 +29,15 @@ interface SearchCandidate {
   entry: MemoryEntry
   score: number
   depth: number
+}
+
+export interface BenchmarkSeedEntry {
+  agent: string
+  slug: string
+  content: string
+  createdAt: number
+  pinned: boolean
+  metadata: Record<string, string>
 }
 
 export interface GraphSearchResult {
@@ -170,9 +180,12 @@ function recencyBoost(createdAt: number, newestCreatedAt: number): number {
 export class FileGraphCandidateAdapter implements MemoryAdapter {
   #file: FileAdapter
   #db: Database
+  #memoryDir: string
+  #cache = new Map<string, MemoryEntry[]>()
 
   constructor(projectDir: string) {
     this.#file = new FileAdapter(projectDir)
+    this.#memoryDir = path.join(projectDir, ".wunderkind", "memory")
     const dbPath = path.join(projectDir, ".wunderkind", "memory-graph.db")
     mkdirSync(path.dirname(dbPath), { recursive: true })
     this.#db = new Database(dbPath, { create: true })
@@ -187,6 +200,8 @@ export class FileGraphCandidateAdapter implements MemoryAdapter {
 
   async write(agent: string, entry: Omit<MemoryEntry, "id">): Promise<MemoryEntry> {
     const written = await this.#file.write(agent, entry)
+    const existing = await this.#entriesForAgent(agent)
+    this.#cache.set(agent, [...existing, written])
     this.#indexEntry(written, entry.metadata)
     return written
   }
@@ -204,6 +219,7 @@ export class FileGraphCandidateAdapter implements MemoryAdapter {
     this.#db.prepare("DELETE FROM adjacency WHERE from_id IN (SELECT memory_id FROM entry_nodes WHERE agent = $agent) OR to_id IN (SELECT memory_id FROM entry_nodes WHERE agent = $agent)").run({ $agent: agent })
     this.#db.prepare("DELETE FROM entry_tags WHERE agent = $agent").run({ $agent: agent })
     this.#db.prepare("DELETE FROM entry_nodes WHERE agent = $agent").run({ $agent: agent })
+    this.#cache.delete(agent)
     await this.#file.deleteAll(agent)
   }
 
@@ -213,14 +229,15 @@ export class FileGraphCandidateAdapter implements MemoryAdapter {
   }
 
   async searchBase(agent: string, query: string): Promise<MemoryEntry[]> {
-    return this.#file.search(agent, query)
+    const entries = await this.#entriesForAgent(agent)
+    return exactTokenSearch(entries, query)
   }
 
   async searchWithGraph(agent: string, query: string): Promise<GraphSearchResult> {
     const entries = await this.#entriesForAgent(agent)
     const entryMap = new Map(entries.map((entry) => [entry.id, entry]))
     const newestCreatedAt = entries.reduce((max, entry) => Math.max(max, entry.createdAt), 0)
-    const baseResults = await this.#file.search(agent, query)
+    const baseResults = exactTokenSearch(entries, query)
     const relaxedSeeds = this.#relaxedSeeds(query, entries)
     const seedPool = new Map<string, SearchCandidate>()
 
@@ -359,16 +376,54 @@ export class FileGraphCandidateAdapter implements MemoryAdapter {
   }
 
   async #mergeNodeTimestamps(agent: string): Promise<MemoryEntry[]> {
-    const entries = await this.#file.read(agent)
+    const cached = this.#cache.get(agent)
+    const entries = cached ? cached : await this.#file.read(agent)
     const stmt = this.#db.prepare<EntryNodeRow, { $agent: string }>(
       "SELECT memory_id, agent, slug, created_at, tags, supersedes_slug FROM entry_nodes WHERE agent = $agent",
     )
     const rows = stmt.all({ $agent: agent }) as EntryNodeRow[]
     const createdAtById = new Map(rows.map((row) => [row.memory_id, row.created_at]))
-    return entries.map((entry) => ({
+    const merged = entries.map((entry) => ({
       ...entry,
       createdAt: createdAtById.get(entry.id) ?? entry.createdAt,
     }))
+    this.#cache.set(agent, merged)
+    return merged
+  }
+
+  async seedCorpus(entries: BenchmarkSeedEntry[]): Promise<void> {
+    const grouped = new Map<string, BenchmarkSeedEntry[]>()
+    for (const entry of entries) {
+      const existing = grouped.get(entry.agent) ?? []
+      existing.push(entry)
+      grouped.set(entry.agent, existing)
+    }
+
+    mkdirSync(this.#memoryDir, { recursive: true })
+    for (const [agent, agentEntries] of grouped) {
+      const sortedEntries = [...agentEntries].sort((left, right) => left.createdAt - right.createdAt)
+      const filePath = path.join(this.#memoryDir, `${agent}.md`)
+      const frontmatter = this.#frontmatter(agent)
+      const memoryEntries: MemoryEntry[] = sortedEntries.map((entry) => ({
+        id: entry.slug,
+        agent: entry.agent,
+        slug: entry.slug,
+        content: entry.content,
+        createdAt: entry.createdAt,
+        pinned: entry.pinned,
+        metadata: entry.metadata,
+      }))
+      const sections = memoryEntries.map((entry) => this.#formatSection(entry))
+      const fileContent = sections.length === 0 ? frontmatter : `${frontmatter}\n\n${sections.join("\n\n")}`
+      await writeFile(filePath, fileContent, "utf-8")
+      this.#cache.set(agent, memoryEntries)
+      const tx = this.#db.transaction(() => {
+        for (const entry of memoryEntries) {
+          this.#indexEntry(entry, entry.metadata)
+        }
+      })
+      tx()
+    }
   }
 
   #indexEntry(entry: MemoryEntry, metadata: Record<string, string>): void {
@@ -462,4 +517,28 @@ export class FileGraphCandidateAdapter implements MemoryAdapter {
     this.#db.prepare("DELETE FROM entry_tags WHERE memory_id = $memoryId").run({ $memoryId: memoryId })
     this.#db.prepare("DELETE FROM entry_nodes WHERE memory_id = $memoryId").run({ $memoryId: memoryId })
   }
+
+  #frontmatter(agent: string): string {
+    const date = new Date().toISOString().slice(0, 10)
+    return ["---", `agent: ${agent}`, `compacted: ${date}`, "---"].join("\n")
+  }
+
+  #formatSection(entry: MemoryEntry): string {
+    const date = new Date(entry.createdAt).toISOString().slice(0, 10)
+    const pinnedLine = entry.pinned ? "\n> pinned" : ""
+    return `## [${date}] ${entry.slug}\nid: ${entry.id}\n${entry.content}${pinnedLine}`
+  }
+}
+
+function exactTokenSearch(entries: MemoryEntry[], query: string): MemoryEntry[] {
+  const tokens = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+    .map((token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"))
+
+  return entries.filter((entry) => {
+    const text = `${entry.content} ${entry.slug}`
+    return tokens.every((regex) => regex.test(text))
+  })
 }

@@ -33,6 +33,15 @@ interface StoredNode {
   tags: string[]
 }
 
+export interface BenchmarkSeedEntry {
+  agent: string
+  slug: string
+  content: string
+  createdAt: number
+  pinned: boolean
+  metadata: Record<string, string>
+}
+
 export interface LocalVecGraphAdapterConfig extends LocalVecAdapterConfig {
   graphDbPath: string
   maxHops?: 1 | 2
@@ -68,6 +77,9 @@ CREATE TABLE IF NOT EXISTS graph_edges (
 CREATE INDEX IF NOT EXISTS idx_graph_edges_from ON graph_edges(agent_id, from_id);
 CREATE INDEX IF NOT EXISTS idx_graph_edges_to ON graph_edges(agent_id, to_id);
 `
+
+const SEED_BATCH_SIZE = 50
+const PROGRESS_LOG_INTERVAL = 500
 
 function runStatements(db: Database, sql: string): void {
   const statements = sql
@@ -124,6 +136,7 @@ export class LocalVecGraphAdapter implements MemoryAdapter {
   readonly #db: Database
   readonly #maxHops: 1 | 2
   readonly #resultLimit: number
+  readonly #upsertNodeStatement: ReturnType<Database["prepare"]>
 
   constructor(config: LocalVecGraphAdapterConfig) {
     void mkdir(path.dirname(config.graphDbPath), { recursive: true })
@@ -132,6 +145,18 @@ export class LocalVecGraphAdapter implements MemoryAdapter {
     this.#db.run("PRAGMA journal_mode = WAL;")
     this.#db.run("PRAGMA foreign_keys = ON;")
     runStatements(this.#db, GRAPH_SCHEMA)
+    this.#upsertNodeStatement = this.#db.prepare(
+      `INSERT INTO graph_nodes (id, agent_id, slug, content, created_at, pinned, metadata_json, tags_json)
+       VALUES ($id, $agent, $slug, $content, $createdAt, $pinned, $metadata, $tags)
+       ON CONFLICT(id) DO UPDATE SET
+         agent_id = excluded.agent_id,
+         slug = excluded.slug,
+         content = excluded.content,
+         created_at = excluded.created_at,
+         pinned = excluded.pinned,
+         metadata_json = excluded.metadata_json,
+         tags_json = excluded.tags_json`,
+    )
     this.#maxHops = config.maxHops ?? 2
     this.#resultLimit = config.resultLimit ?? 10
   }
@@ -149,6 +174,109 @@ export class LocalVecGraphAdapter implements MemoryAdapter {
     this.#upsertNode(stored)
     this.#rebuildEdgesForNode(agent, stored.id, parseTags(stored.metadata))
     return stored
+  }
+
+  async seedCorpus(entries: BenchmarkSeedEntry[]): Promise<void> {
+    const grouped = new Map<string, BenchmarkSeedEntry[]>()
+    for (const entry of entries) {
+      const existing = grouped.get(entry.agent)
+      if (existing) {
+        existing.push(entry)
+        continue
+      }
+      grouped.set(entry.agent, [entry])
+    }
+
+    const total = entries.length
+    let totalWritten = 0
+    const storedEntriesByAgent = new Map<string, MemoryEntry[]>()
+
+    for (const [agent, agentEntries] of grouped) {
+      const storedEntries: MemoryEntry[] = []
+
+      for (let index = 0; index < agentEntries.length; index += SEED_BATCH_SIZE) {
+        const batch = agentEntries.slice(index, index + SEED_BATCH_SIZE)
+        const results = await Promise.all(
+          batch.map((entry) => this.#base.write(entry.agent, {
+            agent: entry.agent,
+            slug: entry.slug,
+            content: entry.content,
+            createdAt: entry.createdAt,
+            pinned: entry.pinned,
+            metadata: entry.metadata,
+          })),
+        )
+
+        storedEntries.push(...results)
+        totalWritten += results.length
+        if (totalWritten % PROGRESS_LOG_INTERVAL === 0 && totalWritten > 0) {
+          console.log(`[progress] ingested ${totalWritten}/${total} entries...`)
+        }
+      }
+
+      storedEntriesByAgent.set(agent, storedEntries)
+    }
+
+    const deleteEdges = this.#db.prepare("DELETE FROM graph_edges WHERE agent_id = $agent")
+    const deleteNodes = this.#db.prepare("DELETE FROM graph_nodes WHERE agent_id = $agent")
+    const insertEdge = this.#db.prepare(
+      `INSERT OR REPLACE INTO graph_edges (agent_id, from_id, to_id, weight)
+       VALUES ($agent, $fromId, $toId, $weight)`,
+    )
+
+    const tx = this.#db.transaction((entriesByAgent: Map<string, MemoryEntry[]>) => {
+      for (const [agent, storedEntries] of entriesByAgent) {
+        const nodes = storedEntries.map((entry) => ({
+          entry,
+          tags: parseTags(entry.metadata),
+        }))
+
+        deleteEdges.run({ $agent: agent })
+        deleteNodes.run({ $agent: agent })
+
+        for (const node of nodes) {
+          this.#upsertNode(node.entry)
+        }
+
+        for (let leftIndex = 0; leftIndex < nodes.length; leftIndex += 1) {
+          const leftNode = nodes[leftIndex]
+          if (!leftNode) {
+            continue
+          }
+
+          for (let rightIndex = leftIndex + 1; rightIndex < nodes.length; rightIndex += 1) {
+            const rightNode = nodes[rightIndex]
+            if (!rightNode) {
+              continue
+            }
+
+            const sharedTags = overlapCount(leftNode.tags, rightNode.tags)
+            if (sharedTags === 0) {
+              continue
+            }
+
+            insertEdge.run({
+              $agent: agent,
+              $fromId: leftNode.entry.id,
+              $toId: rightNode.entry.id,
+              $weight: sharedTags,
+            })
+            insertEdge.run({
+              $agent: agent,
+              $fromId: rightNode.entry.id,
+              $toId: leftNode.entry.id,
+              $weight: sharedTags,
+            })
+          }
+        }
+      }
+    })
+
+    tx(storedEntriesByAgent)
+
+    if (totalWritten < total) {
+      console.log(`[progress] ingested ${totalWritten}/${total} entries...`)
+    }
   }
 
   async update(id: string, content: string): Promise<MemoryEntry> {
@@ -316,29 +444,16 @@ export class LocalVecGraphAdapter implements MemoryAdapter {
 
   #upsertNode(entry: MemoryEntry): void {
     const tags = parseTags(entry.metadata)
-    this.#db
-      .prepare(
-        `INSERT INTO graph_nodes (id, agent_id, slug, content, created_at, pinned, metadata_json, tags_json)
-         VALUES ($id, $agent, $slug, $content, $createdAt, $pinned, $metadata, $tags)
-         ON CONFLICT(id) DO UPDATE SET
-           agent_id = excluded.agent_id,
-           slug = excluded.slug,
-           content = excluded.content,
-           created_at = excluded.created_at,
-           pinned = excluded.pinned,
-           metadata_json = excluded.metadata_json,
-           tags_json = excluded.tags_json`,
-      )
-      .run({
-        $id: entry.id,
-        $agent: entry.agent,
-        $slug: entry.slug,
-        $content: entry.content,
-        $createdAt: entry.createdAt,
-        $pinned: entry.pinned ? 1 : 0,
-        $metadata: JSON.stringify(entry.metadata),
-        $tags: JSON.stringify(tags),
-      })
+    this.#upsertNodeStatement.run({
+      $id: entry.id,
+      $agent: entry.agent,
+      $slug: entry.slug,
+      $content: entry.content,
+      $createdAt: entry.createdAt,
+      $pinned: entry.pinned ? 1 : 0,
+      $metadata: JSON.stringify(entry.metadata),
+      $tags: JSON.stringify(tags),
+    })
   }
 
   #removeNode(id: string): void {

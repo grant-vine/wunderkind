@@ -244,6 +244,7 @@ function mapRow(row: MemoryRow): MemoryEntry {
 
 export class PostgresPgvectorAdapter implements MemoryAdapter {
   #pool: Pool
+  #ready: Promise<void>
   #model: string
   #vectorSize: number
   #cacheDir?: string
@@ -252,6 +253,9 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   constructor(config: PostgresPgvectorAdapterConfig = {}) {
     this.#model = config.model ?? DEFAULT_MODEL
     this.#vectorSize = config.vectorSize ?? DEFAULT_VECTOR_SIZE
+    if (this.#vectorSize !== DEFAULT_VECTOR_SIZE) {
+      throw new Error(`Postgres pgvector prototype requires vectorSize=${DEFAULT_VECTOR_SIZE}`)
+    }
     this.#cacheDir = config.cacheDir
     this.#embedderMode = isLikelyModelCached(this.#model, config.cacheDir) ? "transformers" : "hash"
     this.#pool = new Pool({
@@ -266,6 +270,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
       idleTimeoutMillis: 5000,
       connectionTimeoutMillis: 3000,
     })
+    this.#ready = this.#ensureSchema()
   }
 
   embeddingMode(): EmbedderMode {
@@ -277,12 +282,12 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async reset(): Promise<void> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     await this.#pool.query("TRUNCATE TABLE memory_edges, memory_history, memories")
   }
 
   async addEdges(edges: PostgresMemoryEdge[]): Promise<number> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     if (edges.length === 0) return 0
     const client = await this.#pool.connect()
     try {
@@ -309,7 +314,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async searchExpanded(agent: string, query: string, depth: number = 2, limit: number = 10): Promise<MemoryEntry[]> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const seedRows = await this.#searchRows(agent, query, 5)
     if (seedRows.length === 0) return []
 
@@ -366,7 +371,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async read(agent: string): Promise<MemoryEntry[]> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const result = await this.#pool.query<MemoryRow>(
       `
         SELECT id, agent, slug, content, created_at, pinned, metadata, tags
@@ -380,7 +385,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async write(agent: string, entry: Omit<MemoryEntry, "id">): Promise<MemoryEntry> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const id = generateId()
     const slug = entry.slug.trim().length > 0 ? entry.slug : generateSlug(entry.content)
     const embedding = await this.#embed(entry.content)
@@ -397,7 +402,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async update(id: string, content: string): Promise<MemoryEntry> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const existing = await this.#getById(id)
     if (!existing) {
       throw new Error(`Memory entry not found: ${id}`)
@@ -420,14 +425,14 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async delete(id: string): Promise<void> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     await this.#pool.query("DELETE FROM memory_edges WHERE from_id = $1 OR to_id = $1", [id])
     await this.#pool.query("DELETE FROM memory_history WHERE memory_id = $1", [id])
     await this.#pool.query("DELETE FROM memories WHERE id = $1", [id])
   }
 
   async deleteAll(agent: string): Promise<void> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const idsResult = await this.#pool.query<{ id: string }>("SELECT id FROM memories WHERE agent = $1", [agent])
     const ids = idsResult.rows.map((row) => row.id)
     if (ids.length === 0) return
@@ -437,13 +442,13 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async search(agent: string, query: string): Promise<MemoryEntry[]> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const rows = await this.#searchRows(agent, query, 10)
     return rows.map((row) => mapRow(row))
   }
 
   async history(id: string): Promise<HistoryEntry[]> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const result = await this.#pool.query<HistoryRow>(
       `
         SELECT action, value, timestamp
@@ -466,7 +471,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async prune(agent: string, idsToRemove: string[]): Promise<number> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     if (idsToRemove.length === 0) return 0
     const result = await this.#pool.query(
       `
@@ -481,7 +486,7 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async count(agent: string): Promise<MemoryCount> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const result = await this.#pool.query<CountRow>(
       `
         SELECT
@@ -507,14 +512,14 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
   }
 
   async listAgents(): Promise<string[]> {
-    await this.#ensureSchema()
+    await this.#ensureReady()
     const result = await this.#pool.query<AgentRow>("SELECT DISTINCT agent FROM memories ORDER BY agent ASC")
     return result.rows.map((row) => row.agent)
   }
 
   async status(): Promise<{ ok: boolean; message: string }> {
     try {
-      await this.#ensureSchema()
+      await this.#ensureReady()
       await this.#pool.query("SELECT 1")
       return { ok: true, message: `postgres-pgvector adapter ready (${this.#embedderMode})` }
     } catch (error) {
@@ -525,6 +530,10 @@ export class PostgresPgvectorAdapter implements MemoryAdapter {
 
   async #ensureSchema(): Promise<void> {
     await this.#pool.query(SCHEMA_SQL)
+  }
+
+  async #ensureReady(): Promise<void> {
+    await this.#ready
   }
 
   async #embed(text: string): Promise<number[]> {

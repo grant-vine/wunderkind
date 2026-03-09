@@ -189,10 +189,20 @@ function toBenchMemory(entry: CorpusEntry) {
   }
 }
 
-async function ingestCorpus(corpus: CorpusResult, adapter: MemoryAdapter): Promise<void> {
-  for (const entry of corpus.entries) {
-    await adapter.write(entry.agent, toBenchMemory(entry))
-  }
+async function ingestCorpus(corpus: CorpusResult, adapter: FileGraphCandidateAdapter): Promise<void> {
+  await adapter.seedCorpus(
+    corpus.entries.map((entry) => ({
+      agent: entry.agent,
+      slug: entry.id,
+      content: entry.content,
+      createdAt: Date.parse(entry.timestamp),
+      pinned: false,
+      metadata: {
+        tags: entry.tags.join(","),
+        ...(entry.supersedes ? { supersedesFactId: entry.supersedes } : {}),
+      },
+    })),
+  )
 }
 
 function relationshipPairs(weakSeedPairs: WeakSeedPair[]): WeakSeedPair[] {
