@@ -502,6 +502,12 @@ bun run bench:full
 
 ---
 
+## Research Log
+
+Wunderkind maintains a durable record of architectural experiments, historical findings, and environmental constraints. For details on what was tried, what was backed out, and why certain decisions were made, see [RESEARCH.md](RESEARCH.md).
+
+---
+
 ## Requirements
 
 - [OpenCode](https://opencode.ai)

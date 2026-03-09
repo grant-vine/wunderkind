@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.3.1  
+**Package:** `@grant-vine/wunderkind` v0.4.2  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-opencode addon that injects 8 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security) into any OpenCode project via a `bunx`/`npx` interactive installer.
@@ -38,6 +38,7 @@ wunderkind/
 <project-root>/
 └── .wunderkind/                 # Per-project config + memory (gitignored)
     ├── wunderkind.config.jsonc  # Per-project config override
+    ├── oh-my-opencode.json      # Wunderkind agent model config (project scope)
     ├── memory/                  # File adapter memory storage (one .md per agent)
     ├── memory.db                # SQLite adapter storage
     └── exports/                 # memory export zips (fflate zip format)
@@ -48,6 +49,7 @@ wunderkind/
 ```
 ~/.wunderkind/                   # Global config baseline + Docker Compose files
 ├── wunderkind.config.jsonc      # Global config baseline (per-project overrides take precedence)
+├── oh-my-opencode.json          # Wunderkind agent model config (global scope)
 ├── docker-compose.vector.yml    # Qdrant vector memory adapter
 └── docker-compose.mem0.yml      # mem0 memory adapter
 ```
@@ -73,6 +75,11 @@ wunderkind/
 | Add / change memory subcommands | `src/cli/memory-commands.ts` |
 | Change memory adapter logic | `src/memory/index.ts` (`loadAdapter`) + `src/memory/adapters/` |
 | Change project slug derivation | `src/memory/slug.ts` (`deriveProjectSlug`) |
+| Check if oh-my-opencode is installed | `src/cli/config-manager/index.ts` → `isOhMyOpenCodeInstalled()` |
+| Change wunderkind agent model config written | `src/cli/config-manager/index.ts` → `writeWunderkindAgentConfig()` |
+| Change model inheritance from oh-my-opencode | `src/cli/config-manager/index.ts` → `readUserPreferredModel()` / `readUserPreferredCreativeModel()` |
+| Memory tools registered into OpenCode plugin | `src/memory/tools.ts` → `createMemoryTools()` |
+| Find historical research findings, tried approaches, backed-out decisions | RESEARCH.md |
 
 ---
 
@@ -218,3 +225,6 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`deriveProjectSlug()`** in `src/memory/slug.ts` is used for Qdrant `group_id` payload and mem0 composite `agentId` namespacing. Changing slug derivation will orphan existing memories in vector/mem0 adapters.
 - **`exportMemories` / `importMemories`** use `fflate` for zip — NOT `Bun.Archive` (that API produces tar.gz only).
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
+- **oh-my-opencode must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+- **Wunderkind never touches the user's oh-my-opencode config** — `writeWunderkindAgentConfig()` writes to `.wunderkind/oh-my-opencode.json` (project) or `~/.wunderkind/oh-my-opencode.json` (global). The user's `~/.config/opencode/oh-my-opencode.json` is read-only (for model inheritance) and never modified.
+- **`isOhMyOpenCodeInstalled()`** checks both `oh-my-opencode.{json,jsonc}` in the OpenCode config dir AND the `plugin` array in `opencode.json` for an `"oh-my-opencode"` or `"oh-my-opencode@..."` entry.
