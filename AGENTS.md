@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.4.2  
+**Package:** `@grant-vine/wunderkind` v0.5.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-opencode addon that injects 8 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security) into any OpenCode project via a `bunx`/`npx` interactive installer.
@@ -15,12 +15,6 @@ wunderkind/
 │   ├── index.ts               # Plugin entry — default-exports Plugin object
 │   ├── build-agents.ts        # Build-time generator — writes agents/*.md
 │   ├── agents/                # Agent factory functions + types (see src/agents/AGENTS.md)
-│   ├── memory/                # Memory adapter system (file, sqlite, vector, mem0)
-│   │   ├── index.ts           # Public API: takeNote, searchMemories, exportMemories, importMemories, etc.
-│   │   ├── slug.ts            # deriveProjectSlug() — project namespacing for Qdrant + mem0
-│   │   ├── docker.ts          # startMemoryServices() — runs docker-compose from ~/.wunderkind/
-│   │   ├── format.ts          # generateSlug() for memory entry slugs
-│   │   └── adapters/          # file, sqlite, vector, mem0, stub adapter implementations
 │   └── cli/                   # Installer CLI (see src/cli/AGENTS.md)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── skills/                    # Static SKILL.md files for 8 sub-skills
@@ -36,22 +30,17 @@ wunderkind/
 
 ```
 <project-root>/
-└── .wunderkind/                 # Per-project config + memory (gitignored)
+└── .wunderkind/                 # Per-project config + state (gitignored)
     ├── wunderkind.config.jsonc  # Per-project config override
-    ├── oh-my-opencode.json      # Wunderkind agent model config (project scope)
-    ├── memory/                  # File adapter memory storage (one .md per agent)
-    ├── memory.db                # SQLite adapter storage
-    └── exports/                 # memory export zips (fflate zip format)
+    └── oh-my-opencode.json      # Wunderkind agent model config (project scope)
 ```
 
 ### Global directory (created by installer at first run)
 
 ```
-~/.wunderkind/                   # Global config baseline + Docker Compose files
+~/.wunderkind/                   # Global config baseline
 ├── wunderkind.config.jsonc      # Global config baseline (per-project overrides take precedence)
-├── oh-my-opencode.json          # Wunderkind agent model config (global scope)
-├── docker-compose.vector.yml    # Qdrant vector memory adapter
-└── docker-compose.mem0.yml      # mem0 memory adapter
+└── oh-my-opencode.json          # Wunderkind agent model config (global scope)
 ```
 
 ---
@@ -70,16 +59,10 @@ wunderkind/
 | Plugin entry point | `src/index.ts` |
 | Build pipeline (two-step) | `src/build-agents.ts` + `package.json` scripts |
 | Change install scope | `src/cli/index.ts` (`--scope` flag) + `src/cli/tui-installer.ts` + `src/cli/cli-installer.ts` |
-| Export / import memory | `src/memory/index.ts` (`exportMemories`, `importMemories`) |
 | Change config paths / constants | `src/cli/config-manager/index.ts` |
-| Add / change memory subcommands | `src/cli/memory-commands.ts` |
-| Change memory adapter logic | `src/memory/index.ts` (`loadAdapter`) + `src/memory/adapters/` |
-| Change project slug derivation | `src/memory/slug.ts` (`deriveProjectSlug`) |
-| Check if oh-my-opencode is installed | `src/cli/config-manager/index.ts` → `isOhMyOpenCodeInstalled()` |
-| Change wunderkind agent model config written | `src/cli/config-manager/index.ts` → `writeWunderkindAgentConfig()` |
-| Change model inheritance from oh-my-opencode | `src/cli/config-manager/index.ts` → `readUserPreferredModel()` / `readUserPreferredCreativeModel()` |
-| Memory tools registered into OpenCode plugin | `src/memory/tools.ts` → `createMemoryTools()` |
-| Find historical research findings, tried approaches, backed-out decisions | RESEARCH.md |
+| Check if oh-my-opencode is installed | `src/cli/config-manager/index.ts` → `detectCurrentConfig()` |
+| Change wunderkind config written | `src/cli/config-manager/index.ts` → `writeWunderkindConfig()` |
+| Add gitignore entries | `src/cli/gitignore-manager.ts` → `addAiTracesToGitignore()` |
 
 ---
 
@@ -148,25 +131,6 @@ Sub-skills: `social-media-maven` (marketing) · `visual-artist` (creative) · `a
 
 ---
 
-## MEMORY ADAPTERS
-
-Four adapters selectable via `memoryAdapter` in `wunderkind.config.jsonc`. Default is `file`.
-
-| Adapter | Storage | Namespace |
-|---|---|---|
-| `file` (default) | `.wunderkind/memory/<agent>.md` per project | One file per agent |
-| `sqlite` | `.wunderkind/memory.db` per project | Agent name column |
-| `vector` | Qdrant (external) — single collection `wunderkind-memories` | `group_id` payload = project slug |
-| `mem0` | mem0 API (external) | composite `agentId = ${projectSlug}:${agent}` |
-
-**Project slug** is derived by `deriveProjectSlug()` in `src/memory/slug.ts`. Reads `package.json` `name` field, sanitises to lowercase alphanumeric + hyphens. Fallback: `path.basename(cwd())`.
-
-**Docker Compose** for `vector` and `mem0` adapters lives in `~/.wunderkind/` (global), not in the project directory. Run `wunderkind memory start` to bring up the relevant service.
-
-Config for adapters goes into `wunderkind.config.jsonc`. The project config (`.wunderkind/wunderkind.config.jsonc`) is merged on top of the global baseline (`~/.wunderkind/wunderkind.config.jsonc`) at runtime.
-
----
-
 ## COMMANDS
 
 ```bash
@@ -190,21 +154,6 @@ node bin/wunderkind.js install --no-tui \
   --industry=SaaS \
   --primary-regulation=GDPR
 
-# Memory commands
-node bin/wunderkind.js memory take-note --agent ciso --note "Always require MFA for admin routes"
-node bin/wunderkind.js memory take-note --agent ciso --note "Critical finding" --pin
-node bin/wunderkind.js memory search --agent fullstack-wunderkind --query "database"
-node bin/wunderkind.js memory count                    # all agents
-node bin/wunderkind.js memory count --agent ciso
-node bin/wunderkind.js memory reduce-noise --agent ciso           # preview
-node bin/wunderkind.js memory reduce-noise --agent ciso --confirm # prune
-node bin/wunderkind.js memory status
-node bin/wunderkind.js memory start                    # start Docker Compose for vector/mem0
-node bin/wunderkind.js memory export
-node bin/wunderkind.js memory export --output backup.zip
-node bin/wunderkind.js memory import backup.zip
-node bin/wunderkind.js memory import backup.zip --strategy=overwrite
-
 # Gitignore helper
 node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, .opencode/ to .gitignore
 ```
@@ -219,12 +168,9 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **JSONC config editing in config-manager** uses regex replacement (not AST) to preserve comments when adding the plugin entry. Fragile — be careful when modifying that logic.
 - **Regex in source**: use `\u001b` not `\x1b` in regex literals (both work in tsc, but LSP reports false positives with `\x1b`).
 - **`createRequire`** in `src/cli/index.ts` is the only CommonJS interop usage — used to read `package.json` at runtime. Everything else is pure ESM.
-- **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and memory are never committed.
+- **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
-- **Docker Compose files** for `vector`/`mem0` memory adapters live in `~/.wunderkind/` (global), NOT in the project directory. The installer copies them there on first run.
-- **`deriveProjectSlug()`** in `src/memory/slug.ts` is used for Qdrant `group_id` payload and mem0 composite `agentId` namespacing. Changing slug derivation will orphan existing memories in vector/mem0 adapters.
-- **`exportMemories` / `importMemories`** use `fflate` for zip — NOT `Bun.Archive` (that API produces tar.gz only).
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
 - **oh-my-opencode must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
-- **Wunderkind never touches the user's oh-my-opencode config** — `writeWunderkindAgentConfig()` writes to `.wunderkind/oh-my-opencode.json` (project) or `~/.wunderkind/oh-my-opencode.json` (global). The user's `~/.config/opencode/oh-my-opencode.json` is read-only (for model inheritance) and never modified.
-- **`isOhMyOpenCodeInstalled()`** checks both `oh-my-opencode.{json,jsonc}` in the OpenCode config dir AND the `plugin` array in `opencode.json` for an `"oh-my-opencode"` or `"oh-my-opencode@..."` entry.
+- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent models are configured via `oh-my-opencode.jsonc` at build time; no runtime oh-my-opencode config file is written by the installer.
+- **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
