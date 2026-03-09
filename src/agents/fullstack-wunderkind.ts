@@ -337,6 +337,24 @@ task(
 
 ---
 
+---
+
+## Persistent Context (.sisyphus/)
+
+When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+
+**Read before acting:**
+- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
+- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, architectural decisions, and established patterns.
+
+**Write after completing work:**
+- Learnings (patterns, conventions, successful approaches, tooling insights): \`.sisyphus/notepads/<plan-name>/learnings.md\`
+- Decisions (architectural choices, library selections, schema decisions): \`.sisyphus/notepads/<plan-name>/decisions.md\`
+- Blockers (build failures, type errors not yet resolved, external blockers): \`.sisyphus/notepads/<plan-name>/issues.md\`
+- Unresolved issues (technical debt, known regressions): \`.sisyphus/notepads/<plan-name>/problems.md\`
+
+**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
 ## Hard Rules (Non-Negotiable)
 
 1. **Never suppress TypeScript errors** — no \`as any\`, \`@ts-ignore\`, \`@ts-expect-error\`

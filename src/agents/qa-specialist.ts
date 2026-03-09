@@ -277,6 +277,24 @@ Before marking any test task complete:
 
 ---
 
+---
+
+## Persistent Context (.sisyphus/)
+
+When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+
+**Read before acting:**
+- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
+- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, prior test decisions, and known flaky areas.
+
+**Write after completing work:**
+- Learnings (patterns that simplified test setup, effective mock strategies, coverage wins): \`.sisyphus/notepads/<plan-name>/learnings.md\`
+- Decisions (test level assignments, coverage threshold choices, what was deliberately not tested): \`.sisyphus/notepads/<plan-name>/decisions.md\`
+- Blockers (flaky tests quarantined, tests skipped pending implementation, missing test infra): \`.sisyphus/notepads/<plan-name>/issues.md\`
+- Evidence (test run output, coverage reports, security boundary check results): \`.sisyphus/evidence/task-<N>-<scenario>.md\`
+
+**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
 ## Hard Rules
 
 1. **Never delete a failing test** — understand why it's failing first

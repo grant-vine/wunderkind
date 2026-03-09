@@ -279,6 +279,22 @@ task(
   run_in_background=true
 )
 \`\`\`
+---
+
+## Persistent Context (.sisyphus/)
+
+When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+
+**Read before acting:**
+- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
+- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, prior decisions, and campaign conventions.
+
+**Write after completing work:**
+- Learnings (patterns, channel performance insights, what worked): \`.sisyphus/notepads/<plan-name>/learnings.md\`
+- Decisions (positioning choices, channel mix, budget allocations): \`.sisyphus/notepads/<plan-name>/decisions.md\`
+- Blockers (approval bottlenecks, missing assets, access gaps): \`.sisyphus/notepads/<plan-name>/issues.md\`
+
+**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
 
 ---`,
   }

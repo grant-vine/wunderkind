@@ -15,11 +15,14 @@ wunderkind/
 │   ├── index.ts               # Plugin entry — default-exports Plugin object
 │   ├── build-agents.ts        # Build-time generator — writes agents/*.md
 │   ├── agents/                # Agent factory functions + types (see src/agents/AGENTS.md)
-│   └── cli/                   # Installer CLI (see src/cli/AGENTS.md)
+│   ├── cli/                   # Installer CLI (see src/cli/AGENTS.md)
+│   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── skills/                    # Static SKILL.md files for 8 sub-skills
+├── tests/unit/                # Bun test suite (cli-installer.test.ts)
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
+├── .github/workflows/         # CI: publish on v* tag push
 └── oh-my-opencode.jsonc       # Agent registration config (model, color, mode per agent)
 ```
 
@@ -31,16 +34,14 @@ wunderkind/
 ```
 <project-root>/
 └── .wunderkind/                 # Per-project config + state (gitignored)
-    ├── wunderkind.config.jsonc  # Per-project config override
-    └── oh-my-opencode.json      # Wunderkind agent model config (project scope)
+    └── wunderkind.config.jsonc  # Per-project config override
 ```
 
 ### Global directory (created by installer at first run)
 
 ```
 ~/.wunderkind/                   # Global config baseline
-├── wunderkind.config.jsonc      # Global config baseline (per-project overrides take precedence)
-└── oh-my-opencode.json          # Wunderkind agent model config (global scope)
+└── wunderkind.config.jsonc      # Global config baseline (per-project overrides take precedence)
 ```
 
 ---
@@ -165,7 +166,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`exactOptionalPropertyTypes`** — the most common source of type errors when adding new CLI functions. Split calls rather than passing `undefined` for optional params.
 - **`agents/` is gitignored** but included in the npm publish via `"files"` in `package.json`. CI generates them during `prepublishOnly`.
 - **`.claude-plugin/plugin.json` version** must be manually kept in sync with `package.json` version — no automation exists for this.
-- **JSONC config editing in config-manager** uses regex replacement (not AST) to preserve comments when adding the plugin entry. Fragile — be careful when modifying that logic.
+- **JSONC comments lost on opencode config write** — `addPluginToOpenCodeConfig()` uses `JSON.stringify` when writing. If the original was a `.jsonc` file with comments those are lost. The file is always written as `.json`.
 - **Regex in source**: use `\u001b` not `\x1b` in regex literals (both work in tsc, but LSP reports false positives with `\x1b`).
 - **`createRequire`** in `src/cli/index.ts` is the only CommonJS interop usage — used to read `package.json` at runtime. Everything else is pure ESM.
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
