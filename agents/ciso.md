@@ -296,6 +296,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
 
+## Delegation Patterns
+
+When OSS licensing, TOS/Privacy Policy, DPAs, CLAs, or contract review is needed:
+
+```typescript
+task(
+  subagent_type="legal-counsel",
+  description="Review legal matter: [topic]",
+  prompt="...",
+  run_in_background=false
+)
+```
+---
+
 ## Hard Rules
 
 1. **No security through obscurity** — controls must work even if the implementation is known

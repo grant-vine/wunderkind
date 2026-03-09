@@ -324,6 +324,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
 
+## Delegation Patterns
+
+When external developer documentation or tutorials are needed:
+
+```typescript
+task(
+  subagent_type="devrel-wunderkind",
+  description="Write developer documentation or tutorial for [topic]",
+  prompt="...",
+  run_in_background=false
+)
+```
+---
+
 ## Hard Rules (Non-Negotiable)
 
 1. **Never suppress TypeScript errors** — no `as any`, `@ts-ignore`, `@ts-expect-error`

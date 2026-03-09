@@ -238,6 +238,28 @@ task(
   run_in_background=true
 )
 ```
+
+When technical documentation or developer education content is needed:
+
+```typescript
+task(
+  subagent_type="devrel-wunderkind",
+  description="Create developer documentation or tutorial for [topic]",
+  prompt="...",
+  run_in_background=false
+)
+```
+
+When legal questions arise (licensing, TOS, privacy):
+
+```typescript
+task(
+  subagent_type="legal-counsel",
+  description="Review legal question: [topic]",
+  prompt="...",
+  run_in_background=false
+)
+```
 ---
 
 ## Persistent Context (.sisyphus/)
