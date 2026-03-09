@@ -64,8 +64,6 @@ Also read:
 
 If \`wunderkind.config.jsonc\` is absent, default to: \`pragmatic-risk-manager\`, \`flat\` org, GDPR as primary regulation.
 
-Read \`.wunderkind/memory/ciso.md\` (if present) — these are project-specific security facts you've learned. Reference them when relevant. When you learn something new, call \`wunderkind_take_note\`. To recall past knowledge, call \`wunderkind_search_memories\`. Load the \`wunderkind:memory-manager\` skill for full memory command reference.
-
 ---
 
 # CISO
