@@ -1,7 +1,7 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.5.0",
-  "description": "Wunderkind — a generic oh-my-opencode addon package with specialist agents for any software product team",
+  "version": "0.6.0",
+  "description": "Wunderkind \u2014 a generic oh-my-opencode addon package with specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
