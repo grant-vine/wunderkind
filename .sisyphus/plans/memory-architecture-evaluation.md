@@ -881,7 +881,7 @@ Wave FINAL (After ALL tasks — independent review)
     Evidence: .sisyphus/evidence/architecture-eval/task-14-path-query-validation.txt
   ```
 
-- [ ] 15. Run benchmark matrix and write decision memo
+- [x] 15. Run benchmark matrix and write decision memo
 
   **What to do**:
   - Run all candidates against the same frozen benchmark suite.
@@ -933,7 +933,7 @@ Wave FINAL (After ALL tasks — independent review)
 
 ## Final Verification Wave
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Verify candidate set, rubric, fixture families, and recommendation outputs all match this plan.
 
   **QA Scenarios**:
@@ -949,7 +949,7 @@ Wave FINAL (After ALL tasks — independent review)
     Evidence: .sisyphus/evidence/architecture-eval/f1-plan-compliance.txt
   ```
 
-- [ ] F2. **Benchmark Artifact Integrity Review** — `unspecified-high`
+- [x] F2. **Benchmark Artifact Integrity Review** — `unspecified-high`
   Confirm all result artifacts are present, machine-readable, and comparable across candidates.
 
   **QA Scenarios**:
@@ -965,7 +965,7 @@ Wave FINAL (After ALL tasks — independent review)
     Evidence: .sisyphus/evidence/architecture-eval/f2-artifact-integrity.txt
   ```
 
-- [ ] F3. **Scope Fidelity Check** — `deep`
+- [x] F3. **Scope Fidelity Check** — `deep`
   Ensure the work stayed in evaluation/prototyping scope and did not drift into production migration.
 
   **QA Scenarios**:
@@ -981,7 +981,7 @@ Wave FINAL (After ALL tasks — independent review)
     Evidence: .sisyphus/evidence/architecture-eval/f3-scope-fidelity.txt
   ```
 
-- [ ] F4. **Recommendation Quality Review** — `oracle`
+- [x] F4. **Recommendation Quality Review** — `oracle`
   Check that the final memo names a clear default path and explicit deferrals grounded in evidence.
 
   **QA Scenarios**:
