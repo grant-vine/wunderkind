@@ -27,6 +27,7 @@ export const OPERATIONS_LEAD_METADATA: AgentPromptMetadata = {
     "Security architecture decisions (use ciso)",
     "Frontend product features (use fullstack-wunderkind)",
     "Marketing or community work (use marketing-wunderkind or brand-builder)",
+    "User-reported bugs or incoming issue triage (use support-engineer) unless already confirmed as a production incident",
   ],
 }
 
@@ -314,6 +315,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 - Evidence (postmortem docs, supportability scorecards, SLO dashboards): \`.sisyphus/evidence/task-<N>-<scenario>.md\`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
+## Delegation Patterns
+
+When user-reported bugs arrive that are not yet confirmed production incidents:
+
+\`\`\`typescript
+task(
+  subagent_type="support-engineer",
+  description="Triage incoming issue: [description]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
+---
 
 ## Hard Rules
 

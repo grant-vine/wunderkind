@@ -27,6 +27,7 @@ export const QA_SPECIALIST_METADATA: AgentPromptMetadata = {
     "Implementation work is needed (use fullstack-wunderkind)",
     "Security architecture decisions (use ciso)",
     "Product or UX decisions (use product-wunderkind)",
+    "Post-release bug triage, user issue synthesis, or GitHub issue management (use support-engineer)",
   ],
 }
 
@@ -294,6 +295,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 - Evidence (test run output, coverage reports, security boundary check results): \`.sisyphus/evidence/task-<N>-<scenario>.md\`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
+## Delegation Patterns
+
+When post-release bug reports or user issues need triage:
+
+\`\`\`typescript
+task(
+  subagent_type="support-engineer",
+  description="Triage user-reported issue: [description]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
+---
 
 ## Hard Rules
 

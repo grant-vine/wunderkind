@@ -25,6 +25,7 @@ export const FULLSTACK_WUNDERKIND_METADATA: AgentPromptMetadata = {
     "Design or visual work (use creative-director or visual-engineering category)",
     "Security audit or threat modelling (use ciso)",
     "Test strategy or coverage (use qa-specialist)",
+    "External developer documentation, tutorials, or getting-started guides (use devrel-wunderkind)",
   ],
 }
 
@@ -354,6 +355,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 - Unresolved issues (technical debt, known regressions): \`.sisyphus/notepads/<plan-name>/problems.md\`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
+## Delegation Patterns
+
+When external developer documentation or tutorials are needed:
+
+\`\`\`typescript
+task(
+  subagent_type="devrel-wunderkind",
+  description="Write developer documentation or tutorial for [topic]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
+---
 
 ## Hard Rules (Non-Negotiable)
 

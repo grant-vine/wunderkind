@@ -18,6 +18,10 @@ The following specialist agents are available. Delegate to them when their domai
 - \`wunderkind:qa-specialist\` — TDD, test writing, Playwright, Vitest, coverage analysis, user story review, test optimisation, security boundary testing
 - \`wunderkind:operations-lead\` — SRE/SLO, admin tooling (build-first), runbooks, incident response, observability, supportability assessment
 - \`wunderkind:ciso\` — Security architecture, OWASP, threat modelling, compliance (GDPR/CCPA/POPIA/LGPD), pen testing coordination, breach response
+- \`wunderkind:devrel-wunderkind\` — Developer relations, DX audits, API documentation, tutorials, migration guides, OSS community, getting started guides
+- \`wunderkind:legal-counsel\` — OSS licensing, TOS/Privacy Policy drafting, DPAs, CLAs, contract review, GDPR/CCPA legal obligations
+- \`wunderkind:support-engineer\` — Bug triage, issue classification, repro steps, severity rating (P0–P3), engineering handoff, support synthesis
+- \`wunderkind:data-analyst\` — Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiment design, metric definitions
 
 ### Delegation Rules
 
@@ -51,6 +55,21 @@ The following specialist agents are available. Delegate to them when their domai
 #### Operations
 - Use \`wunderkind:operations-lead\` for SRE/SLO decisions, admin panel architecture (build-first bias), incident containment, runbooks, monitoring, or supportability assessment
 
+#### Developer Relations
+- Use \`wunderkind:devrel-wunderkind\` for API docs, tutorials, getting started guides, DX audits, migration guides, OSS community docs, technical writing, changelog drafts
+
+#### Legal
+- Use \`wunderkind:legal-counsel\` for OSS licensing, TOS/Privacy Policy, DPAs, CLAs, contract review, GDPR/CCPA legal obligations
+- Escalate from legal-counsel to \`wunderkind:ciso\` when the question is about technical security controls or implementation
+
+#### Support & Triage
+- Use \`wunderkind:support-engineer\` for bug triage, issue classification, user report synthesis, severity rating, engineering handoff
+- Escalate from support-engineer: confirmed bugs → fullstack-wunderkind, security vulnerabilities → ciso, P0/P1 → operations-lead
+
+#### Data & Analytics
+- Use \`wunderkind:data-analyst\` for event tracking, funnel/cohort analysis, A/B experiments, metric definitions, tracking plans
+- Escalate from data-analyst: roadmap decisions → product-wunderkind, channel performance → marketing-wunderkind
+
 ### Project Configuration
 
 All agents read \`wunderkind.config.jsonc\` (project root) for:
@@ -60,7 +79,7 @@ All agents read \`wunderkind.config.jsonc\` (project root) for:
 - \`secondaryRegulation\` — additional regulation to layer on top
 - \`teamCulture\` — communication style baseline: \`formal-strict\` | \`pragmatic-balanced\` | \`experimental-informal\`
 - \`orgStructure\` — \`flat\` (peer escalation) | \`hierarchical\` (CISO has hard veto on security)
-- \`cisoPersonality\`, \`ctoPersonality\`, \`cmoPersonality\`, \`qaPersonality\`, \`productPersonality\`, \`opsPersonality\`, \`creativePersonality\`, \`brandPersonality\` — character archetypes per agent
+- \`cisoPersonality\`, \`ctoPersonality\`, \`cmoPersonality\`, \`qaPersonality\`, \`productPersonality\`, \`opsPersonality\`, \`creativePersonality\`, \`brandPersonality\`, \`devrelPersonality\`, \`legalPersonality\`, \`supportPersonality\`, \`dataAnalystPersonality\` — character archetypes per agent
 
 If the file is absent or fields are blank, agents default to global best practices.
 

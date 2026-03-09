@@ -302,6 +302,28 @@ task(
   run_in_background=false
 )
 \`\`\`
+
+When analytics or measurement questions arise:
+
+\`\`\`typescript
+task(
+  subagent_type="data-analyst",
+  description="Analyse [metric/funnel/experiment] for [feature]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
+
+When user-reported bugs need triage:
+
+\`\`\`typescript
+task(
+  subagent_type="support-engineer",
+  description="Triage user-reported issue: [description]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
 ---
 
 ## Persistent Context (.sisyphus/)

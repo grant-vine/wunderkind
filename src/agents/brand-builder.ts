@@ -26,6 +26,7 @@ export const BRAND_BUILDER_METADATA: AgentPromptMetadata = {
     "Social media ad campaigns (use marketing-wunderkind)",
     "Visual brand assets or design (use creative-director)",
     "Engineering or product work is needed",
+    "Technical documentation, code examples, or developer education content (use devrel-wunderkind)",
   ],
 }
 
@@ -274,6 +275,20 @@ When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus),
 - Blockers (pending approvals, legal reviews, missing spokesperson availability): \`.sisyphus/notepads/<plan-name>/issues.md\`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+
+## Delegation Patterns
+
+When technical documentation or developer education requests arise:
+
+\`\`\`typescript
+task(
+  subagent_type="devrel-wunderkind",
+  description="Create developer education content for [topic]",
+  prompt="...",
+  run_in_background=false
+)
+\`\`\`
+---
 
 ## Hard Rules
 
