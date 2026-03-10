@@ -1,5 +1,13 @@
 import { describe, it, expect } from "bun:test"
 import {
+  createMarketingWunderkindAgent,
+  createCreativeDirectorAgent,
+  createProductWunderkindAgent,
+  createFullstackWunderkindAgent,
+  createBrandBuilderAgent,
+  createQaSpecialistAgent,
+  createOperationsLeadAgent,
+  createCisoAgent,
   createDevrelWunderkindAgent,
   DEVREL_WUNDERKIND_METADATA,
   createLegalCounselAgent,
@@ -133,4 +141,40 @@ describe("New agent factory structure", () => {
       }
     })
   })
+})
+
+describe("Documentation Output static sections", () => {
+  const ELIGIBLE_AGENT_FACTORIES = [
+    { name: "marketing-wunderkind", factory: createMarketingWunderkindAgent },
+    { name: "creative-director", factory: createCreativeDirectorAgent },
+    { name: "product-wunderkind", factory: createProductWunderkindAgent },
+    { name: "fullstack-wunderkind", factory: createFullstackWunderkindAgent },
+    { name: "brand-builder", factory: createBrandBuilderAgent },
+    { name: "qa-specialist", factory: createQaSpecialistAgent },
+    { name: "operations-lead", factory: createOperationsLeadAgent },
+    { name: "ciso", factory: createCisoAgent },
+    { name: "devrel-wunderkind", factory: createDevrelWunderkindAgent },
+  ]
+
+  for (const { name, factory } of ELIGIBLE_AGENT_FACTORIES) {
+    it(`${name} contains ## Documentation Output (Static Reference)`, () => {
+      const config = factory("test-model")
+      expect(config.prompt).toContain("## Documentation Output (Static Reference)")
+    })
+  }
+
+  const EXCLUDED_AGENT_FACTORIES = [
+    { name: "legal-counsel", factory: createLegalCounselAgent },
+    { name: "support-engineer", factory: createSupportEngineerAgent },
+    { name: "data-analyst", factory: createDataAnalystAgent },
+  ]
+
+  for (const { name, factory } of EXCLUDED_AGENT_FACTORIES) {
+    it(`${name} does NOT contain ## Documentation Output (Static Reference)`, () => {
+      const config = factory("test-model")
+      expect(config.prompt).not.toContain(
+        "## Documentation Output (Static Reference)",
+      )
+    })
+  }
 })
