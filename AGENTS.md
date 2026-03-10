@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.5.0  
+**Package:** `@grant-vine/wunderkind` v0.7.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
@@ -23,7 +23,7 @@ wunderkind/
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
 ├── .github/workflows/         # CI: publish on v* tag push
-└── oh-my-opencode.jsonc       # Agent registration config (model, color, mode per agent)
+└── oh-my-opencode.jsonc       # Agent registration config (category, color, mode per agent)
 ```
 
 **`agents/` is generated.** Do not edit files there directly — they are overwritten by `bun run build`.  
@@ -51,7 +51,7 @@ wunderkind/
 | Task | Location |
 |---|---|
 | Add / edit an agent | `src/agents/<name>.ts` → rebuild |
-| Change agent model defaults | `oh-my-opencode.jsonc` |
+| Change agent category defaults | `oh-my-opencode.jsonc` |
 | Change installer TUI flow | `src/cli/tui-installer.ts` |
 | Change non-interactive installer | `src/cli/cli-installer.ts` |
 | Change what config is written to user projects | `src/cli/config-manager/index.ts` |
@@ -117,16 +117,20 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 
 ## AGENTS
 
-| Agent key | Role | Model |
+| Agent key | Role | Category |
 |---|---|---|
-| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | claude-sonnet-4-5 |
-| `wunderkind:creative-director` | Brand & UI/UX lead | gemini-2.0-flash |
-| `wunderkind:product-wunderkind` | VP Product | claude-sonnet-4-5 |
-| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | claude-sonnet-4-5 |
-| `wunderkind:brand-builder` | Community, PR, thought leadership | claude-sonnet-4-5 |
-| `wunderkind:qa-specialist` | TDD, coverage, user story review | claude-sonnet-4-5 |
-| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident | claude-sonnet-4-5 |
-| `wunderkind:ciso` | Security, OWASP, compliance | claude-sonnet-4-5 |
+| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | writing |
+| `wunderkind:creative-director` | Brand & UI/UX lead | visual-engineering |
+| `wunderkind:product-wunderkind` | VP Product | writing |
+| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | unspecified-high |
+| `wunderkind:brand-builder` | Community, PR, thought leadership | writing |
+| `wunderkind:qa-specialist` | TDD, coverage, user story review | unspecified-high |
+| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | unspecified-high |
+| `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
+| `wunderkind:devrel-wunderkind` | Developer relations and advocacy | writing |
+| `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
+| `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
+| `wunderkind:data-analyst` | Data analysis and insights | writing |
 
 Sub-skills: `social-media-maven` (marketing) · `visual-artist` (creative) · `agile-pm` (product) · `db-architect` + `vercel-architect` (fullstack) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso).
 
@@ -173,5 +177,5 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
 - **oh-my-openagent must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
-- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent models are configured via `oh-my-opencode.jsonc` at build time.
+- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent categories are configured via `oh-my-opencode.jsonc` at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.

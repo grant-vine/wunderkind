@@ -106,7 +106,7 @@ Wunderkind writes its own agent config to a separate file — it never modifies 
 | `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
 | `wunderkind:data-analyst` | Data analysis and insights | writing |
 
-Agent models default to whatever provider you selected during oh-my-openagent setup (read from `agents.sisyphus.model` in your oh-my-openagent config). The creative-director uses Gemini regardless, as it requires a multimodal model.
+Agent models are determined by category inheritance configured in `oh-my-opencode.jsonc`. Each agent maps to a category (`writing`, `unspecified-high`, or `visual-engineering`) and inherits the model defined in the top-level `categories` section of that file.
 
 ---
 

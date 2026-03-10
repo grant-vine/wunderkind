@@ -1,0 +1,40 @@
+VERDICT: REJECT
+
+Failed checks:
+- LSP diagnostics are not clean on changed test files:
+  - tests/unit/manifest-sync.test.ts: TS2307 Cannot find module 'bun:test' or its corresponding type declarations.
+  - tests/unit/config-template.test.ts: TS2307 Cannot find module 'bun:test' or its corresponding type declarations.
+  - tests/unit/cli-help-text.test.ts: TS2307 Cannot find module 'bun:test' or its corresponding type declarations.
+  - tests/unit/agent-factories.test.ts: TS2307 Cannot find module 'bun:test' or its corresponding type declarations.
+
+Command results:
+- tsc --noEmit: PASS (exit 0, no output)
+- bun test tests/unit/: PASS
+  - 62 pass, 0 fail, 5 files
+- bun run build: PASS
+  - tsc completed and dist/build-agents.js regenerated 12 agents/*.md files
+- grep "oh-my-opencode workflow" in src/ and agents/: PASS (no matches)
+
+Anti-patterns found:
+- No real anti-pattern usage found in reviewed files.
+- Literal grep hits for `as any` / `@ts-ignore` / `@ts-expect-error` appear only inside prompt policy text in:
+  - src/agents/fullstack-wunderkind.ts:119,375
+  - src/agents/qa-specialist.ts:317
+
+Test quality review:
+- tests/unit/manifest-sync.test.ts: real behaviour; reads both manifests and enforces 0.7.0 sync.
+- tests/unit/config-template.test.ts: real behaviour; parses JSONC and validates the 12-agent template plus category inheritance/no per-agent model keys.
+- tests/unit/cli-help-text.test.ts: real behaviour; spawns the CLI and asserts user-visible help copy.
+- tests/unit/agent-factories.test.ts: meaningful prompt/permission assertions; not trivially passing.
+
+Source/generated consistency: PASS
+- Spot-checked src/agents/marketing-wunderkind.ts ↔ agents/marketing-wunderkind.md: wording matches.
+- Spot-checked src/agents/ciso.ts ↔ agents/ciso.md: wording matches.
+- Spot-checked src/agents/creative-director.ts ↔ agents/creative-director.md: wording matches.
+
+Manifest consistency: PASS
+- package.json version: 0.7.0
+- .claude-plugin/plugin.json version: 0.7.0
+
+Summary:
+Build, typecheck, unit tests, manifest sync, stale-wording grep, and source/generated spot-checks all pass. The migration should still be rejected because LSP diagnostics are not clean on the changed test files: the workspace is missing Bun test typings for editor/language-server validation.

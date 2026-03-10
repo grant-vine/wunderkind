@@ -1,0 +1,10 @@
+VERDICT: REJECT
+
+Out-of-scope changes (if REJECT):
+- .sisyphus/plans/openagent-migration-and-plan-restructure.md — plan file was modified in commit 331aaea — out of scope because allowed plan path is only .sisyphus/plans/docs-output-system.md and plan files are read-only for this review scope.
+
+Docs-output scope leak: NONE
+Technical literal preservation: CORRECT
+Unplanned file changes: .sisyphus/plans/openagent-migration-and-plan-restructure.md
+
+Summary: Commits d166216 and b3a35b0 stayed within the allowed source/config/test/generated-file scope and showed no docs-output feature implementation leakage (`docsEnabled`, `docsPath`, `docHistoryMode` all absent). Technical identifiers are preserved (`"oh-my-opencode"` remains in package.json and `oh-my-opencode.jsonc` remains the config filename). However, commit 331aaea modifies an unapproved plan file path, so scope fidelity fails.

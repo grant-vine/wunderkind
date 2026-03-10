@@ -9,6 +9,7 @@ declare module "bun:test" {
     toEqual(expected: unknown): void
     toHaveProperty(path: string, value?: unknown): void
     toHaveLength(length: number): void
+    toHaveBeenCalledTimes(expected: number): void
     not: Matchers
   }
 
@@ -21,6 +22,7 @@ declare module "bun:test" {
       mockClear(): void
       mockImplementation(impl: T): void
       calls: unknown[][]
+      mock: { calls: unknown[][] }
     }
     module(modulePath: string, factory: () => Record<string, unknown>): void
   }
