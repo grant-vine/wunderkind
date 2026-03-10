@@ -1,8 +1,29 @@
 import type { Plugin } from "@opencode-ai/plugin";
+import { readWunderkindConfig } from "./cli/config-manager/index.js";
+
+const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->";
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
     "experimental.chat.system.transform": async (_input, output) => {
+      const wunderkindConfig = readWunderkindConfig();
+      const hasDocsOutputSentinel = output.system.join("").includes(DOCS_OUTPUT_SENTINEL);
+
+      if (wunderkindConfig?.docsEnabled === true && !hasDocsOutputSentinel) {
+        const docsPath = wunderkindConfig.docsPath ?? "./docs";
+        const docHistoryMode = wunderkindConfig.docHistoryMode ?? "overwrite";
+
+        output.system.push(`
+${DOCS_OUTPUT_SENTINEL}
+## Documentation Output
+
+When producing documentation artifacts, write files to the configured docs directory.
+
+- docsPath: \`${docsPath}\`
+- docHistoryMode: \`${docHistoryMode}\`
+`.trim());
+      }
+
       output.system.push(`
 ## Wunderkind Plugin Agents (available via wunderkind:agent-name)
 
@@ -72,7 +93,7 @@ The following specialist agents are available. Delegate to them when their domai
 
 ### Project Configuration
 
-All agents read \`wunderkind.config.jsonc\` (project root) for:
+All agents read \`.wunderkind/wunderkind.config.jsonc\` for:
 - \`region\` — adjusts platform mix, event targeting, and regulatory focus
 - \`industry\` — adjusts content tone and sector-specific obligations
 - \`primaryRegulation\` — the main data protection regulation to apply (defaults to GDPR)
