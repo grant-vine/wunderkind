@@ -127,6 +127,11 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     legalPersonality: detected.legalPersonality,
     supportPersonality: detected.supportPersonality,
     dataAnalystPersonality: detected.dataAnalystPersonality,
+    docsEnabled: args.docsEnabled ?? false,
+    docsPath: args.docsPath ?? "./docs",
+    docHistoryMode: args.docHistoryMode === "append-dated" || args.docHistoryMode === "new-dated-file" || args.docHistoryMode === "overwrite-archive"
+      ? args.docHistoryMode
+      : "overwrite",
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")

@@ -11,6 +11,7 @@ import type {
   CtoPersonality,
   DataAnalystPersonality,
   DetectedConfig,
+  DocHistoryMode,
   DevrelPersonality,
   InstallConfig,
   InstallScope,
@@ -60,6 +61,62 @@ function parseConfig(path: string): OpenCodeConfig | null {
   }
 }
 
+function parseWunderkindConfig(path: string): Record<string, unknown> | null {
+  try {
+    const parsed = parseJsonc(readFileSync(path, "utf-8")) as unknown
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null
+    }
+    return parsed as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+export function readWunderkindConfig(): Partial<InstallConfig> | null {
+  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  const globalConfig = existsSync(GLOBAL_WUNDERKIND_CONFIG) ? parseWunderkindConfig(GLOBAL_WUNDERKIND_CONFIG) : null
+
+  if (!projectConfig && !globalConfig) {
+    return null
+  }
+
+  const merged: Record<string, unknown> = {
+    ...(globalConfig ?? {}),
+    ...(projectConfig ?? {}),
+  }
+
+  const result: Partial<InstallConfig> = {}
+
+  if (typeof merged["region"] === "string") result.region = merged["region"]
+  if (typeof merged["industry"] === "string") result.industry = merged["industry"]
+  if (typeof merged["primaryRegulation"] === "string") result.primaryRegulation = merged["primaryRegulation"]
+  if (typeof merged["secondaryRegulation"] === "string") result.secondaryRegulation = merged["secondaryRegulation"]
+  if (typeof merged["teamCulture"] === "string") result.teamCulture = merged["teamCulture"] as TeamCulture
+  if (typeof merged["orgStructure"] === "string") result.orgStructure = merged["orgStructure"] as OrgStructure
+  if (typeof merged["cisoPersonality"] === "string") result.cisoPersonality = merged["cisoPersonality"] as CisoPersonality
+  if (typeof merged["ctoPersonality"] === "string") result.ctoPersonality = merged["ctoPersonality"] as CtoPersonality
+  if (typeof merged["cmoPersonality"] === "string") result.cmoPersonality = merged["cmoPersonality"] as CmoPersonality
+  if (typeof merged["qaPersonality"] === "string") result.qaPersonality = merged["qaPersonality"] as QaPersonality
+  if (typeof merged["productPersonality"] === "string") result.productPersonality = merged["productPersonality"] as ProductPersonality
+  if (typeof merged["opsPersonality"] === "string") result.opsPersonality = merged["opsPersonality"] as OpsPersonality
+  if (typeof merged["creativePersonality"] === "string") {
+    result.creativePersonality = merged["creativePersonality"] as CreativePersonality
+  }
+  if (typeof merged["brandPersonality"] === "string") result.brandPersonality = merged["brandPersonality"] as BrandPersonality
+  if (typeof merged["devrelPersonality"] === "string") result.devrelPersonality = merged["devrelPersonality"] as DevrelPersonality
+  if (typeof merged["legalPersonality"] === "string") result.legalPersonality = merged["legalPersonality"] as LegalPersonality
+  if (typeof merged["supportPersonality"] === "string") result.supportPersonality = merged["supportPersonality"] as SupportPersonality
+  if (typeof merged["dataAnalystPersonality"] === "string") {
+    result.dataAnalystPersonality = merged["dataAnalystPersonality"] as DataAnalystPersonality
+  }
+  if (typeof merged["docsEnabled"] === "boolean") result.docsEnabled = merged["docsEnabled"]
+  if (typeof merged["docsPath"] === "string") result.docsPath = merged["docsPath"]
+  if (typeof merged["docHistoryMode"] === "string") result.docHistoryMode = merged["docHistoryMode"] as DocHistoryMode
+
+  return result
+}
+
 export function detectCurrentConfig(): DetectedConfig {
   const defaults: DetectedConfig = {
     isInstalled: false,
@@ -82,6 +139,9 @@ export function detectCurrentConfig(): DetectedConfig {
     legalPersonality: "pragmatic-advisor" as LegalPersonality,
     supportPersonality: "systematic-triage" as SupportPersonality,
     dataAnalystPersonality: "insight-storyteller" as DataAnalystPersonality,
+    docsEnabled: false,
+    docsPath: "./docs",
+    docHistoryMode: "overwrite" as DocHistoryMode,
   }
 
   const { path, format } = getConfigPath()
@@ -96,43 +156,33 @@ export function detectCurrentConfig(): DetectedConfig {
   )
   if (!isInstalled) return defaults
 
-  const wkConfigPath = existsSync(WUNDERKIND_CONFIG)
-    ? WUNDERKIND_CONFIG
-    : existsSync(GLOBAL_WUNDERKIND_CONFIG)
-      ? GLOBAL_WUNDERKIND_CONFIG
-      : null
+  const wk = readWunderkindConfig()
 
-  if (wkConfigPath !== null) {
-    try {
-      const wk = parseJsonc(readFileSync(wkConfigPath, "utf-8")) as Record<string, unknown>
-      return {
-        isInstalled: true,
-        scope: "global" as InstallScope,
-        region: typeof wk["region"] === "string" ? wk["region"] : defaults.region,
-        industry: typeof wk["industry"] === "string" ? wk["industry"] : defaults.industry,
-        primaryRegulation: typeof wk["primaryRegulation"] === "string" ? wk["primaryRegulation"] : defaults.primaryRegulation,
-        secondaryRegulation: typeof wk["secondaryRegulation"] === "string" ? wk["secondaryRegulation"] : defaults.secondaryRegulation,
-        teamCulture: typeof wk["teamCulture"] === "string" ? (wk["teamCulture"] as TeamCulture) : defaults.teamCulture,
-        orgStructure: typeof wk["orgStructure"] === "string" ? (wk["orgStructure"] as OrgStructure) : defaults.orgStructure,
-        cisoPersonality: typeof wk["cisoPersonality"] === "string" ? (wk["cisoPersonality"] as CisoPersonality) : defaults.cisoPersonality,
-        ctoPersonality: typeof wk["ctoPersonality"] === "string" ? (wk["ctoPersonality"] as CtoPersonality) : defaults.ctoPersonality,
-        cmoPersonality: typeof wk["cmoPersonality"] === "string" ? (wk["cmoPersonality"] as CmoPersonality) : defaults.cmoPersonality,
-        qaPersonality: typeof wk["qaPersonality"] === "string" ? (wk["qaPersonality"] as QaPersonality) : defaults.qaPersonality,
-        productPersonality: typeof wk["productPersonality"] === "string" ? (wk["productPersonality"] as ProductPersonality) : defaults.productPersonality,
-        opsPersonality: typeof wk["opsPersonality"] === "string" ? (wk["opsPersonality"] as OpsPersonality) : defaults.opsPersonality,
-        creativePersonality: typeof wk["creativePersonality"] === "string" ? (wk["creativePersonality"] as CreativePersonality) : defaults.creativePersonality,
-        brandPersonality: typeof wk["brandPersonality"] === "string" ? (wk["brandPersonality"] as BrandPersonality) : defaults.brandPersonality,
-        devrelPersonality: typeof wk["devrelPersonality"] === "string" ? (wk["devrelPersonality"] as DevrelPersonality) : defaults.devrelPersonality,
-        legalPersonality: typeof wk["legalPersonality"] === "string" ? (wk["legalPersonality"] as LegalPersonality) : defaults.legalPersonality,
-        supportPersonality: typeof wk["supportPersonality"] === "string" ? (wk["supportPersonality"] as SupportPersonality) : defaults.supportPersonality,
-        dataAnalystPersonality: typeof wk["dataAnalystPersonality"] === "string" ? (wk["dataAnalystPersonality"] as DataAnalystPersonality) : defaults.dataAnalystPersonality,
-      }
-    } catch {
-      return { ...defaults, isInstalled: true, scope: "global" as InstallScope }
-    }
+  return {
+    isInstalled: true,
+    scope: "global" as InstallScope,
+    region: wk?.region ?? defaults.region,
+    industry: wk?.industry ?? defaults.industry,
+    primaryRegulation: wk?.primaryRegulation ?? defaults.primaryRegulation,
+    secondaryRegulation: wk?.secondaryRegulation ?? defaults.secondaryRegulation,
+    teamCulture: wk?.teamCulture ?? defaults.teamCulture,
+    orgStructure: wk?.orgStructure ?? defaults.orgStructure,
+    cisoPersonality: wk?.cisoPersonality ?? defaults.cisoPersonality,
+    ctoPersonality: wk?.ctoPersonality ?? defaults.ctoPersonality,
+    cmoPersonality: wk?.cmoPersonality ?? defaults.cmoPersonality,
+    qaPersonality: wk?.qaPersonality ?? defaults.qaPersonality,
+    productPersonality: wk?.productPersonality ?? defaults.productPersonality,
+    opsPersonality: wk?.opsPersonality ?? defaults.opsPersonality,
+    creativePersonality: wk?.creativePersonality ?? defaults.creativePersonality,
+    brandPersonality: wk?.brandPersonality ?? defaults.brandPersonality,
+    devrelPersonality: wk?.devrelPersonality ?? defaults.devrelPersonality,
+    legalPersonality: wk?.legalPersonality ?? defaults.legalPersonality,
+    supportPersonality: wk?.supportPersonality ?? defaults.supportPersonality,
+    dataAnalystPersonality: wk?.dataAnalystPersonality ?? defaults.dataAnalystPersonality,
+    docsEnabled: wk?.docsEnabled ?? defaults.docsEnabled,
+    docsPath: wk?.docsPath ?? defaults.docsPath,
+    docHistoryMode: wk?.docHistoryMode ?? defaults.docHistoryMode,
   }
-
-  return { ...defaults, isInstalled: true, scope: "global" as InstallScope }
 }
 
 export function addPluginToOpenCodeConfig(scope: InstallScope): ConfigMergeResult {
@@ -234,7 +284,15 @@ export function writeWunderkindConfig(installConfig: InstallConfig, scope: Insta
       `  // Support Engineer: "empathetic-resolver" | "systematic-triage" | "knowledge-builder"`,
       `  "supportPersonality": ${JSON.stringify(installConfig.supportPersonality)},`,
       `  // Data Analyst: "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"`,
-      `  "dataAnalystPersonality": ${JSON.stringify(installConfig.dataAnalystPersonality)}`,
+      `  "dataAnalystPersonality": ${JSON.stringify(installConfig.dataAnalystPersonality)},`,
+      ``,
+      `  // Docs output settings`,
+      `  // Enable or disable writing docs outputs to disk`,
+      `  "docsEnabled": ${JSON.stringify(installConfig.docsEnabled)},`,
+      `  // Directory path where docs outputs are written`,
+      `  "docsPath": ${JSON.stringify(installConfig.docsPath)},`,
+      `  // History mode: "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"`,
+      `  "docHistoryMode": ${JSON.stringify(installConfig.docHistoryMode)}`,
       `}`,
       ``,
     ].join("\n")

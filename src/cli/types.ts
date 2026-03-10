@@ -1,5 +1,6 @@
 export type BooleanArg = "no" | "yes"
 export type InstallScope = "global" | "project"
+export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -37,6 +38,9 @@ export interface InstallArgs {
   legalPersonality?: string | undefined
   supportPersonality?: string | undefined
   dataAnalystPersonality?: string | undefined
+  docsEnabled?: boolean | undefined
+  docsPath?: string | undefined
+  docHistoryMode?: string | undefined
 }
 
 export interface InstallConfig {
@@ -58,6 +62,9 @@ export interface InstallConfig {
   legalPersonality: LegalPersonality
   supportPersonality: SupportPersonality
   dataAnalystPersonality: DataAnalystPersonality
+  docsEnabled: boolean
+  docsPath: string
+  docHistoryMode: DocHistoryMode
 }
 
 export interface ConfigMergeResult {
@@ -87,4 +94,7 @@ export interface DetectedConfig {
   legalPersonality: LegalPersonality
   supportPersonality: SupportPersonality
   dataAnalystPersonality: DataAnalystPersonality
+  docsEnabled: boolean
+  docsPath: string
+  docHistoryMode: DocHistoryMode
 }
