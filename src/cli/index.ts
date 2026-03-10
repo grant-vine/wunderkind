@@ -19,10 +19,10 @@ program
     [
       "Wunderkind — specialist AI agents for any software product team.",
       "",
-      "Extends oh-my-opencode with eight professional agents covering",
+      "Extends oh-my-openagent with twelve professional agents covering",
       "marketing, design, product, engineering, brand, QA, operations,",
-      "and security — each pre-tuned to your region, industry, and",
-      "data-protection regulation.",
+      "security, devrel, legal, support, and data analysis — each",
+      "pre-tuned to your region, industry, and data-protection regulation.",
       "",
       "Examples:",
       "  bunx @grant-vine/wunderkind",

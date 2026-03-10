@@ -328,7 +328,7 @@ task(
 
 ## Persistent Context (.sisyphus/)
 
-When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+When operating as a subagent inside an oh-my-openagent workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
 
 **Read before acting:**
 - Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.

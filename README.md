@@ -1,8 +1,11 @@
 # Wunderkind
 
-Wunderkind — specialist AI agent addon for OpenCode that extends your team with eight professional agents covering marketing, design, product, engineering, brand building, QA, operations, and security.
+Wunderkind — specialist AI agent addon for OpenCode that extends your team with 12 professional agents covering marketing, design, product, engineering, brand building, QA, operations, security, devrel, legal, support, and data analysis.
 
-**Requires [OpenCode](https://opencode.ai) and [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode).** This package cannot be used standalone.
+**Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
+
+> [!IMPORTANT]
+> **Breaking change (0.7.0)**: This is a pre-1.0 release. Older installs are not supported. Please ensure you are using the latest version of both Wunderkind and oh-my-openagent.
 
 ---
 
@@ -40,7 +43,7 @@ npx @grant-vine/wunderkind
 ```
 
 The TUI will guide you through:
-1. Installing oh-my-opencode if it isn't already (runs its own setup flow first).
+1. Installing oh-my-openagent if it isn't already (runs its own setup flow first).
 2. Selecting the install scope (Global vs Project).
 3. Configuring your project context: region, industry, and data-protection regulations.
 4. Tailoring agent personalities and your team's culture baseline.
@@ -49,11 +52,11 @@ The TUI will guide you through:
 
 For CI/CD or scripted environments, use the `install` command with the `--no-tui` flag.
 
-> **oh-my-opencode must already be installed** before running non-interactive mode. If it isn't, install it first:
+> **oh-my-openagent must already be installed** before running non-interactive mode. If it isn't, install it first:
 > ```bash
 > bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes
 > ```
-> See the [oh-my-opencode docs](https://github.com/code-yeongyu/oh-my-opencode) for all available options.
+> See the [oh-my-openagent docs](https://github.com/code-yeongyu/oh-my-openagent) for all available options.
 
 ```bash
 bunx @grant-vine/wunderkind install --no-tui \
@@ -82,29 +85,28 @@ bunx @grant-vine/wunderkind install --no-tui \
 | `global` (default) | Adds the plugin to `~/.config/opencode/opencode.json`. Agents are available in all projects. |
 | `project` | Adds the plugin to `./opencode.json` (created if missing). Agents are limited to the current project. |
 
-Wunderkind writes its own agent config to a separate file — it never modifies your existing oh-my-opencode configuration. Removing Wunderkind leaves oh-my-opencode intact.
-
-| Scope | Agent config written to |
-|---|---|
-| `global` | `~/.wunderkind/oh-my-opencode.json` |
-| `project` | `.wunderkind/oh-my-opencode.json` |
+Wunderkind writes its own agent config to a separate file — it never modifies your existing oh-my-openagent configuration. Removing Wunderkind leaves oh-my-openagent intact.
 
 ---
 
 ## Agents
 
-| Agent Key | Role | Model |
+| Agent Key | Role | Category |
 |---|---|---|
-| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | inherits from oh-my-opencode |
-| `wunderkind:creative-director` | Brand & UI/UX lead | gemini-2.0-flash |
-| `wunderkind:product-wunderkind` | VP Product | inherits from oh-my-opencode |
-| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | inherits from oh-my-opencode |
-| `wunderkind:brand-builder` | Community, PR, thought leadership | inherits from oh-my-opencode |
-| `wunderkind:qa-specialist` | TDD, coverage, user story review | inherits from oh-my-opencode |
-| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | inherits from oh-my-opencode |
-| `wunderkind:ciso` | Security architecture, OWASP, compliance | inherits from oh-my-opencode |
+| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | writing |
+| `wunderkind:creative-director` | Brand & UI/UX lead | visual-engineering |
+| `wunderkind:product-wunderkind` | VP Product | writing |
+| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | unspecified-high |
+| `wunderkind:brand-builder` | Community, PR, thought leadership | writing |
+| `wunderkind:qa-specialist` | TDD, coverage, user story review | unspecified-high |
+| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | unspecified-high |
+| `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
+| `wunderkind:devrel-wunderkind` | Developer relations and advocacy | writing |
+| `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
+| `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
+| `wunderkind:data-analyst` | Data analysis and insights | writing |
 
-Agent models default to whatever provider you selected during oh-my-opencode setup (read from `agents.sisyphus.model` in your oh-my-opencode config). The creative-director uses Gemini regardless, as it requires a multimodal model.
+Agent models default to whatever provider you selected during oh-my-openagent setup (read from `agents.sisyphus.model` in your oh-my-openagent config). The creative-director uses Gemini regardless, as it requires a multimodal model.
 
 ---
 
@@ -183,7 +185,6 @@ Edit either file directly to change any value after install. The installer pre-f
 ```
 .wunderkind/
   wunderkind.config.jsonc     # per-project config override
-  oh-my-opencode.json         # wunderkind agent model config (project scope)
 ```
 
 ### Global (`~/.wunderkind/`)
@@ -191,7 +192,6 @@ Edit either file directly to change any value after install. The installer pre-f
 ```
 ~/.wunderkind/
   wunderkind.config.jsonc     # global config baseline
-  oh-my-opencode.json         # wunderkind agent model config (global scope)
 ```
 
 ---
@@ -223,7 +223,7 @@ This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to your `.
 ## Requirements
 
 - [OpenCode](https://opencode.ai)
-- [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode)
+- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
 - Node.js 18+ or Bun 1+
 
 ---

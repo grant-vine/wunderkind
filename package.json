@@ -1,7 +1,7 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.6.0",
-  "description": "Wunderkind \u2014 a generic oh-my-opencode addon package with specialist agents for any software product team",
+  "version": "0.7.0",
+  "description": "Wunderkind \u2014 specialist AI agent addon for oh-my-openagent with 12 professional agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,7 @@
     "@opencode-ai/plugin": "^1.2.18",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
-    "oh-my-opencode": "^3.10.0",
+    "oh-my-opencode": "^3.11.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
@@ -43,6 +43,7 @@
     "typescript": "^5.7.3"
   },
   "keywords": [
+    "oh-my-openagent",
     "oh-my-opencode",
     "opencode",
     "plugin",

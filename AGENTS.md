@@ -3,7 +3,7 @@
 **Package:** `@grant-vine/wunderkind` v0.5.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
-oh-my-opencode addon that injects 8 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security) into any OpenCode project via a `bunx`/`npx` interactive installer.
+oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
 
 ---
 
@@ -61,7 +61,7 @@ wunderkind/
 | Build pipeline (two-step) | `src/build-agents.ts` + `package.json` scripts |
 | Change install scope | `src/cli/index.ts` (`--scope` flag) + `src/cli/tui-installer.ts` + `src/cli/cli-installer.ts` |
 | Change config paths / constants | `src/cli/config-manager/index.ts` |
-| Check if oh-my-opencode is installed | `src/cli/config-manager/index.ts` → `detectCurrentConfig()` |
+| Check if oh-my-openagent is installed | `src/cli/config-manager/index.ts` → `detectCurrentConfig()` |
 | Change wunderkind config written | `src/cli/config-manager/index.ts` → `writeWunderkindConfig()` |
 | Add gitignore entries | `src/cli/gitignore-manager.ts` → `addAiTracesToGitignore()` |
 
@@ -172,6 +172,6 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
-- **oh-my-opencode must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
-- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent models are configured via `oh-my-opencode.jsonc` at build time; no runtime oh-my-opencode config file is written by the installer.
+- **oh-my-openagent must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent models are configured via `oh-my-opencode.jsonc` at build time.
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
