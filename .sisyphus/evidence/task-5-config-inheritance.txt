@@ -1,0 +1,40 @@
+Task 5 — Config Inheritance Verification
+
+File: oh-my-opencode.jsonc
+
+Command: node --input-type=module -e '<jsonc-parser validation script>'
+Result:
+{
+  "parseOk": true,
+  "schemaOk": true,
+  "categoryCount": 5,
+  "categoryKeys": [
+    "quick",
+    "unspecified-low",
+    "unspecified-high",
+    "writing",
+    "visual-engineering"
+  ],
+  "agentCount": 12,
+  "missingCategory": [],
+  "modelInAgents": [],
+  "mismatches": []
+}
+
+Command: grep -n '"model"' oh-my-opencode.jsonc
+Result lines:
+15:    "quick": { "model": "anthropic/claude-haiku-4-5" },
+16:    "unspecified-low": { "model": "anthropic/claude-sonnet-4-6" },
+17:    "unspecified-high": { "model": "openai/gpt-5.4", "variant": "high" },
+18:    "writing": { "model": "google/gemini-3-flash" },
+19:    "visual-engineering": { "model": "google/gemini-3.1-pro", "variant": "high" }
+
+Command: grep -c '"model"' oh-my-opencode.jsonc
+Result:
+5
+
+Conclusion:
+- JSONC parses successfully
+- Schema URL updated to oh-my-openagent repo path
+- Exactly 5 model definitions remain (top-level categories only)
+- No per-agent model keys remain

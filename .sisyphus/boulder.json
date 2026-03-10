@@ -1,7 +1,9 @@
 {
-  "active_plan": "/Users/grantv/Code/wunderkind/.sisyphus/plans/agent-role-gaps.md",
-  "started_at": "2026-03-09T21:31:18.903Z",
-  "session_ids": ["ses_3362a9b76ffeuU4x04D1Y49VDH"],
-  "plan_name": "agent-role-gaps",
+  "active_plan": "/Users/grantv/Code/wunderkind/.sisyphus/plans/openagent-migration-and-plan-restructure.md",
+  "started_at": "2026-03-10T10:43:29.646Z",
+  "session_ids": [
+    "ses_328f4faa7ffeJLTu01LBpN2W98"
+  ],
+  "plan_name": "openagent-migration-and-plan-restructure",
   "agent": "atlas"
 }

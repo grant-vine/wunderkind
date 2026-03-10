@@ -1,0 +1,1 @@
+8:> **Breaking change (0.7.0)**: This is a pre-1.0 release. Older installs are not supported. Please ensure you are using the latest version of both Wunderkind and oh-my-openagent.

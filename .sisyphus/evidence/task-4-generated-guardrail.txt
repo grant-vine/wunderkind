@@ -1,0 +1,21 @@
+.claude-plugin/plugin.json
+.sisyphus/boulder.json
+.sisyphus/plans/docs-output-system.md
+AGENTS.md
+README.md
+oh-my-opencode.jsonc
+package.json
+src/agents/brand-builder.ts
+src/agents/ciso.ts
+src/agents/creative-director.ts
+src/agents/data-analyst.ts
+src/agents/devrel-wunderkind.ts
+src/agents/fullstack-wunderkind.ts
+src/agents/legal-counsel.ts
+src/agents/marketing-wunderkind.ts
+src/agents/operations-lead.ts
+src/agents/product-wunderkind.ts
+src/agents/qa-specialist.ts
+src/agents/support-engineer.ts
+src/cli/index.ts
+OK: no generated agents/ files touched

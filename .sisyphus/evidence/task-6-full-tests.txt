@@ -1,0 +1,22 @@
+Task 6 — Full Unit Suite + Type Check
+
+Command:
+bun test tests/unit/
+
+Output:
+bun test v1.3.10 (30e609e0)
+
+ 62 pass
+ 0 fail
+ 135 expect() calls
+Ran 62 tests across 5 files. [88.00ms]
+
+Exit code: 0
+
+Command:
+tsc --noEmit
+
+Output:
+(no output)
+
+Exit code: 0

@@ -1,0 +1,38 @@
+# Task 7 Brand Audit Evidence
+# Date: 2026-03-10
+# Auditing agents/*.md for brand wording
+
+## OLD WORDING: "oh-my-opencode workflow"
+Command: grep -r "oh-my-opencode workflow" agents/
+Result: 0 matches — CLEAN ✅
+
+## NEW WORDING: "oh-my-openagent workflow"
+Command: grep -r "oh-my-openagent workflow" agents/
+Result: 12 matches (one per file) ✅
+
+Matches:
+agents/product-wunderkind.md:    "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/brand-builder.md:         "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/data-analyst.md:          "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/support-engineer.md:      "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/devrel-wunderkind.md:     "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/legal-counsel.md:         "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/creative-director.md:     "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/fullstack-wunderkind.md:  "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/ciso.md:                  "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/marketing-wunderkind.md:  "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/qa-specialist.md:         "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+agents/operations-lead.md:       "...oh-my-openagent workflow (Atlas/Sisyphus)..."
+
+## TECHNICAL LITERALS: "wunderkind.config.jsonc"
+Command: grep -r "wunderkind.config.jsonc" agents/
+Result: 21 matches across agent files — PRESERVED ✅
+
+## SUMMARY
+- Build: PASS (exit 0)
+- All 12 files generated: PASS
+- All files non-empty: PASS (smallest: 10952 bytes)
+- Old brand wording removed: PASS (0 occurrences)
+- New brand wording present: PASS (12 occurrences, 1 per file)
+- Technical literals preserved: PASS (21 occurrences)
+- tsc --noEmit: PASS (exit 0)

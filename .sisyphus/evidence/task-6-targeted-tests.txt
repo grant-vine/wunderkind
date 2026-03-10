@@ -1,0 +1,14 @@
+Task 6 — Targeted Contract Tests
+
+Command:
+bun test tests/unit/agent-factories.test.ts tests/unit/manifest-sync.test.ts tests/unit/config-template.test.ts tests/unit/cli-help-text.test.ts
+
+Output:
+bun test v1.3.10 (30e609e0)
+
+ 55 pass
+ 0 fail
+ 123 expect() calls
+Ran 55 tests across 4 files. [86.00ms]
+
+Exit code: 0

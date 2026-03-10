@@ -1,0 +1,28 @@
+Task 5 — Agent Category Matrix
+
+Required mapping validation for 12 Wunderkind agents:
+
+writing (7)
+- wunderkind:marketing-wunderkind
+- wunderkind:product-wunderkind
+- wunderkind:brand-builder
+- wunderkind:devrel-wunderkind
+- wunderkind:legal-counsel
+- wunderkind:support-engineer
+- wunderkind:data-analyst
+
+unspecified-high (4)
+- wunderkind:fullstack-wunderkind
+- wunderkind:qa-specialist
+- wunderkind:operations-lead
+- wunderkind:ciso
+
+visual-engineering (1)
+- wunderkind:creative-director
+
+Verification summary:
+- All 12 agents include a category key
+- creative-director maps to visual-engineering
+- fullstack/qa/operations/ciso map to unspecified-high
+- marketing/product/brand/devrel/legal/support/data-analyst map to writing
+- No agent entry contains a model key

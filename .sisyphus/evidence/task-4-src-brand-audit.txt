@@ -1,0 +1,2 @@
+$ grep -rn "oh-my-opencode" src/ --include="*.ts"
+[no remaining matches]

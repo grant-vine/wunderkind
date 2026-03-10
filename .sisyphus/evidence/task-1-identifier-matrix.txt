@@ -1,0 +1,131 @@
+TASK 1 — IDENTIFIER MATRIX
+
+Scope: repo-local inventory only; no source/docs/tests edited.
+Search command: grep -rn "oh-my-opencode\|oh-my-openagent" package.json README.md AGENTS.md src/ tests/ oh-my-opencode.jsonc .claude-plugin/ --include="*.ts" --include="*.json" --include="*.jsonc" --include="*.md" --include="*.js"
+
+SUMMARY
+- Raw grep-hit lines: 49
+- Exact oh-my-opencode/oh-my-openagent occurrences classified: 58
+- Current oh-my-openagent occurrences found: 0
+- PRESERVE_LITERAL rows: 11
+- REPO_URL_RENAME rows: 5
+- USER_FACING_BRAND_RENAME rows: 37
+- DELETE rows: 5
+
+RAW GREP OUTPUT
+package.json:4:  "description": "Wunderkind \u2014 a generic oh-my-opencode addon package with specialist agents for any software product team",
+package.json:24:    "oh-my-opencode.jsonc"
+package.json:38:    "oh-my-opencode": "^3.10.0",
+package.json:46:    "oh-my-opencode",
+README.md:5:**Requires [OpenCode](https://opencode.ai) and [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode).** This package cannot be used standalone.
+README.md:43:1. Installing oh-my-opencode if it isn't already (runs its own setup flow first).
+README.md:52:> **oh-my-opencode must already be installed** before running non-interactive mode. If it isn't, install it first:
+README.md:54:> bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes
+README.md:56:> See the [oh-my-opencode docs](https://github.com/code-yeongyu/oh-my-opencode) for all available options.
+README.md:85:Wunderkind writes its own agent config to a separate file — it never modifies your existing oh-my-opencode configuration. Removing Wunderkind leaves oh-my-opencode intact.
+README.md:89:| `global` | `~/.wunderkind/oh-my-opencode.json` |
+README.md:90:| `project` | `.wunderkind/oh-my-opencode.json` |
+README.md:98:| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | inherits from oh-my-opencode |
+README.md:100:| `wunderkind:product-wunderkind` | VP Product | inherits from oh-my-opencode |
+README.md:101:| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | inherits from oh-my-opencode |
+README.md:102:| `wunderkind:brand-builder` | Community, PR, thought leadership | inherits from oh-my-opencode |
+README.md:103:| `wunderkind:qa-specialist` | TDD, coverage, user story review | inherits from oh-my-opencode |
+README.md:104:| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | inherits from oh-my-opencode |
+README.md:105:| `wunderkind:ciso` | Security architecture, OWASP, compliance | inherits from oh-my-opencode |
+README.md:107:Agent models default to whatever provider you selected during oh-my-opencode setup (read from `agents.sisyphus.model` in your oh-my-opencode config). The creative-director uses Gemini regardless, as it requires a multimodal model.
+README.md:186:  oh-my-opencode.json         # wunderkind agent model config (project scope)
+README.md:194:  oh-my-opencode.json         # wunderkind agent model config (global scope)
+README.md:226:- [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode)
+AGENTS.md:6:oh-my-opencode addon that injects 8 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security) into any OpenCode project via a `bunx`/`npx` interactive installer.
+AGENTS.md:26:└── oh-my-opencode.jsonc       # Agent registration config (model, color, mode per agent)
+AGENTS.md:54:| Change agent model defaults | `oh-my-opencode.jsonc` |
+AGENTS.md:64:| Check if oh-my-opencode is installed | `src/cli/config-manager/index.ts` → `detectCurrentConfig()` |
+AGENTS.md:175:- **oh-my-opencode must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+AGENTS.md:176:- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent models are configured via `oh-my-opencode.jsonc` at build time; no runtime oh-my-opencode config file is written by the installer.
+AGENTS.md:177:- **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
+src/agents/creative-director.ts:290:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/legal-counsel.ts:244:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/devrel-wunderkind.ts:236:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/data-analyst.ts:231:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/brand-builder.ts:266:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/product-wunderkind.ts:331:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/support-engineer.ts:222:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/marketing-wunderkind.ts:310:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/ciso.ts:327:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/operations-lead.ts:305:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/qa-specialist.ts:285:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/agents/fullstack-wunderkind.ts:345:When operating as a subagent inside an oh-my-opencode workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+src/cli/index.ts:22:      "Extends oh-my-opencode with eight professional agents covering",
+oh-my-opencode.jsonc:2:  // Wunderkind oh-my-opencode configuration
+oh-my-opencode.jsonc:4:  // This file configures how oh-my-opencode surfaces the wunderkind plugin agents.
+oh-my-opencode.jsonc:5:  // Copy (or symlink) this file to your project's .opencode/oh-my-opencode.jsonc
+oh-my-opencode.jsonc:10:  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json
+oh-my-opencode.jsonc:11:  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
+.claude-plugin/plugin.json:4:  "description": "Wunderkind \u2014 specialist AI agents for any software product team, built as an oh-my-opencode addon",
+
+CLASSIFICATION MATRIX
+file | line | occurrence | matched string | classification | rationale
+--- | --- | --- | --- | --- | ---
+package.json | 4 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Package description is brand-facing prose, not a preserved technical literal.
+package.json | 24 | #1 | oh-my-opencode.jsonc | PRESERVE_LITERAL | Published config filename is an explicit preserve literal.
+package.json | 38 | #1 | oh-my-opencode | PRESERVE_LITERAL | Upstream npm dependency key must remain the literal package name.
+package.json | 46 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Keyword metadata is discoverability/branding text, so it follows the user-facing rename.
+README.md | 5 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Link text is user-facing brand prose.
+README.md | 5 | #2 | github.com/code-yeongyu/oh-my-opencode | REPO_URL_RENAME | Repository URL must move to the openagent repo path.
+README.md | 43 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Installer step text is user-facing prose.
+README.md | 52 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Precondition text is user-facing prose.
+README.md | 54 | #1 | bunx oh-my-opencode | PRESERVE_LITERAL | Install command literal must stay unchanged.
+README.md | 56 | #1 | oh-my-opencode docs | USER_FACING_BRAND_RENAME | Docs label is user-facing branding.
+README.md | 56 | #2 | github.com/code-yeongyu/oh-my-opencode | REPO_URL_RENAME | Documentation URL should point at the renamed repo.
+README.md | 85 | #1 | oh-my-opencode configuration | USER_FACING_BRAND_RENAME | Configuration prose is user-facing wording, not a required literal filename.
+README.md | 85 | #2 | oh-my-opencode | USER_FACING_BRAND_RENAME | Standalone brand mention in prose should follow openagent naming.
+README.md | 89 | #1 | oh-my-opencode.json | DELETE | README runtime config path is obsolete and should be removed, not renamed.
+README.md | 90 | #1 | oh-my-opencode.json | DELETE | README runtime config path is obsolete and should be removed, not renamed.
+README.md | 98 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 100 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 101 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 102 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 103 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 104 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 105 | #1 | inherits from oh-my-opencode | USER_FACING_BRAND_RENAME | Agent model inheritance note is user-facing wording.
+README.md | 107 | #1 | oh-my-opencode setup | USER_FACING_BRAND_RENAME | Setup wording is descriptive brand prose.
+README.md | 107 | #2 | oh-my-opencode config | USER_FACING_BRAND_RENAME | Config mention is prose, not the preserved jsonc filename literal.
+README.md | 186 | #1 | oh-my-opencode.json | DELETE | README runtime config path is obsolete and should be removed, not renamed.
+README.md | 194 | #1 | oh-my-opencode.json | DELETE | README runtime config path is obsolete and should be removed, not renamed.
+README.md | 226 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Requirements list uses brand-facing link text.
+README.md | 226 | #2 | github.com/code-yeongyu/oh-my-opencode | REPO_URL_RENAME | Requirements link should point at the renamed repo.
+AGENTS.md | 6 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Project knowledge-base description is user-facing brand prose.
+AGENTS.md | 26 | #1 | oh-my-opencode.jsonc | PRESERVE_LITERAL | Repo config filename is an explicit preserve literal.
+AGENTS.md | 54 | #1 | oh-my-opencode.jsonc | PRESERVE_LITERAL | Lookup table references the preserved config filename literal.
+AGENTS.md | 64 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Task label text is user-facing wording.
+AGENTS.md | 175 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Precondition prose is user-facing wording.
+AGENTS.md | 175 | #2 | bunx oh-my-opencode | PRESERVE_LITERAL | Installer command literal must remain unchanged.
+AGENTS.md | 176 | #1 | oh-my-opencode.jsonc | PRESERVE_LITERAL | Build-time config filename is an explicit preserve literal.
+AGENTS.md | 176 | #2 | runtime oh-my-opencode config file | DELETE | This obsolete runtime-config concept should be removed rather than renamed.
+AGENTS.md | 177 | #1 | oh-my-opencode.{json,jsonc} | PRESERVE_LITERAL | Technical detection pattern must keep the upstream filename stem for compatibility.
+src/agents/creative-director.ts | 290 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/legal-counsel.ts | 244 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/devrel-wunderkind.ts | 236 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/data-analyst.ts | 231 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/brand-builder.ts | 266 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/product-wunderkind.ts | 331 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/support-engineer.ts | 222 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/marketing-wunderkind.ts | 310 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/ciso.ts | 327 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/operations-lead.ts | 305 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/qa-specialist.ts | 285 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/agents/fullstack-wunderkind.ts | 345 | #1 | oh-my-opencode workflow | USER_FACING_BRAND_RENAME | Workflow name in prompt prose should follow the brand rename.
+src/cli/index.ts | 22 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | CLI help description is user-facing brand prose.
+oh-my-opencode.jsonc | 2 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Comment heading is descriptive brand prose.
+oh-my-opencode.jsonc | 4 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Commentary about how the plugin surfaces agents is prose, not a preserved literal.
+oh-my-opencode.jsonc | 5 | #1 | oh-my-opencode.jsonc | PRESERVE_LITERAL | Config filename literal must remain unchanged.
+oh-my-opencode.jsonc | 10 | #1 | code-yeongyu/oh-my-opencode | REPO_URL_RENAME | Raw schema URL points at the old repo path and should switch to openagent.
+oh-my-opencode.jsonc | 10 | #2 | oh-my-opencode.schema.json | PRESERVE_LITERAL | Schema filename literal must remain unchanged.
+oh-my-opencode.jsonc | 11 | #1 | code-yeongyu/oh-my-opencode | REPO_URL_RENAME | Raw schema URL points at the old repo path and should switch to openagent.
+oh-my-opencode.jsonc | 11 | #2 | oh-my-opencode.schema.json | PRESERVE_LITERAL | Schema filename literal must remain unchanged.
+.claude-plugin/plugin.json | 4 | #1 | oh-my-opencode | USER_FACING_BRAND_RENAME | Plugin manifest description is user-facing brand prose.
+
+COVERAGE CHECK
+- Every grep-hit line is represented by at least one matrix row.
+- Matrix row count matches the exact number of in-file regex occurrences for `oh-my-opencode|oh-my-openagent` in the searched scope.
+- No current `oh-my-openagent` matches exist in the searched scope; all rename work is still pending.

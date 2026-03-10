@@ -1,0 +1,49 @@
+TASK 11 — LEFTOVER AUDIT (Checks 6, 8, 9)
+Date: 2026-03-10
+Plan: openagent-migration-and-plan-restructure
+
+These three checks specifically target brand split and inheritance contract correctness.
+
+============================================================
+CHECK 6: Old repo URL audit
+============================================================
+TARGET PATTERN: "github.com/code-yeongyu/oh-my-opencode"
+SCOPED TO: README.md AGENTS.md oh-my-opencode.jsonc src/ agents/ .claude-plugin/ package.json
+
+RESULT: 0 MATCHES ✅
+
+The old repo URL from the code-yeongyu fork has been fully removed from all maintained files.
+The new URL (github.com/code-yeongyu/oh-my-openagent) is the canonical reference for all brand/user-facing mentions.
+
+============================================================
+CHECK 8: Stale 8-agent wording audit
+============================================================
+TARGET PATTERNS: "eight.*agent" | "8 specialist" | "8 agents" | "eight specialist"
+SCOPED TO: README.md AGENTS.md src/
+
+RESULT: 0 MATCHES ✅
+
+No stale copy references the old 8-agent count. The project correctly documents 12 specialist agents everywhere.
+
+============================================================
+CHECK 9: Config inheritance structure
+============================================================
+FILE: oh-my-opencode.jsonc
+CHECK: No per-agent "model" key; every agent has a "category" string
+
+RESULT: ✅ PASS
+  - Total agents in config: 12
+  - Per-agent model keys: NONE (0)
+  - All agents have category: YES (all 12)
+
+Agents found: marketing-wunderkind, creative-director, product-wunderkind, fullstack-wunderkind,
+brand-builder, qa-specialist, operations-lead, ciso, devrel-wunderkind, legal-counsel,
+data-analyst, support-engineer
+
+The category-based model inheritance is intact. Models are configured at category level only.
+
+============================================================
+VERDICT: ALL LEFTOVER AUDIT CHECKS CLEAN
+============================================================
+No forbidden old-brand repo URLs, no stale 8-agent wording, no per-agent model keys.
+The brand split and inheritance migration from earlier tasks is confirmed complete.

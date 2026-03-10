@@ -1,0 +1,10 @@
+TASK 1 — PRESERVED LITERALS VERIFICATION
+
+The matrix explicitly preserves these four literals:
+1. npm dependency: `oh-my-opencode` — package.json:38
+2. Install command: `bunx oh-my-opencode` — README.md:54 and AGENTS.md:175
+3. Config filename: `oh-my-opencode.jsonc` — package.json:24, AGENTS.md:26, AGENTS.md:54, AGENTS.md:176, oh-my-opencode.jsonc:5
+4. Schema filename: `oh-my-opencode.schema.json` — oh-my-opencode.jsonc:10 and oh-my-opencode.jsonc:11
+
+Verification result: all four required preserve literals are explicitly named as PRESERVE_LITERAL rows in task-1-identifier-matrix.txt.
+Additional note: repo/documentation URLs still point at `github.com/code-yeongyu/oh-my-opencode` (and raw GitHub schema URLs still use the old repo path), so those rows are classified as REPO_URL_RENAME rather than PRESERVE_LITERAL.
