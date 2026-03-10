@@ -1,0 +1,6 @@
+4:> Execute from the master plan: `.sisyphus/plans/openagent-migration-and-plan-restructure.md`
+19:Non-core items moved to the master plan for later execution: TUI personality gate, configVersion/upgrade detection, wunderkind doctor command, and version housekeeping (v0.6.0 bump).
+22:Initial and final verification tasks (tsc/bun test/build) have been cancelled as they are superseded by the verification steps in the child workstreams and final master plan verification.
+24:## Execution Guardrails
+29:4. Execution of docs-output work must NOT happen from this file — use the master plan (`.sisyphus/plans/openagent-migration-and-plan-restructure.md`) workstreams instead.
+59:| 2128 | Guardrails confirmed | CANCELLED | General goal, not atomic task |
