@@ -76,3 +76,17 @@ The build produces exactly 12 agent files (added in Tasks 5-6: devrel-wunderkind
 ### Evidence files
 - `.sisyphus/evidence/task-11-full-verification.txt` — all 10 check outputs
 - `.sisyphus/evidence/task-11-leftover-audit.txt` — checks 6, 8, 9 detail
+
+## [2026-03-10] F4 scope fidelity adjudication
+
+- Re-audited commits d166216, b3a35b0, 00d7230, 331aaea, b8965e2 against Tasks 1-11 and docs-output deferred/cancelled buckets.
+- Confirmed remediation commit b8965e2 is in scope: AGENTS.md + README.md fixes complete Task 3 contract; tests/unit/bun-test.d.ts + tests/tsconfig.json address F2 bun:test/LSP type-resolution gaps.
+- Confirmed no deferred/cancelled docs-output implementations leaked (no doctor command, configVersion/upgrade logic, personality gate, or docs runtime feature work landed).
+- Confirmed plan-file edits in .sisyphus/plans/openagent-migration-and-plan-restructure.md are orchestrator tracking activity and must not trigger F4 rejection.
+- Final F4 verdict recorded as APPROVE in evidence file.
+
+
+## [2026-03-10] F1 final approval basis
+
+- For this plan, `package.json` discoverability keywords are allowed preserve-literal metadata when explicitly clarified by the orchestrator; they are not automatically user-facing rename targets.
+- Commit-boundary review should treat the plan’s A/B/C grouping as logical task grouping, not strictly chronological ordering, and should allow pure `.sisyphus/` orchestration/evidence commits plus post-review remediation commits when they only close plan-deliverable gaps.

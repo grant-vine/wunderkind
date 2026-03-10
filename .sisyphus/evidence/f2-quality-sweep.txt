@@ -38,3 +38,64 @@ Manifest consistency: PASS
 
 Summary:
 Build, typecheck, unit tests, manifest sync, stale-wording grep, and source/generated spot-checks all pass. The migration should still be rejected because LSP diagnostics are not clean on the changed test files: the workspace is missing Bun test typings for editor/language-server validation.
+
+---
+2026-03-10 follow-up quality sweep
+VERDICT: APPROVE
+
+Reasons:
+- Root typecheck passed: tsc --noEmit exit 0.
+- Tests typecheck passed: tests/tsconfig.json exists and tsc --noEmit from tests/ exits 0.
+- Unit suite passed: bun test tests/unit/ exit 0 with 62 passing tests.
+- Build passed: bun run build exit 0 and regenerated 12 agent markdown files.
+- bun-test.d.ts declares Matchers.toHaveBeenCalledTimes and mock.calls / mock.mock.calls.
+- AGENTS.md is v0.7.0, includes the Category column, and lists 12 agents.
+- README.md describes category inheritance via oh-my-opencode.jsonc and contains no agents.sisyphus.model wording.
+- oh-my-opencode.jsonc uses per-agent category keys only; no per-agent model keys were found.
+- grep hits for banned patterns in src/ are prompt prose only; AST checks found no actual as any usage or empty catch blocks in TypeScript code.
+- Source/generated prompt spot-checks matched after regeneration for devrel-wunderkind, legal-counsel, support-engineer, and data-analyst.
+- LSP diagnostics were clean for changed TS/JSON files (tests/tsconfig.json and tests/unit/bun-test.d.ts). Markdown files were manually reviewed because this workspace has no .md LSP configured.
+
+Command output:
+$ tsc --noEmit
+EXIT_CODE=0
+
+$ (cd tests && tsc --noEmit)
+EXIT_CODE=0
+
+$ bun test tests/unit/
+bun test v1.3.10 (30e609e0)
+
+ 62 pass
+ 0 fail
+ 135 expect() calls
+Ran 62 tests across 5 files. [89.00ms]
+EXIT_CODE=0
+
+$ bun run build
+$ tsc && bun run dist/build-agents.js
+Generated agents/marketing-wunderkind.md
+Generated agents/creative-director.md
+Generated agents/product-wunderkind.md
+Generated agents/fullstack-wunderkind.md
+Generated agents/brand-builder.md
+Generated agents/qa-specialist.md
+Generated agents/operations-lead.md
+Generated agents/ciso.md
+Generated agents/devrel-wunderkind.md
+Generated agents/legal-counsel.md
+Generated agents/data-analyst.md
+Generated agents/support-engineer.md
+
+Generated 12 agent files in /Users/grantv/Code/wunderkind/agents
+EXIT_CODE=0
+
+$ grep -rn "as any\|@ts-ignore\|@ts-expect-error" src/
+src/agents/qa-specialist.ts:317:3. **Never suppress TypeScript errors in test files** — no `as any`, `@ts-ignore`
+src/agents/fullstack-wunderkind.ts:119:**No suppressed errors.** Never use `as any`, `@ts-ignore`, or `@ts-expect-error`. Never write empty `catch` blocks. Every error surface is a learning opportunity.
+src/agents/fullstack-wunderkind.ts:375:1. **Never suppress TypeScript errors** — no `as any`, `@ts-ignore`, `@ts-expect-error`
+
+AST verification:
+- $X as any: no matches
+- try { ... } catch (...) {}: no matches
+- try { ... } catch {}: no matches

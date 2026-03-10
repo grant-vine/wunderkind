@@ -55,3 +55,20 @@ Pass/fail assessment:
 
 Overall conclusion:
 Reject. The migration story is close, but AGENTS.md is materially stale in multiple places (version, agent roster, and config/model explanation), and README still contains model-language that conflicts with the category-based config file. A maintainer reading these surfaces would not get a single coherent source of truth without guessing.
+
+---
+
+2026-03-10 remediation re-walkthrough
+
+APPROVE
+
+Reasons:
+- Version alignment is now coherent across maintainer-facing manifests: `package.json:3`, `.claude-plugin/plugin.json:3`, and `AGENTS.md:3` all show `0.7.0`.
+- README install/migration guidance is coherent: the breaking-change note is present at `README.md:7-8`, the agents table is a 12-agent Category table at `README.md:92-109`, and the category-inheritance explanation is present at `README.md:109`. Required grep checks also passed: `grep -n "Breaking change" README.md` hit line 8, `grep -n "category inheritance" README.md` hit line 109, and `grep -n "agents.sisyphus.model" README.md` returned no matches.
+- AGENTS knowledge base is no longer stale: `AGENTS.md:3` shows `v0.7.0`; `AGENTS.md:26` describes `oh-my-opencode.jsonc` as `category, color, mode per agent`; and `AGENTS.md:118-133` is a 12-agent table with a `Category` column (`grep -n "Category" AGENTS.md` hit line 120).
+- The sample config matches the docs story end-to-end: `oh-my-opencode.jsonc:14-20` defines model selection at the top-level `categories` section, while all per-agent entries at `oh-my-opencode.jsonc:22-129` use `category`/`color`/`mode` and do not define per-agent model keys.
+- The superseded docs plan is compact and clear: `.sisyphus/plans/docs-output-system.md:1-4` marks it `SUPERSEDED`, and `.sisyphus/plans/docs-output-system.md:31-72` provides the TODO-to-workstream crosswalk expected by a maintainer reviewing migration history.
+- Generated prompt artifacts are present and consistent with the category-based repo story: the `agents/` directory contains 12 generated markdown prompts; spot checks across `agents/marketing-wunderkind.md:107-114`, `agents/creative-director.md:198-205`, and `agents/fullstack-wunderkind.md:249-304` show category-based task examples, and repo-wide grep over `agents/*.md` found no `agents.sisyphus.model` references.
+
+Conclusion:
+- The previous F3 reject reasons are resolved. A maintainer can now read the manifests, README, AGENTS knowledge base, sample config, generated prompts, and superseded plan in sequence and get one coherent migration story: 12 agents on v0.7.0, category-based inheritance in `oh-my-opencode.jsonc`, no stale per-agent model guidance, and a clear crosswalk for the superseded docs-output plan.

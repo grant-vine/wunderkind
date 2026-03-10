@@ -1,5 +1,7 @@
 # Wunderkind Openagent Brand Migration, Default Inheritance Alignment, and Plan Decomposition
 
+> **Historical note:** The decomposition of `.sisyphus/plans/docs-output-system.md` described in this plan is no longer the active execution path. The full `docs-output-system.md` plan has been restored and should be treated as the active docs-output execution source.
+
 ## TL;DR
 > **Summary**: Convert Wunderkind to a brand-first `oh-my-openagent` presentation while preserving upstream technical identifiers that still remain `oh-my-opencode`, then align the shipped sample config to inherit current upstream category defaults instead of hard-coded per-agent models, and finally decompose the oversized `docs-output-system` plan into smaller workstreams inside this master plan.
 > **Deliverables**:
@@ -213,7 +215,7 @@ Wave 3:
 
   **Commit**: NO | Message: `Included in Task 4 grouped branding commit` | Files: `package.json`, `.claude-plugin/plugin.json`
 
-- [ ] 3. Rewrite README and AGENTS knowledge-base copy to explain the brand/technical split and breaking change
+- [x] 3. Rewrite README and AGENTS knowledge-base copy to explain the brand/technical split and breaking change
 
   **What to do**: Update `README.md` and `AGENTS.md` so user-facing copy says Wunderkind is an addon for `oh-my-openagent`, but installation/config examples preserve upstream technical identifiers where required. Add a prominent breaking-change note near installation in `README.md` stating that `0.7.0` is a pre-1.0 breaking release and older installs/config assumptions are not supported. Correct stale “eight agents” references to `12` agents. Update upstream repo links to `code-yeongyu/oh-my-openagent` while preserving examples like `bunx oh-my-opencode install` and config filenames like `oh-my-opencode.jsonc`.
   **Must NOT do**: Do not claim the npm package or binary was renamed. Do not leave mixed old repo URLs in either file.
@@ -256,7 +258,7 @@ Wave 3:
 
   **Commit**: NO | Message: `Included in Task 4 grouped branding commit` | Files: `README.md`, `AGENTS.md`
 
-- [ ] 4. Align CLI, plugin runtime text, and agent source prompts to the brand-first contract
+- [x] 4. Align CLI, plugin runtime text, and agent source prompts to the brand-first contract
 
   **What to do**: Update `src/cli/index.ts`, `src/index.ts`, and all `src/agents/*.ts` references that are user-facing wording only. Convert branding references such as “Extends oh-my-opencode” and “inside an oh-my-opencode workflow” to the approved brand-first phrasing when they are descriptive, but preserve literal technical filename references like `wunderkind.config.jsonc` until separately changed by other scoped work. In `src/index.ts`, update the plugin system prompt so the project configuration section no longer falsely says config is at project root if that wording is being touched in this task. Also correct any stale 8-agent wording encountered in CLI/help or prompts.
   **Must NOT do**: Do not rename config filenames or upstream commands here. Do not edit generated `agents/*.md` directly.
@@ -455,7 +457,7 @@ Wave 3:
 
   **Commit**: NO | Message: `n/a` | Files: `.sisyphus/plans/docs-output-system.md`
 
-- [ ] 9. Rewrite `.sisyphus/plans/docs-output-system.md` as a superseded overview with explicit child workstreams
+- [x] 9. Rewrite `.sisyphus/plans/docs-output-system.md` as a superseded overview with explicit child workstreams
 
   **What to do**: Replace the giant execution body of `docs-output-system.md` with a short superseded plan overview that keeps only: original objective summary, why the plan was decomposed, the four child workstreams (`D1`-`D4`), deferred/cancelled items, and instructions that execution must happen from the new master plan rather than the old mega-plan. Preserve enough context that a reader understands what changed, but remove the 2,000+ line execution burden.
   **Must NOT do**: Do not delete the file entirely. Do not preserve the old 38-task execution checklist in full.
@@ -572,7 +574,7 @@ Wave 3:
   **Commit**: NO | Message: `n/a` | Files: evidence only
 
 ## Final Verification Wave (4 parallel agents, ALL must APPROVE)
-- [ ] F1. Plan Compliance Audit — oracle
+- [x] F1. Plan Compliance Audit — oracle
 
   **What to do**: Review the completed branch against this plan only. Confirm every Task 1-11 acceptance criterion and every Definition of Done command has corresponding evidence or passing output. Verify the preserve-vs-rename matrix was followed, grouped commit boundaries were respected, and no forbidden scope expansion occurred.
   **Approval Standard**: APPROVE only if every task in this plan is either demonstrably completed or explicitly marked not applicable with evidence.
@@ -592,7 +594,7 @@ Wave 3:
     Evidence: .sisyphus/evidence/f1-guardrail-audit.txt
   ```
 
-- [ ] F2. Code Quality Review — unspecified-high
+- [x] F2. Code Quality Review — unspecified-high
 
   **What to do**: Run a clean quality sweep on the completed changeset. Focus on manifest consistency, type/test/build health, test quality, prompt/source consistency, and plan-instructed code hygiene. Flag any brittle assertions, stale wording, or generated/source mismatch.
   **Approval Standard**: APPROVE only if there are no failing commands, no obvious contract-test gaps, and no mismatch between source prompts and regenerated `agents/*.md`.
@@ -612,7 +614,7 @@ Wave 3:
     Evidence: .sisyphus/evidence/f2-source-generated-consistency.md
   ```
 
-- [ ] F3. Real Manual QA — unspecified-high
+- [x] F3. Real Manual QA — unspecified-high
 
   **What to do**: Perform agent-executed end-to-end verification of the repo artifacts exactly as a maintainer would inspect them: manifests, README install guidance, AGENTS knowledge base, sample config, generated prompts, and superseded docs plan. This is “manual QA” by the reviewing agent, not by a human user.
   **Approval Standard**: APPROVE only if the repo reads coherently end-to-end: branding is consistent, technical identifiers are explained, and a maintainer could follow the migration story without guessing.
@@ -632,7 +634,7 @@ Wave 3:
     Evidence: .sisyphus/evidence/f3-breaking-release-messaging.txt
   ```
 
-- [ ] F4. Scope Fidelity Check — deep
+- [x] F4. Scope Fidelity Check — deep
 
   **What to do**: Verify that the completed work stayed inside the exact scope of this plan: rebrand/defaults/decomposition only. Confirm no unrelated fixes from the old docs-output mega-plan or opportunistic refactors were included unless explicitly called for here.
   **Approval Standard**: APPROVE only if all changed files and commits map back to Tasks 1-11 and no hidden feature work or speculative upstream rename was introduced.

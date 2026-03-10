@@ -1,0 +1,1 @@
+AGENTS.md updated with maintainer-facing docs-output details (sentinel, static vs runtime headings, init/doctor split).

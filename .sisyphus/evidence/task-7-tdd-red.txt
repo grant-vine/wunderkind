@@ -1,0 +1,36 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/docs-injection.test.ts:
+62 |     }))
+63 |     const output: TestOutput = { system: [] }
+64 | 
+65 |     await runSystemTransform(output)
+66 | 
+67 |     expect(hasDocsSection(output.system)).toBe(true)
+                                               ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/docs-injection.test.ts:67:43)
+(fail) runtime docs-output system injection > injects docs section with docsPath and docHistoryMode when docsEnabled is true [1.04ms]
+79 |     const output: TestOutput = { system: [] }
+80 | 
+81 |     await runSystemTransform(output)
+82 |     await runSystemTransform(output)
+83 | 
+84 |     expect(countSentinel(output.system)).toBe(1)
+                                              ^
+error: expect(received).toBe(expected)
+
+Expected: 1
+Received: 0
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/docs-injection.test.ts:84:42)
+(fail) runtime docs-output system injection > does not duplicate docs section when transform runs twice [0.19ms]
+
+ 2 pass
+ 2 fail
+ 6 expect() calls
+Ran 4 tests across 1 file. [10.00ms]

@@ -1,0 +1,14 @@
+Generated agents/marketing-wunderkind.md
+Generated agents/creative-director.md
+Generated agents/product-wunderkind.md
+Generated agents/fullstack-wunderkind.md
+Generated agents/brand-builder.md
+Generated agents/qa-specialist.md
+Generated agents/operations-lead.md
+Generated agents/ciso.md
+Generated agents/devrel-wunderkind.md
+Generated agents/legal-counsel.md
+Generated agents/data-analyst.md
+Generated agents/support-engineer.md
+
+Generated 12 agent files in /Users/grantv/Code/wunderkind/agents

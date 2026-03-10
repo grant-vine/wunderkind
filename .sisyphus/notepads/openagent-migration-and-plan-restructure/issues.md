@@ -34,3 +34,9 @@
 - Checked `src/index.ts` for descriptive `oh-my-opencode` prose; no matching brand string remained there, so no source edit was required.
 - Saved verification evidence to `.sisyphus/evidence/task-4-src-brand-audit.txt` and `.sisyphus/evidence/task-4-generated-guardrail.txt`.
 - Verified clean `lsp_diagnostics` on changed files and passed `tsc --noEmit` after the wording-only edits.
+
+
+## [2026-03-10] F1 rerun findings
+
+- `package.json` still contains the old-brand keyword `oh-my-opencode`, which conflicts with the Task 1 matrix row that classified that token as `USER_FACING_BRAND_RENAME`.
+- Docs-plan grouping is still split in git history: `00d7230` carries `.sisyphus/plans/docs-output-system.md`, while `331aaea` reuses the Commit C message for evidence/orchestration files instead of the docs-plan file itself.
