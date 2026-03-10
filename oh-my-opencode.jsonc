@@ -1,21 +1,30 @@
 {
-  // Wunderkind oh-my-opencode configuration
-  // ─────────────────────────────────────────
-  // This file configures how oh-my-opencode surfaces the wunderkind plugin agents.
+  // Wunderkind oh-my-openagent configuration (technical filename retained)
+  // ──────────────────────────────────────────────────────────────────────
+  // Upstream is branded as "oh-my-openagent", but this file is intentionally
+  // named "oh-my-opencode.jsonc" to match upstream technical identifiers.
   // Copy (or symlink) this file to your project's .opencode/oh-my-opencode.jsonc
   // to activate the full wunderkind agent suite with recommended settings.
   //
   // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
   //
-  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json
-  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
+  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
+
+  "categories": {
+    "quick": { "model": "anthropic/claude-haiku-4-5" },
+    "unspecified-low": { "model": "anthropic/claude-sonnet-4-6" },
+    "unspecified-high": { "model": "openai/gpt-5.4", "variant": "high" },
+    "writing": { "model": "google/gemini-3-flash" },
+    "visual-engineering": { "model": "google/gemini-3.1-pro", "variant": "high" }
+  },
 
   "agents": {
     // ── Marketing ──────────────────────────────────────────────────────────────
     // CMO-calibre: go-to-market, brand, content, SEO/SEM, paid media, analytics
     "wunderkind:marketing-wunderkind": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#FF6B35",
       "description": "CMO-calibre marketing strategist. Brand, GTM, content, SEO/SEM, paid media, analytics, PR."
     },
@@ -24,7 +33,7 @@
     // Creative Director: brand identity, design systems, UI/UX, accessibility
     "wunderkind:creative-director": {
       "mode": "primary",
-      "model": "github-copilot/gemini-2.0-flash",
+      "category": "visual-engineering",
       "color": "#A855F7",
       "description": "Brand identity, design systems, UI/UX, typography, colour, accessibility, design tokens."
     },
@@ -33,7 +42,7 @@
     // VP Product-calibre: roadmaps, OKRs, PRDs, sprint planning, task decomposition
     "wunderkind:product-wunderkind": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#3B82F6",
       "description": "VP Product: roadmaps, OKRs, PRDs, user research, sprint planning, task decomposition."
     },
@@ -42,7 +51,7 @@
     // CTO-calibre: full-stack, DB, Vercel/Next.js, architecture, code review, AI
     "wunderkind:fullstack-wunderkind": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "unspecified-high",
       "color": "#10B981",
       "description": "CTO-calibre full-stack engineer. Frontend, backend, DB, Vercel, architecture, AI integration."
     },
@@ -51,7 +60,7 @@
     // Community strategy, thought leadership, PR, spend gating
     "wunderkind:brand-builder": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#F59E0B",
       "description": "Community strategy, thought leadership, PR narrative, forum targeting, ROI gating."
     },
@@ -60,7 +69,7 @@
     // TDD, test writing, Playwright/Vitest, coverage analysis, story review
     "wunderkind:qa-specialist": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "unspecified-high",
       "color": "#06B6D4",
       "description": "TDD, test writing, Playwright, Vitest, coverage analysis, user story review, security boundary testing."
     },
@@ -69,7 +78,7 @@
     // SRE/SLO, admin tooling (build-first), runbooks, incident response, observability
     "wunderkind:operations-lead": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "unspecified-high",
       "color": "#EF4444",
       "description": "SRE/SLO, admin tooling (build-first), runbooks, incident response, observability."
     },
@@ -78,7 +87,7 @@
     // CISO: security architecture, OWASP, threat modelling, compliance, pen testing
     "wunderkind:ciso": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "unspecified-high",
       "color": "#EF4444",
       "description": "CISO: security architecture, OWASP, threat modelling, GDPR/CCPA/POPIA, pen testing, breach response."
     },
@@ -87,7 +96,7 @@
     // Developer relations, DX, API docs, tutorials, migration guides, OSS community
     "wunderkind:devrel-wunderkind": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#8B5CF6",
       "description": "Developer relations, DX, API docs, tutorials, migration guides, OSS community, getting started guides."
     },
@@ -96,7 +105,7 @@
     // OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA obligations
     "wunderkind:legal-counsel": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#6366F1",
       "description": "OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA compliance obligations."
     },
@@ -105,7 +114,7 @@
     // Bug triage, issue classification, repro steps, severity rating, engineering handoff
     "wunderkind:support-engineer": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#F97316",
       "description": "Bug triage, issue classification, repro steps, severity rating, engineering handoff, support synthesis."
     },
@@ -114,7 +123,7 @@
     // Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments
     "wunderkind:data-analyst": {
       "mode": "primary",
-      "model": "github-copilot/claude-sonnet-4-5",
+      "category": "writing",
       "color": "#14B8A6",
       "description": "Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments, metric definitions."
     }

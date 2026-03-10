@@ -82,6 +82,10 @@ describe("New agent factory structure", () => {
         expect(config.prompt).toMatch(/Personality/)
       })
 
+      it("prompt references oh-my-openagent workflow context", () => {
+        expect(config.prompt).toContain("oh-my-openagent workflow")
+      })
+
       it("prompt contains .sisyphus/ persistent context section", () => {
         expect(config.prompt).toContain(".sisyphus/")
       })
