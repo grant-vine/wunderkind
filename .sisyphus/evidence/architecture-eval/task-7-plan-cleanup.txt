@@ -1,0 +1,52 @@
+Plan Cleanup Evidence - Task 7
+Date: 2026-03-09
+
+Summary of unique findings from plans slated for deletion:
+
+Plan: memory-redesign.md
+Findings:
+- Transform wunderkind's memory layer into a fully pluggable, multi-datastore "Ultimate Memory System" (UMS).
+- Xenova/e5-small-v2 (Microsoft, 32MB int8, 384d, MTEB 59.9) as default embedding model.
+- voyage-4-nano (2048d) as premium option via onnx-community/voyage-4-nano-ONNX.
+- Hybrid search via RRF (k=60), weight_fts=1.3, weight_vec=1.0.
+- SQLite hybrid RRF search (FTS5 + sqlite-vec).
+- MiniSearch for FileAdapter BM25 index.
+- New DuckDBAdapter ("timestream") for hot/warm/cold tiering.
+- New CompositeAdapter for fan-out writes and RRF read merge.
+- TTL policies: procedural (null), factual (90d), contextual (7d), observational (3d).
+- Auto-pin heuristic: access_count >= 5 AND age_days >= 3, or keyword-based (manual pinnedReason is sticky).
+- Contradiction detection: 3-gram Jaccard > 0.6.
+- LLM consolidation: phi4-mini:3.8b via Ollama, count-based trigger (N=100), structured diff output.
+- Storage budget: limitMb (default 500MB), LRU eviction excludes pinned.
+- Memory diagram command using Mermaid.
+- mem0 deprecated due to latency (380ms/write) and incompatibility with bulk writes.
+- Story-based recall accuracy testbench (bun run bench:recall) using LongMemEval and LoCoMo datasets.
+
+Plan: wunderkind-overhaul.md
+Findings:
+- Install scope support: global (~/.config/opencode/opencode.json) vs project-local (./opencode.json).
+- Project isolation: .wunderkind/ directory (gitignored) for config and memory.
+- Hierarchical config: project config merges on top of global baseline.
+- Shared service architecture: one Qdrant/mem0 instance shared globally with per-project namespacing (group_id payload or composite agentId).
+- Project slug derivation: package.json name or directory basename.
+- Docker compose files stored globally (~/.wunderkind/) and shared.
+- Memory export/import (word_vomit): fflate for zip, includes manifest.json, entries.json, and agents/*.md.
+- Import strategies: merge (skip duplicates) or overwrite.
+- addAiTracesToGitignore(): auto-add .wunderkind/, AGENTS.md, .sisyphus/, .opencode/ to .gitignore.
+
+--------------------------------------------------
+
+Plan: memory-architecture-evaluation.md
+Disposition: active
+Reason: Current active evaluation plan.
+Capture destination: N/A
+
+Plan: memory-redesign.md
+Disposition: deleted
+Reason: Fully superseded by the UMS implementation and captured in HISTORY.md (part of Wave 1 of that plan) and this evidence file.
+Capture destination: HISTORY.md (narrative) and .sisyphus/evidence/architecture-eval/task-7-plan-cleanup.txt (summary).
+
+Plan: wunderkind-overhaul.md
+Disposition: deleted
+Reason: CLI overhaul completed; findings captured in README.md and this evidence file.
+Capture destination: README.md and .sisyphus/evidence/architecture-eval/task-7-plan-cleanup.txt (summary).

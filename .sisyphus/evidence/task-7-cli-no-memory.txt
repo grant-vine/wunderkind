@@ -1,0 +1,38 @@
+=== CLI HELP VERIFICATION ===
+Date: 2026-03-09
+Command: node bin/wunderkind.js --help
+
+Usage: wunderkind [options] [command]
+
+Wunderkind — specialist AI agents for any software product team.
+
+Extends oh-my-opencode with eight professional agents covering
+marketing, design, product, engineering, brand, QA, operations,
+and security — each pre-tuned to your region, industry, and
+data-protection regulation.
+
+Examples:
+  bunx @grant-vine/wunderkind
+  bunx @grant-vine/wunderkind install --no-tui \
+    --region='South Africa' --industry=SaaS --primary-regulation=POPIA
+  bunx @grant-vine/wunderkind gitignore
+
+Options:
+  -V, --version      output the version number
+  -h, --help         display help for command
+
+Commands:
+  install [options]  Install Wunderkind into your OpenCode setup.
+                     
+                     Runs the interactive TUI by default. Pass --no-tui for
+                     non-interactive use in CI or scripted environments.
+  gitignore          Add AI tooling traces to .gitignore in the current
+                     directory.
+                     
+                     Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/,
+                     .opencode/
+                     Skips entries that are already present. Safe to run
+                     multiple times.
+  help [command]     display help for command
+
+Memory check: PASS ✓ (no "memory" text in output)

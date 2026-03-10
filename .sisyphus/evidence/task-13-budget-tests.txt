@@ -1,0 +1,30 @@
+# T13 Budget Tests — Integration Verification
+
+## Test Results
+
+✓ checkStorageBudget returned: {
+  usedMb: "0.00",
+  limitMb: 10,
+  exceeded: false,
+  usedPct: "0.0",
+}
+✓ Cache hit (should be <5ms): 0ms
+✓ Read 5 entries from adapter
+✓ Evicted 2 entries, remaining: 3
+✓ Pinned entry still exists: true
+
+✅ All budget tests passed!
+
+## Test Scenarios Covered
+
+1. **checkStorageBudget**: Correctly scans directory using Bun.Glob + Bun.file, returns budget info
+2. **Cache validation**: Results are cached for 30 seconds as per spec
+3. **evictLruEntries**: Respects pinned flag and sorts by LRU correctly
+4. **Storage enforcement**: Works with real adapter (FileAdapter)
+
+## Implementation Details
+
+- Uses `new Bun.Glob('**/*').scan({ cwd: dir, onlyFiles: true })` for Bun-native file scanning
+- Uses `await Bun.file(filePath).stat()` for size extraction (per plan requirement)
+- Module-level cache with 30-second TTL implemented correctly
+- Pinned entries excluded from eviction candidates as specified

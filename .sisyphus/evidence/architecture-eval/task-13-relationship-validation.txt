@@ -1,0 +1,24 @@
+Task 13 — Qdrant + Memgraph relationship validation
+Date: 2026-03-09
+
+Command:
+`bun run tests/memory-bench/candidates/qdrant-memgraph/bench.ts --validate-relationships`
+
+Result:
+```json
+{
+  "candidate": "qdrant-memgraph",
+  "timestamp": "2026-03-09T11:18:44.968Z",
+  "skipped": true,
+  "skipped_reason": "qdrant or memgraph unavailable",
+  "graph": {
+    "node_count": 0,
+    "edge_count": 0
+  },
+  "samples": []
+}
+```
+
+Validation notes:
+- The prototype relationship validation runner executed and produced an explicit skip payload.
+- Skip cause matched the benchmark runner: Qdrant HTTP access on `6334` was blocked by an existing container binding that port, preventing end-to-end semantic-seed + graph-expansion validation.

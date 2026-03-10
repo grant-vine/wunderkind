@@ -1,0 +1,1 @@
+README.md and AGENTS.md must reference RESEARCH.md — see task-6-research-policy.md for exact linkage requirements

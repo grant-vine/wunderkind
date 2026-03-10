@@ -1,0 +1,4 @@
+COMMAND: grep -rE "wunderkind_take_note|wunderkind_search_memories|memory-manager|\.wunderkind/memory" src/agents/ 2>&1
+OUTPUT:
+
+EXIT_CODE:1

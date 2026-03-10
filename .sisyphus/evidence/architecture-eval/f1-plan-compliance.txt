@@ -1,0 +1,42 @@
+F1 PLAN COMPLIANCE AUDIT
+Reviewer: oracle
+Date: 2026-03-09
+
+VERDICT: APPROVE
+
+CANDIDATE COVERAGE:
+- file (DIY baseline — plain, no graph): PRESENT in matrix as `file` (COMPLETE)
+- sqlite (DIY baseline — plain, no graph): PRESENT in matrix as `sqlite` (COMPLETE)
+- local-vec (DIY baseline — plain, no graph): PRESENT in matrix as `local-vec` (SKIPPED, explicitly labelled plain DIY baseline)
+- flat-file + graph supplement: PRESENT in matrix as `file-graph` (COMPLETE)
+- local-vec + graph supplement: PRESENT in matrix as `local-vec-graph` (SKIPPED)
+- PostgreSQL + pgvector + relational edges: PRESENT in matrix as `postgres-pgvector` (SKIPPED)
+- Qdrant + Memgraph: PRESENT in matrix as `qdrant-memgraph` (SKIPPED)
+- Qdrant + Neo4j: PRESENT in matrix as `qdrant-neo4j` (SKIPPED)
+
+RUBRIC COMPLIANCE:
+- latest-truth: PRESENT in matrix as `latest-truth (15)`
+- weak-seed: PRESENT in matrix as `weak-seed (25)`
+- traversal: PRESENT in matrix as `traversal (15)`
+- strong-seed: PRESENT in matrix as `strong-seed (15)`
+- isolation: PRESENT in matrix as `isolation (10)`
+- ops: PRESENT in matrix as `ops-complexity (10)`
+- docker: PRESENT in matrix as `docker-practicality (5)`
+- determinism: PRESENT in matrix as `determinism (5)`
+
+MEMO STRUCTURE:
+- Recommended default: PRESENT — Section 3 recommends SQLite as the current default
+- Optional advanced path: PRESENT — Section 5b names local-vec/local-vec-graph as the optional advanced path once the model constraint is resolved
+- Deferred/avoid sections: PRESENT — Sections 5a-5d explicitly defer file-graph, local-vec/local-vec-graph, postgres-pgvector, and avoid qdrant-memgraph / qdrant-neo4j
+- Benchmark evidence citations: PRESENT — memo cites measured scores and raw benchmark metrics (for example file-graph 57.27, sqlite 45.00, chain_hit_at_3=0.5556, supersede_win_rate=0.6458, EM comparisons)
+
+RECOMMENDATION GROUNDING:
+- file-graph 57.27 vs sqlite 45.00 reconciliation: YES. Section 6 explicitly explains why sqlite is recommended despite file-graph's higher score: file-graph has a correctness regression in strong-seed preservation (41.7% EM vs sqlite's 100%), while sqlite's gaps are missing capabilities rather than regressions.
+- SQLite-Hybrid / SQLite+graph composite labelling: YES. Section 4 clearly marks `SQLite+graph hybrid` as `PROPOSED — NOT YET BENCHMARKED` and states it was not one of the 6 frozen candidates.
+
+ISSUES (if REJECT):
+- None rising to rejection.
+- Minor precision issue: the memo's executive summary says "Of the 6 candidates, 3 produced measured benchmark data" and then describes "The remaining 3" while also listing four skipped rows in the summary table because the matrix includes the explicit plain `local-vec` DIY-baseline row in addition to the 6 frozen candidate groupings. This is a counting inconsistency, but it does not undermine scope compliance, candidate coverage, rubric compliance, or recommendation grounding.
+
+RATIONALE:
+The final matrix and memo satisfy the plan-compliance checks required by F1. All required candidate identities are represented in the matrix, including the three plain DIY-baseline rows (`file`, `sqlite`, `local-vec`) and the five named graph/external candidates used in the evidence set. The rubric dimensions in the matrix align with the plan's frozen criteria. The recommendation memo contains the required decision structure (default, optional advanced path, deferred/avoid paths), and each recommendation is grounded in benchmark evidence rather than unsupported preference. Crucially, the memo now does the two things the prior review needed: it explicitly labels SQLite+graph as a proposal instead of a measured candidate, and it reconciles why sqlite can be recommended over the higher-scoring file-graph result. On that basis, the output is compliant and should be approved.

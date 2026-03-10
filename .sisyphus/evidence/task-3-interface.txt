@@ -1,0 +1,3 @@
+42:  count(agent: string): Promise<MemoryCount>
+43:  listAgents(): Promise<string[]>
+44:  status(): Promise<{ ok: boolean; message: string }>

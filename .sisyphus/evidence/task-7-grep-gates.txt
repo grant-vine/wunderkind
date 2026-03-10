@@ -1,0 +1,20 @@
+=== GREP GATES VERIFICATION ===
+Date: 2026-03-09
+
+--- Gate 1: Memory imports in src/ ---
+Command: grep -r "from.*\/memory" src/
+Result: PASS ✓ (exit code 1 = zero matches)
+
+--- Gate 2: Memory symbols in src/ ---
+Command: grep -rE "wunderkind_take_note|wunderkind_search_memories|createMemoryTools|memoryAdapter|createMemoryFiles|MEMORY_DIR" src/
+Result: PASS ✓ (exit code 1 = zero matches)
+
+--- Gate 3: Memory in generated agents/*.md ---
+Command: grep -rl "wunderkind_take_note\|memory-manager" agents/
+Result: PASS ✓ (exit code 1 = zero matches)
+
+--- Gate 4: Memory deps in package.json ---
+Command: grep -E '"@huggingface|@qdrant|fflate|mem0ai|vectra|onnxruntime"' package.json
+Result: PASS ✓ (exit code 1 = zero matches)
+
+All grep gates PASSED ✓

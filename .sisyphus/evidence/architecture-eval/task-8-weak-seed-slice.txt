@@ -1,0 +1,5 @@
+Confirmed in shared harness implementation:
+- weak_seed_hit_at_1 is emitted as the baseline non-graph weak-seed hit@1 metric.
+- graph_weak_seed_hit_at_1 is emitted as a separate graph-assisted weak-seed hit@1 metric.
+- gold_in_expanded_neighborhood is kept separate from ranking metrics and remains nullable for non-graph candidates.
+- Non-graph candidates emit graph_weak_seed_hit_at_1: null and gold_in_expanded_neighborhood: null without setting degraded solely for missing graph capability.

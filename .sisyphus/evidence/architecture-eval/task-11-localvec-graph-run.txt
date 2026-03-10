@@ -1,0 +1,46 @@
+Task 11 — local-vec + graph supplement benchmark run
+Date: 2026-03-09
+
+Verification:
+- lsp_diagnostics: clean for `tests/memory-bench/candidates/local-vec-graph/adapter.ts`
+- lsp_diagnostics: clean for `tests/memory-bench/candidates/local-vec-graph/bench.ts`
+- `tsc --noEmit`: passed with zero reported errors
+
+Benchmark command:
+`bun tests/memory-bench/candidates/local-vec-graph/bench.ts`
+
+Observed output:
+Wunderkind local-vec + graph supplement benchmark
+candidate: local-vec-graph
+dataset: primary-synthetic-codebase-analysis
+model: Xenova/e5-small-v2
+status: skipped (embedding model not cached)
+artifact:
+{
+  "candidate": "local-vec-graph",
+  "dataset": "primary-synthetic-codebase-analysis",
+  "timestamp": "2026-03-09T11:05:01.335Z",
+  "environment": {
+    "os": "darwin",
+    "arch": "arm64",
+    "runtime": "node v24.3.0",
+    "external_services": []
+  },
+  "metrics": {
+    "weak_seed_hit_at_1": 0,
+    "graph_weak_seed_hit_at_1": 0,
+    "gold_in_expanded_neighborhood": 0,
+    "chain_hit_at_3": 0,
+    "supersede_win_rate": 0,
+    "wrong_agent_leakage_rate": 0
+  },
+  "degraded": false,
+  "degraded_reason": null,
+  "skipped": true,
+  "skipped_reason": "embedding model not cached"
+}
+
+Conclusion:
+- Candidate runner executed successfully.
+- Skip behavior matched requirement because the embedding model cache was absent.
+- Artifact was emitted with all 6 benchmark metric fields present.

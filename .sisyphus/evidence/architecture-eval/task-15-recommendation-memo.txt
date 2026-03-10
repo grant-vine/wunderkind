@@ -1,0 +1,113 @@
+# DECISION MEMO: Memory Architecture Evaluation
+Date: 2026-03-09
+Topic: Wunderkind Memory Architecture — Evaluation Summary and Recommendation
+
+---
+
+## 1. Executive Summary
+
+This evaluation benchmarked 6 frozen memory architecture candidates against a shared rubric covering latest-truth retrieval, weak-seed rescue, relationship traversal, strong-seed preservation, agent isolation, operational complexity, Docker practicality, and determinism.
+
+Of the 6 candidates, 3 produced measured benchmark data on this machine: **file**, **sqlite**, and **file-graph**. The remaining 3 (local-vec-graph, postgres-pgvector, qdrant-memgraph, qdrant-neo4j) were skipped due to environment constraints (embedding model not cached, Docker services unavailable) and scored only on manual criteria.
+
+**The highest-scoring measured candidate is file-graph (57.27)**, driven by genuine traversal and supersession capability. However, its strong-seed preservation regression (41.7% EM vs sqlite's 100%) makes it unsafe to adopt as-is. **SQLite is the recommended current default (45.00)** as the highest-scoring candidate without regressions.
+
+**A SQLite+graph hybrid architecture is the recommended implementation direction for the next phase**, but it is explicitly a proposed next-step — it was NOT one of the 6 benchmarked frozen candidates and has not been measured in this evaluation.
+
+---
+
+## 2. Benchmark Results Summary
+
+| Candidate | Status | Score | Strong-seed EM | Notes |
+|---|---|---|---|---|
+| file-graph | COMPLETE | 57.27 | 41.7% | Traversal+supersession strong; strong-seed regression |
+| sqlite | COMPLETE | 45.00 | 100% | Perfect exact-match; zero traversal |
+| file | COMPLETE | 32.51 | 16.7% | Weakest exact-match; zero traversal |
+| local-vec | SKIPPED | 29.00 | — | Embedding model not cached on this machine |
+| local-vec-graph | SKIPPED | 28.00 | — | Embedding model not cached on this machine |
+| postgres-pgvector | SKIPPED | 24.00 | — | Docker container unavailable |
+| qdrant-memgraph | SKIPPED | 18.00 | — | Docker services unavailable |
+| qdrant-neo4j | SKIPPED | 18.00 | — | Docker services unavailable |
+
+All 6 frozen candidates from the plan are covered above. Skipped candidates score 0 on all benchmark-derived metrics and are scored only on manual operational criteria.
+
+---
+
+## 3. Recommended Current Default: SQLite
+
+**SQLite (score: 45.00)** is the recommended default architecture for immediate use.
+
+**Rationale:**
+- Highest measured score among candidates without regressions
+- 100% exact-match (EM) across the full strong-seed query set — no retrieval regressions
+- Zero wrong-agent leakage (10/10 isolation score)
+- No Docker dependency — zero operational overhead (10/10 ops complexity)
+- Fully deterministic (5/5 determinism score)
+
+**Evidence citations:**
+- Strong-seed: SQLite achieved 100% EM vs file's 16.7% and file-graph's 41.7%
+- Isolation: `wrong_agent_leakage_rate = 0` in raw artifact
+- Ops: No Docker, no model download, no external service required
+
+**Limitation acknowledged:** SQLite scored 0 on traversal, weak-seed rescue, and latest-truth — these are genuine capability gaps. The graph layer in file-graph demonstrates that these metrics are improvable; the regression issue is implementation-specific (the reranking path overrides exact matches), not a fundamental architectural blocker.
+
+---
+
+## 4. Recommended Implementation Direction: SQLite+Graph Hybrid (PROPOSED — NOT YET BENCHMARKED)
+
+> **IMPORTANT: The following is a proposed next-step architecture. It was not one of the 6 frozen evaluation candidates and was not benchmarked in this evaluation. It is a recommendation for Phase 2 implementation, not a conclusion from measured data.**
+
+Based on what this evaluation measured:
+- SQLite provides reliable exact-match retrieval with zero operational overhead
+- The file-graph prototype demonstrates that graph traversal genuinely works (chain_hit@3=55.6%, supersede_win_rate=64.6%)
+- The critical lesson from file-graph's regression (EM dropped from 100% to 41.7%) is that the graph reranking layer must NOT override exact-match retrieval — it should only supplement it
+
+The proposed hybrid uses SQLite as the primary lookup store and applies graph traversal only for relationship-expansion or weak-match-rescue queries where exact-match fails. This design preserves sqlite's 100% strong-seed EM while adding graph-derived traversal value.
+
+This proposed architecture has not been implemented or measured and requires a dedicated Phase 2 prototype before adoption.
+
+---
+
+## 5. Deferred Paths
+
+### 5a. file-graph — Deferred (Requires Regression Fix)
+
+**File-graph scored the highest of any measured candidate (57.27)** but carries a critical defect: the graph reranking layer reduced strong-seed EM from 100% (sqlite) to 41.7%. This regression is unacceptable for production use.
+
+File-graph should be deferred — not abandoned — pending a fix that makes graph traversal strictly additive (supplement only; never override exact matches).
+
+**Evidence:** `chain_hit_at_3=0.5556`, `supersede_win_rate=0.6458`, `EM=41.7%` (vs sqlite baseline 100%)
+
+### 5b. local-vec / local-vec-graph — Deferred (Environment constraint)
+
+Both candidates were skipped because the `Xenova/e5-small-v2` embedding model is not cached on this machine. They cannot be fairly evaluated without a valid run. Their manual scores (local-vec: 29.00, local-vec-graph: 28.00) reflect operational estimates only.
+
+local-vec-graph remains a promising candidate for users requiring semantic search without Docker — it is the recommended optional advanced path once the model constraint is resolved. **Its scoring is based on expected/prior-research characteristics, not this evaluation's measured data.**
+
+### 5c. postgres-pgvector — Deferred
+
+Operational complexity (6/10) and Docker requirement make it unsuitable as the primary default for the OpenCode audience. May be revisited for enterprise deployments.
+
+### 5d. qdrant-memgraph / qdrant-neo4j — Avoid
+
+Lowest practical feasibility scores (3/10 complexity, 0/5 Docker practicality). Both require two-service Docker stacks and were entirely skipped. They represent architectural overkill for the current 3k–5k memory scale.
+
+---
+
+## 6. Reconciliation: Why Not file-graph as Default Despite Highest Score?
+
+file-graph scores 57.27 vs sqlite's 45.00 — it is the highest-scoring measured candidate. The decision to recommend sqlite instead is justified by:
+
+1. **The 41.7% strong-seed regression is a correctness defect**, not a performance tradeoff. Dropping from 100% to 41.7% exact-match means the graph layer actively harms the most important retrieval case.
+2. **The regression is a known fixable implementation bug** (graph reranking overrides exact matches) — it does not invalidate file-graph's traversal results, but it does prevent production adoption until fixed.
+3. **SQLite's gap (zero traversal/weak-seed) is a missing capability**, not a regression. Missing features can be added; correctness regressions must be fixed first.
+4. A developer acting on this memo today would be worse off with file-graph than with sqlite because of the retrieval regression.
+
+---
+
+## 7. Caveats and Limitations
+
+- 3 of 6 candidates were skipped due to environment constraints. The matrix reflects what this machine could run, not a full 6-candidate comparison.
+- The proposed SQLite+graph hybrid (Section 4) is a design recommendation only — it has not been implemented or benchmarked.
+- local-vec-graph's expected performance (~60% semantic rescue rate) is based on prior research from the WIP snapshot (commit `2370981`) and README benchmarks, not this evaluation's data.
+- The file-graph strong-seed regression may be specific to the corpus design; a fix should be validated before assuming it generalises.

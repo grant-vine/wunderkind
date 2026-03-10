@@ -1,0 +1,6 @@
+primary corpus: synthetic codebase-analysis (required)
+primary corpus size target: 3,000-5,000 memories
+latest-truth temporal corpus: required
+.sisyphus validation corpus: optional only
+.sisyphus validation corpus: sanity check only, not primary scoring
+raw code chunks as primary payload: prohibited

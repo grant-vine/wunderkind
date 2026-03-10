@@ -1,0 +1,1 @@
+Frozen 6-candidate matrix defined in task-1-candidate-matrix.md with explicit exclusions.

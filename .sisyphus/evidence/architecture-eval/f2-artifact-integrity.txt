@@ -1,0 +1,32 @@
+F2 BENCHMARK ARTIFACT INTEGRITY REVIEW
+Reviewer: unspecified-high
+Date: 2026-03-09
+
+VERDICT: APPROVE
+
+ARTIFACT FILES:
+- task-15-matrix-completeness.txt: present
+- task-15-recommendation-memo.txt: present
+
+CANDIDATE INTEGRITY:
+- file: status=COMPLETE, machine-readable artifact present in RAW ARTIFACT PAYLOADS
+- sqlite: status=COMPLETE, machine-readable artifact present in RAW ARTIFACT PAYLOADS
+- file-graph: status=COMPLETE, machine-readable artifact present in RAW ARTIFACT PAYLOADS
+- local-vec: status=SKIPPED, reason documented (embedding model Xenova/e5-small-v2 not cached on this machine)
+- local-vec-graph: status=SKIPPED, reason documented (embedding model Xenova/e5-small-v2 not cached on this machine)
+- postgres-pgvector: status=SKIPPED, reason documented (Docker container unavailable)
+- qdrant-memgraph: status=SKIPPED, reason documented (Docker services unavailable)
+- qdrant-neo4j: status=SKIPPED, reason documented (Docker services unavailable)
+
+SCHEMA COMPLIANCE:
+- task-3-artifact-schema.txt matches the actual implementation field names: weak_seed_hit_at_1, graph_weak_seed_hit_at_1, gold_in_expanded_neighborhood, chain_hit_at_3, supersede_win_rate, wrong_agent_leakage_rate; legacy fields are explicitly marked as superseded.
+- The raw JSON payloads for file, sqlite, and file-graph match the documented schema shape exactly: top-level fields candidate, dataset, timestamp, environment, metrics, degraded, degraded_reason, skipped, skipped_reason; environment fields os, arch, runtime, external_services; metrics fields weak_seed_hit_at_1, graph_weak_seed_hit_at_1, gold_in_expanded_neighborhood, chain_hit_at_3, supersede_win_rate, wrong_agent_leakage_rate.
+- task-15-matrix-completeness.txt CANDIDATE STATUS includes file, sqlite, file-graph, local-vec, local-vec-graph, postgres-pgvector, qdrant-memgraph, and qdrant-neo4j.
+- file-graph appears in both the CANDIDATE STATUS section and the METRIC TABLE.
+- All skipped candidates have explicit documented skip reasons.
+
+ISSUES (if REJECT):
+- None.
+
+RATIONALE:
+The evidence set satisfies the required integrity checks. The updated schema now documents the implemented metric names, the matrix includes all required candidates with file-graph present in both required sections, raw machine-readable JSON payloads are embedded for all COMPLETE measured candidates, and every skipped candidate has an explicit reason. On the requested artifact-integrity criteria, the benchmark evidence is complete and internally consistent.

@@ -1,0 +1,4 @@
+Cross-links confirmed in README.md and AGENTS.md.
+Grep matches:
+README.md: see [RESEARCH.md](RESEARCH.md).
+AGENTS.md: | Find historical research findings, tried approaches, backed-out decisions | RESEARCH.md |

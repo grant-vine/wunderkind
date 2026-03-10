@@ -5,6 +5,5 @@ dist/
 
 # oh-my-opencode / opencode runtime files
 AGENTS.md
-.sisyphus/
 .opencode/
 .wunderkind/

@@ -1,0 +1,13 @@
+RESEARCH.md confirmed at repo root.
+Section headings found:
+## Tried & Worked
+## Tried & Backed Out
+## Environmental Constraints
+## Candidates to Revisit
+
+Seed entries confirmed:
+1. Semantic Search Supremacy (Tried & Worked)
+2. Graph Layer Prototype (Tried & Backed Out)
+3. DuckDB & Composite Adapter Prototypes (Tried & Backed Out)
+4. mem0 Low-Memory Limitation (Environmental Constraints)
+5. macOS SQLite Hybrid Validity Rule (Environmental Constraints)

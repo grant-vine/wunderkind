@@ -1,0 +1,8 @@
+tests/memory-bench/run-bench.ts: canonical
+tests/perf/adapter-benchmark.ts: archive
+tests/memory-bench/download-fixtures.ts: keep-as-utility
+tests/memory-bench/run-sisyphus-bench.ts (WIP): port-and-replace
+tests/memory-bench/run-conversational-bench.ts (WIP): port-and-replace
+tests/memory-bench/run-latest-truth-bench.ts (WIP): port-and-replace
+tests/memory-bench/stress-all-adapters.ts (WIP): port-and-replace
+tests/memory-bench/ollama-review.ts (WIP): keep-as-utility

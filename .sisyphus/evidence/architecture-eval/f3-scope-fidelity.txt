@@ -1,0 +1,41 @@
+F3 SCOPE FIDELITY CHECK
+Reviewer: deep
+Date: 2026-03-09
+
+VERDICT: APPROVE
+
+GIT SCOPE AUDIT:
+Commits since baseline (2c376b5):
+502ba89 fix: wrap postgres-pgvector runBenchmark() in try/catch for graceful skip when Docker unavailable
+76f8599 perf: fix O(N²) corpus seeding in file-graph and local-vec-graph bench candidates
+
+Files changed (stat summary):
+ .../memory-bench/candidates/file-graph/adapter.ts  |    87 +-
+ tests/memory-bench/candidates/file-graph/bench.ts  |    18 +-
+ .../candidates/local-vec-graph/adapter.ts          |   161 +-
+ .../candidates/local-vec-graph/bench.ts            |     8 +-
+ .../candidates/postgres-pgvector/adapter.ts        |    37 +-
+ .../candidates/postgres-pgvector/bench.ts          |    20 +-
+ .../candidates/qdrant-memgraph/adapter.ts          |    13 +-
+ .../candidates/qdrant-memgraph/bench.ts            |     6 +-
+ .../memory-bench/candidates/qdrant-neo4j/bench.ts  |     6 +-
+ tests/memory-bench/download-fixtures.ts            |    46 +
+ tests/memory-bench/fixtures/.gitkeep               |     0
+ .../memory-bench/fixtures/longmemeval_oracle.json  | 67042 +++++++++++++++++++
+ tests/memory-bench/generators/codebase-corpus.ts   |  1058 +
+ tests/memory-bench/generators/story-generator.ts   |   413 +
+ tests/memory-bench/harness/ingest.ts               |    58 +
+ tests/memory-bench/harness/query.ts                |     7 +
+ tests/memory-bench/harness/score.ts                |   214 +
+ tests/memory-bench/run-bench.ts                    |   428 +
+ 18 files changed, 69562 insertions(+), 60 deletions(-)
+
+PRODUCTION FILE CHECK:
+- src/memory/adapters/: unchanged
+- src/cli/: unchanged
+- src/index.ts: unchanged
+- package.json: unchanged
+- tsconfig.json: unchanged
+
+RATIONALE:
+All recorded git changes since 2c376b5 are confined to tests/memory-bench artifacts and fixture/harness code; no production src/ files, CLI code, package manifest, or TypeScript config changed. The direct diff for src/memory/adapters/, src/cli/, src/index.ts, package.json, tsconfig.json, and src/memory/index.ts is empty. The recommendation memo is prospective only: it recommends a future default shift but does not show that any production migration or adapter switch was implemented in this phase.

@@ -1,0 +1,18 @@
+src/cli/cli-installer.ts(123,24): error TS2554: Expected 1 arguments, but got 0.
+src/cli/cli-installer.ts(131,24): error TS2554: Expected 2 arguments, but got 1.
+src/cli/index.ts(82,11): error TS2741: Property 'scope' is missing in type '{ tui: boolean; region: string | undefined; industry: string | undefined; primaryRegulation: string | undefined; secondaryRegulation: string | undefined; }' but required in type 'InstallArgs'.
+src/cli/tui-installer.ts(408,24): error TS2554: Expected 1 arguments, but got 0.
+src/cli/tui-installer.ts(417,24): error TS2554: Expected 2 arguments, but got 1.
+src/memory/adapters/mem0.ts(119,14): error TS2420: Class 'Mem0Adapter' incorrectly implements interface 'MemoryAdapter'.
+  Property 'listAgents' is missing in type 'Mem0Adapter' but required in type 'MemoryAdapter'.
+src/memory/adapters/mem0.ts(123,3): error TS6133: '#knownAgents' is declared but its value is never read.
+src/memory/adapters/mem0.ts(134,3): error TS6133: '#scopedAgent' is declared but its value is never read.
+src/memory/adapters/vector.ts(111,14): error TS2420: Class 'VectorAdapter' incorrectly implements interface 'MemoryAdapter'.
+  Property 'listAgents' is missing in type 'VectorAdapter' but required in type 'MemoryAdapter'.
+src/memory/adapters/vector.ts(254,11): error TS2741: Property 'group_id' is missing in type '{ agent_id: string; raw_text: string; slug: string; created_at: number; last_accessed: number; importance: number; access_count: number; pinned: boolean; metadata: Record<string, string>; history: { ...; }[]; }' but required in type 'MemoryPayload'.
+src/memory/index.ts(44,7): error TS2741: Property 'listAgents' is missing in type 'Mem0Adapter' but required in type 'MemoryAdapter'.
+src/memory/index.ts(44,30): error TS2379: Argument of type '{ vectorStoreCollection?: string; vectorStorePort?: number; vectorStoreHost?: string; vectorStore?: string; embedBaseUrl?: string; embedDims?: number; embedModel?: string; embedProvider?: string; llmBaseUrl?: string; llmModel?: string; llmProvider?: string; url: string; }' is not assignable to parameter of type 'Mem0AdapterConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Property 'projectSlug' is missing in type '{ vectorStoreCollection?: string; vectorStorePort?: number; vectorStoreHost?: string; vectorStore?: string; embedBaseUrl?: string; embedDims?: number; embedModel?: string; embedProvider?: string; llmBaseUrl?: string; llmModel?: string; llmProvider?: string; url: string; }' but required in type 'Mem0AdapterConfig'.
+src/memory/index.ts(60,7): error TS2741: Property 'listAgents' is missing in type 'VectorAdapter' but required in type 'MemoryAdapter'.
+src/memory/index.ts(60,32): error TS2379: Argument of type '{ cacheDir?: string; qdrantUrl: string; model: string; vectorSize: number; collectionName: string; }' is not assignable to parameter of type 'VectorAdapterConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Property 'projectSlug' is missing in type '{ cacheDir?: string; qdrantUrl: string; model: string; vectorSize: number; collectionName: string; }' but required in type 'VectorAdapterConfig'.

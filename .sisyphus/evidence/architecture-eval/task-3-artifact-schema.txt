@@ -1,0 +1,40 @@
+BENCHMARK ARTIFACT SCHEMA — memory-architecture-evaluation
+Updated: 2026-03-09 (corrected to match actual implementation in bench scripts)
+
+FIELD LIST (per-candidate JSON artifact):
+
+candidate          string   — candidate identifier (e.g. "file", "file-graph", "local-vec-graph")
+dataset            string   — dataset identifier (e.g. "primary-synthetic-codebase-analysis")
+timestamp          string   — ISO 8601 run timestamp
+environment.os     string   — operating system (e.g. "darwin")
+environment.arch   string   — CPU architecture (e.g. "arm64")
+environment.runtime string  — runtime version (e.g. "node v24.3.0")
+environment.external_services  string[]  — list of external services used (e.g. ["qdrant", "neo4j"])
+metrics.weak_seed_hit_at_1             number        — hit@1 rate for weak-seed queries (no graph assist)
+metrics.graph_weak_seed_hit_at_1       number | null — hit@1 rate for weak-seed queries using graph traversal (null for non-graph candidates)
+metrics.gold_in_expanded_neighborhood  number | null — fraction of weak-seed queries where the gold memory appeared in the graph-expanded neighborhood (null for non-graph candidates)
+metrics.chain_hit_at_3                 number        — hit@3 rate for support-chain relationship traversal queries
+metrics.supersede_win_rate             number        — fraction of supersede queries where the latest-truth memory ranks above the stale one
+metrics.wrong_agent_leakage_rate       number        — fraction of queries returning at least one memory from the wrong agent namespace
+degraded           boolean  — true if the candidate ran in a degraded/partial mode
+degraded_reason    string | null — description of degradation if degraded=true, otherwise null
+skipped            boolean  — true if the candidate could not run at all
+skipped_reason     string | null — description of skip reason if skipped=true, otherwise null
+
+EXAMPLE ARTIFACT (complete, machine-readable):
+
+file:
+{"candidate":"file","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:37:08.242Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":null,"gold_in_expanded_neighborhood":null,"chain_hit_at_3":0,"supersede_win_rate":0,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+sqlite:
+{"candidate":"sqlite","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:37:09.545Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":null,"gold_in_expanded_neighborhood":null,"chain_hit_at_3":0,"supersede_win_rate":0,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+file-graph:
+{"candidate":"file-graph","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:39:34.640Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":0.1527777777777778,"gold_in_expanded_neighborhood":0.4444444444444444,"chain_hit_at_3":0.5555555555555556,"supersede_win_rate":0.6458333333333334,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+SCHEMA EVOLUTION NOTE:
+An earlier draft of this schema (pre-benchmark-implementation) listed legacy field names
+(hit_at_1_recency, hit_at_10_semantic, hit_at_1_exact, hop_success_rate, cross_agent_leak_count,
+install_steps, min_ram_mb, result_variance, p50_write_ms, p50_search_ms) that were superseded
+during the Task 8 metric refinement phase. The field list above reflects what the bench scripts
+actually emit as of the completed evaluation run.

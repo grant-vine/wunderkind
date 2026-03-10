@@ -1,0 +1,66 @@
+BENCHMARK MATRIX — memory-architecture-evaluation
+Generated: 2026-03-09
+Dataset: primary-synthetic-codebase-analysis
+
+CANDIDATE STATUS
+- file: COMPLETE
+- sqlite: COMPLETE
+- file-graph: COMPLETE
+- local-vec (plain DIY baseline, no graph): SKIPPED (embedding model Xenova/e5-small-v2 not cached on this machine)
+- local-vec-graph: SKIPPED (embedding model Xenova/e5-small-v2 not cached on this machine)
+- postgres-pgvector: SKIPPED (Docker container unavailable)
+- qdrant-memgraph: SKIPPED (Docker services unavailable)
+- qdrant-neo4j: SKIPPED (Docker services unavailable)
+
+NOTE: The plan's "DIY baseline" comprises three plain adapters with no graph layer: file, sqlite,
+and local-vec. File and sqlite ran to completion. Local-vec was skipped because the embedding
+model is not cached locally — the same reason local-vec-graph was skipped.
+
+METRIC TABLE
+candidate         | status   | latest-truth (15) | weak-seed (25) | traversal (15) | strong-seed (15) | isolation (10) | ops-complexity (10) | docker-practicality (5) | determinism (5) | TOTAL
+------------------|----------|-------------------|----------------|----------------|------------------|----------------|---------------------|-------------------------|-----------------|-------
+file              | COMPLETE | 0.00              | 0.00           | 0.00           | 2.51             | 10.0           | 10.0                | 5.0                     | 5.0             | 32.51
+sqlite            | COMPLETE | 0.00              | 0.00           | 0.00           | 15.00            | 10.0           | 10.0                | 5.0                     | 5.0             | 45.00
+file-graph        | COMPLETE | 9.69              | 3.82           | 7.50           | 6.26             | 10.0           | 10.0                | 5.0                     | 5.0             | 57.27
+local-vec         | SKIPPED  | 0.00              | 0.00           | 0.00           | 0.00             | 10.0           | 9.0                 | 5.0                     | 5.0             | 29.00
+local-vec-graph   | SKIPPED  | 0.00              | 0.00           | 0.00           | 0.00             | 10.0           | 9.0                 | 4.0                     | 5.0             | 28.00
+postgres-pgvector | SKIPPED  | 0.00              | 0.00           | 0.00           | 0.00             | 10.0           | 6.0                 | 3.0                     | 5.0             | 24.00
+qdrant-memgraph   | SKIPPED  | 0.00              | 0.00           | 0.00           | 0.00             | 10.0           | 3.0                 | 0.0                     | 5.0             | 18.00
+qdrant-neo4j      | SKIPPED  | 0.00              | 0.00           | 0.00           | 0.00             | 10.0           | 3.0                 | 0.0                     | 5.0             | 18.00
+
+WEIGHTED SCORE CALCULATION LOGIC:
+- latest-truth: supersede_win_rate * 15
+- weak-seed: weak_seed_hit_at_1 * 25 (graph_weak_seed_hit_at_1 for graph candidates)
+- traversal: ((chain_hit_at_3 + gold_in_expanded_neighborhood) / 2) * 15
+- strong-seed: Overall EM% * 15
+- isolation: 10 if leakage == 0, else 0
+- ops-complexity: Manual score (out of 10)
+- docker-practicality: Manual score (out of 5)
+- determinism: 5 (fixed for all candidates)
+
+RAW DATA (file): EM=16.7% -> 0.167 * 15 = 2.51
+RAW DATA (sqlite): EM=100% -> 1.0 * 15 = 15.00
+RAW DATA (file-graph):
+  - supersede_win_rate: 0.6458 -> 9.69
+  - graph_weak_seed_hit_at_1: 0.1528 -> 3.82
+  - traversal: (0.5556 + 0.4444) / 2 = 0.5 -> 7.50
+  - EM: 41.7% -> 6.26
+  - isolation: 0 leakage -> 10.0
+
+RAW ARTIFACT PAYLOADS (machine-readable JSON):
+
+--- file ---
+{"candidate":"file","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:37:08.242Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":null,"gold_in_expanded_neighborhood":null,"chain_hit_at_3":0,"supersede_win_rate":0,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+--- sqlite ---
+{"candidate":"sqlite","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:37:09.545Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":null,"gold_in_expanded_neighborhood":null,"chain_hit_at_3":0,"supersede_win_rate":0,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+--- file-graph ---
+{"candidate":"file-graph","dataset":"primary-synthetic-codebase-analysis","timestamp":"2026-03-09T12:39:34.640Z","environment":{"os":"darwin","arch":"arm64","runtime":"node v24.3.0","external_services":[]},"metrics":{"weak_seed_hit_at_1":0,"graph_weak_seed_hit_at_1":0.1527777777777778,"gold_in_expanded_neighborhood":0.4444444444444444,"chain_hit_at_3":0.5555555555555556,"supersede_win_rate":0.6458333333333334,"wrong_agent_leakage_rate":0},"degraded":false,"degraded_reason":null,"skipped":false,"skipped_reason":null}
+
+NOTES
+- Skipped candidates score 0 on benchmark-derived metrics but retain manual operational scores.
+- file-graph showed genuine traversal (50% avg) and supersession (64.6%) but severely degraded strong-seed preservation (41.7% vs sqlite's 100%).
+- local-vec and local-vec-graph both skipped on this machine because the embedding model is not cached; local-vec-graph is expected to be the high-performer in hybrid scenarios once the model is available.
+- Docker-backed candidates skipped; results would require running their respective Docker stacks.
+- The matrix covers all 6 frozen plan candidates (file, sqlite, local-vec-graph, postgres-pgvector, qdrant-memgraph, qdrant-neo4j) plus the explicit DIY plain local-vec row.

@@ -1,0 +1,22 @@
+Task 11 — weak-seed baseline vs graph-assisted comparison
+Date: 2026-03-09
+
+Candidate: `local-vec-graph`
+Dataset: `primary-synthetic-codebase-analysis`
+
+Separate metric fields present in emitted artifact:
+- Baseline semantic weak-seed metric: `weak_seed_hit_at_1`
+- Graph-assisted weak-seed metric: `graph_weak_seed_hit_at_1`
+- Expanded neighborhood coverage metric: `gold_in_expanded_neighborhood`
+
+Run result:
+- Benchmark was skipped because `Xenova/e5-small-v2` was not cached locally.
+- Because of the skip, no live weak-seed retrieval comparison was measured on this machine.
+- The emitted artifact still preserved separate baseline and graph-assisted weak-seed fields, both set independently in the artifact payload:
+  - `weak_seed_hit_at_1 = 0`
+  - `graph_weak_seed_hit_at_1 = 0`
+  - `gold_in_expanded_neighborhood = 0`
+
+Interpretation:
+- Baseline local-vec and graph-assisted weak-seed metrics remain distinct in the prototype runner.
+- Once the model is cached, the runner will compute the baseline from semantic-only search and the graph-assisted metric from 2-hop adjacency expansion on the same weak-seed query set.

@@ -1,0 +1,6 @@
+weak_seed_hit_at_1: number
+graph_weak_seed_hit_at_1: number | null
+gold_in_expanded_neighborhood: number | null
+chain_hit_at_3: number
+supersede_win_rate: number
+wrong_agent_leakage_rate: number

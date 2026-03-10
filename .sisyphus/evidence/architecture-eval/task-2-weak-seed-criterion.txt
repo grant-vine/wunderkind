@@ -1,0 +1,6 @@
+Criterion: Weak-seed rescue
+Weight: 25
+Description: Can the system find relevant memories when the query is vague, uses wrong terminology, or is significantly different from the stored phrasing?
+Measurement: hit@10_semantic — percentage of on-topic results found using non-overlapping vocabulary.
+Good (25): Hit rate > 0.8 on synonym/conceptual queries where keywords do not match.
+Bad (0): Zero results found unless exact keywords match (standard flat-file behavior).

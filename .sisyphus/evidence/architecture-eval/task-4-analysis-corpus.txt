@@ -1,0 +1,9 @@
+Artifact types included in the primary synthetic benchmark corpus (analysis artifacts only, no raw code):
+- module description
+- dependency record
+- ADR
+- known issue
+- risk record
+- change history
+- support chain
+- cross-module relationship

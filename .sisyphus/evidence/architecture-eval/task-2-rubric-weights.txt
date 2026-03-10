@@ -1,0 +1,10 @@
+1. Latest-truth win-rate: 15
+2. Weak-seed rescue: 25
+3. Relationship traversal quality: 15
+4. Strong-seed preservation: 15
+5. Wrong-agent isolation: 10
+6. Operational complexity: 10
+7. Docker/self-host practicality: 5
+8. Determinism/reproducibility: 5
+
+Total: 100

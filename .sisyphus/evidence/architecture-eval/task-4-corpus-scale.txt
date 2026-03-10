@@ -1,0 +1,1 @@
+Primary corpus: 5000 memories, 40 modules, 3+ agents

@@ -1,0 +1,4 @@
+COMMAND: tsc --noEmit 2>&1
+OUTPUT:
+
+EXIT_CODE:0

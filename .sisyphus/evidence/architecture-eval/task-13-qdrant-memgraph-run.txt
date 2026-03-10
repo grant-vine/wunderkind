@@ -1,0 +1,40 @@
+Task 13 — Qdrant + Memgraph benchmark run
+Date: 2026-03-09
+
+Command:
+`bun run tests/memory-bench/candidates/qdrant-memgraph/bench.ts`
+
+Result:
+```json
+{
+  "candidate": "qdrant-memgraph",
+  "dataset": "primary-synthetic-codebase-analysis",
+  "timestamp": "2026-03-09T11:18:44.971Z",
+  "environment": {
+    "os": "darwin",
+    "arch": "arm64",
+    "runtime": "node v24.3.0",
+    "external_services": [
+      "qdrant@6334",
+      "memgraph@7688"
+    ]
+  },
+  "metrics": {
+    "weak_seed_hit_at_1": 0,
+    "graph_weak_seed_hit_at_1": null,
+    "gold_in_expanded_neighborhood": null,
+    "chain_hit_at_3": 0,
+    "supersede_win_rate": 0,
+    "wrong_agent_leakage_rate": 0
+  },
+  "degraded": false,
+  "degraded_reason": null,
+  "skipped": true,
+  "skipped_reason": "qdrant or memgraph unavailable"
+}
+```
+
+Notes:
+- Docker was available.
+- Memgraph on `bolt://127.0.0.1:7688` responded successfully.
+- Qdrant on `http://127.0.0.1:6334` was unavailable for HTTP because port `6334` was already allocated by an existing container (`wunderkind-qdrant-1`), so the candidate correctly emitted a skipped artifact.

@@ -1,0 +1,6 @@
+candidate: qdrant-neo4j
+dataset: primary-synthetic-codebase-analysis
+status: skipped
+reason: qdrant or neo4j unavailable
+neo4j_auth: none
+embedding: deterministic hash-based pseudo-embedding (384 dims)

@@ -1,0 +1,27 @@
+Task 5: Scripts Cleanup Verification
+=====================================
+
+Date: 2026-03-09
+Task: Remove bench scripts and fix test:contract script
+
+VERIFICATION 1:
+grep -E '"bench":|"bench:vector":|"bench:full":' package.json
+
+RESULT: ✓ All bench scripts removed
+
+VERIFICATION 2:
+grep '"test:contract"' package.json
+
+RESULT: "test:contract": "bun test tests/unit/"
+EXPECTED: "test:contract": "bun test tests/unit/"
+STATUS: ✓ PASS
+
+Removed scripts:
+- "bench": "bun run tests/perf/adapter-benchmark.ts --skip-vector"
+- "bench:vector": "bun run tests/perf/adapter-benchmark.ts"
+- "bench:full": "bun run tests/perf/adapter-benchmark.ts --with-mem0"
+
+Changed scripts:
+- "test:contract": from "bun test tests/" to "bun test tests/unit/"
+
+Status: PASS

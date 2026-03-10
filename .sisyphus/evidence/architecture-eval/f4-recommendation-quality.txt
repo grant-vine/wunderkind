@@ -1,0 +1,31 @@
+F4 RECOMMENDATION QUALITY REVIEW
+Reviewer: oracle
+Date: 2026-03-09
+
+VERDICT: APPROVE
+
+SECTION CHECK:
+- Executive Summary: present
+- Benchmark Results Summary: present, all candidates covered
+- Recommended Default: present, cites evidence
+- Optional Advanced Path: present, clearly labelled as expected not measured
+- Deferred/Avoid Paths: present, file-graph placed here
+- Score reconciliation (57.27 vs 45.00): present, satisfactory
+- SQLite+graph hybrid labelled as proposal: yes
+
+EVIDENCE QUALITY:
+- Default cites metrics: YES — SQLite 45.00, strong-seed EM 100%, file 16.7%, file-graph 41.7%, wrong_agent_leakage_rate = 0
+- Optional path cites reason: YES — local-vec-graph is framed as a promising advanced path only after the model constraint is resolved, and its scoring is explicitly described as expected/prior-research rather than measured here
+- Deferred paths give reasons: YES — file-graph deferred for the 41.7% EM regression; local-vec/local-vec-graph deferred for environment constraints; postgres/qdrant paths deferred or avoided for operational/Docker burden
+
+SOUNDNESS:
+- file-graph strong-seed regression acknowledged: YES
+- Composite/hybrid proposal labelled as proposal: YES
+- Default is actionable (developer knows what to use today): YES
+- Score reconciliation present (57.27 file-graph vs 45.00 sqlite): YES
+
+ISSUES (if REJECT):
+- None
+
+RATIONALE:
+The memo now cleanly separates measured conclusions from proposed next-step architecture. SQLite is explicitly identified as the current default with concrete benchmark support, file-graph is explicitly deferred because the 41.7% strong-seed EM regression is treated as a correctness defect, and the SQLite+graph hybrid is clearly marked as a Phase 2 proposal that was not benchmarked. A developer reading this can tell what to use today and what to prototype next.
