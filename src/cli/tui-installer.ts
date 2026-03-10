@@ -7,22 +7,9 @@ import {
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
+import { isProjectContext, runInit } from "./init.js"
 import type {
-  BrandPersonality,
-  CisoPersonality,
-  CmoPersonality,
-  CreativePersonality,
-  CtoPersonality,
-  DataAnalystPersonality,
-  DevrelPersonality,
   InstallScope,
-  LegalPersonality,
-  OpsPersonality,
-  OrgStructure,
-  ProductPersonality,
-  QaPersonality,
-  SupportPersonality,
-  TeamCulture,
 } from "./types.js"
 
 const COMMON_REGULATIONS = [
@@ -109,6 +96,20 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   }
   const scope = scopeRaw
 
+  const inProjectContext = isProjectContext(process.cwd())
+  let shouldInitProjectNow = false
+  if (inProjectContext) {
+    const initNow = await p.confirm({
+      message: "Initialize the current project now?",
+      initialValue: scope === "project",
+    })
+    if (p.isCancel(initNow)) {
+      p.cancel("Installation cancelled.")
+      return 1
+    }
+    shouldInitProjectNow = initNow
+  }
+
   const detected = detectCurrentConfig()
   const isUpdate = detected.isInstalled
 
@@ -160,389 +161,28 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   )
   if (secondaryRegulation === null) return 1
 
-  p.log.step(color.bold("Team & Agent Personalities"))
-  p.log.message("These shape how your agents communicate, challenge decisions, and handle conflict.")
-
-  const teamCultureRaw = await p.select<TeamCulture>({
-    message: "What's your team culture baseline?",
-    options: [
-      {
-        value: "pragmatic-balanced",
-        label: "Pragmatic & Balanced",
-        hint: "Ship fast but don't cut corners. Debate is welcome, consensus is valued.",
-      },
-      {
-        value: "formal-strict",
-        label: "Formal & Strict",
-        hint: "Process first. Rigour over speed. Every decision documented and justified.",
-      },
-      {
-        value: "experimental-informal",
-        label: "Experimental & Informal",
-        hint: "Move fast, break things (sometimes). Bets over committees. High tolerance for ambiguity.",
-      },
-    ],
-    initialValue: detected.teamCulture,
-  })
-  if (p.isCancel(teamCultureRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const orgStructureRaw = await p.select<OrgStructure>({
-    message: "What's your org structure?",
-    options: [
-      {
-        value: "flat",
-        label: "Flat",
-        hint: "All agents are peers. Conflicts escalate to you (the user).",
-      },
-      {
-        value: "hierarchical",
-        label: "Hierarchical",
-        hint: "Domain authority applies. CTO owns engineering calls. CISO has hard veto on security. Unresolvable conflicts escalate to you.",
-      },
-    ],
-    initialValue: detected.orgStructure,
-  })
-  if (p.isCancel(orgStructureRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  p.log.step(color.bold("Agent Personality Overrides") + color.dim(" (optional — press Enter to keep defaults)"))
-
-  const cisoRaw = await p.select<CisoPersonality>({
-    message: "CISO personality:",
-    options: [
-      {
-        value: "pragmatic-risk-manager",
-        label: "Pragmatic Risk Manager",
-        hint: "Paranoid but practical. Prioritises by real-world exploitability. Recommends, not just red-flags.",
-      },
-      {
-        value: "paranoid-enforcer",
-        label: "Paranoid Enforcer",
-        hint: "Everything is a threat until proven otherwise. Zero tolerance, zero exceptions.",
-      },
-      {
-        value: "educator-collaborator",
-        label: "Educator & Collaborator",
-        hint: "Explains attack vectors, provides doc links, teaches the team to fish.",
-      },
-    ],
-    initialValue: detected.cisoPersonality,
-  })
-  if (p.isCancel(cisoRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const ctoRaw = await p.select<CtoPersonality>({
-    message: "CTO / Fullstack Engineer personality:",
-    options: [
-      {
-        value: "code-archaeologist",
-        label: "Code Archaeologist",
-        hint: "Methodical, empathetic to legacy, understand before rewrite. Ships with confidence.",
-      },
-      {
-        value: "grizzled-sysadmin",
-        label: "Grizzled Sysadmin",
-        hint: "Anti-hype, brutally pragmatic. Your container orchestration is just process management with YAML.",
-      },
-      {
-        value: "startup-bro",
-        label: "Startup Bro",
-        hint: "Ship it. Tests are a Series B problem. Move fast, apologise if needed.",
-      },
-    ],
-    initialValue: detected.ctoPersonality,
-  })
-  if (p.isCancel(ctoRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const cmoRaw = await p.select<CmoPersonality>({
-    message: "CMO / Marketing personality:",
-    options: [
-      {
-        value: "data-driven",
-        label: "Data-Driven Performance Marketer",
-        hint: "CAC, LTV, attribution. If you can't measure it, it doesn't exist.",
-      },
-      {
-        value: "brand-storyteller",
-        label: "Brand Storyteller",
-        hint: "Products are features, brands are feelings. Narrative is the strategy.",
-      },
-      {
-        value: "growth-hacker",
-        label: "Growth Hacker",
-        hint: "Channels, virality loops, PMF as religion. Every week is an experiment.",
-      },
-    ],
-    initialValue: detected.cmoPersonality,
-  })
-  if (p.isCancel(cmoRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const qaRaw = await p.select<QaPersonality>({
-    message: "QA Lead personality:",
-    options: [
-      {
-        value: "risk-based-pragmatist",
-        label: "Risk-Based Pragmatist",
-        hint: "Test the happy path and top 3 failure modes. Ship, then harden.",
-      },
-      {
-        value: "rule-enforcer",
-        label: "Rule Enforcer",
-        hint: "Zero merges without 80% coverage. No exceptions, no deadlines.",
-      },
-      {
-        value: "rubber-duck",
-        label: "Rubber Duck / Process Guide",
-        hint: "Socratic. Makes you think through what could go wrong. Collaborative, not gatekeeping.",
-      },
-    ],
-    initialValue: detected.qaPersonality,
-  })
-  if (p.isCancel(qaRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const productRaw = await p.select<ProductPersonality>({
-    message: "VP Product personality:",
-    options: [
-      {
-        value: "outcome-obsessed",
-        label: "Outcome-Obsessed PM",
-        hint: "I don't care about features. I care about whether users changed behaviour.",
-      },
-      {
-        value: "user-advocate",
-        label: "User Advocate",
-        hint: "I am the customer's voice in every engineering meeting. Empathy first.",
-      },
-      {
-        value: "velocity-optimizer",
-        label: "Velocity Optimizer",
-        hint: "Feature velocity as competitive moat. Fast > perfect.",
-      },
-    ],
-    initialValue: detected.productPersonality,
-  })
-  if (p.isCancel(productRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const opsRaw = await p.select<OpsPersonality>({
-    message: "Operations Lead personality:",
-    options: [
-      {
-        value: "on-call-veteran",
-        label: "On-Call Veteran",
-        hint: "Calm, structured, incident-first. Classify before remediate. SEV2 until proven SEV1.",
-      },
-      {
-        value: "efficiency-maximiser",
-        label: "Efficiency Maximiser",
-        hint: "Your cloud bill is 23% waste. Here's the Pareto fix. Toil is the enemy.",
-      },
-      {
-        value: "process-purist",
-        label: "Process Purist",
-        hint: "DORA metrics, runbooks for everything. If it's not documented, it doesn't exist.",
-      },
-    ],
-    initialValue: detected.opsPersonality,
-  })
-  if (p.isCancel(opsRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const creativeRaw = await p.select<CreativePersonality>({
-    message: "Creative Director personality:",
-    options: [
-      {
-        value: "pragmatic-problem-solver",
-        label: "Pragmatic Problem Solver",
-        hint: "Design solves real problems within real constraints. Ship beautiful work on time.",
-      },
-      {
-        value: "perfectionist-craftsperson",
-        label: "Perfectionist Craftsperson",
-        hint: "Every pixel must earn its place. Pixel-perfect or not shipped.",
-      },
-      {
-        value: "bold-provocateur",
-        label: "Bold Provocateur",
-        hint: "Push the boundaries. Safe is forgettable. The best designs divide opinion.",
-      },
-    ],
-    initialValue: detected.creativePersonality,
-  })
-  if (p.isCancel(creativeRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const brandRaw = await p.select<BrandPersonality>({
-    message: "Brand Builder personality:",
-    options: [
-      {
-        value: "authentic-builder",
-        label: "Authentic Builder",
-        hint: "Build the brand by doing the work publicly. Genuine usefulness over polish.",
-      },
-      {
-        value: "community-evangelist",
-        label: "Community Evangelist",
-        hint: "Community is infrastructure. Invest in it consistently. People first.",
-      },
-      {
-        value: "pr-spinner",
-        label: "PR Strategist",
-        hint: "Narrative is everything. Every story angle, every journalist, every moment.",
-      },
-    ],
-    initialValue: detected.brandPersonality,
-  })
-  if (p.isCancel(brandRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const devrelRaw = await p.select<DevrelPersonality>({
-    message: "DevRel Wunderkind personality:",
-    options: [
-      {
-        value: "dx-engineer",
-        label: "DX Engineer",
-        hint: "Developer experience as a product. Obsessed with time-to-first-value and reducing friction.",
-      },
-      {
-        value: "community-champion",
-        label: "Community Champion",
-        hint: "Builds trust through presence. Discord, GitHub Discussions, meetups — show up, help out.",
-      },
-      {
-        value: "docs-perfectionist",
-        label: "Docs Perfectionist",
-        hint: "If it isn't documented clearly, it doesn't ship. Every word earns its place.",
-      },
-    ],
-    initialValue: detected.devrelPersonality,
-  })
-  if (p.isCancel(devrelRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const legalRaw = await p.select<LegalPersonality>({
-    message: "Legal Counsel personality:",
-    options: [
-      {
-        value: "pragmatic-advisor",
-        label: "Pragmatic Advisor",
-        hint: "Legal reality without legal paralysis. Clear risk levels, actionable recommendations.",
-      },
-      {
-        value: "cautious-gatekeeper",
-        label: "Cautious Gatekeeper",
-        hint: "When in doubt, don't. Legal certainty before any commitment.",
-      },
-      {
-        value: "plain-english-counselor",
-        label: "Plain-English Counselor",
-        hint: "No legalese. Plain summaries first, full legal language on request.",
-      },
-    ],
-    initialValue: detected.legalPersonality,
-  })
-  if (p.isCancel(legalRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const supportRaw = await p.select<SupportPersonality>({
-    message: "Support Engineer personality:",
-    options: [
-      {
-        value: "systematic-triage",
-        label: "Systematic Triage",
-        hint: "Classify first, solve second. Severity → owner → response. Every time.",
-      },
-      {
-        value: "empathetic-resolver",
-        label: "Empathetic Resolver",
-        hint: "User pain is real. Acknowledge it, own it, close it. No robotic templates.",
-      },
-      {
-        value: "knowledge-builder",
-        label: "Knowledge Builder",
-        hint: "Every ticket is a docs gap. Fix the issue and prevent the next one.",
-      },
-    ],
-    initialValue: detected.supportPersonality,
-  })
-  if (p.isCancel(supportRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
-  const dataAnalystRaw = await p.select<DataAnalystPersonality>({
-    message: "Data Analyst personality:",
-    options: [
-      {
-        value: "insight-storyteller",
-        label: "Insight Storyteller",
-        hint: "Data is only valuable when it changes decisions. Lead with the insight, support with the numbers.",
-      },
-      {
-        value: "rigorous-statistician",
-        label: "Rigorous Statistician",
-        hint: "Statistical significance or it didn't happen. Confidence intervals on everything.",
-      },
-      {
-        value: "pragmatic-quant",
-        label: "Pragmatic Quant",
-        hint: "Good enough data, fast. 80% confident answer today beats 99% confident answer next quarter.",
-      },
-    ],
-    initialValue: detected.dataAnalystPersonality,
-  })
-  if (p.isCancel(dataAnalystRaw)) {
-    p.cancel("Installation cancelled.")
-    return 1
-  }
-
   const config = {
     region: (region as string).trim() || "Global",
     industry: (industry as string).trim(),
     primaryRegulation: primaryRegulation || "GDPR",
     secondaryRegulation: secondaryRegulation,
-    teamCulture: teamCultureRaw,
-    orgStructure: orgStructureRaw,
-    cisoPersonality: cisoRaw,
-    ctoPersonality: ctoRaw,
-    cmoPersonality: cmoRaw,
-    qaPersonality: qaRaw,
-    productPersonality: productRaw,
-    opsPersonality: opsRaw,
-    creativePersonality: creativeRaw,
-    brandPersonality: brandRaw,
-    devrelPersonality: devrelRaw,
-    legalPersonality: legalRaw,
-    supportPersonality: supportRaw,
-    dataAnalystPersonality: dataAnalystRaw,
+    teamCulture: detected.teamCulture,
+    orgStructure: detected.orgStructure,
+    cisoPersonality: detected.cisoPersonality,
+    ctoPersonality: detected.ctoPersonality,
+    cmoPersonality: detected.cmoPersonality,
+    qaPersonality: detected.qaPersonality,
+    productPersonality: detected.productPersonality,
+    opsPersonality: detected.opsPersonality,
+    creativePersonality: detected.creativePersonality,
+    brandPersonality: detected.brandPersonality,
+    devrelPersonality: detected.devrelPersonality,
+    legalPersonality: detected.legalPersonality,
+    supportPersonality: detected.supportPersonality,
+    dataAnalystPersonality: detected.dataAnalystPersonality,
+    docsEnabled: detected.docsEnabled,
+    docsPath: detected.docsPath,
+    docHistoryMode: detected.docHistoryMode,
   }
 
   const spinner = p.spinner()
@@ -603,6 +243,25 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   p.log.success(color.bold(isUpdate ? "Configuration updated!" : "Installation complete!"))
   p.log.message(`Run ${color.cyan("opencode")} to start!`)
+
+  if (shouldInitProjectNow) {
+    const initExitCode = await runInit({
+      noTui: true,
+      region: config.region,
+      industry: config.industry,
+      primaryRegulation: config.primaryRegulation,
+      secondaryRegulation: config.secondaryRegulation,
+      docsEnabled: config.docsEnabled,
+      docsPath: config.docsPath,
+      docHistoryMode: config.docHistoryMode,
+    })
+    if (initExitCode !== 0) {
+      p.log.warn("Install succeeded, but project initialization failed.")
+      p.outro(color.yellow("Wunderkind install complete with init warning."))
+      return initExitCode
+    }
+    p.log.success("Current project initialized.")
+  }
 
   p.outro(color.green("Wunderkind... Enjoy!"))
 

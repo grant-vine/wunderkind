@@ -2,9 +2,11 @@
 import { Command } from "commander"
 import { createRequire } from "node:module"
 import { runCliInstaller } from "./cli-installer.js"
+import { runDoctor } from "./doctor.js"
+import { runInit } from "./init.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
-import type { InstallArgs, InstallScope } from "./types.js"
+import type { DocHistoryMode, InstallArgs, InstallScope } from "./types.js"
 
 const require = createRequire(import.meta.url)
 const pkg = require("../../package.json") as { version: string }
@@ -137,6 +139,91 @@ program
     if (result.added.length === 0 && result.alreadyPresent.length > 0) {
       console.log("Nothing to add — all AI trace entries already present.")
     }
+  })
+
+program
+  .command("init")
+  .description(
+    [
+      "Initialize Wunderkind in the current project folder.",
+      "",
+      "Bootstraps project-local config and soul files (.sisyphus, AGENTS.md, docs README).",
+      "Requires Wunderkind to already be installed via `wunderkind install`.",
+    ].join("\n"),
+  )
+  .option("--no-tui", "Run non-interactive project bootstrap")
+  .option("--region <region>", "Geographic region, e.g. 'South Africa', 'United States', 'Global'")
+  .option("--industry <industry>", "Industry vertical, e.g. SaaS, FinTech, eCommerce, HealthTech")
+  .option(
+    "--primary-regulation <regulation>",
+    `Primary data-protection regulation.\n  Common values: ${REGULATION_LIST}`,
+  )
+  .option("--secondary-regulation <regulation>", "Secondary regulation (optional)")
+  .option("--docs-enabled <yes|no>", "Enable docs output during init")
+  .option("--docs-path <path>", "Docs output path (relative to current project)")
+  .option("--doc-history-mode <mode>", "Doc history mode: overwrite | append-dated | new-dated-file | overwrite-archive")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Example:",
+      "  bunx @grant-vine/wunderkind init --no-tui --region=EU --industry=SaaS --primary-regulation=GDPR",
+    ].join("\n"),
+  )
+  .action(async (opts: {
+    tui: boolean
+    region?: string | undefined
+    industry?: string | undefined
+    primaryRegulation?: string | undefined
+    secondaryRegulation?: string | undefined
+    docsEnabled?: string | undefined
+    docsPath?: string | undefined
+    docHistoryMode?: string | undefined
+  }) => {
+    let docsEnabled: boolean | undefined
+    if (typeof opts.docsEnabled === "string") {
+      const normalized = opts.docsEnabled.trim().toLowerCase()
+      if (normalized === "yes" || normalized === "y" || normalized === "true") {
+        docsEnabled = true
+      } else if (normalized === "no" || normalized === "n" || normalized === "false") {
+        docsEnabled = false
+      } else {
+        console.error(`Error: --docs-enabled must be yes|no, got: "${opts.docsEnabled}"`)
+        process.exit(1)
+      }
+    }
+
+    const initOptions: {
+      noTui: boolean
+      region?: string
+      industry?: string
+      primaryRegulation?: string
+      secondaryRegulation?: string
+      docsEnabled?: boolean
+      docsPath?: string
+      docHistoryMode?: DocHistoryMode
+    } = {
+      noTui: !opts.tui,
+    }
+
+    if (opts.region !== undefined) initOptions.region = opts.region
+    if (opts.industry !== undefined) initOptions.industry = opts.industry
+    if (opts.primaryRegulation !== undefined) initOptions.primaryRegulation = opts.primaryRegulation
+    if (opts.secondaryRegulation !== undefined) initOptions.secondaryRegulation = opts.secondaryRegulation
+    if (docsEnabled !== undefined) initOptions.docsEnabled = docsEnabled
+    if (opts.docsPath !== undefined) initOptions.docsPath = opts.docsPath
+    if (opts.docHistoryMode !== undefined) initOptions.docHistoryMode = opts.docHistoryMode as DocHistoryMode
+
+    const exitCode = await runInit(initOptions)
+    process.exit(exitCode)
+  })
+
+program
+  .command("doctor")
+  .description("Run read-only diagnostics for Wunderkind install and current project context.")
+  .action(async () => {
+    const exitCode = await runDoctor()
+    process.exit(exitCode)
   })
 
 program.parse()
