@@ -9,6 +9,28 @@ Wunderkind — specialist AI agent addon for OpenCode that extends your team wit
 
 ---
 
+## CLI
+
+Wunderkind provides a tiered CLI for installation, project setup, and health checks.
+
+| Command | Purpose | Modifies |
+|---|---|---|
+| `wunderkind install` | Registers the plugin in OpenCode | `opencode.json` (Global or Project) |
+| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/` |
+| `wunderkind doctor` | Read-only diagnostics | None |
+| `wunderkind gitignore` | Adds AI traces to `.gitignore` | `.gitignore` |
+
+---
+
+## Install vs Init
+
+Wunderkind distinguishes between **installing** the plugin and **initializing** a project:
+
+1. **Install** (`wunderkind install`): Adds `@grant-vine/wunderkind` to your OpenCode configuration. This makes the agents available to your AI assistant. You typically do this once globally.
+2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, and optional documentation output folders.
+
+---
+
 ## Install
 
 ### Have Your Agent Install This
@@ -75,6 +97,68 @@ bunx @grant-vine/wunderkind install --no-tui \
   --industry=FinTech \
   --primary-regulation=CCPA
 ```
+
+---
+
+## Init
+
+Initialize the current directory as a Wunderkind project to enable advanced features like Documentation Output and agent context persistence.
+
+```bash
+wunderkind init [options]
+```
+
+### Options
+
+| Option | Description | Default |
+|---|---|---|
+| `--docs-path <path>` | Relative path for agent docs output | `./docs` |
+| `--docs-history-mode <mode>` | Update style for documentation | `overwrite` |
+| `--no-docs` | Disable documentation output | (false) |
+| `--no-tui` | Skip interactive prompts | (false) |
+
+`wunderkind init` creates the following project "soul files":
+- `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
+- `AGENTS.md` — Project knowledge base for agents
+- `.sisyphus/` — Directory for agent planning, notepads, and evidence
+- `<docsPath>/README.md` — Auto-generated documentation index (if enabled)
+
+### Documentation History Modes
+
+| Mode | Description |
+|---|---|
+| `overwrite` | Replaces the file contents each time (default) |
+| `append-dated` | Appends a new dated section to the file |
+| `new-dated-file` | Creates a new file with a date suffix |
+| `overwrite-archive` | Overwrites the current file and archives the old one |
+
+---
+
+## Doctor
+
+Run diagnostics to verify your installation, configuration, and project health.
+
+```bash
+wunderkind doctor
+```
+
+`wunderkind doctor` reports:
+- Installed version and scope (Global vs Project)
+- Location of configuration files
+- Presence and status of project soul files (in a project context)
+- Current Documentation Output configuration and index status
+
+`wunderkind doctor` is strictly read-only and makes no changes to your filesystem.
+
+---
+
+## Documentation Output
+
+When enabled, agents can persist their decisions and strategies to your project's docs folder.
+
+1. **Enable** via `wunderkind init --docs-path ./docs`
+2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
+3. **Index** via `/docs-index`. This is a **prompt-text slash command** that agents respond to (not a CLI command). Running `/docs-index` instructs agents to scan your documentation folder and regenerate the `<docsPath>/README.md` index.
 
 ---
 
@@ -172,7 +256,15 @@ Edit either file directly to change any value after install. The installer pre-f
   // Creative Director: "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"
   "creativePersonality": "pragmatic-problem-solver",
   // Brand Builder: "community-evangelist" | "pr-spinner" | "authentic-builder"
-  "brandPersonality": "authentic-builder"
+  "brandPersonality": "authentic-builder",
+
+  // Documentation Output (Init-only customizations)
+  // "true" | "false"
+  "docsEnabled": false,
+  // Relative path (e.g. "./docs", "./documentation")
+  "docsPath": "./docs",
+  // "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
+  "docHistoryMode": "overwrite"
 }
 ```
 

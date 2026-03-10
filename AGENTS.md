@@ -67,6 +67,41 @@ wunderkind/
 
 ---
 
+## CLI COMMANDS (FOR MAINTAINERS)
+
+Wunderkind provides a tiered CLI for installation, project setup, and health checks.
+
+- **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
+- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`) and initializes the Documentation Output folder if enabled.
+- **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
+
+---
+
+## DOCUMENTATION OUTPUT
+
+Documentation Output (`docs-output`) allows agents to write persistent files to a project documentation directory.
+
+### Configuration (`src/agents/docs-config.ts`)
+
+`AGENT_DOCS_CONFIG` maps all 12 agent keys to their `canonicalFilename` and `eligible` status. When adding a new agent, add an entry to this record first.
+
+- **`canonicalFilename`**: The filename agents are instructed to write to (e.g. `marketing-strategy.md`).
+- **`eligible`**: Boolean flag determining if an agent is authorized to write to disk.
+
+`buildDocsInstruction(agentKey, docsPath, docHistoryMode)` generates the formatted instruction string used in agent prompt templates.
+
+### Runtime vs Static Headings
+
+Maintaining the distinction between runtime and static headings is critical for the idempotency sentinel check:
+
+- **Runtime heading**: `## Documentation Output` — Injected by `src/index.ts` during the plugin transform when `docsEnabled: true`.
+- **Static heading**: `## Documentation Output (Static Reference)` — Embedded directly in agent prompt strings (e.g. `src/agents/marketing-wunderkind.ts`).
+- **Sentinel**: `<!-- wunderkind:docs-output-start -->` — Injected by `src/index.ts` to mark the start of the documentation output section.
+
+These strings MUST NOT be identical. If the sentinel or runtime heading matches the static heading, the idempotency check will fail.
+
+---
+
 ## BUILD
 
 Two-step build — **order matters:**
