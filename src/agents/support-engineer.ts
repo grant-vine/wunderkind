@@ -36,7 +36,6 @@ export function createSupportEngineerAgent(model: string): AgentConfig {
     "write",
     "edit",
     "apply_patch",
-    "call_omo_agent",
   ])
 
   return {

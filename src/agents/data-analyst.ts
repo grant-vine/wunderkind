@@ -37,7 +37,6 @@ export function createDataAnalystAgent(model: string): AgentConfig {
     "edit",
     "apply_patch",
     "task",
-    "call_omo_agent",
   ])
 
   return {

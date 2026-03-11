@@ -22,7 +22,7 @@ program
     [
       "Wunderkind — specialist AI agents for any software product team.",
       "",
-      "Extends oh-my-openagent with twelve professional agents covering",
+      "Adds twelve specialist native OpenCode agents covering",
       "marketing, design, product, engineering, brand, QA, operations,",
       "security, devrel, legal, support, and data analysis — each",
       "pre-tuned to your region, industry, and data-protection regulation.",

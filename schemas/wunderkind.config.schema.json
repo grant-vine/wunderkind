@@ -23,6 +23,10 @@
       "type": "object",
       "properties": {
         "$schema": { "type": "string" },
+        "region": { "type": "string" },
+        "industry": { "type": "string" },
+        "primaryRegulation": { "type": "string" },
+        "secondaryRegulation": { "type": "string" },
         "teamCulture": { "enum": ["formal-strict", "pragmatic-balanced", "experimental-informal"] },
         "orgStructure": { "enum": ["flat", "hierarchical"] },
         "cisoPersonality": { "enum": ["paranoid-enforcer", "pragmatic-risk-manager", "educator-collaborator"] },

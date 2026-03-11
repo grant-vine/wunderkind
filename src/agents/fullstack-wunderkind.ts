@@ -372,8 +372,6 @@ Read \`.wunderkind/wunderkind.config.jsonc\` at runtime for \`docsPath\` (defaul
 - \`new-dated-file\` — Create a new file with a date suffix.
 - \`overwrite-archive\` — Overwrite the current file and archive the old one.
 
-After writing, run \`/docs-index\` to update the project documentation index.
-
 ## Delegation Patterns
 
 When external developer documentation or tutorials are needed:

@@ -35,7 +35,6 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
     "edit",
     "apply_patch",
     "task",
-    "call_omo_agent",
   ])
 
   return {
@@ -314,9 +313,7 @@ Read \`.wunderkind/wunderkind.config.jsonc\` at runtime for \`docsPath\` (defaul
 - \`overwrite\` — Replace the file contents each time.
 - \`append-dated\` — Append a dated section to the file.
 - \`new-dated-file\` — Create a new file with a date suffix.
-- \`overwrite-archive\` — Overwrite the current file and archive the old one.
-
-After writing, run \`/docs-index\` to update the project documentation index.`,
+- \`overwrite-archive\` — Overwrite the current file and archive the old one.`,
   }
 }
 

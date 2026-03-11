@@ -1,6 +1,6 @@
 ---
 description: Regenerate Wunderkind-managed project documentation and refresh the docs index
-agent: wunderkind:product-wunderkind
+agent: product-wunderkind
 ---
 
 You are coordinating the Wunderkind documentation refresh workflow for this project.
