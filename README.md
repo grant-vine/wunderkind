@@ -134,7 +134,7 @@ wunderkind init [options]
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` is where team culture, org structure, all agent personality customizations, and docs-output settings are set.
+Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect.
 
 `wunderkind init` creates the following project "soul files":
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration

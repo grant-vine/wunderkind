@@ -141,137 +141,158 @@ export async function runInit(options: InitOptions): Promise<number> {
       )
       if (orgStructure === null) return 1
 
-      const cisoPersonality = await promptSelect<CisoPersonality>(
-        "CISO personality:",
-        [
-          { value: "paranoid-enforcer", label: "paranoid-enforcer", hint: PERSONALITY_META.ciso["paranoid-enforcer"]!.hint },
-          { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager", hint: PERSONALITY_META.ciso["pragmatic-risk-manager"]!.hint },
-          { value: "educator-collaborator", label: "educator-collaborator", hint: PERSONALITY_META.ciso["educator-collaborator"]!.hint },
-        ],
-        config.cisoPersonality,
-      )
-      if (cisoPersonality === null) return 1
+      const customizeSpecialistPersonalities = await p.confirm({
+        message: "Customize specialist personalities for this project?",
+        initialValue: false,
+      })
+      if (p.isCancel(customizeSpecialistPersonalities)) return 1
 
-      const ctoPersonality = await promptSelect<CtoPersonality>(
-        "CTO/Fullstack personality:",
-        [
-          { value: "grizzled-sysadmin", label: "grizzled-sysadmin", hint: PERSONALITY_META.cto["grizzled-sysadmin"]!.hint },
-          { value: "startup-bro", label: "startup-bro", hint: PERSONALITY_META.cto["startup-bro"]!.hint },
-          { value: "code-archaeologist", label: "code-archaeologist", hint: PERSONALITY_META.cto["code-archaeologist"]!.hint },
-        ],
-        config.ctoPersonality,
-      )
-      if (ctoPersonality === null) return 1
+      if (customizeSpecialistPersonalities) {
+        const cisoPersonality = await promptSelect<CisoPersonality>(
+          "CISO personality:",
+          [
+            { value: "paranoid-enforcer", label: "paranoid-enforcer", hint: PERSONALITY_META.ciso["paranoid-enforcer"]!.hint },
+            { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager", hint: PERSONALITY_META.ciso["pragmatic-risk-manager"]!.hint },
+            { value: "educator-collaborator", label: "educator-collaborator", hint: PERSONALITY_META.ciso["educator-collaborator"]!.hint },
+          ],
+          config.cisoPersonality,
+        )
+        if (cisoPersonality === null) return 1
 
-      const cmoPersonality = await promptSelect<CmoPersonality>(
-        "CMO/Marketing personality:",
-        [
-          { value: "data-driven", label: "data-driven", hint: PERSONALITY_META.cmo["data-driven"]!.hint },
-          { value: "brand-storyteller", label: "brand-storyteller", hint: PERSONALITY_META.cmo["brand-storyteller"]!.hint },
-          { value: "growth-hacker", label: "growth-hacker", hint: PERSONALITY_META.cmo["growth-hacker"]!.hint },
-        ],
-        config.cmoPersonality,
-      )
-      if (cmoPersonality === null) return 1
+        const ctoPersonality = await promptSelect<CtoPersonality>(
+          "CTO/Fullstack personality:",
+          [
+            { value: "grizzled-sysadmin", label: "grizzled-sysadmin", hint: PERSONALITY_META.cto["grizzled-sysadmin"]!.hint },
+            { value: "startup-bro", label: "startup-bro", hint: PERSONALITY_META.cto["startup-bro"]!.hint },
+            { value: "code-archaeologist", label: "code-archaeologist", hint: PERSONALITY_META.cto["code-archaeologist"]!.hint },
+          ],
+          config.ctoPersonality,
+        )
+        if (ctoPersonality === null) return 1
 
-      const qaPersonality = await promptSelect<QaPersonality>(
-        "QA personality:",
-        [
-          { value: "rule-enforcer", label: "rule-enforcer", hint: PERSONALITY_META.qa["rule-enforcer"]!.hint },
-          { value: "risk-based-pragmatist", label: "risk-based-pragmatist", hint: PERSONALITY_META.qa["risk-based-pragmatist"]!.hint },
-          { value: "rubber-duck", label: "rubber-duck", hint: PERSONALITY_META.qa["rubber-duck"]!.hint },
-        ],
-        config.qaPersonality,
-      )
-      if (qaPersonality === null) return 1
+        const cmoPersonality = await promptSelect<CmoPersonality>(
+          "CMO/Marketing personality:",
+          [
+            { value: "data-driven", label: "data-driven", hint: PERSONALITY_META.cmo["data-driven"]!.hint },
+            { value: "brand-storyteller", label: "brand-storyteller", hint: PERSONALITY_META.cmo["brand-storyteller"]!.hint },
+            { value: "growth-hacker", label: "growth-hacker", hint: PERSONALITY_META.cmo["growth-hacker"]!.hint },
+          ],
+          config.cmoPersonality,
+        )
+        if (cmoPersonality === null) return 1
 
-      const productPersonality = await promptSelect<ProductPersonality>(
-        "Product personality:",
-        [
-          { value: "user-advocate", label: "user-advocate", hint: PERSONALITY_META.product["user-advocate"]!.hint },
-          { value: "velocity-optimizer", label: "velocity-optimizer", hint: PERSONALITY_META.product["velocity-optimizer"]!.hint },
-          { value: "outcome-obsessed", label: "outcome-obsessed", hint: PERSONALITY_META.product["outcome-obsessed"]!.hint },
-        ],
-        config.productPersonality,
-      )
-      if (productPersonality === null) return 1
+        const qaPersonality = await promptSelect<QaPersonality>(
+          "QA personality:",
+          [
+            { value: "rule-enforcer", label: "rule-enforcer", hint: PERSONALITY_META.qa["rule-enforcer"]!.hint },
+            { value: "risk-based-pragmatist", label: "risk-based-pragmatist", hint: PERSONALITY_META.qa["risk-based-pragmatist"]!.hint },
+            { value: "rubber-duck", label: "rubber-duck", hint: PERSONALITY_META.qa["rubber-duck"]!.hint },
+          ],
+          config.qaPersonality,
+        )
+        if (qaPersonality === null) return 1
 
-      const opsPersonality = await promptSelect<OpsPersonality>(
-        "Operations personality:",
-        [
-          { value: "on-call-veteran", label: "on-call-veteran", hint: PERSONALITY_META.ops["on-call-veteran"]!.hint },
-          { value: "efficiency-maximiser", label: "efficiency-maximiser", hint: PERSONALITY_META.ops["efficiency-maximiser"]!.hint },
-          { value: "process-purist", label: "process-purist", hint: PERSONALITY_META.ops["process-purist"]!.hint },
-        ],
-        config.opsPersonality,
-      )
-      if (opsPersonality === null) return 1
+        const productPersonality = await promptSelect<ProductPersonality>(
+          "Product personality:",
+          [
+            { value: "user-advocate", label: "user-advocate", hint: PERSONALITY_META.product["user-advocate"]!.hint },
+            { value: "velocity-optimizer", label: "velocity-optimizer", hint: PERSONALITY_META.product["velocity-optimizer"]!.hint },
+            { value: "outcome-obsessed", label: "outcome-obsessed", hint: PERSONALITY_META.product["outcome-obsessed"]!.hint },
+          ],
+          config.productPersonality,
+        )
+        if (productPersonality === null) return 1
 
-      const creativePersonality = await promptSelect<CreativePersonality>(
-        "Creative Director personality:",
-        [
-          { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson", hint: PERSONALITY_META.creative["perfectionist-craftsperson"]!.hint },
-          { value: "bold-provocateur", label: "bold-provocateur", hint: PERSONALITY_META.creative["bold-provocateur"]!.hint },
-          { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver", hint: PERSONALITY_META.creative["pragmatic-problem-solver"]!.hint },
-        ],
-        config.creativePersonality,
-      )
-      if (creativePersonality === null) return 1
+        const opsPersonality = await promptSelect<OpsPersonality>(
+          "Operations personality:",
+          [
+            { value: "on-call-veteran", label: "on-call-veteran", hint: PERSONALITY_META.ops["on-call-veteran"]!.hint },
+            { value: "efficiency-maximiser", label: "efficiency-maximiser", hint: PERSONALITY_META.ops["efficiency-maximiser"]!.hint },
+            { value: "process-purist", label: "process-purist", hint: PERSONALITY_META.ops["process-purist"]!.hint },
+          ],
+          config.opsPersonality,
+        )
+        if (opsPersonality === null) return 1
 
-      const brandPersonality = await promptSelect<BrandPersonality>(
-        "Brand Builder personality:",
-        [
-          { value: "community-evangelist", label: "community-evangelist", hint: PERSONALITY_META.brand["community-evangelist"]!.hint },
-          { value: "pr-spinner", label: "pr-spinner", hint: PERSONALITY_META.brand["pr-spinner"]!.hint },
-          { value: "authentic-builder", label: "authentic-builder", hint: PERSONALITY_META.brand["authentic-builder"]!.hint },
-        ],
-        config.brandPersonality,
-      )
-      if (brandPersonality === null) return 1
+        const creativePersonality = await promptSelect<CreativePersonality>(
+          "Creative Director personality:",
+          [
+            { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson", hint: PERSONALITY_META.creative["perfectionist-craftsperson"]!.hint },
+            { value: "bold-provocateur", label: "bold-provocateur", hint: PERSONALITY_META.creative["bold-provocateur"]!.hint },
+            { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver", hint: PERSONALITY_META.creative["pragmatic-problem-solver"]!.hint },
+          ],
+          config.creativePersonality,
+        )
+        if (creativePersonality === null) return 1
 
-      const devrelPersonality = await promptSelect<DevrelPersonality>(
-        "DevRel personality:",
-        [
-          { value: "community-champion", label: "community-champion", hint: PERSONALITY_META.devrel["community-champion"]!.hint },
-          { value: "docs-perfectionist", label: "docs-perfectionist", hint: PERSONALITY_META.devrel["docs-perfectionist"]!.hint },
-          { value: "dx-engineer", label: "dx-engineer", hint: PERSONALITY_META.devrel["dx-engineer"]!.hint },
-        ],
-        config.devrelPersonality,
-      )
-      if (devrelPersonality === null) return 1
+        const brandPersonality = await promptSelect<BrandPersonality>(
+          "Brand Builder personality:",
+          [
+            { value: "community-evangelist", label: "community-evangelist", hint: PERSONALITY_META.brand["community-evangelist"]!.hint },
+            { value: "pr-spinner", label: "pr-spinner", hint: PERSONALITY_META.brand["pr-spinner"]!.hint },
+            { value: "authentic-builder", label: "authentic-builder", hint: PERSONALITY_META.brand["authentic-builder"]!.hint },
+          ],
+          config.brandPersonality,
+        )
+        if (brandPersonality === null) return 1
 
-      const legalPersonality = await promptSelect<LegalPersonality>(
-        "Legal Counsel personality:",
-        [
-          { value: "cautious-gatekeeper", label: "cautious-gatekeeper", hint: PERSONALITY_META.legal["cautious-gatekeeper"]!.hint },
-          { value: "pragmatic-advisor", label: "pragmatic-advisor", hint: PERSONALITY_META.legal["pragmatic-advisor"]!.hint },
-          { value: "plain-english-counselor", label: "plain-english-counselor", hint: PERSONALITY_META.legal["plain-english-counselor"]!.hint },
-        ],
-        config.legalPersonality,
-      )
-      if (legalPersonality === null) return 1
+        const devrelPersonality = await promptSelect<DevrelPersonality>(
+          "DevRel personality:",
+          [
+            { value: "community-champion", label: "community-champion", hint: PERSONALITY_META.devrel["community-champion"]!.hint },
+            { value: "docs-perfectionist", label: "docs-perfectionist", hint: PERSONALITY_META.devrel["docs-perfectionist"]!.hint },
+            { value: "dx-engineer", label: "dx-engineer", hint: PERSONALITY_META.devrel["dx-engineer"]!.hint },
+          ],
+          config.devrelPersonality,
+        )
+        if (devrelPersonality === null) return 1
 
-      const supportPersonality = await promptSelect<SupportPersonality>(
-        "Support Engineer personality:",
-        [
-          { value: "empathetic-resolver", label: "empathetic-resolver", hint: PERSONALITY_META.support["empathetic-resolver"]!.hint },
-          { value: "systematic-triage", label: "systematic-triage", hint: PERSONALITY_META.support["systematic-triage"]!.hint },
-          { value: "knowledge-builder", label: "knowledge-builder", hint: PERSONALITY_META.support["knowledge-builder"]!.hint },
-        ],
-        config.supportPersonality,
-      )
-      if (supportPersonality === null) return 1
+        const legalPersonality = await promptSelect<LegalPersonality>(
+          "Legal Counsel personality:",
+          [
+            { value: "cautious-gatekeeper", label: "cautious-gatekeeper", hint: PERSONALITY_META.legal["cautious-gatekeeper"]!.hint },
+            { value: "pragmatic-advisor", label: "pragmatic-advisor", hint: PERSONALITY_META.legal["pragmatic-advisor"]!.hint },
+            { value: "plain-english-counselor", label: "plain-english-counselor", hint: PERSONALITY_META.legal["plain-english-counselor"]!.hint },
+          ],
+          config.legalPersonality,
+        )
+        if (legalPersonality === null) return 1
 
-      const dataAnalystPersonality = await promptSelect<DataAnalystPersonality>(
-        "Data Analyst personality:",
-        [
-          { value: "rigorous-statistician", label: "rigorous-statistician", hint: PERSONALITY_META.dataAnalyst["rigorous-statistician"]!.hint },
-          { value: "insight-storyteller", label: "insight-storyteller", hint: PERSONALITY_META.dataAnalyst["insight-storyteller"]!.hint },
-          { value: "pragmatic-quant", label: "pragmatic-quant", hint: PERSONALITY_META.dataAnalyst["pragmatic-quant"]!.hint },
-        ],
-        config.dataAnalystPersonality,
-      )
-      if (dataAnalystPersonality === null) return 1
+        const supportPersonality = await promptSelect<SupportPersonality>(
+          "Support Engineer personality:",
+          [
+            { value: "empathetic-resolver", label: "empathetic-resolver", hint: PERSONALITY_META.support["empathetic-resolver"]!.hint },
+            { value: "systematic-triage", label: "systematic-triage", hint: PERSONALITY_META.support["systematic-triage"]!.hint },
+            { value: "knowledge-builder", label: "knowledge-builder", hint: PERSONALITY_META.support["knowledge-builder"]!.hint },
+          ],
+          config.supportPersonality,
+        )
+        if (supportPersonality === null) return 1
+
+        const dataAnalystPersonality = await promptSelect<DataAnalystPersonality>(
+          "Data Analyst personality:",
+          [
+            { value: "rigorous-statistician", label: "rigorous-statistician", hint: PERSONALITY_META.dataAnalyst["rigorous-statistician"]!.hint },
+            { value: "insight-storyteller", label: "insight-storyteller", hint: PERSONALITY_META.dataAnalyst["insight-storyteller"]!.hint },
+            { value: "pragmatic-quant", label: "pragmatic-quant", hint: PERSONALITY_META.dataAnalyst["pragmatic-quant"]!.hint },
+          ],
+          config.dataAnalystPersonality,
+        )
+        if (dataAnalystPersonality === null) return 1
+
+        config.cisoPersonality = cisoPersonality
+        config.ctoPersonality = ctoPersonality
+        config.cmoPersonality = cmoPersonality
+        config.qaPersonality = qaPersonality
+        config.productPersonality = productPersonality
+        config.opsPersonality = opsPersonality
+        config.creativePersonality = creativePersonality
+        config.brandPersonality = brandPersonality
+        config.devrelPersonality = devrelPersonality
+        config.legalPersonality = legalPersonality
+        config.supportPersonality = supportPersonality
+        config.dataAnalystPersonality = dataAnalystPersonality
+      }
 
       const docsEnabledRaw = await p.text({
         message: "Enable docs output to disk? (yes/no)",
@@ -317,18 +338,6 @@ export async function runInit(options: InitOptions): Promise<number> {
 
       config.teamCulture = teamCulture
       config.orgStructure = orgStructure
-      config.cisoPersonality = cisoPersonality
-      config.ctoPersonality = ctoPersonality
-      config.cmoPersonality = cmoPersonality
-      config.qaPersonality = qaPersonality
-      config.productPersonality = productPersonality
-      config.opsPersonality = opsPersonality
-      config.creativePersonality = creativePersonality
-      config.brandPersonality = brandPersonality
-      config.devrelPersonality = devrelPersonality
-      config.legalPersonality = legalPersonality
-      config.supportPersonality = supportPersonality
-      config.dataAnalystPersonality = dataAnalystPersonality
       config.docsEnabled = docsEnabled
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
@@ -370,6 +379,9 @@ export async function runInit(options: InitOptions): Promise<number> {
 
     console.log(`Initialized project in ${cwd}`)
     console.log(`Project config: ${writeResult.configPath}`)
+    if (!noTui) {
+      console.log("Tip: Run 'wunderkind doctor --verbose' or edit .wunderkind/wunderkind.config.jsonc to review specialist personalities later.")
+    }
     return 0
   } catch (error) {
     console.error(`Error: ${String(error)}`)
