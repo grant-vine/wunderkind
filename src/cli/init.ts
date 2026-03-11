@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { detectCurrentConfig, writeOmoAgentConfig, writeWunderkindConfig } from "./config-manager/index.js"
+import { detectCurrentConfig, writeNativeAgentFiles, writeWunderkindConfig } from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
@@ -362,9 +362,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       return 1
     }
 
-    const omoResult = writeOmoAgentConfig(cwd)
-    if (!omoResult.success) {
-      console.error(`Error: Failed to write OMO agent config: ${omoResult.error}`)
+    const nativeAgentsResult = writeNativeAgentFiles("project")
+    if (!nativeAgentsResult.success) {
+      console.error(`Error: Failed to write native agent files: ${nativeAgentsResult.error}`)
       return 1
     }
 

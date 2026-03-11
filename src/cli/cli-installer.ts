@@ -6,7 +6,7 @@ import {
   detectLegacyConfig,
   getDefaultGlobalConfig,
   readGlobalWunderkindConfig,
-  writeOmoAgentConfig,
+  writeNativeAgentFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -164,14 +164,12 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   printSuccess(`Config written ${SYMBOLS.arrow} ${color.dim(configResult.configPath)}`)
 
-  if (args.scope === "project") {
-    const omoResult = writeOmoAgentConfig(process.cwd())
-    if (!omoResult.success) {
-      printError(`Failed to write OMO agent config: ${omoResult.error}`)
-      return 1
-    }
-    printSuccess(`OMO agent config written ${SYMBOLS.arrow} ${color.dim(omoResult.configPath)}`)
+  const nativeAgentsResult = writeNativeAgentFiles(args.scope)
+  if (!nativeAgentsResult.success) {
+    printError(`Failed to write native agent files: ${nativeAgentsResult.error}`)
+    return 1
   }
+  printSuccess(`Native agents written ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
 
   printStep(step++, totalSteps, "Updating .gitignore with AI tooling traces...")
   const gitignoreResult = addAiTracesToGitignore()

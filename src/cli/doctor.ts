@@ -3,6 +3,7 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import color from "picocolors"
 import {
+  detectNativeAgentFiles,
   detectCurrentConfig,
   readGlobalWunderkindConfig,
   readProjectWunderkindConfig,
@@ -63,7 +64,16 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     line("installed:", status(detected.isInstalled))
     line("effective scope:", scopeLabel)
     line("global registration:", status(detected.globalInstalled === true))
-    line("project registration:", status(detected.projectInstalled === true))
+
+    let projectRegistrationStatus: string
+    if (detected.projectInstalled === true) {
+      projectRegistrationStatus = color.green("✓ yes")
+    } else if (detected.globalInstalled === true) {
+      projectRegistrationStatus = color.dim("✗ no")
+    } else {
+      projectRegistrationStatus = color.red("✗ no")
+    }
+    line("project registration:", projectRegistrationStatus)
 
     if (options.verbose) {
       section("Resolved Paths")
@@ -75,6 +85,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         "project OpenCode config:",
         `${color.dim(projectOpenCodePath)} ${color.dim(`(${projectOpenCodeResolution.source})`)}`,
       )
+      const globalNativeAgents = detectNativeAgentFiles("global")
+      const projectNativeAgents = detectNativeAgentFiles("project")
+      line("global native agents dir:", `${status(globalNativeAgents.allPresent)} ${color.dim(globalNativeAgents.dir)}`)
+      line("project native agents dir:", `${status(projectNativeAgents.allPresent)} ${color.dim(projectNativeAgents.dir)}`)
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
 
@@ -100,8 +114,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const hasNotepads = existsSync(sisyphusNotepadsPath)
       const hasEvidence = existsSync(sisyphusEvidencePath)
       const hasDocsReadme = existsSync(docsReadmePath)
-      const omoConfigPath = join(cwd, ".opencode", "oh-my-opencode.jsonc")
-      const hasOmoConfig = existsSync(omoConfigPath)
+      const globalNativeAgents = detectNativeAgentFiles("global")
+      const projectNativeAgents = detectNativeAgentFiles("project")
 
       if (!localConfigExists) warnings.push(`missing local config: ${localConfigPath}`)
       if (!hasAgents) warnings.push(`missing soul file: ${agentsPath}`)
@@ -109,8 +123,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (!hasNotepads) warnings.push(`missing soul directory: ${sisyphusNotepadsPath}`)
       if (!hasEvidence) warnings.push(`missing soul directory: ${sisyphusEvidencePath}`)
       if (detected.docsEnabled && !hasDocsReadme) warnings.push(`missing docs README: ${docsReadmePath}`)
-      if (!hasOmoConfig && detected.projectInstalled === true) {
-        warnings.push(`missing OMO agent config: ${omoConfigPath}`)
+      if (detected.globalInstalled === true && !globalNativeAgents.allPresent) {
+        warnings.push(`missing native global agent files: ${globalNativeAgents.dir}`)
+      }
+      if (localConfigExists && !projectNativeAgents.allPresent) {
+        warnings.push(`missing native project agent files: ${projectNativeAgents.dir}`)
       }
 
       section(options.verbose ? "Project Health" : "Project health")
@@ -119,7 +136,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line(".sisyphus/plans present:", status(hasPlans))
       line(".sisyphus/notepads present:", status(hasNotepads))
       line(".sisyphus/evidence present:", status(hasEvidence))
-      line("OMO agent config present:", status(hasOmoConfig))
+      line("global native agents present:", status(globalNativeAgents.allPresent))
+      line(
+        "project native agents present:",
+        projectNativeAgents.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
+      )
 
       if (options.verbose) {
         section("Project Configuration")
@@ -168,7 +189,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         )
       }
       if (!localConfigExists) {
-        warnings.push("project is not initialized; using packaged defaults for soul/docs settings")
+        warnings.push("project is not initialized; using global/native defaults for agent and soul/docs settings")
       }
     } else {
       section(options.verbose ? "Project Health" : "Project health")

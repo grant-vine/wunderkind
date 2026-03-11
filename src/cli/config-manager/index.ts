@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { parse as parseJsonc } from "jsonc-parser"
+import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
+import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
 import type {
   BrandPersonality,
   CisoPersonality,
@@ -37,6 +38,7 @@ const LEGACY_CONFIG_JSON = join(CONFIG_DIR, "config.json")
 const LEGACY_CONFIG_JSONC = join(CONFIG_DIR, "config.jsonc")
 const GLOBAL_WUNDERKIND_DIR = join(homedir(), ".wunderkind")
 const GLOBAL_WUNDERKIND_CONFIG = join(GLOBAL_WUNDERKIND_DIR, "wunderkind.config.jsonc")
+const GLOBAL_OPENCODE_AGENTS_DIR = join(CONFIG_DIR, "agents")
 const WUNDERKIND_DIR = join(process.cwd(), ".wunderkind")
 const WUNDERKIND_CONFIG = join(WUNDERKIND_DIR, "wunderkind.config.jsonc")
 const LEGACY_WUNDERKIND_CONFIG = join(process.cwd(), "wunderkind.config.jsonc")
@@ -277,10 +279,12 @@ export function readWunderkindConfig(): Partial<InstallConfig> | null {
   }
 
   const globalSafe = coerceGlobalConfig(globalConfig ?? {})
+  const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = coerceProjectConfig(projectConfig ?? {})
 
   return {
     ...globalSafe,
+    ...projectGlobalSafe,
     ...projectLocal,
   }
 }
@@ -325,10 +329,17 @@ function renderGlobalWunderkindConfig(config: GlobalConfig): string {
 }
 
 function renderProjectWunderkindConfig(config: ProjectConfig): string {
+  const installConfig = config as ProjectConfig & Partial<GlobalConfig>
   return [
     `// Wunderkind project configuration — edit these values to tailor agents to this project`,
     `{`,
     `  "$schema": ${JSON.stringify(WUNDERKIND_SCHEMA_URL)},`,
+    `  // Optional project-local baseline overrides — used for project-scope installs or project-specific market context`,
+    `  "region": ${JSON.stringify(installConfig.region ?? "Global")},`,
+    `  "industry": ${JSON.stringify(installConfig.industry ?? "")},`,
+    `  "primaryRegulation": ${JSON.stringify(installConfig.primaryRegulation ?? "GDPR")},`,
+    `  "secondaryRegulation": ${JSON.stringify(installConfig.secondaryRegulation ?? "")},`,
+    ``,
     `  // Team culture baseline — affects all agents' communication style and decision rigour`,
     `  // "formal-strict" | "pragmatic-balanced" | "experimental-informal"`,
     `  "teamCulture": ${JSON.stringify(config.teamCulture)},`,
@@ -431,6 +442,8 @@ export function detectCurrentConfig(): DetectedConfig {
   const globalConfig = existsSync(GLOBAL_WUNDERKIND_CONFIG) ? parseWunderkindConfig(GLOBAL_WUNDERKIND_CONFIG) : null
   const legacyGlobalProjectFields = globalConfig ? listLegacyGlobalProjectFields(globalConfig) : []
   const globalSafe = readGlobalWunderkindConfig()
+  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
   const legacyGlobalProject = coerceProjectConfig(globalConfig ?? {})
 
@@ -443,10 +456,10 @@ export function detectCurrentConfig(): DetectedConfig {
     projectOpenCodeConfigPath: registration.projectOpenCodeConfigPath,
     globalOpenCodeConfigPath: registration.globalOpenCodeConfigPath,
     legacyGlobalProjectFields,
-    region: globalSafe?.region ?? defaults.region,
-    industry: globalSafe?.industry ?? defaults.industry,
-    primaryRegulation: globalSafe?.primaryRegulation ?? defaults.primaryRegulation,
-    secondaryRegulation: globalSafe?.secondaryRegulation ?? defaults.secondaryRegulation,
+    region: projectGlobalSafe.region ?? globalSafe?.region ?? defaults.region,
+    industry: projectGlobalSafe.industry ?? globalSafe?.industry ?? defaults.industry,
+    primaryRegulation: projectGlobalSafe.primaryRegulation ?? globalSafe?.primaryRegulation ?? defaults.primaryRegulation,
+    secondaryRegulation: projectGlobalSafe.secondaryRegulation ?? globalSafe?.secondaryRegulation ?? defaults.secondaryRegulation,
     teamCulture: projectLocal?.teamCulture ?? legacyGlobalProject.teamCulture ?? defaults.teamCulture,
     orgStructure: projectLocal?.orgStructure ?? legacyGlobalProject.orgStructure ?? defaults.orgStructure,
     cisoPersonality: projectLocal?.cisoPersonality ?? legacyGlobalProject.cisoPersonality ?? defaults.cisoPersonality,
@@ -557,21 +570,66 @@ export function removePluginFromOpenCodeConfig(scope: InstallScope): ConfigMerge
    } catch (err) {
      return { success: false, configPath: targetPath, error: String(err) }
    }
- }
- 
- export function writeOmoAgentConfig(targetDir: string): ConfigMergeResult {
-   const omoConfigPath = join(targetDir, ".opencode", "oh-my-opencode.jsonc")
-   try {
-     const sourceUrl = new URL("../../../oh-my-opencode.jsonc", import.meta.url)
-     const sourceFilePath = fileURLToPath(sourceUrl)
-     const contents = readFileSync(sourceFilePath, "utf-8")
-     mkdirSync(join(targetDir, ".opencode"), { recursive: true })
-     writeFileSync(omoConfigPath, contents)
-     return { success: true, configPath: omoConfigPath }
-   } catch (err) {
-     return { success: false, configPath: omoConfigPath, error: String(err) }
-   }
- }
+  }
+
+export function getNativeAgentDir(scope: InstallScope): string {
+  return scope === "global" ? GLOBAL_OPENCODE_AGENTS_DIR : join(process.cwd(), ".opencode", "agents")
+}
+
+export function getNativeAgentFilePaths(scope: InstallScope): string[] {
+  const dir = getNativeAgentDir(scope)
+  return WUNDERKIND_AGENT_IDS.map((id) => join(dir, `${id}.md`))
+}
+
+export function writeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
+  const targetDir = getNativeAgentDir(scope)
+
+  try {
+    mkdirSync(targetDir, { recursive: true })
+    for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
+      writeFileSync(join(targetDir, `${definition.id}.md`), renderNativeAgentMarkdown(definition), "utf-8")
+    }
+    return { success: true, configPath: targetDir }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
+
+export function detectNativeAgentFiles(scope: InstallScope): { dir: string; presentCount: number; totalCount: number; allPresent: boolean } {
+  const dir = getNativeAgentDir(scope)
+  const presentCount = getNativeAgentFilePaths(scope).filter((filePath) => existsSync(filePath)).length
+  const totalCount = WUNDERKIND_AGENT_IDS.length
+
+  return {
+    dir,
+    presentCount,
+    totalCount,
+    allPresent: presentCount === totalCount,
+  }
+}
+
+export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
+  const filePaths = getNativeAgentFilePaths(scope)
+  const targetDir = getNativeAgentDir(scope)
+
+  try {
+    let changed = false
+    for (const filePath of filePaths) {
+      if (existsSync(filePath)) {
+        rmSync(filePath, { force: true })
+        changed = true
+      }
+    }
+
+    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
+      rmSync(targetDir, { recursive: false, force: true })
+    }
+
+    return { success: true, configPath: targetDir, changed }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
  
  export function removeGlobalWunderkindConfig(): ConfigMergeResult {
   try {

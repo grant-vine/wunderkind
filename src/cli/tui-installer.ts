@@ -6,7 +6,7 @@ import {
   detectLegacyConfig,
   getDefaultGlobalConfig,
   readWunderkindConfigForScope,
-  writeOmoAgentConfig,
+  writeNativeAgentFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -227,18 +227,16 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   spinner.stop("Configuration applied successfully")
 
-  if (scope === "project" && !shouldInitProjectNow) {
-    const omoResult = writeOmoAgentConfig(process.cwd())
-    if (!omoResult.success) {
-      spinner.stop(color.red(`Failed to write OMO agent config: ${omoResult.error}`))
-      p.outro(color.red("Installation failed."))
-      return 1
-    }
-    p.log.success(`OMO agent config written to ${color.cyan(omoResult.configPath)}`)
+  const nativeAgentsResult = writeNativeAgentFiles(scope)
+  if (!nativeAgentsResult.success) {
+    spinner.stop(color.red(`Failed to write native agent files: ${nativeAgentsResult.error}`))
+    p.outro(color.red("Installation failed."))
+    return 1
   }
 
   p.log.success(`Plugin added to ${color.cyan(pluginResult.configPath)}`)
   p.log.success(`Config written to ${color.cyan(configResult.configPath)}`)
+  p.log.success(`Native agents written to ${color.cyan(nativeAgentsResult.configPath)}`)
 
   if (shouldUpdateGitignore) {
     const gitignoreResult = addAiTracesToGitignore()
