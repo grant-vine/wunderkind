@@ -29,16 +29,24 @@ const mockDetectCurrentConfig = mock(() => ({
   docHistoryMode: "overwrite" as const,
 }))
 
-const mockReadWunderkindConfig = mock(() => null)
+const mockReadGlobalWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock(() => null)
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/wunderkind.config.jsonc" }))
+const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
+  scope === "global"
+    ? { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }
+    : { path: `${process.cwd()}/opencode.json`, format: "json" as const, source: "opencode.json" as const },
+)
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
-  readWunderkindConfig: mockReadWunderkindConfig,
+  readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
+  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
+  resolveOpenCodeConfigPath: mockResolveOpenCodeConfigPath,
 }))
 
-import { runDoctor } from "../../src/cli/doctor.js"
+import { runDoctorWithOptions } from "../../src/cli/doctor.js"
 import { isProjectContext, runInit } from "../../src/cli/init.js"
 
 function silenceConsole(): () => void {
@@ -118,7 +126,9 @@ describe("runInit", () => {
 describe("runDoctor", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
-    mockReadWunderkindConfig.mockClear()
+    mockReadGlobalWunderkindConfig.mockClear()
+    mockReadProjectWunderkindConfig.mockClear()
+    mockResolveOpenCodeConfigPath.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => ({
       isInstalled: true,
       scope: "global" as const,
@@ -144,10 +154,11 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
     }))
-    mockReadWunderkindConfig.mockImplementation(() => null)
+    mockReadGlobalWunderkindConfig.mockImplementation(() => null)
+    mockReadProjectWunderkindConfig.mockImplementation(() => null)
   })
 
-  it("returns 0 and prints install information", async () => {
+  it("returns 0 and prints concise install information by default", async () => {
     const messages: string[] = []
     const originalLog = console.log
     const originalError = console.error
@@ -157,9 +168,33 @@ describe("runDoctor", () => {
     console.error = () => {}
 
     try {
-      const code = await runDoctor()
+      const code = await runDoctorWithOptions({})
       expect(code).toBe(0)
-      expect(messages.some((m) => m.includes("Install Information"))).toBe(true)
+      expect(messages.some((m) => m.includes("Install Summary"))).toBe(true)
+      expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
+      expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
+      expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("prints verbose diagnostic sections when verbose mode is enabled", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    try {
+      const code = await runDoctorWithOptions({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(true)
+      expect(messages.some((m) => m.includes("Active Configuration"))).toBe(true)
+      expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError

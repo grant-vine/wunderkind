@@ -3,14 +3,27 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { detectCurrentConfig, writeWunderkindConfig } from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
-import type { DocHistoryMode, InstallConfig } from "./types.js"
+import type {
+  BrandPersonality,
+  CisoPersonality,
+  CmoPersonality,
+  CreativePersonality,
+  CtoPersonality,
+  DataAnalystPersonality,
+  DevrelPersonality,
+  DocHistoryMode,
+  InstallConfig,
+  LegalPersonality,
+  OpsPersonality,
+  OrgStructure,
+  ProductPersonality,
+  QaPersonality,
+  SupportPersonality,
+  TeamCulture,
+} from "./types.js"
 
 export interface InitOptions {
   noTui?: boolean
-  region?: string
-  industry?: string
-  primaryRegulation?: string
-  secondaryRegulation?: string
   docsEnabled?: boolean
   docsPath?: string
   docHistoryMode?: string
@@ -52,6 +65,27 @@ function normalizeDocHistoryMode(mode: string): DocHistoryMode {
   return "overwrite"
 }
 
+const TEAM_CULTURE_OPTIONS: Array<{ value: TeamCulture; label: string; hint: string }> = [
+  { value: "formal-strict", label: "formal-strict", hint: "Structured, policy-heavy, rigorous tone" },
+  { value: "pragmatic-balanced", label: "pragmatic-balanced", hint: "Default balanced execution style" },
+  { value: "experimental-informal", label: "experimental-informal", hint: "Fast-moving, exploratory, informal" },
+]
+
+const ORG_STRUCTURE_OPTIONS: Array<{ value: OrgStructure; label: string; hint: string }> = [
+  { value: "flat", label: "flat", hint: "Peer collaboration and user escalation" },
+  { value: "hierarchical", label: "hierarchical", hint: "Domain authority with explicit veto paths" },
+]
+
+async function promptSelect<T extends string>(
+  message: string,
+  options: NonNullable<Parameters<typeof p.select<T>>[0]["options"]>,
+  initialValue: T,
+): Promise<T | null> {
+  const selection = await p.select<T>({ message, options, initialValue })
+  if (p.isCancel(selection)) return null
+  return selection
+}
+
 export async function runInit(options: InitOptions): Promise<number> {
   try {
     const detected = detectCurrentConfig()
@@ -68,10 +102,10 @@ export async function runInit(options: InitOptions): Promise<number> {
     const noTui = options.noTui === true || !process.stdin.isTTY || !process.stdout.isTTY
 
     const config: InstallConfig = {
-      region: options.region ?? detected.region,
-      industry: options.industry ?? detected.industry,
-      primaryRegulation: options.primaryRegulation ?? detected.primaryRegulation,
-      secondaryRegulation: options.secondaryRegulation ?? detected.secondaryRegulation,
+      region: detected.region,
+      industry: detected.industry,
+      primaryRegulation: detected.primaryRegulation,
+      secondaryRegulation: detected.secondaryRegulation,
       teamCulture: detected.teamCulture,
       orgStructure: detected.orgStructure,
       cisoPersonality: detected.cisoPersonality,
@@ -92,28 +126,151 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
 
     if (!noTui) {
-      const region = await p.text({
-        message: "Project region:",
-        placeholder: "Global",
-        initialValue: config.region,
-        validate: (v) => (v.trim() ? undefined : "Region is required"),
-      })
-      if (p.isCancel(region)) return 1
+      const teamCulture = await promptSelect(
+        "Team culture baseline:",
+        TEAM_CULTURE_OPTIONS,
+        config.teamCulture,
+      )
+      if (teamCulture === null) return 1
 
-      const industry = await p.text({
-        message: "Project industry:",
-        placeholder: "SaaS",
-        initialValue: config.industry,
-      })
-      if (p.isCancel(industry)) return 1
+      const orgStructure = await promptSelect(
+        "Organization structure:",
+        ORG_STRUCTURE_OPTIONS,
+        config.orgStructure,
+      )
+      if (orgStructure === null) return 1
 
-      const primaryRegulation = await p.text({
-        message: "Primary regulation:",
-        placeholder: "GDPR",
-        initialValue: config.primaryRegulation,
-        validate: (v) => (v.trim() ? undefined : "Primary regulation is required"),
-      })
-      if (p.isCancel(primaryRegulation)) return 1
+      const cisoPersonality = await promptSelect<CisoPersonality>(
+        "CISO personality:",
+        [
+          { value: "paranoid-enforcer", label: "paranoid-enforcer" },
+          { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager" },
+          { value: "educator-collaborator", label: "educator-collaborator" },
+        ],
+        config.cisoPersonality,
+      )
+      if (cisoPersonality === null) return 1
+
+      const ctoPersonality = await promptSelect<CtoPersonality>(
+        "CTO/Fullstack personality:",
+        [
+          { value: "grizzled-sysadmin", label: "grizzled-sysadmin" },
+          { value: "startup-bro", label: "startup-bro" },
+          { value: "code-archaeologist", label: "code-archaeologist" },
+        ],
+        config.ctoPersonality,
+      )
+      if (ctoPersonality === null) return 1
+
+      const cmoPersonality = await promptSelect<CmoPersonality>(
+        "CMO/Marketing personality:",
+        [
+          { value: "data-driven", label: "data-driven" },
+          { value: "brand-storyteller", label: "brand-storyteller" },
+          { value: "growth-hacker", label: "growth-hacker" },
+        ],
+        config.cmoPersonality,
+      )
+      if (cmoPersonality === null) return 1
+
+      const qaPersonality = await promptSelect<QaPersonality>(
+        "QA personality:",
+        [
+          { value: "rule-enforcer", label: "rule-enforcer" },
+          { value: "risk-based-pragmatist", label: "risk-based-pragmatist" },
+          { value: "rubber-duck", label: "rubber-duck" },
+        ],
+        config.qaPersonality,
+      )
+      if (qaPersonality === null) return 1
+
+      const productPersonality = await promptSelect<ProductPersonality>(
+        "Product personality:",
+        [
+          { value: "user-advocate", label: "user-advocate" },
+          { value: "velocity-optimizer", label: "velocity-optimizer" },
+          { value: "outcome-obsessed", label: "outcome-obsessed" },
+        ],
+        config.productPersonality,
+      )
+      if (productPersonality === null) return 1
+
+      const opsPersonality = await promptSelect<OpsPersonality>(
+        "Operations personality:",
+        [
+          { value: "on-call-veteran", label: "on-call-veteran" },
+          { value: "efficiency-maximiser", label: "efficiency-maximiser" },
+          { value: "process-purist", label: "process-purist" },
+        ],
+        config.opsPersonality,
+      )
+      if (opsPersonality === null) return 1
+
+      const creativePersonality = await promptSelect<CreativePersonality>(
+        "Creative Director personality:",
+        [
+          { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson" },
+          { value: "bold-provocateur", label: "bold-provocateur" },
+          { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver" },
+        ],
+        config.creativePersonality,
+      )
+      if (creativePersonality === null) return 1
+
+      const brandPersonality = await promptSelect<BrandPersonality>(
+        "Brand Builder personality:",
+        [
+          { value: "community-evangelist", label: "community-evangelist" },
+          { value: "pr-spinner", label: "pr-spinner" },
+          { value: "authentic-builder", label: "authentic-builder" },
+        ],
+        config.brandPersonality,
+      )
+      if (brandPersonality === null) return 1
+
+      const devrelPersonality = await promptSelect<DevrelPersonality>(
+        "DevRel personality:",
+        [
+          { value: "community-champion", label: "community-champion" },
+          { value: "docs-perfectionist", label: "docs-perfectionist" },
+          { value: "dx-engineer", label: "dx-engineer" },
+        ],
+        config.devrelPersonality,
+      )
+      if (devrelPersonality === null) return 1
+
+      const legalPersonality = await promptSelect<LegalPersonality>(
+        "Legal Counsel personality:",
+        [
+          { value: "cautious-gatekeeper", label: "cautious-gatekeeper" },
+          { value: "pragmatic-advisor", label: "pragmatic-advisor" },
+          { value: "plain-english-counselor", label: "plain-english-counselor" },
+        ],
+        config.legalPersonality,
+      )
+      if (legalPersonality === null) return 1
+
+      const supportPersonality = await promptSelect<SupportPersonality>(
+        "Support Engineer personality:",
+        [
+          { value: "empathetic-resolver", label: "empathetic-resolver" },
+          { value: "systematic-triage", label: "systematic-triage" },
+          { value: "knowledge-builder", label: "knowledge-builder" },
+        ],
+        config.supportPersonality,
+      )
+      if (supportPersonality === null) return 1
+
+      const dataAnalystPersonality = await promptSelect<DataAnalystPersonality>(
+        "Data Analyst personality:",
+        [
+          { value: "rigorous-statistician", label: "rigorous-statistician" },
+          { value: "insight-storyteller", label: "insight-storyteller" },
+          { value: "pragmatic-quant", label: "pragmatic-quant" },
+        ],
+        config.dataAnalystPersonality,
+      )
+      if (dataAnalystPersonality === null) return 1
 
       const docsEnabledRaw = await p.text({
         message: "Enable docs output to disk? (yes/no)",
@@ -157,9 +314,20 @@ export async function runInit(options: InitOptions): Promise<number> {
         docHistoryMode = docHistoryModeRaw
       }
 
-      config.region = (region as string).trim() || "Global"
-      config.industry = (industry as string).trim()
-      config.primaryRegulation = (primaryRegulation as string).trim() || "GDPR"
+      config.teamCulture = teamCulture
+      config.orgStructure = orgStructure
+      config.cisoPersonality = cisoPersonality
+      config.ctoPersonality = ctoPersonality
+      config.cmoPersonality = cmoPersonality
+      config.qaPersonality = qaPersonality
+      config.productPersonality = productPersonality
+      config.opsPersonality = opsPersonality
+      config.creativePersonality = creativePersonality
+      config.brandPersonality = brandPersonality
+      config.devrelPersonality = devrelPersonality
+      config.legalPersonality = legalPersonality
+      config.supportPersonality = supportPersonality
+      config.dataAnalystPersonality = dataAnalystPersonality
       config.docsEnabled = docsEnabled
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode

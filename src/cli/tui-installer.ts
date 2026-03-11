@@ -4,6 +4,8 @@ import {
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
   detectLegacyConfig,
+  getDefaultGlobalConfig,
+  readWunderkindConfigForScope,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -98,6 +100,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   const inProjectContext = isProjectContext(process.cwd())
   let shouldInitProjectNow = false
+  let shouldUpdateGitignore = false
   if (inProjectContext) {
     const initNow = await p.confirm({
       message: "Initialize the current project now?",
@@ -108,10 +111,28 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
       return 1
     }
     shouldInitProjectNow = initNow
+
+    if (shouldInitProjectNow) {
+      const updateGit = await p.confirm({
+        message: "Add AI tooling traces to .gitignore?",
+        initialValue: true,
+      })
+      if (p.isCancel(updateGit)) {
+        p.cancel("Installation cancelled.")
+        return 1
+      }
+      shouldUpdateGitignore = updateGit
+    }
   }
 
   const detected = detectCurrentConfig()
-  const isUpdate = detected.isInstalled
+  const defaults = getDefaultGlobalConfig()
+  const scopedConfig = readWunderkindConfigForScope(scope)
+  const installBase = {
+    ...defaults,
+    ...(scopedConfig ?? {}),
+  }
+  const isUpdate = scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
 
   if (detectLegacyConfig()) {
     p.cancel(
@@ -122,14 +143,14 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   if (isUpdate) {
     p.log.info(
-      `Existing configuration detected: Region=${detected.region}, Industry=${detected.industry || "(not set)"}`,
+      `Existing configuration detected: Region=${installBase.region}, Industry=${installBase.industry || "(not set)"}`,
     )
   }
 
   const region = await p.text({
     message: "What region is your product based in?",
     placeholder: "Global",
-    initialValue: detected.region,
+    initialValue: installBase.region,
     validate: (v) => (v.trim() ? undefined : "Region is required"),
   })
   if (p.isCancel(region)) {
@@ -140,7 +161,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   const industry = await p.text({
     message: "What industry or vertical is your product in?",
     placeholder: "SaaS",
-    initialValue: detected.industry,
+    initialValue: installBase.industry,
   })
   if (p.isCancel(industry)) {
     p.cancel("Installation cancelled.")
@@ -149,14 +170,14 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   const primaryRegulation = await promptRegulation(
     "What is your primary data-protection regulation?",
-    detected.primaryRegulation,
+    installBase.primaryRegulation,
     true,
   )
   if (primaryRegulation === null) return 1
 
   const secondaryRegulation = await promptRegulation(
     "Secondary regulation? (optional)",
-    detected.secondaryRegulation,
+    installBase.secondaryRegulation,
     false,
   )
   if (secondaryRegulation === null) return 1
@@ -187,70 +208,58 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
 
   const spinner = p.spinner()
 
-  spinner.start("Adding wunderkind to OpenCode config")
+  spinner.start("Applying configuration")
+  
   const pluginResult = addPluginToOpenCodeConfig(scope)
   if (!pluginResult.success) {
-    spinner.stop(`Failed: ${pluginResult.error}`)
+    spinner.stop(color.red(`Failed to add plugin: ${pluginResult.error}`))
     p.outro(color.red("Installation failed."))
     return 1
   }
-  spinner.stop(`Plugin added to ${color.cyan(pluginResult.configPath)}`)
 
-  spinner.start("Writing wunderkind configuration")
   const configResult = writeWunderkindConfig(config, scope)
   if (!configResult.success) {
-    spinner.stop(`Failed: ${configResult.error}`)
+    spinner.stop(color.red(`Failed to write config: ${configResult.error}`))
     p.outro(color.red("Installation failed."))
     return 1
   }
-  spinner.stop(`Config written to ${color.cyan(configResult.configPath)}`)
 
-  const gitignoreResult = addAiTracesToGitignore()
-  if (gitignoreResult.added.length > 0) {
-    p.log.info(`Added to .gitignore: ${gitignoreResult.added.join(", ")}`)
-  }
-  if (gitignoreResult.error) {
-    p.log.warn(`Could not update .gitignore: ${gitignoreResult.error}`)
+  spinner.stop("Configuration applied successfully")
+
+  p.log.success(`Plugin added to ${color.cyan(pluginResult.configPath)}`)
+  p.log.success(`Config written to ${color.cyan(configResult.configPath)}`)
+
+  if (shouldUpdateGitignore) {
+    const gitignoreResult = addAiTracesToGitignore()
+    if (gitignoreResult.added.length > 0) {
+      p.log.success(`Added ${gitignoreResult.added.length} entries to ${color.cyan(".gitignore")}`)
+    } else if (!gitignoreResult.error) {
+      p.log.info(color.dim(".gitignore already contains AI tooling traces"))
+    }
+    if (gitignoreResult.error) {
+      p.log.warn(`Could not update .gitignore: ${gitignoreResult.error}`)
+    }
   }
 
   p.note(
     [
+      `Scope:               ${color.cyan(scope)}`,
       `Region:              ${color.cyan(config.region)}`,
       `Industry:            ${color.cyan(config.industry || color.dim("(not set)"))}`,
       `Primary regulation:  ${color.cyan(config.primaryRegulation)}`,
       config.secondaryRegulation ? `Secondary:           ${color.cyan(config.secondaryRegulation)}` : "",
       ``,
-      `Team culture:        ${color.cyan(config.teamCulture)}`,
-      `Org structure:       ${color.cyan(config.orgStructure)}`,
-      ``,
-      `CISO:                ${color.cyan(config.cisoPersonality)}`,
-      `CTO/Fullstack:       ${color.cyan(config.ctoPersonality)}`,
-      `CMO/Marketing:       ${color.cyan(config.cmoPersonality)}`,
-      `QA:                  ${color.cyan(config.qaPersonality)}`,
-      `Product:             ${color.cyan(config.productPersonality)}`,
-      `Ops:                 ${color.cyan(config.opsPersonality)}`,
-      `Creative:            ${color.cyan(config.creativePersonality)}`,
-      `Brand:               ${color.cyan(config.brandPersonality)}`,
-      `DevRel:              ${color.cyan(config.devrelPersonality)}`,
-      `Legal:               ${color.cyan(config.legalPersonality)}`,
-      `Support:             ${color.cyan(config.supportPersonality)}`,
-      `Data Analyst:        ${color.cyan(config.dataAnalystPersonality)}`,
+      `${color.dim("Advanced team/personality and docs settings are managed via 'wunderkind init'.")}`,
     ]
       .filter(Boolean)
       .join("\n"),
-    isUpdate ? "Updated Configuration" : "Installation Complete",
+    isUpdate ? "Updated Setup" : "Installation Setup",
   )
 
-  p.log.success(color.bold(isUpdate ? "Configuration updated!" : "Installation complete!"))
-  p.log.message(`Run ${color.cyan("opencode")} to start!`)
-
   if (shouldInitProjectNow) {
+    p.log.message(`\n${color.bold("→ Handoff to Project Initialization")}`)
     const initExitCode = await runInit({
-      noTui: true,
-      region: config.region,
-      industry: config.industry,
-      primaryRegulation: config.primaryRegulation,
-      secondaryRegulation: config.secondaryRegulation,
+      noTui: false,
       docsEnabled: config.docsEnabled,
       docsPath: config.docsPath,
       docHistoryMode: config.docHistoryMode,
@@ -263,7 +272,10 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     p.log.success("Current project initialized.")
   }
 
-  p.outro(color.green("Wunderkind... Enjoy!"))
+  p.outro(
+    `${color.green("✔ Wunderkind... Enjoy!")}\n\n` +
+    `  Run ${color.cyan("opencode")} to start your session.`
+  )
 
   return 0
 }

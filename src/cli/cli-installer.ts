@@ -1,6 +1,13 @@
 import color from "picocolors"
-import type { InstallArgs, InstallConfig } from "./types.js"
-import { addPluginToOpenCodeConfig, detectCurrentConfig, detectLegacyConfig, writeWunderkindConfig } from "./config-manager/index.js"
+import type { InstallArgs, InstallConfig, InstallScope } from "./types.js"
+import {
+  addPluginToOpenCodeConfig,
+  detectCurrentConfig,
+  detectLegacyConfig,
+  getDefaultGlobalConfig,
+  readGlobalWunderkindConfig,
+  writeWunderkindConfig,
+} from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 
 export const SYMBOLS = {
@@ -80,6 +87,14 @@ export function validateNonTuiArgs(args: InstallArgs): { valid: boolean; errors:
   return { valid: errors.length === 0, errors }
 }
 
+export interface UpgradeArgs {
+  scope: InstallScope
+  region?: string
+  industry?: string
+  primaryRegulation?: string
+  secondaryRegulation?: string
+}
+
 export async function runCliInstaller(args: InstallArgs): Promise<number> {
   const validation = validateNonTuiArgs(args)
   if (!validation.valid) {
@@ -101,7 +116,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     printError("Legacy config found at project root wunderkind.config.jsonc — move it to .wunderkind/wunderkind.config.jsonc")
     return 1
   }
-  const isUpdate = detected.isInstalled
+  const isUpdate = args.scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
 
   printHeader(isUpdate)
 
@@ -127,11 +142,9 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     legalPersonality: detected.legalPersonality,
     supportPersonality: detected.supportPersonality,
     dataAnalystPersonality: detected.dataAnalystPersonality,
-    docsEnabled: args.docsEnabled ?? false,
-    docsPath: args.docsPath ?? "./docs",
-    docHistoryMode: args.docHistoryMode === "append-dated" || args.docHistoryMode === "new-dated-file" || args.docHistoryMode === "overwrite-archive"
-      ? args.docHistoryMode
-      : "overwrite",
+    docsEnabled: detected.docsEnabled,
+    docsPath: detected.docsPath,
+    docHistoryMode: detected.docHistoryMode,
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")
@@ -174,6 +187,77 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   console.log(`${SYMBOLS.star} ${color.bold(color.green(isUpdate ? "Configuration updated!" : "Installation complete!"))}`)
   console.log(`  Run ${color.cyan("opencode")} to start!`)
   console.log()
+
+  return 0
+}
+
+export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
+  const detected = detectCurrentConfig()
+  if (detectLegacyConfig()) {
+    printError("Legacy config found at project root wunderkind.config.jsonc — move it to .wunderkind/wunderkind.config.jsonc")
+    return 1
+  }
+
+  const installedInScope = args.scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
+  if (!installedInScope) {
+    printHeader(false)
+    printError(
+      args.scope === "project"
+        ? "Wunderkind is not installed in the project scope. Did you mean 'wunderkind install --scope=project'?"
+        : "Wunderkind is not installed in the global scope. Did you mean 'wunderkind install --scope=global'?",
+    )
+    return 1
+  }
+
+  printHeader(true)
+
+  const defaults = getDefaultGlobalConfig()
+  const persisted = readGlobalWunderkindConfig() ?? {}
+  const nextConfig = {
+    region: args.region ?? persisted.region ?? defaults.region,
+    industry: args.industry ?? persisted.industry ?? defaults.industry,
+    primaryRegulation: args.primaryRegulation ?? persisted.primaryRegulation ?? defaults.primaryRegulation,
+    secondaryRegulation: args.secondaryRegulation ?? persisted.secondaryRegulation ?? defaults.secondaryRegulation,
+  }
+
+  const isNoop =
+    nextConfig.region === (persisted.region ?? defaults.region) &&
+    nextConfig.industry === (persisted.industry ?? defaults.industry) &&
+    nextConfig.primaryRegulation === (persisted.primaryRegulation ?? defaults.primaryRegulation) &&
+    nextConfig.secondaryRegulation === (persisted.secondaryRegulation ?? defaults.secondaryRegulation)
+
+  if (isNoop) {
+    printInfo("No changes required. Wunderkind is already up to date for the requested scope.")
+    return 0
+  }
+
+  const configResult = writeWunderkindConfig(
+    {
+      ...detected,
+      ...nextConfig,
+    },
+    "global",
+  )
+
+  if (!configResult.success) {
+    printError(`Failed: ${configResult.error}`)
+    return 1
+  }
+
+  printSuccess(`Global baseline updated ${SYMBOLS.arrow} ${color.dim(configResult.configPath)}`)
+  printBox(
+    [
+      `  ${color.bold("Region:")}              ${color.cyan(nextConfig.region)}`,
+      `  ${color.bold("Industry:")}            ${color.cyan(nextConfig.industry || color.dim("(not set)"))}`,
+      `  ${color.bold("Primary regulation:")} ${color.cyan(nextConfig.primaryRegulation)}`,
+      nextConfig.secondaryRegulation
+        ? `  ${color.bold("Secondary:")}           ${color.cyan(nextConfig.secondaryRegulation)}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    "Upgrade Complete",
+  )
 
   return 0
 }

@@ -3,10 +3,17 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { homedir } from "node:os"
 import { join } from "node:path"
 import type { InstallArgs } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
 
-const mockDetectCurrentConfig = mock(() => ({
+function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
+  return {
   isInstalled: false,
   scope: "global" as const,
+  projectInstalled: false,
+  globalInstalled: false,
+  registrationScope: "none" as const,
+  projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+  globalOpenCodeConfigPath: "/tmp/opencode.json",
   region: "Global",
   industry: "",
   primaryRegulation: "GDPR",
@@ -28,17 +35,30 @@ const mockDetectCurrentConfig = mock(() => ({
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
-}))
+    ...overrides,
+  }
+}
+
+const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
+  region: "Global",
+  industry: "",
+  primaryRegulation: "GDPR",
+  secondaryRegulation: "",
+}))
+const mockReadWunderkindConfigForScope = mock<(scope: InstallScope) => Partial<InstallConfig> | null>(() => null)
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
+  getDefaultGlobalConfig: mockGetDefaultGlobalConfig,
+  readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
 }))
 
 const mockAddAiTracesToGitignore = mock(() => ({
@@ -51,7 +71,7 @@ mock.module("../../src/cli/gitignore-manager.js", () => ({
   addAiTracesToGitignore: mockAddAiTracesToGitignore,
 }))
 
-import { validateNonTuiArgs, runCliInstaller } from "../../src/cli/cli-installer.js"
+import { validateNonTuiArgs, runCliInstaller, runCliUpgrade } from "../../src/cli/cli-installer.js"
 
 function silenceConsole(): () => void {
   const origLog = console.log
@@ -108,36 +128,15 @@ describe("runCliInstaller", () => {
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
+    mockGetDefaultGlobalConfig.mockClear()
+    mockReadWunderkindConfigForScope.mockClear()
     mockAddAiTracesToGitignore.mockClear()
 
     mockDetectLegacyConfig.mockImplementation(() => false)
-    mockDetectCurrentConfig.mockImplementation(() => ({
-      isInstalled: false,
-      scope: "global" as const,
-      region: "Global",
-      industry: "",
-      primaryRegulation: "GDPR",
-      secondaryRegulation: "",
-      teamCulture: "pragmatic-balanced" as const,
-      orgStructure: "flat" as const,
-      cisoPersonality: "pragmatic-risk-manager" as const,
-      ctoPersonality: "code-archaeologist" as const,
-      cmoPersonality: "data-driven" as const,
-      qaPersonality: "risk-based-pragmatist" as const,
-      productPersonality: "outcome-obsessed" as const,
-      opsPersonality: "on-call-veteran" as const,
-      creativePersonality: "pragmatic-problem-solver" as const,
-      brandPersonality: "authentic-builder" as const,
-      devrelPersonality: "dx-engineer" as const,
-      legalPersonality: "pragmatic-advisor" as const,
-      supportPersonality: "systematic-triage" as const,
-      dataAnalystPersonality: "insight-storyteller" as const,
-      docsEnabled: false,
-      docsPath: "./docs",
-      docHistoryMode: "overwrite" as const,
-    }))
+    mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+    mockReadWunderkindConfigForScope.mockImplementation(() => null)
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: true, added: [".wunderkind/"], alreadyPresent: [] }))
   })
 
@@ -174,15 +173,127 @@ describe("runCliInstaller", () => {
     }
   })
 
-  it("passes docs-output defaults to writeWunderkindConfig", async () => {
+  it("writes only baseline fields into the selected install scope", async () => {
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs())
       const calls = mockWriteWunderkindConfig.mock.calls
       const installConfigArg = calls[0]?.[0] as Record<string, unknown> | undefined
-      expect(installConfigArg?.docsEnabled).toBe(false)
-      expect(installConfigArg?.docsPath).toBe("./docs")
-      expect(installConfigArg?.docHistoryMode).toBe("overwrite")
+      expect(installConfigArg?.region).toBe("South Africa")
+      expect(installConfigArg?.industry).toBe("SaaS")
+      expect(installConfigArg?.primaryRegulation).toBe("POPIA")
+      expect(installConfigArg?.secondaryRegulation).toBe("")
+    } finally {
+      restore()
+    }
+  })
+
+  it("does not copy project-local soul/docs fields from scope config into install writes", async () => {
+    mockDetectCurrentConfig.mockImplementation(() =>
+      makeDetectedConfig({
+        isInstalled: true,
+        scope: "global",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        teamCulture: "experimental-informal",
+        orgStructure: "hierarchical",
+        cisoPersonality: "educator-collaborator",
+        ctoPersonality: "startup-bro",
+        cmoPersonality: "growth-hacker",
+        qaPersonality: "rubber-duck",
+        productPersonality: "velocity-optimizer",
+        opsPersonality: "process-purist",
+        creativePersonality: "bold-provocateur",
+        brandPersonality: "pr-spinner",
+        devrelPersonality: "community-champion",
+        legalPersonality: "cautious-gatekeeper",
+        supportPersonality: "empathetic-resolver",
+        dataAnalystPersonality: "pragmatic-quant",
+        docsEnabled: true,
+        docsPath: "./project-docs",
+        docHistoryMode: "append-dated",
+      }),
+    )
+
+    mockReadWunderkindConfigForScope.mockImplementation((scope: string) => {
+      if (scope === "global") {
+        return {
+          region: "Africa",
+          industry: "Agency",
+        }
+      }
+      return null
+    })
+
+    const restore = silenceConsole()
+    try {
+      await runCliInstaller(baseArgs({ scope: "global" }))
+      const calls = mockWriteWunderkindConfig.mock.calls
+      const installConfigArg = calls[0]?.[0] as Record<string, unknown>
+      expect(installConfigArg.region).toBe("South Africa")
+      expect(installConfigArg.industry).toBe("SaaS")
+      expect(installConfigArg.teamCulture).toBe("experimental-informal")
+      expect(installConfigArg.docsEnabled).toBe(true)
+    } finally {
+      restore()
+    }
+  })
+})
+
+describe("runCliUpgrade", () => {
+  beforeEach(() => {
+    mockDetectCurrentConfig.mockClear()
+    mockDetectLegacyConfig.mockClear()
+    mockWriteWunderkindConfig.mockClear()
+    mockReadWunderkindConfigForScope.mockClear()
+
+    mockDetectLegacyConfig.mockImplementation(() => false)
+    mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: true, globalInstalled: true, registrationScope: "global" }))
+    mockReadWunderkindConfigForScope.mockImplementation((scope: InstallScope) =>
+      scope === "global"
+        ? {
+            region: "Australia",
+            industry: "SaaS",
+            primaryRegulation: "GDPR",
+            secondaryRegulation: "",
+          }
+        : null,
+    )
+    mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+  })
+
+  it("fails if Wunderkind is not installed in the requested scope", async () => {
+    mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: false, globalInstalled: false, registrationScope: "none" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("reports no-op when no global baseline changes are requested", async () => {
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(0)
+      expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(0)
+    } finally {
+      restore()
+    }
+  })
+
+  it("updates only global baseline fields when explicit overrides are provided", async () => {
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global", region: "South Africa" })
+      expect(code).toBe(0)
+      const configArg = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(configArg.region).toBe("South Africa")
+      expect(configArg.teamCulture).toBe("pragmatic-balanced")
+      expect(configArg.docsEnabled).toBe(false)
     } finally {
       restore()
     }
@@ -217,7 +328,7 @@ describe("readWunderkindConfig", () => {
     }
   })
 
-  it("merges project over global docs-output config field-by-field", async () => {
+  it("uses only project docs-output config fields for effective project docs settings", async () => {
     const projectConfigDir = join(process.cwd(), ".wunderkind")
     const projectConfigPath = join(projectConfigDir, "wunderkind.config.jsonc")
     const globalConfigDir = join(homedir(), ".wunderkind")
@@ -251,7 +362,6 @@ describe("readWunderkindConfig", () => {
       expect(merged).toEqual({
         docsEnabled: true,
         docsPath: "./project-docs",
-        docHistoryMode: "append-dated",
       })
     } finally {
       if (projectBackup === null) {
@@ -264,6 +374,50 @@ describe("readWunderkindConfig", () => {
         rmSync(globalConfigPath, { force: true })
       } else {
         writeFileSync(globalConfigPath, globalBackup)
+      }
+    }
+  })
+})
+
+describe("writeWunderkindConfig schema field", () => {
+  it("writes the schema URL into global config output", async () => {
+    const globalConfigPath = join(homedir(), ".wunderkind", "wunderkind.config.jsonc")
+    const globalBackup = existsSync(globalConfigPath) ? readFileSync(globalConfigPath, "utf-8") : null
+
+    try {
+      const { writeGlobalWunderkindConfig, getDefaultGlobalConfig } = await import(`../../src/cli/config-manager/index.ts?global-schema=${Date.now()}`)
+      const result = writeGlobalWunderkindConfig(getDefaultGlobalConfig())
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(globalConfigPath, "utf-8")
+      expect(written).toContain('"$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"')
+    } finally {
+      if (globalBackup === null) {
+        rmSync(globalConfigPath, { force: true })
+      } else {
+        writeFileSync(globalConfigPath, globalBackup)
+      }
+    }
+  })
+
+  it("writes the schema URL into project config output", async () => {
+    const projectConfigDir = join(process.cwd(), ".wunderkind")
+    const projectConfigPath = join(projectConfigDir, "wunderkind.config.jsonc")
+    const projectBackup = existsSync(projectConfigPath) ? readFileSync(projectConfigPath, "utf-8") : null
+
+    try {
+      mkdirSync(projectConfigDir, { recursive: true })
+      const { writeProjectWunderkindConfig, getDefaultProjectConfig } = await import(`../../src/cli/config-manager/index.ts?project-schema=${Date.now()}`)
+      const result = writeProjectWunderkindConfig(getDefaultProjectConfig())
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(projectConfigPath, "utf-8")
+      expect(written).toContain('"$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"')
+    } finally {
+      if (projectBackup === null) {
+        rmSync(projectConfigPath, { force: true })
+      } else {
+        writeFileSync(projectConfigPath, projectBackup)
       }
     }
   })
