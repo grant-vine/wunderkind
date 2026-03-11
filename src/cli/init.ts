@@ -1,8 +1,9 @@
 import * as p from "@clack/prompts"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { detectCurrentConfig, writeWunderkindConfig } from "./config-manager/index.js"
+import { detectCurrentConfig, writeOmoAgentConfig, writeWunderkindConfig } from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
+import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
   BrandPersonality,
   CisoPersonality,
@@ -143,9 +144,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const cisoPersonality = await promptSelect<CisoPersonality>(
         "CISO personality:",
         [
-          { value: "paranoid-enforcer", label: "paranoid-enforcer" },
-          { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager" },
-          { value: "educator-collaborator", label: "educator-collaborator" },
+          { value: "paranoid-enforcer", label: "paranoid-enforcer", hint: PERSONALITY_META.ciso["paranoid-enforcer"]!.hint },
+          { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager", hint: PERSONALITY_META.ciso["pragmatic-risk-manager"]!.hint },
+          { value: "educator-collaborator", label: "educator-collaborator", hint: PERSONALITY_META.ciso["educator-collaborator"]!.hint },
         ],
         config.cisoPersonality,
       )
@@ -154,9 +155,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const ctoPersonality = await promptSelect<CtoPersonality>(
         "CTO/Fullstack personality:",
         [
-          { value: "grizzled-sysadmin", label: "grizzled-sysadmin" },
-          { value: "startup-bro", label: "startup-bro" },
-          { value: "code-archaeologist", label: "code-archaeologist" },
+          { value: "grizzled-sysadmin", label: "grizzled-sysadmin", hint: PERSONALITY_META.cto["grizzled-sysadmin"]!.hint },
+          { value: "startup-bro", label: "startup-bro", hint: PERSONALITY_META.cto["startup-bro"]!.hint },
+          { value: "code-archaeologist", label: "code-archaeologist", hint: PERSONALITY_META.cto["code-archaeologist"]!.hint },
         ],
         config.ctoPersonality,
       )
@@ -165,9 +166,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const cmoPersonality = await promptSelect<CmoPersonality>(
         "CMO/Marketing personality:",
         [
-          { value: "data-driven", label: "data-driven" },
-          { value: "brand-storyteller", label: "brand-storyteller" },
-          { value: "growth-hacker", label: "growth-hacker" },
+          { value: "data-driven", label: "data-driven", hint: PERSONALITY_META.cmo["data-driven"]!.hint },
+          { value: "brand-storyteller", label: "brand-storyteller", hint: PERSONALITY_META.cmo["brand-storyteller"]!.hint },
+          { value: "growth-hacker", label: "growth-hacker", hint: PERSONALITY_META.cmo["growth-hacker"]!.hint },
         ],
         config.cmoPersonality,
       )
@@ -176,9 +177,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const qaPersonality = await promptSelect<QaPersonality>(
         "QA personality:",
         [
-          { value: "rule-enforcer", label: "rule-enforcer" },
-          { value: "risk-based-pragmatist", label: "risk-based-pragmatist" },
-          { value: "rubber-duck", label: "rubber-duck" },
+          { value: "rule-enforcer", label: "rule-enforcer", hint: PERSONALITY_META.qa["rule-enforcer"]!.hint },
+          { value: "risk-based-pragmatist", label: "risk-based-pragmatist", hint: PERSONALITY_META.qa["risk-based-pragmatist"]!.hint },
+          { value: "rubber-duck", label: "rubber-duck", hint: PERSONALITY_META.qa["rubber-duck"]!.hint },
         ],
         config.qaPersonality,
       )
@@ -187,9 +188,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const productPersonality = await promptSelect<ProductPersonality>(
         "Product personality:",
         [
-          { value: "user-advocate", label: "user-advocate" },
-          { value: "velocity-optimizer", label: "velocity-optimizer" },
-          { value: "outcome-obsessed", label: "outcome-obsessed" },
+          { value: "user-advocate", label: "user-advocate", hint: PERSONALITY_META.product["user-advocate"]!.hint },
+          { value: "velocity-optimizer", label: "velocity-optimizer", hint: PERSONALITY_META.product["velocity-optimizer"]!.hint },
+          { value: "outcome-obsessed", label: "outcome-obsessed", hint: PERSONALITY_META.product["outcome-obsessed"]!.hint },
         ],
         config.productPersonality,
       )
@@ -198,9 +199,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const opsPersonality = await promptSelect<OpsPersonality>(
         "Operations personality:",
         [
-          { value: "on-call-veteran", label: "on-call-veteran" },
-          { value: "efficiency-maximiser", label: "efficiency-maximiser" },
-          { value: "process-purist", label: "process-purist" },
+          { value: "on-call-veteran", label: "on-call-veteran", hint: PERSONALITY_META.ops["on-call-veteran"]!.hint },
+          { value: "efficiency-maximiser", label: "efficiency-maximiser", hint: PERSONALITY_META.ops["efficiency-maximiser"]!.hint },
+          { value: "process-purist", label: "process-purist", hint: PERSONALITY_META.ops["process-purist"]!.hint },
         ],
         config.opsPersonality,
       )
@@ -209,9 +210,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const creativePersonality = await promptSelect<CreativePersonality>(
         "Creative Director personality:",
         [
-          { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson" },
-          { value: "bold-provocateur", label: "bold-provocateur" },
-          { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver" },
+          { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson", hint: PERSONALITY_META.creative["perfectionist-craftsperson"]!.hint },
+          { value: "bold-provocateur", label: "bold-provocateur", hint: PERSONALITY_META.creative["bold-provocateur"]!.hint },
+          { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver", hint: PERSONALITY_META.creative["pragmatic-problem-solver"]!.hint },
         ],
         config.creativePersonality,
       )
@@ -220,9 +221,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const brandPersonality = await promptSelect<BrandPersonality>(
         "Brand Builder personality:",
         [
-          { value: "community-evangelist", label: "community-evangelist" },
-          { value: "pr-spinner", label: "pr-spinner" },
-          { value: "authentic-builder", label: "authentic-builder" },
+          { value: "community-evangelist", label: "community-evangelist", hint: PERSONALITY_META.brand["community-evangelist"]!.hint },
+          { value: "pr-spinner", label: "pr-spinner", hint: PERSONALITY_META.brand["pr-spinner"]!.hint },
+          { value: "authentic-builder", label: "authentic-builder", hint: PERSONALITY_META.brand["authentic-builder"]!.hint },
         ],
         config.brandPersonality,
       )
@@ -231,9 +232,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const devrelPersonality = await promptSelect<DevrelPersonality>(
         "DevRel personality:",
         [
-          { value: "community-champion", label: "community-champion" },
-          { value: "docs-perfectionist", label: "docs-perfectionist" },
-          { value: "dx-engineer", label: "dx-engineer" },
+          { value: "community-champion", label: "community-champion", hint: PERSONALITY_META.devrel["community-champion"]!.hint },
+          { value: "docs-perfectionist", label: "docs-perfectionist", hint: PERSONALITY_META.devrel["docs-perfectionist"]!.hint },
+          { value: "dx-engineer", label: "dx-engineer", hint: PERSONALITY_META.devrel["dx-engineer"]!.hint },
         ],
         config.devrelPersonality,
       )
@@ -242,9 +243,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const legalPersonality = await promptSelect<LegalPersonality>(
         "Legal Counsel personality:",
         [
-          { value: "cautious-gatekeeper", label: "cautious-gatekeeper" },
-          { value: "pragmatic-advisor", label: "pragmatic-advisor" },
-          { value: "plain-english-counselor", label: "plain-english-counselor" },
+          { value: "cautious-gatekeeper", label: "cautious-gatekeeper", hint: PERSONALITY_META.legal["cautious-gatekeeper"]!.hint },
+          { value: "pragmatic-advisor", label: "pragmatic-advisor", hint: PERSONALITY_META.legal["pragmatic-advisor"]!.hint },
+          { value: "plain-english-counselor", label: "plain-english-counselor", hint: PERSONALITY_META.legal["plain-english-counselor"]!.hint },
         ],
         config.legalPersonality,
       )
@@ -253,9 +254,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const supportPersonality = await promptSelect<SupportPersonality>(
         "Support Engineer personality:",
         [
-          { value: "empathetic-resolver", label: "empathetic-resolver" },
-          { value: "systematic-triage", label: "systematic-triage" },
-          { value: "knowledge-builder", label: "knowledge-builder" },
+          { value: "empathetic-resolver", label: "empathetic-resolver", hint: PERSONALITY_META.support["empathetic-resolver"]!.hint },
+          { value: "systematic-triage", label: "systematic-triage", hint: PERSONALITY_META.support["systematic-triage"]!.hint },
+          { value: "knowledge-builder", label: "knowledge-builder", hint: PERSONALITY_META.support["knowledge-builder"]!.hint },
         ],
         config.supportPersonality,
       )
@@ -264,9 +265,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       const dataAnalystPersonality = await promptSelect<DataAnalystPersonality>(
         "Data Analyst personality:",
         [
-          { value: "rigorous-statistician", label: "rigorous-statistician" },
-          { value: "insight-storyteller", label: "insight-storyteller" },
-          { value: "pragmatic-quant", label: "pragmatic-quant" },
+          { value: "rigorous-statistician", label: "rigorous-statistician", hint: PERSONALITY_META.dataAnalyst["rigorous-statistician"]!.hint },
+          { value: "insight-storyteller", label: "insight-storyteller", hint: PERSONALITY_META.dataAnalyst["insight-storyteller"]!.hint },
+          { value: "pragmatic-quant", label: "pragmatic-quant", hint: PERSONALITY_META.dataAnalyst["pragmatic-quant"]!.hint },
         ],
         config.dataAnalystPersonality,
       )
@@ -300,17 +301,17 @@ export async function runInit(options: InitOptions): Promise<number> {
         if (p.isCancel(docsPathRaw)) return 1
         docsPath = (docsPathRaw as string).trim() || "./docs"
 
-        const docHistoryModeRaw = await p.text({
-          message: "Docs history mode:",
-          placeholder: "overwrite",
-          initialValue: config.docHistoryMode,
-          validate: (v) => (validateDocHistoryMode(v) ? undefined : "Invalid mode"),
-        })
-        if (p.isCancel(docHistoryModeRaw)) return 1
-        if (!validateDocHistoryMode(docHistoryModeRaw)) {
-          console.error("Error: Invalid docHistoryMode")
-          return 1
-        }
+        const docHistoryModeRaw = await promptSelect<DocHistoryMode>(
+          "Docs history mode:",
+          [
+            { value: "overwrite", label: "overwrite", hint: DOCS_HISTORY_META["overwrite"].hint },
+            { value: "append-dated", label: "append-dated", hint: DOCS_HISTORY_META["append-dated"].hint },
+            { value: "new-dated-file", label: "new-dated-file", hint: DOCS_HISTORY_META["new-dated-file"].hint },
+            { value: "overwrite-archive", label: "overwrite-archive", hint: DOCS_HISTORY_META["overwrite-archive"].hint },
+          ],
+          config.docHistoryMode,
+        )
+        if (docHistoryModeRaw === null) return 1
         docHistoryMode = docHistoryModeRaw
       }
 
@@ -349,6 +350,12 @@ export async function runInit(options: InitOptions): Promise<number> {
     const writeResult = writeWunderkindConfig(config, "project")
     if (!writeResult.success) {
       console.error(`Error: Failed to write project config: ${writeResult.error}`)
+      return 1
+    }
+
+    const omoResult = writeOmoAgentConfig(cwd)
+    if (!omoResult.success) {
+      console.error(`Error: Failed to write OMO agent config: ${omoResult.error}`)
       return 1
     }
 
