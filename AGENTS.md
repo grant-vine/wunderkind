@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.7.0  
+**Package:** `@grant-vine/wunderkind` v0.8.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
@@ -41,7 +41,7 @@ wunderkind/
 
 ```
 ~/.wunderkind/                   # Global config baseline
-└── wunderkind.config.jsonc      # Global config baseline (per-project overrides take precedence)
+└── wunderkind.config.jsonc      # Global config baseline (region, industry, regulations only)
 ```
 
 ---
@@ -87,6 +87,7 @@ Documentation Output (`docs-output`) allows agents to write persistent files to 
 
 - **`canonicalFilename`**: The filename agents are instructed to write to (e.g. `marketing-strategy.md`).
 - **`eligible`**: Boolean flag determining if an agent is authorized to write to disk.
+- **`DOCS_INDEX_RUNTIME_STATUS`**: Freezes the current W8A truth that `/docs-index` is prompt convention only and not executable in the current plugin surface.
 
 `buildDocsInstruction(agentKey, docsPath, docHistoryMode)` generates the formatted instruction string used in agent prompt templates.
 

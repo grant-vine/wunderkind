@@ -16,8 +16,10 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 | Command | Purpose | Modifies |
 |---|---|---|
 | `wunderkind install` | Registers the plugin in OpenCode | `opencode.json` (Global or Project) |
+| `wunderkind upgrade` | Upgrade lifecycle entry point for existing installs | None yet (surface only) |
 | `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
+| `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
 | `wunderkind gitignore` | Adds AI traces to `.gitignore` | `.gitignore` |
 
 ---
@@ -55,20 +57,16 @@ The guide contains all flags for non-interactive install so the agent can run a 
 ### Interactive TUI (recommended)
 
 ```bash
-bunx @grant-vine/wunderkind
+bunx @grant-vine/wunderkind install
 ```
 
 or
 
-```bash
-npx @grant-vine/wunderkind
-```
-
 The TUI will guide you through:
 1. Installing oh-my-openagent if it isn't already (runs its own setup flow first).
 2. Selecting the install scope (Global vs Project).
-3. Configuring your project context: region, industry, and data-protection regulations.
-4. Tailoring agent personalities and your team's culture baseline.
+3. Configuring your shared baseline context: region, industry, and data-protection regulations.
+4. Optionally initializing the current project immediately.
 
 ### Non-interactive install
 
@@ -98,6 +96,25 @@ bunx @grant-vine/wunderkind install --no-tui \
   --primary-regulation=CCPA
 ```
 
+> Running `wunderkind` with no subcommand now shows help and exits. Installation must be explicit via `wunderkind install`.
+
+---
+
+## Upgrade
+
+Wunderkind exposes an explicit upgrade lifecycle command:
+
+```bash
+wunderkind upgrade --scope=global
+```
+
+Current first-wave upgrade behavior is intentionally narrow:
+- it validates that Wunderkind is already installed in the requested scope
+- it preserves all project-local soul/docs settings
+- it currently behaves as a safe no-op until future baseline override flags are introduced
+
+This keeps the lifecycle concept explicit without overloading `install`.
+
 ---
 
 ## Init
@@ -114,8 +131,10 @@ wunderkind init [options]
 |---|---|---|
 | `--docs-path <path>` | Relative path for agent docs output | `./docs` |
 | `--docs-history-mode <mode>` | Update style for documentation | `overwrite` |
-| `--no-docs` | Disable documentation output | (false) |
+| `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
+
+Interactive `wunderkind init` is where team culture, org structure, all agent personality customizations, and docs-output settings are set.
 
 `wunderkind init` creates the following project "soul files":
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
@@ -131,6 +150,19 @@ wunderkind init [options]
 | `append-dated` | Appends a new dated section to the file |
 | `new-dated-file` | Creates a new file with a date suffix |
 | `overwrite-archive` | Overwrites the current file and archives the old one |
+
+### JSON Schema
+
+Generated Wunderkind config files now include a top-level `$schema` field for editor validation.
+
+- Latest schema URL:
+  - `https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json`
+- Immutable tagged schema URLs should use the same path on a release tag:
+  - `https://raw.githubusercontent.com/grant-vine/wunderkind/<tag>/schemas/wunderkind.config.schema.json`
+
+The schema is scope-aware:
+- global config validates only baseline fields (`region`, `industry`, `primaryRegulation`, `secondaryRegulation`)
+- project config validates only soul/personality/docs fields
 
 ---
 
@@ -152,13 +184,32 @@ wunderkind doctor
 
 ---
 
+## Uninstall
+
+Safely remove Wunderkind plugin/config wiring:
+
+```bash
+wunderkind uninstall
+```
+
+Optional scope targeting:
+
+```bash
+wunderkind uninstall --scope=global
+wunderkind uninstall --scope=project
+```
+
+`wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`, docs folders).
+
+---
+
 ## Documentation Output
 
 When enabled, agents can persist their decisions and strategies to your project's docs folder.
 
 1. **Enable** via `wunderkind init --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
-3. **Index** via `/docs-index`. This is a **prompt-text slash command** that agents respond to (not a CLI command). Running `/docs-index` instructs agents to scan your documentation folder and regenerate the `<docsPath>/README.md` index.
+3. **Index** via `/docs-index`. This is currently a **prompt convention only**, not an executable Wunderkind CLI/runtime command. The current plugin surface can inject system instructions, but it cannot intercept raw user slash commands yet. Treat `/docs-index` as documentation guidance until a future runtime hook makes it executable.
 
 ---
 
@@ -211,20 +262,23 @@ Agent models are determined by category inheritance configured in `oh-my-opencod
 
 ## Configuration
 
-Wunderkind uses a hierarchical configuration system. The per-project config is merged on top of the global baseline at runtime — project values take precedence.
+Wunderkind uses a split configuration model:
+- global config stores shared market/regulation baseline
+- project config stores soul/personality/docs settings
 
 | File | Scope |
 |---|---|
 | `~/.wunderkind/wunderkind.config.jsonc` | Global baseline (applies to all projects) |
-| `.wunderkind/wunderkind.config.jsonc` | Per-project override |
+| `.wunderkind/wunderkind.config.jsonc` | Per-project soul/personality/docs settings |
 
-Edit either file directly to change any value after install. The installer pre-fills both files with the values you provided during setup.
+Edit the global file to change region/industry/regulation defaults after install. Edit the project file to change team culture, personalities, or docs-output settings after init.
 
 ### Configuration Reference
 
 ```jsonc
-// Wunderkind configuration — edit these values to tailor agents to your project context
+// Global baseline config
 {
+  "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   // Geographic region — e.g. "South Africa", "United States", "United Kingdom", "Australia"
   "region": "South Africa",
   // Industry vertical — e.g. "SaaS", "FinTech", "eCommerce", "HealthTech"
@@ -232,38 +286,36 @@ Edit either file directly to change any value after install. The installer pre-f
   // Primary data-protection regulation — e.g. "GDPR", "POPIA", "CCPA", "LGPD"
   "primaryRegulation": "POPIA",
   // Optional secondary regulation
-  "secondaryRegulation": "",
+  "secondaryRegulation": ""
+}
+```
 
+```jsonc
+// Project-local soul/docs config
+{
+  "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   // Team culture baseline — affects all agents' communication style and decision rigour
-  // "formal-strict" | "pragmatic-balanced" | "experimental-informal"
   "teamCulture": "pragmatic-balanced",
   // Org structure — "flat" (peers) | "hierarchical" (domain authority applies)
   "orgStructure": "flat",
 
   // Agent personalities — controls each agent's default character archetype
-  // CISO: "paranoid-enforcer" | "pragmatic-risk-manager" | "educator-collaborator"
   "cisoPersonality": "pragmatic-risk-manager",
-  // CTO/Fullstack: "grizzled-sysadmin" | "startup-bro" | "code-archaeologist"
   "ctoPersonality": "code-archaeologist",
-  // CMO/Marketing: "data-driven" | "brand-storyteller" | "growth-hacker"
   "cmoPersonality": "data-driven",
-  // QA: "rule-enforcer" | "risk-based-pragmatist" | "rubber-duck"
   "qaPersonality": "risk-based-pragmatist",
-  // Product: "user-advocate" | "velocity-optimizer" | "outcome-obsessed"
   "productPersonality": "outcome-obsessed",
-  // Operations: "on-call-veteran" | "efficiency-maximiser" | "process-purist"
   "opsPersonality": "on-call-veteran",
-  // Creative Director: "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"
   "creativePersonality": "pragmatic-problem-solver",
-  // Brand Builder: "community-evangelist" | "pr-spinner" | "authentic-builder"
   "brandPersonality": "authentic-builder",
+  "devrelPersonality": "dx-engineer",
+  "legalPersonality": "pragmatic-advisor",
+  "supportPersonality": "systematic-triage",
+  "dataAnalystPersonality": "insight-storyteller",
 
   // Documentation Output (Init-only customizations)
-  // "true" | "false"
   "docsEnabled": false,
-  // Relative path (e.g. "./docs", "./documentation")
   "docsPath": "./docs",
-  // "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
   "docHistoryMode": "overwrite"
 }
 ```
