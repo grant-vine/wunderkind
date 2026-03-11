@@ -1,12 +1,12 @@
 import type { Plugin } from "@opencode-ai/plugin";
-import { readWunderkindConfig } from "./cli/config-manager/index.js";
+import { readProjectWunderkindConfig } from "./cli/config-manager/index.js";
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->";
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
     "experimental.chat.system.transform": async (_input, output) => {
-      const wunderkindConfig = readWunderkindConfig();
+      const wunderkindConfig = readProjectWunderkindConfig();
       const hasDocsOutputSentinel = output.system.join("").includes(DOCS_OUTPUT_SENTINEL);
 
       if (wunderkindConfig?.docsEnabled === true && !hasDocsOutputSentinel) {
@@ -93,16 +93,14 @@ The following specialist agents are available. Delegate to them when their domai
 
 ### Project Configuration
 
-All agents read \`.wunderkind/wunderkind.config.jsonc\` for:
-- \`region\` — adjusts platform mix, event targeting, and regulatory focus
-- \`industry\` — adjusts content tone and sector-specific obligations
-- \`primaryRegulation\` — the main data protection regulation to apply (defaults to GDPR)
-- \`secondaryRegulation\` — additional regulation to layer on top
+Global config defines shared region, industry, and regulation context.
+
+Project-local \`.wunderkind/wunderkind.config.jsonc\` defines:
 - \`teamCulture\` — communication style baseline: \`formal-strict\` | \`pragmatic-balanced\` | \`experimental-informal\`
 - \`orgStructure\` — \`flat\` (peer escalation) | \`hierarchical\` (CISO has hard veto on security)
 - \`cisoPersonality\`, \`ctoPersonality\`, \`cmoPersonality\`, \`qaPersonality\`, \`productPersonality\`, \`opsPersonality\`, \`creativePersonality\`, \`brandPersonality\`, \`devrelPersonality\`, \`legalPersonality\`, \`supportPersonality\`, \`dataAnalystPersonality\` — character archetypes per agent
 
-If the file is absent or fields are blank, agents default to global best practices.
+If project-local soul fields are absent, agents default to packaged sane defaults.
 
 `.trim());
     },

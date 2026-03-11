@@ -1,5 +1,6 @@
 export type BooleanArg = "no" | "yes"
 export type InstallScope = "global" | "project"
+export type InstallRegistrationScope = InstallScope | "both" | "none"
 export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
@@ -16,6 +17,33 @@ export type DevrelPersonality = "community-champion" | "docs-perfectionist" | "d
 export type LegalPersonality = "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"
 export type SupportPersonality = "empathetic-resolver" | "systematic-triage" | "knowledge-builder"
 export type DataAnalystPersonality = "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"
+
+export interface GlobalConfig {
+  region: string
+  industry: string
+  primaryRegulation: string
+  secondaryRegulation: string
+}
+
+export interface ProjectConfig {
+  teamCulture: TeamCulture
+  orgStructure: OrgStructure
+  cisoPersonality: CisoPersonality
+  ctoPersonality: CtoPersonality
+  cmoPersonality: CmoPersonality
+  qaPersonality: QaPersonality
+  productPersonality: ProductPersonality
+  opsPersonality: OpsPersonality
+  creativePersonality: CreativePersonality
+  brandPersonality: BrandPersonality
+  devrelPersonality: DevrelPersonality
+  legalPersonality: LegalPersonality
+  supportPersonality: SupportPersonality
+  dataAnalystPersonality: DataAnalystPersonality
+  docsEnabled: boolean
+  docsPath: string
+  docHistoryMode: DocHistoryMode
+}
 
 export interface InstallArgs {
   tui: boolean
@@ -43,39 +71,24 @@ export interface InstallArgs {
   docHistoryMode?: string | undefined
 }
 
-export interface InstallConfig {
-  region: string
-  industry: string
-  primaryRegulation: string
-  secondaryRegulation: string
-  teamCulture: TeamCulture
-  orgStructure: OrgStructure
-  cisoPersonality: CisoPersonality
-  ctoPersonality: CtoPersonality
-  cmoPersonality: CmoPersonality
-  qaPersonality: QaPersonality
-  productPersonality: ProductPersonality
-  opsPersonality: OpsPersonality
-  creativePersonality: CreativePersonality
-  brandPersonality: BrandPersonality
-  devrelPersonality: DevrelPersonality
-  legalPersonality: LegalPersonality
-  supportPersonality: SupportPersonality
-  dataAnalystPersonality: DataAnalystPersonality
-  docsEnabled: boolean
-  docsPath: string
-  docHistoryMode: DocHistoryMode
-}
+export interface InstallConfig extends GlobalConfig, ProjectConfig {}
 
 export interface ConfigMergeResult {
   success: boolean
   configPath: string
+  changed?: boolean
   error?: string
 }
 
 export interface DetectedConfig {
   isInstalled: boolean
   scope: InstallScope
+  projectInstalled?: boolean
+  globalInstalled?: boolean
+  registrationScope?: InstallRegistrationScope
+  projectOpenCodeConfigPath?: string
+  globalOpenCodeConfigPath?: string
+  legacyGlobalProjectFields?: string[]
   region: string
   industry: string
   primaryRegulation: string

@@ -16,12 +16,12 @@ function readVersion(fileUrl: URL): string {
 }
 
 describe("manifest version sync", () => {
-  it("keeps package and Claude plugin manifests on version 0.7.0", () => {
+  it("keeps package and Claude plugin manifests in sync", () => {
     const packageVersion = readVersion(new URL("../../package.json", import.meta.url))
     const pluginVersion = readVersion(new URL("../../.claude-plugin/plugin.json", import.meta.url))
 
-    expect(packageVersion).toBe("0.7.0")
-    expect(pluginVersion).toBe("0.7.0")
+    expect(packageVersion.length).toBeGreaterThan(0)
+    expect(pluginVersion.length).toBeGreaterThan(0)
     expect(pluginVersion).toBe(packageVersion)
   })
 })
