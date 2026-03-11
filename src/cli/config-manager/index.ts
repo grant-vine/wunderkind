@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { parse as parseJsonc } from "jsonc-parser"
 import type {
   BrandPersonality,
@@ -552,13 +553,27 @@ export function removePluginFromOpenCodeConfig(scope: InstallScope): ConfigMerge
     }
     writeFileSync(targetPath, JSON.stringify(config, null, 2) + "\n")
 
-    return { success: true, configPath: targetPath, changed: true }
-  } catch (err) {
-    return { success: false, configPath: targetPath, error: String(err) }
-  }
-}
-
-export function removeGlobalWunderkindConfig(): ConfigMergeResult {
+     return { success: true, configPath: targetPath, changed: true }
+   } catch (err) {
+     return { success: false, configPath: targetPath, error: String(err) }
+   }
+ }
+ 
+ export function writeOmoAgentConfig(targetDir: string): ConfigMergeResult {
+   const omoConfigPath = join(targetDir, ".opencode", "oh-my-opencode.jsonc")
+   try {
+     const sourceUrl = new URL("../../../oh-my-opencode.jsonc", import.meta.url)
+     const sourceFilePath = fileURLToPath(sourceUrl)
+     const contents = readFileSync(sourceFilePath, "utf-8")
+     mkdirSync(join(targetDir, ".opencode"), { recursive: true })
+     writeFileSync(omoConfigPath, contents)
+     return { success: true, configPath: omoConfigPath }
+   } catch (err) {
+     return { success: false, configPath: omoConfigPath, error: String(err) }
+   }
+ }
+ 
+ export function removeGlobalWunderkindConfig(): ConfigMergeResult {
   try {
     if (!existsSync(GLOBAL_WUNDERKIND_CONFIG)) {
       return { success: true, configPath: GLOBAL_WUNDERKIND_CONFIG, changed: false }
