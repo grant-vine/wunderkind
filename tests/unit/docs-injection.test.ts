@@ -3,10 +3,10 @@ import type { ProjectConfig } from "../../src/cli/types.js"
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 
-const mockReadProjectWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
+const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
-  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
+  readWunderkindConfig: mockReadWunderkindConfig,
 }))
 
 import WunderkindPlugin from "../../src/index.js"
@@ -40,12 +40,12 @@ async function runSystemTransform(output: TestOutput): Promise<void> {
 
 describe("runtime docs-output system injection", () => {
   beforeEach(() => {
-    mockReadProjectWunderkindConfig.mockClear()
-    mockReadProjectWunderkindConfig.mockImplementation(() => null)
+    mockReadWunderkindConfig.mockClear()
+    mockReadWunderkindConfig.mockImplementation(() => null)
   })
 
   it("does not inject docs section when docsEnabled is false", async () => {
-    mockReadProjectWunderkindConfig.mockImplementation(() => ({ docsEnabled: false }))
+    mockReadWunderkindConfig.mockImplementation(() => ({ docsEnabled: false }))
     const output: TestOutput = { system: [] }
 
     await runSystemTransform(output)
@@ -55,7 +55,7 @@ describe("runtime docs-output system injection", () => {
   })
 
   it("injects docs section with docsPath and docHistoryMode when docsEnabled is true", async () => {
-    mockReadProjectWunderkindConfig.mockImplementation(() => ({
+    mockReadWunderkindConfig.mockImplementation(() => ({
       docsEnabled: true,
       docsPath: "./docs/output",
       docHistoryMode: "append-dated",
@@ -71,7 +71,7 @@ describe("runtime docs-output system injection", () => {
   })
 
   it("does not duplicate docs section when transform runs twice", async () => {
-    mockReadProjectWunderkindConfig.mockImplementation(() => ({
+    mockReadWunderkindConfig.mockImplementation(() => ({
       docsEnabled: true,
       docsPath: "./docs",
       docHistoryMode: "overwrite",
@@ -86,7 +86,7 @@ describe("runtime docs-output system injection", () => {
   })
 
   it("does not inject docs section when config is null", async () => {
-    mockReadProjectWunderkindConfig.mockImplementation(() => null)
+    mockReadWunderkindConfig.mockImplementation(() => null)
     const output: TestOutput = { system: [] }
 
     await runSystemTransform(output)
@@ -96,7 +96,7 @@ describe("runtime docs-output system injection", () => {
   })
 
   it("does not inject docs section for an uninitialized project even if runtime has packaged defaults", async () => {
-    mockReadProjectWunderkindConfig.mockImplementation(() => null)
+    mockReadWunderkindConfig.mockImplementation(() => null)
     const output: TestOutput = { system: [] }
 
     await runSystemTransform(output)

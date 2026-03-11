@@ -33,10 +33,10 @@ function runCliRaw(...args: string[]): { status: number | null; output: string }
 }
 
 describe("CLI help copy", () => {
-  it("uses oh-my-openagent branding in top-level help text", () => {
+  it("uses native OpenCode agent branding in top-level help text", () => {
     const output = runCliHelp("--help")
 
-    expect(output).toContain("Extends oh-my-openagent with twelve professional agents covering")
+    expect(output).toContain("Adds twelve specialist native OpenCode agents covering")
     expect(output).toContain("security, devrel, legal, support, and data analysis")
   })
 

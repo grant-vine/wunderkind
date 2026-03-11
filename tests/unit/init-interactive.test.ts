@@ -50,12 +50,12 @@ mock.module("@clack/prompts", () => ({
 const mockDetectCurrentConfig = mock(() => DEFAULT_DETECTED_CONFIG)
 
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
-const mockWriteOmoAgentConfig = mock(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
-  writeOmoAgentConfig: mockWriteOmoAgentConfig,
+  writeNativeAgentFiles: mockWriteNativeAgentFiles,
 }))
 
 import { runInit } from "../../src/cli/init.js"
@@ -67,7 +67,7 @@ describe("runInit interactive personality prompts", () => {
     mockConfirm.mockClear()
     mockIsCancel.mockClear()
     mockWriteWunderkindConfig.mockClear()
-    mockWriteOmoAgentConfig.mockClear()
+    mockWriteNativeAgentFiles.mockClear()
     mockDetectCurrentConfig.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => DEFAULT_DETECTED_CONFIG)
     mockConfirm.mockImplementation(async () => false)
@@ -114,7 +114,7 @@ describe("runInit interactive personality prompts", () => {
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(14)
       expect(mockConfirm).toHaveBeenCalledTimes(1)
-      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.teamCulture).toBe("formal-strict")

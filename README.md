@@ -246,9 +246,9 @@ When enabled, agents can persist their decisions and strategies to your project'
 | `global` (default) | Adds the plugin to `~/.config/opencode/opencode.json`. Agents are available in all projects. |
 | `project` | Adds the plugin to `./opencode.json` (created if missing). Agents are limited to the current project. |
 
-Wunderkind writes its own agent config to a separate file — it never modifies your existing oh-my-openagent configuration. Removing Wunderkind leaves oh-my-openagent intact.
+Wunderkind installs its native agent markdown files into OpenCode's supported agent directories. Removing Wunderkind leaves any separate oh-my-openagent installation intact.
 
-> **Project-scope install note**: When installing with `--scope=project`, Wunderkind automatically writes `.opencode/oh-my-opencode.jsonc` to the current directory. This file configures the OMO agent suite for this project and is required for agents to load. Running `wunderkind init` also writes this file. If this file is missing, `wunderkind doctor` will report a warning.
+> **Native agent install note**: Wunderkind now registers its specialist agents through OpenCode-native markdown agent files. Global installs write to `~/.config/opencode/agents/`; project installs and `wunderkind init` write to `.opencode/agents/` for project-local precedence.
 
 ---
 
@@ -256,20 +256,20 @@ Wunderkind writes its own agent config to a separate file — it never modifies 
 
 | Agent Key | Role | Category |
 |---|---|---|
-| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | writing |
-| `wunderkind:creative-director` | Brand & UI/UX lead | visual-engineering |
-| `wunderkind:product-wunderkind` | VP Product | writing |
-| `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | unspecified-high |
-| `wunderkind:brand-builder` | Community, PR, thought leadership | writing |
-| `wunderkind:qa-specialist` | TDD, coverage, user story review | unspecified-high |
-| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | unspecified-high |
-| `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
-| `wunderkind:devrel-wunderkind` | Developer relations and advocacy | writing |
-| `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
-| `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
-| `wunderkind:data-analyst` | Data analysis and insights | writing |
+| `marketing-wunderkind` | CMO-calibre strategist | primary |
+| `creative-director` | Brand & UI/UX lead | primary |
+| `product-wunderkind` | VP Product | primary |
+| `fullstack-wunderkind` | CTO-calibre engineer | primary |
+| `brand-builder` | Community, PR, thought leadership | primary |
+| `qa-specialist` | TDD, coverage, user story review | primary |
+| `operations-lead` | SRE/SLO, runbooks, incident response | primary |
+| `ciso` | Security architecture, OWASP, compliance | primary |
+| `devrel-wunderkind` | Developer relations and advocacy | primary |
+| `legal-counsel` | Legal and regulatory compliance | primary |
+| `support-engineer` | Technical support and troubleshooting | primary |
+| `data-analyst` | Data analysis and insights | primary |
 
-Agent models are determined by category inheritance configured in `oh-my-opencode.jsonc`. Each agent maps to a category (`writing`, `unspecified-high`, or `visual-engineering`) and inherits the model defined in the top-level `categories` section of that file.
+Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are static defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`.
 
 ---
 

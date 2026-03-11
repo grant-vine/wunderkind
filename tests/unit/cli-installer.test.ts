@@ -44,7 +44,7 @@ const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
-const mockWriteOmoAgentConfig = mock(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
 const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
   region: "Global",
   industry: "",
@@ -58,7 +58,7 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
-  writeOmoAgentConfig: mockWriteOmoAgentConfig,
+  writeNativeAgentFiles: mockWriteNativeAgentFiles,
   getDefaultGlobalConfig: mockGetDefaultGlobalConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
 }))
@@ -130,7 +130,7 @@ describe("runCliInstaller", () => {
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
-    mockWriteOmoAgentConfig.mockClear()
+    mockWriteNativeAgentFiles.mockClear()
     mockGetDefaultGlobalConfig.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
     mockAddAiTracesToGitignore.mockClear()
@@ -139,7 +139,7 @@ describe("runCliInstaller", () => {
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
-    mockWriteOmoAgentConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
     mockReadWunderkindConfigForScope.mockImplementation(() => null)
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: true, added: [".wunderkind/"], alreadyPresent: [] }))
   })
@@ -177,21 +177,21 @@ describe("runCliInstaller", () => {
     }
   })
 
-  it("calls writeOmoAgentConfig once for project scope install", async () => {
+  it("calls writeNativeAgentFiles once for project scope install", async () => {
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "project" }))
-      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
     } finally {
       restore()
     }
   })
 
-  it("does NOT call writeOmoAgentConfig for global scope install", async () => {
+  it("calls writeNativeAgentFiles for global scope install", async () => {
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "global" }))
-      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
     } finally {
       restore()
     }
@@ -517,37 +517,48 @@ describe("docs-output-helper", () => {
   })
 })
 
-describe("writeOmoAgentConfig", () => {
-  it("writes oh-my-opencode.jsonc to .opencode/ in target dir", async () => {
-    const { writeOmoAgentConfig } = await import(`../../src/cli/config-manager/index.ts?omo-test=${Date.now()}`)
-    const testRoot = mkdtempSync(join(tmpdir(), "wk-omo-writer-"))
+describe("writeNativeAgentFiles", () => {
+  it("writes native agent markdown files to the project .opencode/agents dir", async () => {
+    const { writeNativeAgentFiles } = await import(`../../src/cli/config-manager/index.ts?native-agent-test=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-native-agent-writer-"))
+    const originalCwd = process.cwd()
 
     try {
-      const result = writeOmoAgentConfig(testRoot)
+      process.chdir(testRoot)
+      const result = writeNativeAgentFiles("project")
       expect(result.success).toBe(true)
 
-      const omoPath = join(testRoot, ".opencode", "oh-my-opencode.jsonc")
-      expect(existsSync(omoPath)).toBe(true)
+      const agentsDir = join(testRoot, ".opencode", "agents")
+      expect(existsSync(agentsDir)).toBe(true)
 
-      const written = readFileSync(omoPath, "utf-8")
-      expect(written).toContain("wunderkind:ciso")
-      expect(written).toContain("wunderkind:marketing-wunderkind")
+      const marketingPath = join(agentsDir, "marketing-wunderkind.md")
+      const cisoPath = join(agentsDir, "ciso.md")
+      expect(existsSync(marketingPath)).toBe(true)
+      expect(existsSync(cisoPath)).toBe(true)
+
+      const written = readFileSync(marketingPath, "utf-8")
+      expect(written).toContain("mode: primary")
+      expect(written).toContain("# Marketing Wunderkind")
     } finally {
+      process.chdir(originalCwd)
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
 
   it("is idempotent — second call overwrites without error", async () => {
-    const { writeOmoAgentConfig } = await import(`../../src/cli/config-manager/index.ts?omo-idempotent=${Date.now()}`)
-    const testRoot = mkdtempSync(join(tmpdir(), "wk-omo-idempotent-"))
+    const { writeNativeAgentFiles } = await import(`../../src/cli/config-manager/index.ts?native-agent-idempotent=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-native-agent-idempotent-"))
+    const originalCwd = process.cwd()
 
     try {
-      const r1 = writeOmoAgentConfig(testRoot)
-      const r2 = writeOmoAgentConfig(testRoot)
+      process.chdir(testRoot)
+      const r1 = writeNativeAgentFiles("project")
+      const r2 = writeNativeAgentFiles("project")
 
       expect(r1.success).toBe(true)
       expect(r2.success).toBe(true)
     } finally {
+      process.chdir(originalCwd)
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
