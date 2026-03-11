@@ -130,7 +130,7 @@ wunderkind init [options]
 | Option | Description | Default |
 |---|---|---|
 | `--docs-path <path>` | Relative path for agent docs output | `./docs` |
-| `--docs-history-mode <mode>` | Update style for documentation | `overwrite` |
+| `--docs-history-mode <mode>` | Update style: `overwrite` (default), `append-dated`, `new-dated-file`, `overwrite-archive` | `overwrite` |
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
@@ -182,6 +182,32 @@ wunderkind doctor
 
 `wunderkind doctor` is strictly read-only and makes no changes to your filesystem.
 
+### Doctor Verbose (`--verbose`)
+
+`wunderkind doctor --verbose` additionally shows:
+- Full path resolution for global and project OpenCode configs
+- Active region, industry, and regulation baseline
+- All agent personality settings with human-readable descriptions
+- Docs output configuration (path, history mode, enabled status)
+
+Example output (project context with defaults):
+
+```
+Agent Personalities
+- ciso:         pragmatic-risk-manager  (Balances risk vs. velocity; default posture)
+- fullstack:    code-archaeologist  (Deep digs into legacy systems; explains history)
+- marketing:    data-driven  (Metrics and attribution first; no vanity metrics)
+- qa:           risk-based-pragmatist  (Tests what matters most; ships with confidence)
+- product:      outcome-obsessed  (Business outcomes and measurable impact first)
+- ops:          on-call-veteran  (Incident-hardened; runbook-first)
+- creative:     pragmatic-problem-solver  (Design that ships; form follows function)
+- brand:        authentic-builder  (No spin; build trust through radical transparency)
+- devrel:       dx-engineer  (Developer experience as a product; DX metrics)
+- legal:        pragmatic-advisor  (Risk-calibrated; enables the business to move)
+- support:      systematic-triage  (Classification, routing, and severity-driven)
+- data analyst: insight-storyteller  (Translates data into narratives for decisions)
+```
+
 ---
 
 ## Uninstall
@@ -221,6 +247,8 @@ When enabled, agents can persist their decisions and strategies to your project'
 | `project` | Adds the plugin to `./opencode.json` (created if missing). Agents are limited to the current project. |
 
 Wunderkind writes its own agent config to a separate file — it never modifies your existing oh-my-openagent configuration. Removing Wunderkind leaves oh-my-openagent intact.
+
+> **Project-scope install note**: When installing with `--scope=project`, Wunderkind automatically writes `.opencode/oh-my-opencode.jsonc` to the current directory. This file configures the OMO agent suite for this project and is required for agents to load. Running `wunderkind init` also writes this file. If this file is missing, `wunderkind doctor` will report a warning.
 
 ---
 
@@ -319,6 +347,108 @@ Edit the global file to change region/industry/regulation defaults after install
   "docHistoryMode": "overwrite"
 }
 ```
+
+---
+
+## Personality Reference
+
+Each agent's behaviour is controlled by a `*Personality` key in your project config. Choose the archetype that matches your team's operating style.
+
+### CISO (`cisoPersonality`)
+
+| Value | What it means |
+|---|---|
+| `paranoid-enforcer` | Maximum threat paranoia; blocks anything unproven |
+| `pragmatic-risk-manager` | Balances risk vs. velocity; default posture (default) |
+| `educator-collaborator` | Guides teams through security thinking collaboratively |
+
+### CTO / Fullstack (`ctoPersonality`)
+
+| Value | What it means |
+|---|---|
+| `grizzled-sysadmin` | Battle-hardened ops mindset; stability over novelty |
+| `startup-bro` | Move fast; bias toward shipping |
+| `code-archaeologist` | Deep digs into legacy systems; explains history (default) |
+
+### CMO / Marketing (`cmoPersonality`)
+
+| Value | What it means |
+|---|---|
+| `data-driven` | Metrics and attribution first; no vanity metrics (default) |
+| `brand-storyteller` | Narrative and emotional resonance over raw data |
+| `growth-hacker` | Experiments, loops, and funnel obsession |
+
+### QA (`qaPersonality`)
+
+| Value | What it means |
+|---|---|
+| `rule-enforcer` | Strict standards; gates every release |
+| `risk-based-pragmatist` | Tests what matters most; ships with confidence (default) |
+| `rubber-duck` | Walks devs through their own bugs; collaborative |
+
+### Product (`productPersonality`)
+
+| Value | What it means |
+|---|---|
+| `user-advocate` | User pain and delight over internal efficiency |
+| `velocity-optimizer` | Throughput and cycle time over perfect specs |
+| `outcome-obsessed` | Business outcomes and measurable impact first (default) |
+
+### Operations (`opsPersonality`)
+
+| Value | What it means |
+|---|---|
+| `on-call-veteran` | Incident-hardened; runbook-first (default) |
+| `efficiency-maximiser` | Automates everything; cost and throughput focused |
+| `process-purist` | Change management and process integrity |
+
+### Creative Director (`creativePersonality`)
+
+| Value | What it means |
+|---|---|
+| `perfectionist-craftsperson` | Pixel-perfect; never ships unpolished |
+| `bold-provocateur` | Intentionally disruptive visual choices |
+| `pragmatic-problem-solver` | Design that ships; form follows function (default) |
+
+### Brand Builder (`brandPersonality`)
+
+| Value | What it means |
+|---|---|
+| `community-evangelist` | Builds through authentic community engagement |
+| `pr-spinner` | Narrative control and media-savvy messaging |
+| `authentic-builder` | No spin; build trust through radical transparency (default) |
+
+### DevRel (`devrelPersonality`)
+
+| Value | What it means |
+|---|---|
+| `community-champion` | Forum presence, events, OSS contribution |
+| `docs-perfectionist` | Every API documented; no gaps tolerated |
+| `dx-engineer` | Developer experience as a product; DX metrics (default) |
+
+### Legal Counsel (`legalPersonality`)
+
+| Value | What it means |
+|---|---|
+| `cautious-gatekeeper` | Blocks anything legally ambiguous |
+| `pragmatic-advisor` | Risk-calibrated; enables the business to move (default) |
+| `plain-english-counselor` | Translates legalese into plain language |
+
+### Support Engineer (`supportPersonality`)
+
+| Value | What it means |
+|---|---|
+| `empathetic-resolver` | Treats every ticket as a relationship |
+| `systematic-triage` | Classification, routing, and severity-driven (default) |
+| `knowledge-builder` | Every fix becomes a doc; knowledge loop focus |
+
+### Data Analyst (`dataAnalystPersonality`)
+
+| Value | What it means |
+|---|---|
+| `rigorous-statistician` | Significance, confidence intervals, no p-hacking |
+| `insight-storyteller` | Translates data into narratives for decisions (default) |
+| `pragmatic-quant` | Good-enough analysis fast; directional signals |
 
 ---
 
