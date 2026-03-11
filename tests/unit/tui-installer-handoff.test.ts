@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test"
 
 const mockRunInit = mock(async () => 0)
 const mockIsProjectContext = mock(() => true)
+const mockWriteOmoAgentConfig = mock(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
 
 mock.module("../../src/cli/init.js", () => ({
   runInit: mockRunInit,
@@ -11,6 +12,7 @@ mock.module("../../src/cli/init.js", () => ({
 mock.module("../../src/cli/config-manager/index.js", () => ({
   addPluginToOpenCodeConfig: () => ({ success: true, configPath: "/tmp/opencode.json" }),
   writeWunderkindConfig: () => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }),
+  writeOmoAgentConfig: mockWriteOmoAgentConfig,
   getDefaultGlobalConfig: () => ({
     region: "Global",
     industry: "",
@@ -94,6 +96,7 @@ describe("runTuiInstaller init handoff", () => {
     mockConfirm.mockClear()
     mockText.mockClear()
     mockAddAiTracesToGitignore.mockClear()
+    mockWriteOmoAgentConfig.mockClear()
 
     originalStdinTTY = process.stdin.isTTY
     originalStdoutTTY = process.stdout.isTTY
@@ -124,6 +127,7 @@ describe("runTuiInstaller init handoff", () => {
       const secondConfirmMsg = mockConfirm.mock.calls[1]?.[0] as { message: string }
       expect(secondConfirmMsg.message).toContain(".gitignore")
       
+      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(0)
       expect(mockAddAiTracesToGitignore).toHaveBeenCalledTimes(1)
     } finally {
       Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
@@ -151,7 +155,29 @@ describe("runTuiInstaller init handoff", () => {
       const firstConfirmMsg = mockConfirm.mock.calls[0]?.[0] as { message: string }
       expect(firstConfirmMsg.message).toContain("Initialize the current project now?")
       
+      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(1)
       expect(mockAddAiTracesToGitignore).toHaveBeenCalledTimes(0)
+    } finally {
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("writes OMO config on project-scope install without init", async () => {
+    const selectAnswers = ["project", "GDPR", "__other__"]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "GDPR")
+
+    const confirmAnswers = [false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+
+    const textAnswers = ["EU", "SaaS", "Custom-Reg"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    try {
+      const code = await runTuiInstaller("project")
+      expect(code).toBe(0)
+      expect(mockRunInit).toHaveBeenCalledTimes(0)
+      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(1)
     } finally {
       Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
       Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })

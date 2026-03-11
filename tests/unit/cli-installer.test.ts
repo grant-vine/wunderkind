@@ -1,6 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test"
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { homedir } from "node:os"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
 import type { InstallArgs } from "../../src/cli/types.js"
 import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
@@ -44,6 +44,7 @@ const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+const mockWriteOmoAgentConfig = mock(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
 const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
   region: "Global",
   industry: "",
@@ -57,6 +58,7 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
+  writeOmoAgentConfig: mockWriteOmoAgentConfig,
   getDefaultGlobalConfig: mockGetDefaultGlobalConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
 }))
@@ -128,6 +130,7 @@ describe("runCliInstaller", () => {
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
+    mockWriteOmoAgentConfig.mockClear()
     mockGetDefaultGlobalConfig.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
     mockAddAiTracesToGitignore.mockClear()
@@ -136,6 +139,7 @@ describe("runCliInstaller", () => {
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+    mockWriteOmoAgentConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/oh-my-opencode.jsonc" }))
     mockReadWunderkindConfigForScope.mockImplementation(() => null)
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: true, added: [".wunderkind/"], alreadyPresent: [] }))
   })
@@ -168,6 +172,26 @@ describe("runCliInstaller", () => {
       expect(mockAddPluginToOpenCodeConfig).toHaveBeenCalledTimes(1)
       const calls = mockAddPluginToOpenCodeConfig.mock.calls
       expect(calls[0]?.[0]).toBe("project")
+    } finally {
+      restore()
+    }
+  })
+
+  it("calls writeOmoAgentConfig once for project scope install", async () => {
+    const restore = silenceConsole()
+    try {
+      await runCliInstaller(baseArgs({ scope: "project" }))
+      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("does NOT call writeOmoAgentConfig for global scope install", async () => {
+    const restore = silenceConsole()
+    try {
+      await runCliInstaller(baseArgs({ scope: "global" }))
+      expect(mockWriteOmoAgentConfig).toHaveBeenCalledTimes(0)
     } finally {
       restore()
     }
@@ -487,6 +511,42 @@ describe("docs-output-helper", () => {
       bootstrapDocsReadme(docsPath, testRoot)
 
       expect(readFileSync(readmePath, "utf-8")).toBe("# Existing\n")
+    } finally {
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("writeOmoAgentConfig", () => {
+  it("writes oh-my-opencode.jsonc to .opencode/ in target dir", async () => {
+    const { writeOmoAgentConfig } = await import(`../../src/cli/config-manager/index.ts?omo-test=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-omo-writer-"))
+
+    try {
+      const result = writeOmoAgentConfig(testRoot)
+      expect(result.success).toBe(true)
+
+      const omoPath = join(testRoot, ".opencode", "oh-my-opencode.jsonc")
+      expect(existsSync(omoPath)).toBe(true)
+
+      const written = readFileSync(omoPath, "utf-8")
+      expect(written).toContain("wunderkind:ciso")
+      expect(written).toContain("wunderkind:marketing-wunderkind")
+    } finally {
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("is idempotent — second call overwrites without error", async () => {
+    const { writeOmoAgentConfig } = await import(`../../src/cli/config-manager/index.ts?omo-idempotent=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-omo-idempotent-"))
+
+    try {
+      const r1 = writeOmoAgentConfig(testRoot)
+      const r2 = writeOmoAgentConfig(testRoot)
+
+      expect(r1.success).toBe(true)
+      expect(r2.success).toBe(true)
     } finally {
       rmSync(testRoot, { recursive: true, force: true })
     }
