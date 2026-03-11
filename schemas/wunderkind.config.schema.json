@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
+  "title": "Wunderkind Config",
+  "description": "Schema for Wunderkind global and project configuration files.",
+  "type": "object",
+  "oneOf": [
+    {
+      "title": "Global Wunderkind Config",
+      "type": "object",
+      "properties": {
+        "$schema": { "type": "string" },
+        "region": { "type": "string" },
+        "industry": { "type": "string" },
+        "primaryRegulation": { "type": "string" },
+        "secondaryRegulation": { "type": "string" }
+      },
+      "required": ["$schema", "region", "industry", "primaryRegulation", "secondaryRegulation"],
+      "additionalProperties": false
+    },
+    {
+      "title": "Project Wunderkind Config",
+      "type": "object",
+      "properties": {
+        "$schema": { "type": "string" },
+        "teamCulture": { "enum": ["formal-strict", "pragmatic-balanced", "experimental-informal"] },
+        "orgStructure": { "enum": ["flat", "hierarchical"] },
+        "cisoPersonality": { "enum": ["paranoid-enforcer", "pragmatic-risk-manager", "educator-collaborator"] },
+        "ctoPersonality": { "enum": ["grizzled-sysadmin", "startup-bro", "code-archaeologist"] },
+        "cmoPersonality": { "enum": ["data-driven", "brand-storyteller", "growth-hacker"] },
+        "qaPersonality": { "enum": ["rule-enforcer", "risk-based-pragmatist", "rubber-duck"] },
+        "productPersonality": { "enum": ["user-advocate", "velocity-optimizer", "outcome-obsessed"] },
+        "opsPersonality": { "enum": ["on-call-veteran", "efficiency-maximiser", "process-purist"] },
+        "creativePersonality": { "enum": ["perfectionist-craftsperson", "bold-provocateur", "pragmatic-problem-solver"] },
+        "brandPersonality": { "enum": ["community-evangelist", "pr-spinner", "authentic-builder"] },
+        "devrelPersonality": { "enum": ["community-champion", "docs-perfectionist", "dx-engineer"] },
+        "legalPersonality": { "enum": ["cautious-gatekeeper", "pragmatic-advisor", "plain-english-counselor"] },
+        "supportPersonality": { "enum": ["empathetic-resolver", "systematic-triage", "knowledge-builder"] },
+        "dataAnalystPersonality": { "enum": ["rigorous-statistician", "insight-storyteller", "pragmatic-quant"] },
+        "docsEnabled": { "type": "boolean" },
+        "docsPath": { "type": "string" },
+        "docHistoryMode": { "enum": ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"] }
+      },
+      "required": [
+        "$schema",
+        "teamCulture",
+        "orgStructure",
+        "cisoPersonality",
+        "ctoPersonality",
+        "cmoPersonality",
+        "qaPersonality",
+        "productPersonality",
+        "opsPersonality",
+        "creativePersonality",
+        "brandPersonality",
+        "devrelPersonality",
+        "legalPersonality",
+        "supportPersonality",
+        "dataAnalystPersonality",
+        "docsEnabled",
+        "docsPath",
+        "docHistoryMode"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

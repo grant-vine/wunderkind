@@ -17,6 +17,8 @@
   "files": [
     "dist/",
     "agents/",
+    "commands/",
+    "schemas/",
     "skills/",
     ".claude-plugin/",
     "bin/",
