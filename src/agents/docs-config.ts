@@ -5,6 +5,18 @@ export interface AgentDocsConfig {
   eligible: boolean
 }
 
+export const DOCS_INDEX_RUNTIME_STATUS = {
+  invocation: "/wunderkind:docs-index",
+  executable: true,
+  reason: "Implemented as a plugin command via commands/docs-index.md and intended to fan out parallel background doc tasks.",
+} as const
+
+export function getDocsEligibleAgentKeys(): string[] {
+  return Object.entries(AGENT_DOCS_CONFIG)
+    .filter(([, config]) => config.eligible)
+    .map(([key]) => key)
+}
+
 export const AGENT_DOCS_CONFIG: Record<string, AgentDocsConfig> = {
   "marketing-wunderkind": {
     canonicalFilename: "marketing-strategy.md",
@@ -76,5 +88,9 @@ History mode: ${docHistoryMode}
 
 Use the configured docs path exactly as provided: ${docsPath}
 
-After writing, run /docs-index to update the project documentation index.`
+After writing, participate in the \`/wunderkind:docs-index\` workflow to refresh the project documentation index.
+
+Each eligible docs agent owns its own canonical document output. When your work is complete, return an explicit completion result for your target file so the coordinator can decide whether to write a partial index or a full success index.
+
+The namespaced plugin command coordinates one parallel background task per eligible docs agent, writes the index from completed child outputs, and only runs \`init-deep\` after full success.`
 }

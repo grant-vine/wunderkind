@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test"
 
 import {
   AGENT_DOCS_CONFIG,
+  DOCS_INDEX_RUNTIME_STATUS,
   buildDocsInstruction,
+  getDocsEligibleAgentKeys,
 } from "../../src/agents/docs-config.js"
 
 const EXPECTED_AGENT_KEYS = [
@@ -60,6 +62,34 @@ describe("docs-config", () => {
     const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
     expect(instruction).toContain("History mode")
     expect(instruction).toContain("overwrite")
+  })
+
+  it("buildDocsInstruction references the namespaced docs-index workflow", () => {
+    const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
+    expect(instruction).toContain("/wunderkind:docs-index")
+    expect(instruction).toContain("parallel background task")
+    expect(instruction).toContain("explicit completion result")
+    expect(instruction).toContain("partial index")
+  })
+
+  it("exports the exact eligible docs agent set", () => {
+    expect(getDocsEligibleAgentKeys()).toEqual([
+      "marketing-wunderkind",
+      "creative-director",
+      "product-wunderkind",
+      "fullstack-wunderkind",
+      "brand-builder",
+      "qa-specialist",
+      "operations-lead",
+      "ciso",
+      "devrel-wunderkind",
+    ])
+  })
+
+  it("freezes docs-index as a namespaced executable plugin command", () => {
+    expect(DOCS_INDEX_RUNTIME_STATUS.invocation).toBe("/wunderkind:docs-index")
+    expect(DOCS_INDEX_RUNTIME_STATUS.executable).toBe(true)
+    expect(DOCS_INDEX_RUNTIME_STATUS.reason).toContain("plugin command")
   })
 
   it("buildDocsInstruction throws for unknown agent key", () => {
