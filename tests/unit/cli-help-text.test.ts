@@ -19,6 +19,19 @@ function runCliHelp(...args: string[]): string {
   return output
 }
 
+function runCliRaw(...args: string[]): { status: number | null; output: string } {
+  const result = spawnSync(process.execPath, [CLI_ENTRY, ...args], {
+    cwd: PROJECT_ROOT,
+    encoding: "utf8",
+    env: process.env,
+  })
+
+  return {
+    status: result.status,
+    output: `${result.stdout}${result.stderr}`,
+  }
+}
+
 describe("CLI help copy", () => {
   it("uses oh-my-openagent branding in top-level help text", () => {
     const output = runCliHelp("--help")
@@ -27,10 +40,40 @@ describe("CLI help copy", () => {
     expect(output).toContain("security, devrel, legal, support, and data analysis")
   })
 
+  it("does not run install implicitly on bare invocation", () => {
+    const result = runCliRaw()
+
+    expect(result.status).toBe(1)
+    expect(result.output).toContain("Usage:")
+    expect(result.output).toContain("wunderkind [options] [command]")
+  })
+
   it("keeps the revised installer copy in install help", () => {
     const output = runCliHelp("install", "--help")
 
     expect(output).toContain("Install Wunderkind into your OpenCode setup.")
     expect(output).toContain("non-interactive use in CI or scripted environments")
+  })
+
+  it("includes uninstall command help text", () => {
+    const output = runCliHelp("uninstall", "--help")
+
+    expect(output).toContain("Safely remove Wunderkind plugin wiring from OpenCode config.")
+    expect(output).toContain("on global uninstall")
+    expect(output).toContain("global config file")
+    expect(output).toContain("Leaves project-local customizations")
+  })
+
+  it("includes upgrade command help text", () => {
+    const output = runCliHelp("upgrade", "--help")
+
+    expect(output).toContain("Upgrade the shared Wunderkind global baseline")
+    expect(output).toContain("validates install state plus")
+  })
+
+  it("includes verbose doctor help text", () => {
+    const output = runCliHelp("doctor", "--help")
+
+    expect(output).toContain("Enable verbose diagnostic output")
   })
 })

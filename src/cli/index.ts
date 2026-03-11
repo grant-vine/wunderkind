@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { Command } from "commander"
 import { createRequire } from "node:module"
-import { runCliInstaller } from "./cli-installer.js"
-import { runDoctor } from "./doctor.js"
+import { runCliInstaller, runCliUpgrade } from "./cli-installer.js"
+import { runDoctorWithOptions } from "./doctor.js"
 import { runInit } from "./init.js"
 import { runTuiInstaller } from "./tui-installer.js"
+import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import type { DocHistoryMode, InstallArgs, InstallScope } from "./types.js"
 
@@ -27,16 +28,18 @@ program
       "pre-tuned to your region, industry, and data-protection regulation.",
       "",
       "Examples:",
-      "  bunx @grant-vine/wunderkind",
+      "  bunx @grant-vine/wunderkind install",
       "  bunx @grant-vine/wunderkind install --no-tui \\",
       "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
+      "  bunx @grant-vine/wunderkind upgrade --scope=global",
       "  bunx @grant-vine/wunderkind gitignore",
     ].join("\n"),
   )
   .version(pkg.version)
+  .showHelpAfterError()
 
 program
-  .command("install", { isDefault: true })
+  .command("install")
   .description(
     [
       "Install Wunderkind into your OpenCode setup.",
@@ -63,7 +66,7 @@ program
       "",
       "Examples:",
       "  # Interactive (default):",
-      "  bunx @grant-vine/wunderkind",
+      "  bunx @grant-vine/wunderkind install",
       "",
       "  # Non-interactive:",
       "  bunx @grant-vine/wunderkind install --no-tui \\",
@@ -98,6 +101,43 @@ program
 
     const exitCode = opts.tui ? await runTuiInstaller(opts.scope as InstallScope) : await runCliInstaller(args)
     process.exit(exitCode)
+  })
+
+program
+  .command("upgrade")
+  .description(
+    [
+      "Upgrade the shared Wunderkind global baseline without resetting project-local customizations.",
+      "",
+      "This first wave is non-interactive and currently validates install state plus no-op safety only.",
+    ].join("\n"),
+  )
+  .option("--no-tui", "Reserved for future interactive upgrade support")
+  .option("--scope <scope>", "Upgrade scope: global or project")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Example:",
+      "  bunx @grant-vine/wunderkind upgrade --scope=global",
+      "",
+      "Current behavior:",
+      "  - validates an existing install in the requested scope",
+      "  - preserves all project-local soul/docs settings",
+      "  - currently performs a safe no-op unless future baseline override flags are added",
+    ].join("\n"),
+  )
+  .action((opts: { scope?: string | undefined }) => {
+    if (opts.scope !== undefined && opts.scope !== "global" && opts.scope !== "project") {
+      console.error(`Error: --scope must be \"global\" or \"project\", got: \"${opts.scope}\"`)
+      process.exit(1)
+    }
+
+    runCliUpgrade({
+      scope: (opts.scope as InstallScope | undefined) ?? "global",
+    }).then((exitCode) => {
+      process.exit(exitCode)
+    })
   })
 
 program
@@ -147,18 +187,11 @@ program
     [
       "Initialize Wunderkind in the current project folder.",
       "",
-      "Bootstraps project-local config and soul files (.sisyphus, AGENTS.md, docs README).",
+      "Bootstraps project-local soul/personality config and soul files (.sisyphus, AGENTS.md, docs README).",
       "Requires Wunderkind to already be installed via `wunderkind install`.",
     ].join("\n"),
   )
   .option("--no-tui", "Run non-interactive project bootstrap")
-  .option("--region <region>", "Geographic region, e.g. 'South Africa', 'United States', 'Global'")
-  .option("--industry <industry>", "Industry vertical, e.g. SaaS, FinTech, eCommerce, HealthTech")
-  .option(
-    "--primary-regulation <regulation>",
-    `Primary data-protection regulation.\n  Common values: ${REGULATION_LIST}`,
-  )
-  .option("--secondary-regulation <regulation>", "Secondary regulation (optional)")
   .option("--docs-enabled <yes|no>", "Enable docs output during init")
   .option("--docs-path <path>", "Docs output path (relative to current project)")
   .option("--doc-history-mode <mode>", "Doc history mode: overwrite | append-dated | new-dated-file | overwrite-archive")
@@ -167,15 +200,11 @@ program
     [
       "",
       "Example:",
-      "  bunx @grant-vine/wunderkind init --no-tui --region=EU --industry=SaaS --primary-regulation=GDPR",
+      "  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs",
     ].join("\n"),
   )
   .action(async (opts: {
     tui: boolean
-    region?: string | undefined
-    industry?: string | undefined
-    primaryRegulation?: string | undefined
-    secondaryRegulation?: string | undefined
     docsEnabled?: string | undefined
     docsPath?: string | undefined
     docHistoryMode?: string | undefined
@@ -195,10 +224,6 @@ program
 
     const initOptions: {
       noTui: boolean
-      region?: string
-      industry?: string
-      primaryRegulation?: string
-      secondaryRegulation?: string
       docsEnabled?: boolean
       docsPath?: string
       docHistoryMode?: DocHistoryMode
@@ -206,10 +231,6 @@ program
       noTui: !opts.tui,
     }
 
-    if (opts.region !== undefined) initOptions.region = opts.region
-    if (opts.industry !== undefined) initOptions.industry = opts.industry
-    if (opts.primaryRegulation !== undefined) initOptions.primaryRegulation = opts.primaryRegulation
-    if (opts.secondaryRegulation !== undefined) initOptions.secondaryRegulation = opts.secondaryRegulation
     if (docsEnabled !== undefined) initOptions.docsEnabled = docsEnabled
     if (opts.docsPath !== undefined) initOptions.docsPath = opts.docsPath
     if (opts.docHistoryMode !== undefined) initOptions.docHistoryMode = opts.docHistoryMode as DocHistoryMode
@@ -221,9 +242,40 @@ program
 program
   .command("doctor")
   .description("Run read-only diagnostics for Wunderkind install and current project context.")
-  .action(async () => {
-    const exitCode = await runDoctor()
+  .option("-v, --verbose", "Enable verbose diagnostic output")
+  .action(async (opts: { verbose?: boolean | undefined }) => {
+    const exitCode = await runDoctorWithOptions({ verbose: opts.verbose === true })
     process.exit(exitCode)
   })
+
+program
+  .command("uninstall")
+  .description(
+    [
+      "Safely remove Wunderkind plugin wiring from OpenCode config.",
+      "",
+      "Removes plugin registration and, on global uninstall, deletes Wunderkind's global config file.",
+      "Leaves project-local customizations and bootstrap artifacts untouched.",
+    ].join("\n"),
+  )
+  .option("--scope <scope>", "Uninstall scope: global or project")
+  .action(async (opts: { scope?: string | undefined }) => {
+    if (opts.scope !== undefined && opts.scope !== "global" && opts.scope !== "project") {
+      console.error(`Error: --scope must be \"global\" or \"project\", got: \"${opts.scope}\"`)
+      process.exit(1)
+    }
+
+    const uninstallOptions: { scope?: InstallScope } = {}
+    if (opts.scope !== undefined) {
+      uninstallOptions.scope = opts.scope as InstallScope
+    }
+    const exitCode = await runUninstall(uninstallOptions)
+    process.exit(exitCode)
+  })
+
+if (process.argv.length <= 2) {
+  program.outputHelp()
+  process.exit(1)
+}
 
 program.parse()
