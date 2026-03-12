@@ -62,8 +62,8 @@ describe("New agent factory structure", () => {
         expect((config.description ?? "").length).toBeGreaterThan(100)
       })
 
-      it("prompt references wunderkind.config.jsonc", () => {
-        expect(config.prompt).toContain("wunderkind.config.jsonc")
+      it("prompt references resolved runtime context", () => {
+        expect(config.prompt).toContain("Before acting, read")
       })
 
       it("prompt contains agent heading", () => {
@@ -120,10 +120,10 @@ describe("New agent factory structure", () => {
       expect(permissions?.["task"]).toBe("deny")
     })
 
-    it("devrel-wunderkind does NOT deny task", () => {
+    it("devrel-wunderkind denies task", () => {
       const config = createDevrelWunderkindAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
-      expect(permissions?.["task"]).toBeUndefined()
+      expect(permissions?.["task"]).toBe("deny")
     })
 
     it("support-engineer does NOT deny task", () => {
@@ -157,9 +157,9 @@ describe("Documentation Output static sections", () => {
   ]
 
   for (const { name, factory } of ELIGIBLE_AGENT_FACTORIES) {
-    it(`${name} contains ## Documentation Output (Static Reference)`, () => {
+    it(`${name} does NOT contain the old static documentation block`, () => {
       const config = factory("test-model")
-      expect(config.prompt).toContain("## Documentation Output (Static Reference)")
+      expect(config.prompt).not.toContain("## Documentation Output (Static Reference)")
     })
   }
 

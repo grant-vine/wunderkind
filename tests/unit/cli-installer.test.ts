@@ -669,3 +669,56 @@ describe("writeNativeAgentFiles", () => {
     }
   })
 })
+
+describe("writeNativeCommandFiles", () => {
+  it("writes native command markdown files to the project .opencode/commands dir", async () => {
+    const { writeNativeCommandFiles } = await import(`../../src/cli/config-manager/index.ts?native-command-test=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-native-command-writer-"))
+    const originalCwd = process.cwd()
+
+    try {
+      process.chdir(testRoot)
+      const result = writeNativeCommandFiles("project")
+      expect(result.success).toBe(true)
+
+      const commandsDir = join(testRoot, ".opencode", "commands")
+      const docsIndexPath = join(commandsDir, "docs-index.md")
+      expect(existsSync(commandsDir)).toBe(true)
+      expect(existsSync(docsIndexPath)).toBe(true)
+
+      const written = readFileSync(docsIndexPath, "utf-8")
+      expect(written).toContain("/docs-index")
+      expect(written).toContain("agent: product-wunderkind")
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("writeNativeSkillFiles", () => {
+  it("writes native skill directories recursively to the project .opencode/skills dir", async () => {
+    const { writeNativeSkillFiles } = await import(`../../src/cli/config-manager/index.ts?native-skill-test=${Date.now()}`)
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-native-skill-writer-"))
+    const originalCwd = process.cwd()
+
+    try {
+      process.chdir(testRoot)
+      const result = writeNativeSkillFiles("project")
+      expect(result.success).toBe(true)
+
+      const skillsDir = join(testRoot, ".opencode", "skills")
+      const agilePmSkill = join(skillsDir, "agile-pm", "SKILL.md")
+      const securityAnalystSkill = join(skillsDir, "security-analyst", "SKILL.md")
+      expect(existsSync(skillsDir)).toBe(true)
+      expect(existsSync(agilePmSkill)).toBe(true)
+      expect(existsSync(securityAnalystSkill)).toBe(true)
+
+      const written = readFileSync(agilePmSkill, "utf-8")
+      expect(written).toContain("Agile PM")
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+})

@@ -52,13 +52,6 @@ export function isProjectContext(cwd: string): boolean {
   return PROJECT_CONTEXT_MARKERS.some((marker) => existsSync(join(cwd, marker)))
 }
 
-function toDocsEnabled(value: string): boolean | null {
-  const normalized = value.trim().toLowerCase()
-  if (normalized === "yes" || normalized === "y" || normalized === "true") return true
-  if (normalized === "no" || normalized === "n" || normalized === "false") return false
-  return null
-}
-
 function normalizeDocHistoryMode(mode: string): DocHistoryMode {
   if (validateDocHistoryMode(mode)) {
     return mode
@@ -294,18 +287,12 @@ export async function runInit(options: InitOptions): Promise<number> {
         config.dataAnalystPersonality = dataAnalystPersonality
       }
 
-      const docsEnabledRaw = await p.text({
-        message: "Enable docs output to disk? (yes/no)",
-        placeholder: "no",
-        initialValue: config.docsEnabled ? "yes" : "no",
-        validate: (v) => (toDocsEnabled(v) === null ? "Enter yes or no" : undefined),
+      const docsEnabledRaw = await p.confirm({
+        message: "Enable docs output to disk?",
+        initialValue: config.docsEnabled,
       })
       if (p.isCancel(docsEnabledRaw)) return 1
-      const docsEnabled = toDocsEnabled(docsEnabledRaw)
-      if (docsEnabled === null) {
-        console.error("Error: Invalid docs-enabled value")
-        return 1
-      }
+      const docsEnabled = docsEnabledRaw
 
       let docsPath = config.docsPath
       let docHistoryMode: DocHistoryMode = config.docHistoryMode

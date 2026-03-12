@@ -236,7 +236,7 @@ When enabled, agents can persist their decisions and strategies to your project'
 
 1. **Enable** via `wunderkind init --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
-3. **Index** via `/docs-index`. This is currently a **prompt convention only**, not an executable Wunderkind CLI/runtime command. The current plugin surface can inject system instructions, but it cannot intercept raw user slash commands yet. Treat `/docs-index` as documentation guidance until a future runtime hook makes it executable.
+3. **Index** via `/docs-index`. This is an executable plugin command that coordinates parallel documentation output from eligible agents, writes a project documentation index, and runs `init-deep` on successful completion.
 
 ---
 
@@ -271,6 +271,8 @@ Wunderkind installs its native agent markdown files into OpenCode's supported ag
 | `data-analyst` | Data analysis and insights | primary |
 
 Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are static defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`.
+
+> **About prompt size:** Wunderkind specialists are intentionally more focused and domain-heavy than many generic assistants. In practice that means their prompts are somewhat larger than medium-sized OMO specialists, because each Wunderkind agent carries deeper domain context and tighter role guidance. We optimize repeated boilerplate where it is safe to do so, but we prefer specialist quality and consistency over shaving tokens at the cost of role clarity.
 
 ---
 

@@ -7,6 +7,7 @@ permission:
   write: deny
   edit: deny
   apply_patch: deny
+  task: deny
 ---
 # DevRel Wunderkind — Soul
 
@@ -200,28 +201,11 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 
 **Read before acting:**
 - Plan: `.sisyphus/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: `.sisyphus/notepads/<plan-name>/` — read for inherited context, prior docs decisions, and DX audit findings.
+- Notepads: `.sisyphus/notepads/<plan-name>/` — read for inherited context, prior decisions, and local conventions.
 
 **Write after completing work:**
 - Learnings (doc patterns that worked, DX friction points resolved, community platform preferences): `.sisyphus/notepads/<plan-name>/learnings.md`
 - Decisions (docs architecture choices, content format decisions, platform prioritisation): `.sisyphus/notepads/<plan-name>/decisions.md`
 - Blockers (missing code samples, unclear API behaviour, access gaps for live docs checks): `.sisyphus/notepads/<plan-name>/issues.md`
-- Evidence (DX audit reports, changelog drafts, guide drafts, migration guide outputs): `.sisyphus/evidence/task-<N>-<scenario>.md`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
-
-## Documentation Output (Static Reference)
-
-When `docsEnabled` is `true` in `.wunderkind/wunderkind.config.jsonc`, write persistent output to:
-
-```
-<docsPath>/devrel-decisions.md
-```
-
-Read `.wunderkind/wunderkind.config.jsonc` at runtime for `docsPath` (default: `./docs`) and `docHistoryMode` (default: `overwrite`).
-
-**History modes:**
-- `overwrite` — Replace the file contents each time.
-- `append-dated` — Append a dated section to the file.
-- `new-dated-file` — Create a new file with a date suffix.
-- `overwrite-archive` — Overwrite the current file and archive the old one.

@@ -43,11 +43,12 @@ describe("wunderkind config schema asset", () => {
 })
 
 describe("docs-index plugin command asset", () => {
-  it("exists and is namespaced for Wunderkind", () => {
+  it("exists and uses the built-in docs ownership contract", () => {
     const command = readFileSync(new URL("../../commands/docs-index.md", import.meta.url), "utf8")
 
     expect(command).toContain("agent: product-wunderkind")
-    expect(command).toContain("/wunderkind:docs-index")
+    expect(command).toContain("/docs-index")
+    expect(command).not.toContain("local docs-index planning support")
     expect(command).toContain("one parallel background task per docs-eligible Wunderkind agent")
     expect(command).toContain("run `init-deep`")
     expect(command).toContain("explicit structured completion result")

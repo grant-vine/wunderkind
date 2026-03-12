@@ -1,6 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
+import { buildPersistentContextSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "primary"
 
@@ -37,6 +38,12 @@ export function createLegalCounselAgent(model: string): AgentConfig {
     "apply_patch",
     "task",
   ])
+
+  const persistentContextSection = buildPersistentContextSection({
+    learnings: "jurisdiction-specific interpretations, licensing edge cases, regulatory nuances discovered",
+    decisions: "license compatibility conclusions, risk acceptance decisions, contract clause recommendations",
+    blockers: "ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions",
+  })
 
   return {
     description:
@@ -238,21 +245,7 @@ Escalate to \`wunderkind:operations-lead\` directly.
 
 ---
 
-## Persistent Context (.sisyphus/)
-
-When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
-
-**Read before acting:**
-- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, prior legal decisions, and jurisdiction-specific notes.
-
-**Write after completing work:**
-- Learnings (jurisdiction-specific interpretations, licensing edge cases, regulatory nuances discovered): \`.sisyphus/notepads/<plan-name>/learnings.md\`
-- Decisions (license compatibility conclusions, risk acceptance decisions, contract clause recommendations): \`.sisyphus/notepads/<plan-name>/decisions.md\`
-- Blockers (ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions): \`.sisyphus/notepads/<plan-name>/issues.md\`
-- Evidence (license audit outputs, drafted TOS/Privacy Policy/CLA/DPA documents, contract review summaries): \`.sisyphus/evidence/task-<N>-<scenario>.md\`
-
-**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+${persistentContextSection}
 
 ## Hard Rules
 

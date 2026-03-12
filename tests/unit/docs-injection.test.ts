@@ -68,6 +68,7 @@ describe("runtime docs-output system injection", () => {
     expect(output.system.some((entry) => entry.includes(DOCS_OUTPUT_SENTINEL))).toBe(true)
     expect(output.system.some((entry) => entry.includes("./docs/output"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("append-dated"))).toBe(true)
+    expect(output.system.some((entry) => entry.includes("Eligible Wunderkind docs targets:"))).toBe(true)
   })
 
   it("does not duplicate docs section when transform runs twice", async () => {

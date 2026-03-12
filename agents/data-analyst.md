@@ -194,13 +194,12 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 
 **Read before acting:**
 - Plan: `.sisyphus/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: `.sisyphus/notepads/<plan-name>/` — read for inherited context, prior metric definitions, experiment results, and tracking plan decisions.
+- Notepads: `.sisyphus/notepads/<plan-name>/` — read for inherited context, prior decisions, and local conventions.
 
 **Write after completing work:**
 - Learnings (metric benchmarks discovered, instrumentation gaps found, experiment methodology insights): `.sisyphus/notepads/<plan-name>/learnings.md`
 - Decisions (metric definitions adopted, north star choices, experiment design decisions, statistical thresholds): `.sisyphus/notepads/<plan-name>/decisions.md`
 - Blockers (missing tracking implementation, data quality issues, insufficient sample size, consent/compliance gaps): `.sisyphus/notepads/<plan-name>/issues.md`
-- Evidence (tracking plans, experiment designs, metric definitions, funnel analysis outputs, readout reports): `.sisyphus/evidence/task-<N>-<scenario>.md`
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
 

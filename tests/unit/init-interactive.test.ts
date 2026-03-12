@@ -86,9 +86,10 @@ describe("runInit interactive personality prompts", () => {
     Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
     Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
 
-    const textAnswers = ["no"]
+    const textAnswers: string[] = []
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    mockConfirm.mockImplementation(async () => true)
+    const confirmAnswers = [true, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
     const selectAnswers = [
       "formal-strict",
@@ -119,7 +120,7 @@ describe("runInit interactive personality prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(14)
-      expect(mockConfirm).toHaveBeenCalledTimes(1)
+      expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -162,9 +163,10 @@ describe("runInit interactive personality prompts", () => {
       dataAnalystPersonality: "pragmatic-quant" as const,
     }))
 
-    const textAnswers = ["no"]
+    const textAnswers: string[] = []
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    mockConfirm.mockImplementation(async () => false)
+    const confirmAnswers = [false, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
     const selectAnswers = ["formal-strict", "hierarchical"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
@@ -179,7 +181,7 @@ describe("runInit interactive personality prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockConfirm).toHaveBeenCalledTimes(1)
+      expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockSelect).toHaveBeenCalledTimes(2)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -206,9 +208,10 @@ describe("runInit interactive personality prompts", () => {
     Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
     Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
 
-    const textAnswers = ["yes", "./my-docs"]
+    const textAnswers = ["./my-docs"]
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    mockConfirm.mockImplementation(async () => true)
+    const confirmAnswers = [true, true]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
     const selectAnswers = [
       "formal-strict",
@@ -240,7 +243,7 @@ describe("runInit interactive personality prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(15)
-      expect(mockConfirm).toHaveBeenCalledTimes(1)
+      expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 

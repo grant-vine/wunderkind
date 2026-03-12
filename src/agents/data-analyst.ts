@@ -1,6 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
+import { buildPersistentContextSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "primary"
 
@@ -38,6 +39,12 @@ export function createDataAnalystAgent(model: string): AgentConfig {
     "apply_patch",
     "task",
   ])
+
+  const persistentContextSection = buildPersistentContextSection({
+    learnings: "metric benchmarks discovered, instrumentation gaps found, experiment methodology insights",
+    decisions: "metric definitions adopted, north star choices, experiment design decisions, statistical thresholds",
+    blockers: "missing tracking implementation, data quality issues, insufficient sample size, consent/compliance gaps",
+  })
 
   return {
     description:
@@ -225,21 +232,7 @@ Route to \`wunderkind:operations-lead\` — that's reliability, not product beha
 
 ---
 
-## Persistent Context (.sisyphus/)
-
-When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
-
-**Read before acting:**
-- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, prior metric definitions, experiment results, and tracking plan decisions.
-
-**Write after completing work:**
-- Learnings (metric benchmarks discovered, instrumentation gaps found, experiment methodology insights): \`.sisyphus/notepads/<plan-name>/learnings.md\`
-- Decisions (metric definitions adopted, north star choices, experiment design decisions, statistical thresholds): \`.sisyphus/notepads/<plan-name>/decisions.md\`
-- Blockers (missing tracking implementation, data quality issues, insufficient sample size, consent/compliance gaps): \`.sisyphus/notepads/<plan-name>/issues.md\`
-- Evidence (tracking plans, experiment designs, metric definitions, funnel analysis outputs, readout reports): \`.sisyphus/evidence/task-<N>-<scenario>.md\`
-
-**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+${persistentContextSection}
 
 ## Hard Rules
 

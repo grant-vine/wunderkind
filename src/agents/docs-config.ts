@@ -6,7 +6,7 @@ export interface AgentDocsConfig {
 }
 
 export const DOCS_INDEX_RUNTIME_STATUS = {
-  invocation: "/wunderkind:docs-index",
+  invocation: "/docs-index",
   executable: true,
   reason: "Implemented as a plugin command via commands/docs-index.md and intended to fan out parallel background doc tasks.",
 } as const
@@ -88,7 +88,7 @@ History mode: ${docHistoryMode}
 
 Use the configured docs path exactly as provided: ${docsPath}
 
-After writing, participate in the \`/wunderkind:docs-index\` workflow to refresh the project documentation index.
+After writing, participate in the \`/docs-index\` workflow to refresh the project documentation index.
 
 Each eligible docs agent owns its own canonical document output. When your work is complete, return an explicit completion result for your target file so the coordinator can decide whether to write a partial index or a full success index.
 

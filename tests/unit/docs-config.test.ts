@@ -64,9 +64,9 @@ describe("docs-config", () => {
     expect(instruction).toContain("overwrite")
   })
 
-  it("buildDocsInstruction references the namespaced docs-index workflow", () => {
+  it("buildDocsInstruction references the docs-index workflow", () => {
     const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
-    expect(instruction).toContain("/wunderkind:docs-index")
+    expect(instruction).toContain("/docs-index")
     expect(instruction).toContain("parallel background task")
     expect(instruction).toContain("explicit completion result")
     expect(instruction).toContain("partial index")
@@ -86,8 +86,8 @@ describe("docs-config", () => {
     ])
   })
 
-  it("freezes docs-index as a namespaced executable plugin command", () => {
-    expect(DOCS_INDEX_RUNTIME_STATUS.invocation).toBe("/wunderkind:docs-index")
+  it("freezes docs-index as an executable plugin command", () => {
+    expect(DOCS_INDEX_RUNTIME_STATUS.invocation).toBe("/docs-index")
     expect(DOCS_INDEX_RUNTIME_STATUS.executable).toBe(true)
     expect(DOCS_INDEX_RUNTIME_STATUS.reason).toContain("plugin command")
   })

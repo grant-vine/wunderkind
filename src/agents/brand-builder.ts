@@ -1,6 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
+import { buildPersistentContextSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "primary"
 
@@ -36,6 +37,12 @@ export function createBrandBuilderAgent(model: string): AgentConfig {
     "edit",
     "apply_patch",
   ])
+
+  const persistentContextSection = buildPersistentContextSection({
+    learnings: "community engagement tactics that worked, PR angles that landed, forum contributions that drove results",
+    decisions: "platform prioritisation, narrative choices, partnership decisions",
+    blockers: "pending approvals, legal reviews, missing spokesperson availability",
+  })
 
   return {
     description:
@@ -260,36 +267,7 @@ task(
 
 ---
 
-## Persistent Context (.sisyphus/)
-
-When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
-
-**Read before acting:**
-- Plan: \`.sisyphus/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: \`.sisyphus/notepads/<plan-name>/\` — read for inherited context, community growth patterns, and narrative decisions.
-
-**Write after completing work:**
-- Learnings (community engagement tactics that worked, PR angles that landed, forum contributions that drove results): \`.sisyphus/notepads/<plan-name>/learnings.md\`
-- Decisions (platform prioritisation, narrative choices, partnership decisions): \`.sisyphus/notepads/<plan-name>/decisions.md\`
-- Blockers (pending approvals, legal reviews, missing spokesperson availability): \`.sisyphus/notepads/<plan-name>/issues.md\`
-
-**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
-
-## Documentation Output (Static Reference)
-
-When \`docsEnabled\` is \`true\` in \`.wunderkind/wunderkind.config.jsonc\`, write persistent output to:
-
-\`\`\`
-<docsPath>/brand-guidelines.md
-\`\`\`
-
-Read \`.wunderkind/wunderkind.config.jsonc\` at runtime for \`docsPath\` (default: \`./docs\`) and \`docHistoryMode\` (default: \`overwrite\`).
-
-**History modes:**
-- \`overwrite\` — Replace the file contents each time.
-- \`append-dated\` — Append a dated section to the file.
-- \`new-dated-file\` — Create a new file with a date suffix.
-- \`overwrite-archive\` — Overwrite the current file and archive the old one.
+${persistentContextSection}
 
 ## Delegation Patterns
 
