@@ -7,24 +7,22 @@ export interface DocsIndexPlanEntry {
   targetPath: string
 }
 
-export type DocsIndexTaskStatus = "complete" | "failed" | "timed_out"
-
-export interface DocsIndexTaskResult {
-  agentKey: string
-  targetPath: string
-  status: DocsIndexTaskStatus
-  notes: string[]
-}
-
 export interface DocsIndexPlan {
   docsPath: string
   entries: DocsIndexPlanEntry[]
 }
 
-export interface DocsIndexAggregation {
-  completed: DocsIndexTaskResult[]
-  incomplete: DocsIndexTaskResult[]
-  canRunInitDeep: boolean
+export interface DocsIndexSummary {
+  created: string[]
+  refreshed: string[]
+  skipped: string[]
+  failed: string[]
+}
+
+export interface DocsIndexSummaryInput {
+  existingBefore: string[]
+  existingAfter: string[]
+  skippedAgentKeys?: string[]
 }
 
 export function buildDocsIndexPlan(docsPath: string, cwd: string = process.cwd()): DocsIndexPlan {
@@ -48,116 +46,52 @@ export function buildDocsIndexPlan(docsPath: string, cwd: string = process.cwd()
   }
 }
 
-export function detectDocsIndexCollisions(plan: DocsIndexPlan): string[] {
+export function validateDocsIndexPlan(plan: DocsIndexPlan): string[] {
   const seen = new Map<string, string>()
-  const collisions: string[] = []
+  const duplicates: string[] = []
 
   for (const entry of plan.entries) {
     const existing = seen.get(entry.targetPath)
     if (existing) {
-      collisions.push(`${existing} <-> ${entry.agentKey} => ${entry.targetPath}`)
+      duplicates.push(`${existing} <-> ${entry.agentKey} => ${entry.targetPath}`)
       continue
     }
     seen.set(entry.targetPath, entry.agentKey)
   }
 
-  return collisions
+  return duplicates
 }
 
-export function hasCompleteDocsIndexOutputs(plan: DocsIndexPlan, existingPaths: string[]): boolean {
-  const existing = new Set(existingPaths)
-  return plan.entries.every((entry) => existing.has(entry.targetPath))
-}
+export function summarizeDocsIndexResults(plan: DocsIndexPlan, input: DocsIndexSummaryInput): DocsIndexSummary {
+  const existingBefore = new Set(input.existingBefore)
+  const existingAfter = new Set(input.existingAfter)
+  const skippedAgentKeys = new Set(input.skippedAgentKeys ?? [])
 
-export function buildDocsIndexCompletionTag(result: DocsIndexTaskResult): string {
-  const notes = result.notes.join(" | ")
-  return [
-    "<wunderkind-docs-index-result>",
-    `agentKey=${result.agentKey}`,
-    `targetPath=${result.targetPath}`,
-    `status=${result.status}`,
-    `notes=${notes}`,
-    "</wunderkind-docs-index-result>",
-  ].join("\n")
-}
-
-export function parseDocsIndexCompletionTag(output: string): DocsIndexTaskResult | null {
-  const match = output.match(
-    /<wunderkind-docs-index-result>\s*agentKey=(.+)\s*targetPath=(.+)\s*status=(complete|failed|timed_out)\s*notes=(.*)\s*<\/wunderkind-docs-index-result>/s,
-  )
-
-  if (!match) return null
-
-  const [, agentKey, targetPath, status, notes] = match
-  if (agentKey === undefined || targetPath === undefined || status === undefined || notes === undefined) {
-    return null
-  }
-
-  return {
-    agentKey: agentKey.trim(),
-    targetPath: targetPath.trim(),
-    status: status.trim() as DocsIndexTaskStatus,
-    notes: notes.trim() === "" ? [] : notes.split("|").map((item) => item.trim()).filter(Boolean),
-  }
-}
-
-export function aggregateDocsIndexResults(
-  plan: DocsIndexPlan,
-  results: DocsIndexTaskResult[],
-  existingPaths: string[],
-): DocsIndexAggregation {
-  const existing = new Set(existingPaths)
-
-  const resultsByEntry = new Map<string, DocsIndexTaskResult[]>()
-  for (const result of results) {
-    const key = `${result.agentKey}::${result.targetPath}`
-    const current = resultsByEntry.get(key)
-    if (current) {
-      current.push(result)
-    } else {
-      resultsByEntry.set(key, [result])
-    }
-  }
-
-  const completed: DocsIndexTaskResult[] = []
-  const incomplete: DocsIndexTaskResult[] = []
+  const created: string[] = []
+  const refreshed: string[] = []
+  const skipped: string[] = []
+  const failed: string[] = []
 
   for (const entry of plan.entries) {
-    const key = `${entry.agentKey}::${entry.targetPath}`
-    const matching = resultsByEntry.get(key) ?? []
-
-    if (matching.length !== 1) {
-      incomplete.push({
-        agentKey: entry.agentKey,
-        targetPath: entry.targetPath,
-        status: "failed",
-        notes: [matching.length === 0 ? "missing completion result" : "duplicate completion results"],
-      })
+    if (skippedAgentKeys.has(entry.agentKey)) {
+      skipped.push(entry.targetPath)
       continue
     }
 
-    const [result] = matching
-    if (result === undefined) {
-      incomplete.push({
-        agentKey: entry.agentKey,
-        targetPath: entry.targetPath,
-        status: "failed",
-        notes: ["missing completion result"],
-      })
+    const existedBefore = existingBefore.has(entry.targetPath)
+    const existsAfter = existingAfter.has(entry.targetPath)
+
+    if (existsAfter) {
+      if (existedBefore) {
+        refreshed.push(entry.targetPath)
+      } else {
+        created.push(entry.targetPath)
+      }
       continue
     }
 
-    if (result.status === "complete" && existing.has(entry.targetPath)) {
-      completed.push(result)
-      continue
-    }
-
-    incomplete.push(result)
+    failed.push(entry.targetPath)
   }
 
-  return {
-    completed,
-    incomplete,
-    canRunInitDeep: incomplete.length === 0 && completed.length === plan.entries.length,
-  }
+  return { created, refreshed, skipped, failed }
 }
