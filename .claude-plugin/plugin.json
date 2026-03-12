@@ -1,6 +1,6 @@
 {
   "name": "wunderkind",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "Wunderkind \u2014 specialist AI agents for any software product team, built as an oh-my-openagent addon",
   "main": "dist/index.js"
 }
