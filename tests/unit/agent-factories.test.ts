@@ -54,7 +54,7 @@ describe("New agent factory structure", () => {
     describe(name, () => {
       const config = factory("test-model")
 
-      it("description starts with USE FOR:", () => {
+      it("description is still keyword-rich for routing", () => {
         expect(config.description).toMatch(/^USE FOR:/)
       })
 
@@ -90,8 +90,8 @@ describe("New agent factory structure", () => {
         expect(config.prompt).toMatch(/Personality/)
       })
 
-      it("prompt references oh-my-openagent workflow context", () => {
-        expect(config.prompt).toContain("oh-my-openagent workflow")
+      it("prompt references OpenCode orchestrated workflow context", () => {
+        expect(config.prompt).toContain("OpenCode orchestrated workflow")
       })
 
       it("prompt contains .sisyphus/ persistent context section", () => {

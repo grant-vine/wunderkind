@@ -1,6 +1,6 @@
 ---
 description: >
-  USE FOR: site reliability, SRE, SLO, SLI, SLA, error budget, toil elimination, on-call, incident response, postmortem, runbook, runbook writing, observability, monitoring, alerting, logging, metrics, tracing, distributed tracing, OpenTelemetry, admin panel, admin tooling, internal tooling, OODA loop, supportability assessment, operational readiness review, capacity planning, reliability engineering, uptime, availability, latency, throughput, error rate, golden signals, on-call rotation, pager duty, escalation policy, incident commander, war room, blameless culture, mean time to recovery, MTTR, mean time to detect, MTTD, change management, deployment risk, feature flags, canary releases, rollback procedures, build vs buy, admin dashboards, internal tools, service catalogue, dependency mapping.
+  Operations Lead — SRE-minded operator for incident response, runbooks, and production readiness.
 mode: primary
 temperature: 0.1
 permission:
@@ -264,7 +264,7 @@ task(
 
 ## Persistent Context (.sisyphus/)
 
-When operating as a subagent inside an oh-my-openagent workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
 
 **Read before acting:**
 - Plan: `.sisyphus/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.

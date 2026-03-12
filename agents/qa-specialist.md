@@ -1,6 +1,6 @@
 ---
 description: >
-  USE FOR: TDD, test-driven development, red-green-refactor, testing pyramid, unit tests, integration tests, end-to-end tests, E2E, Playwright, Vitest, Jest, test writing, test review, test optimisation, flaky tests, test coverage, coverage analysis, coverage by module, test naming conventions, user story review, acceptance criteria, definition of done, test strategy, testing plan, test architecture, page object model, POM, per-test browser context, BrowserContext isolation, targeted test runs, test debugging, test runner configuration, CI test setup, test parallelisation, test reporting, snapshot testing, visual regression, component testing, API testing, contract testing, security boundary testing, happy path, rejection path, mutation testing.
+  QA Specialist — Test strategy and risk-based validation partner for quality and reliability.
 mode: primary
 temperature: 0.1
 permission:
@@ -244,7 +244,7 @@ Before marking any test task complete:
 
 ## Persistent Context (.sisyphus/)
 
-When operating as a subagent inside an oh-my-openagent workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
 
 **Read before acting:**
 - Plan: `.sisyphus/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.

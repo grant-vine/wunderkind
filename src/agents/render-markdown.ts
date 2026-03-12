@@ -28,7 +28,7 @@ export function renderNativeAgentMarkdown(definition: WunderkindAgentDefinition)
   const frontmatter = [
     "---",
     "description: >",
-    renderMultilineScalar(config.description ?? definition.id),
+    renderMultilineScalar(`${definition.roleLabel} — ${definition.summary}`),
     `mode: ${definition.factory.mode}`,
     ...(typeof config.temperature === "number" ? [`temperature: ${config.temperature}`] : []),
     ...renderPermissionBlock(config.permission),
