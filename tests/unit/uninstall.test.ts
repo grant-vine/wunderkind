@@ -40,7 +40,7 @@ const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
 const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
 const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
-const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/commands", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands", changed: true }))
 const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/skills", changed: true }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
@@ -78,6 +78,7 @@ describe("runUninstall", () => {
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
       expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeCommandFiles.mock.calls[0]?.length ?? 0).toBe(0)
       expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(1)
     } finally {
@@ -86,7 +87,7 @@ describe("runUninstall", () => {
     }
   })
 
-  it("defaults to project uninstall when both scopes are installed", async () => {
+  it("defaults to project uninstall when both scopes are installed and preserves shared global capabilities", async () => {
     mockDetectCurrentConfig.mockImplementation(() => ({
       ...makeDetectedConfig(),
       registrationScope: "both" as const,
@@ -106,9 +107,9 @@ describe("runUninstall", () => {
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
       const first = mockRemovePluginFromOpenCodeConfig.mock.calls[0]?.[0]
       expect(first).toBe("project")
-      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
-      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
-      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(0)
+      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(0)
+      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(0)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.log = originalLog
@@ -116,7 +117,7 @@ describe("runUninstall", () => {
     }
   })
 
-  it("removes only project registration and leaves both configs untouched", async () => {
+  it("removes only project registration and leaves shared global capabilities untouched", async () => {
     const originalLog = console.log
     const originalError = console.error
     console.log = () => {}
@@ -128,9 +129,9 @@ describe("runUninstall", () => {
       const firstCallScope = mockRemovePluginFromOpenCodeConfig.mock.calls[0]?.[0]
       expect(firstCallScope).toBe("project")
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
-      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
-      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
-      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(0)
+      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(0)
+      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(0)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.log = originalLog

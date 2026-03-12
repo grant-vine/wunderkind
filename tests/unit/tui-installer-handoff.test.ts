@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, mock } from "bun:test"
 
 const mockRunInit = mock(async () => 0)
 const mockIsProjectContext = mock(() => true)
-const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
-const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
-const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
 
 mock.module("../../src/cli/init.js", () => ({
   runInit: mockRunInit,

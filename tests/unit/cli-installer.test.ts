@@ -44,9 +44,9 @@ const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
-const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
-const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
-const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
 const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
   region: "Global",
   industry: "",
@@ -126,6 +126,18 @@ describe("validateNonTuiArgs", () => {
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
   })
+
+  it("allows project scope without baseline flags", () => {
+    const result = validateNonTuiArgs(baseArgs({
+      scope: "project",
+      region: undefined,
+      industry: undefined,
+      primaryRegulation: undefined,
+      secondaryRegulation: undefined,
+    }))
+    expect(result.valid).toBe(true)
+    expect(result.errors).toEqual([])
+  })
 })
 
 describe("runCliInstaller", () => {
@@ -145,9 +157,9 @@ describe("runCliInstaller", () => {
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
-    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
-    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
-    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
     mockReadWunderkindConfigForScope.mockImplementation(() => null)
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: true, added: [".wunderkind/"], alreadyPresent: [] }))
   })
@@ -168,6 +180,37 @@ describe("runCliInstaller", () => {
     try {
       const code = await runCliInstaller(baseArgs({ scope: "global" }))
       expect(code).toBe(0)
+    } finally {
+      restore()
+    }
+  })
+
+  it("allows successful project install without baseline flags", async () => {
+    mockDetectCurrentConfig.mockImplementation(() =>
+      makeDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }),
+    )
+
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs({
+        scope: "project",
+        region: undefined,
+        industry: undefined,
+        primaryRegulation: undefined,
+        secondaryRegulation: undefined,
+      }))
+      expect(code).toBe(0)
+      expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(1)
     } finally {
       restore()
     }
@@ -195,7 +238,7 @@ describe("runCliInstaller", () => {
     }
   })
 
-  it("calls native command and skill writers for project scope install", async () => {
+  it("calls native command writer for project scope install and refreshes the global command copy", async () => {
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "project" }))
@@ -424,6 +467,44 @@ describe("runCliUpgrade", () => {
       expect(configArg.industry).toBe("Project Industry")
       expect(configArg.primaryRegulation).toBe("POPIA")
       expect(configArg.secondaryRegulation).toBe("GDPR")
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("uses detected effective baseline values for project refresh-config when sparse project overrides omit them", async () => {
+    mockDetectCurrentConfig.mockImplementation(() =>
+      makeDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }),
+    )
+    mockReadWunderkindConfigForScope.mockImplementation((scope: InstallScope) =>
+      scope === "project"
+        ? {
+            teamCulture: "pragmatic-balanced",
+            docsEnabled: false,
+          }
+        : null,
+    )
+
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "project", refreshConfig: true })
+      expect(code).toBe(0)
+      const configArg = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(configArg.region).toBe("South Africa")
+      expect(configArg.industry).toBe("SaaS")
+      expect(configArg.primaryRegulation).toBe("POPIA")
+      expect(configArg.secondaryRegulation).toBe("GDPR")
     } finally {
       restore()
     }
@@ -551,6 +632,100 @@ describe("writeWunderkindConfig schema field", () => {
       }
     }
   })
+
+  it("writes sparse project config without baseline fields when they match the global baseline", async () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-project-sparse-config-"))
+    const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
+
+    try {
+      mkdirSync(fakeHome, { recursive: true })
+      mock.module("node:os", () => ({ homedir: () => fakeHome }))
+      process.chdir(testRoot)
+
+      const {
+        writeGlobalWunderkindConfig,
+        writeWunderkindConfig,
+        getDefaultGlobalConfig,
+        getDefaultInstallConfig,
+      } = await import(`../../src/cli/config-manager/index.ts?project-sparse-schema=${Date.now()}`)
+
+      expect(writeGlobalWunderkindConfig({
+        ...getDefaultGlobalConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }).success).toBe(true)
+
+      const result = writeWunderkindConfig({
+        ...getDefaultInstallConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }, "project")
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(join(testRoot, ".wunderkind", "wunderkind.config.jsonc"), "utf-8")
+      expect(written).not.toContain('"region"')
+      expect(written).not.toContain('"industry"')
+      expect(written).not.toContain('"primaryRegulation"')
+      expect(written).not.toContain('"secondaryRegulation"')
+      expect(written).toContain('"teamCulture"')
+      expect(written).toContain('"docsEnabled"')
+    } finally {
+      process.chdir(originalCwd)
+      mock.module("node:os", () => ({ homedir }))
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("writes project baseline overrides when they differ from the global baseline", async () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-project-override-config-"))
+    const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
+
+    try {
+      mkdirSync(fakeHome, { recursive: true })
+      mock.module("node:os", () => ({ homedir: () => fakeHome }))
+      process.chdir(testRoot)
+
+      const {
+        writeGlobalWunderkindConfig,
+        writeWunderkindConfig,
+        getDefaultGlobalConfig,
+        getDefaultInstallConfig,
+      } = await import(`../../src/cli/config-manager/index.ts?project-override-schema=${Date.now()}`)
+
+      expect(writeGlobalWunderkindConfig({
+        ...getDefaultGlobalConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }).success).toBe(true)
+
+      const result = writeWunderkindConfig({
+        ...getDefaultInstallConfig(),
+        region: "EU",
+        industry: "Marketplace",
+        primaryRegulation: "GDPR",
+        secondaryRegulation: "",
+      }, "project")
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(join(testRoot, ".wunderkind", "wunderkind.config.jsonc"), "utf-8")
+      expect(written).toContain('"region": "EU"')
+      expect(written).toContain('"industry": "Marketplace"')
+      expect(written).toContain('"primaryRegulation": "GDPR"')
+      expect(written).toContain('"secondaryRegulation": ""')
+    } finally {
+      process.chdir(originalCwd)
+      mock.module("node:os", () => ({ homedir }))
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
 })
 
 describe("docs-output-helper", () => {
@@ -624,17 +799,22 @@ describe("docs-output-helper", () => {
 })
 
 describe("writeNativeAgentFiles", () => {
-  it("writes native agent markdown files to the project .opencode/agents dir", async () => {
-    const { writeNativeAgentFiles } = await import(`../../src/cli/config-manager/index.ts?native-agent-test=${Date.now()}`)
+  it("writes native agent markdown files to the global OpenCode agents dir", async () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-native-agent-writer-"))
     const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
 
     try {
+      mkdirSync(fakeHome, { recursive: true })
+      mock.module("node:os", () => ({
+        homedir: () => fakeHome,
+      }))
       process.chdir(testRoot)
+      const { writeNativeAgentFiles } = await import(`../../src/cli/config-manager/index.ts?native-agent-test=${Date.now()}`)
       const result = writeNativeAgentFiles("project")
       expect(result.success).toBe(true)
 
-      const agentsDir = join(testRoot, ".opencode", "agents")
+      const agentsDir = join(fakeHome, ".config", "opencode", "agents")
       expect(existsSync(agentsDir)).toBe(true)
 
       const marketingPath = join(agentsDir, "marketing-wunderkind.md")
@@ -643,10 +823,13 @@ describe("writeNativeAgentFiles", () => {
       expect(existsSync(cisoPath)).toBe(true)
 
       const written = readFileSync(marketingPath, "utf-8")
-      expect(written).toContain("mode: primary")
+      expect(written).toContain("mode: all")
       expect(written).toContain("# Marketing Wunderkind")
     } finally {
       process.chdir(originalCwd)
+      mock.module("node:os", () => ({
+        homedir,
+      }))
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
@@ -671,17 +854,22 @@ describe("writeNativeAgentFiles", () => {
 })
 
 describe("writeNativeCommandFiles", () => {
-  it("writes native command markdown files to the project .opencode/commands dir", async () => {
-    const { writeNativeCommandFiles } = await import(`../../src/cli/config-manager/index.ts?native-command-test=${Date.now()}`)
+  it("writes native command markdown files to the global OpenCode commands dir", async () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-native-command-writer-"))
     const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
 
     try {
+      mkdirSync(fakeHome, { recursive: true })
+      mock.module("node:os", () => ({
+        homedir: () => fakeHome,
+      }))
       process.chdir(testRoot)
-      const result = writeNativeCommandFiles("project")
+      const { writeNativeCommandFiles } = await import(`../../src/cli/config-manager/index.ts?native-command-test=${Date.now()}`)
+      const result = writeNativeCommandFiles()
       expect(result.success).toBe(true)
 
-      const commandsDir = join(testRoot, ".opencode", "commands")
+      const commandsDir = join(fakeHome, ".config", "opencode", "commands")
       const docsIndexPath = join(commandsDir, "docs-index.md")
       expect(existsSync(commandsDir)).toBe(true)
       expect(existsSync(docsIndexPath)).toBe(true)
@@ -691,23 +879,31 @@ describe("writeNativeCommandFiles", () => {
       expect(written).toContain("agent: product-wunderkind")
     } finally {
       process.chdir(originalCwd)
+      mock.module("node:os", () => ({
+        homedir,
+      }))
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
 })
 
 describe("writeNativeSkillFiles", () => {
-  it("writes native skill directories recursively to the project .opencode/skills dir", async () => {
-    const { writeNativeSkillFiles } = await import(`../../src/cli/config-manager/index.ts?native-skill-test=${Date.now()}`)
+  it("writes native skill directories recursively to the global OpenCode skills dir", async () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-native-skill-writer-"))
     const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
 
     try {
+      mkdirSync(fakeHome, { recursive: true })
+      mock.module("node:os", () => ({
+        homedir: () => fakeHome,
+      }))
       process.chdir(testRoot)
+      const { writeNativeSkillFiles } = await import(`../../src/cli/config-manager/index.ts?native-skill-test=${Date.now()}`)
       const result = writeNativeSkillFiles("project")
       expect(result.success).toBe(true)
 
-      const skillsDir = join(testRoot, ".opencode", "skills")
+      const skillsDir = join(fakeHome, ".config", "opencode", "skills")
       const agilePmSkill = join(skillsDir, "agile-pm", "SKILL.md")
       const securityAnalystSkill = join(skillsDir, "security-analyst", "SKILL.md")
       expect(existsSync(skillsDir)).toBe(true)
@@ -718,6 +914,9 @@ describe("writeNativeSkillFiles", () => {
       expect(written).toContain("Agile PM")
     } finally {
       process.chdir(originalCwd)
+      mock.module("node:os", () => ({
+        homedir,
+      }))
       rmSync(testRoot, { recursive: true, force: true })
     }
   })

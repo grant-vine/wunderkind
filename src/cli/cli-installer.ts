@@ -83,6 +83,10 @@ export function printBox(content: string, title?: string): void {
 }
 
 export function validateNonTuiArgs(args: InstallArgs): { valid: boolean; errors: string[] } {
+  if (args.scope === "project") {
+    return { valid: true, errors: [] }
+  }
+
   const errors: string[] = []
   if (!args.region) errors.push("--region is required (e.g. --region='South Africa')")
   if (!args.industry) errors.push("--industry is required (e.g. --industry=SaaS)")
@@ -129,10 +133,10 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   let step = 1
 
   const config: InstallConfig = {
-    region: args.region ?? "Global",
-    industry: args.industry ?? "",
-    primaryRegulation: args.primaryRegulation ?? "GDPR",
-    secondaryRegulation: args.secondaryRegulation ?? "",
+    region: args.region ?? detected.region ?? "Global",
+    industry: args.industry ?? detected.industry ?? "",
+    primaryRegulation: args.primaryRegulation ?? detected.primaryRegulation ?? "GDPR",
+    secondaryRegulation: args.secondaryRegulation ?? detected.secondaryRegulation ?? "",
     teamCulture: detected.teamCulture,
     orgStructure: detected.orgStructure,
     cisoPersonality: detected.cisoPersonality,
@@ -175,12 +179,12 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   printSuccess(`Native agents written ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
 
-  const nativeCommandsResult = writeNativeCommandFiles(args.scope)
+  const nativeCommandsResult = writeNativeCommandFiles()
   if (!nativeCommandsResult.success) {
     printError(`Failed to write native command files: ${nativeCommandsResult.error}`)
     return 1
   }
-  printSuccess(`Native commands written ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
+  printSuccess(`Global native commands written ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
 
   const nativeSkillsResult = writeNativeSkillFiles(args.scope)
   if (!nativeSkillsResult.success) {
@@ -239,22 +243,35 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
 
   const defaults = getDefaultGlobalConfig()
   const persisted = readWunderkindConfigForScope(args.scope) ?? {}
+  const effectiveBaseline = args.scope === "project"
+    ? {
+        region: detected.region,
+        industry: detected.industry,
+        primaryRegulation: detected.primaryRegulation,
+        secondaryRegulation: detected.secondaryRegulation,
+      }
+    : {
+        region: persisted.region ?? defaults.region,
+        industry: persisted.industry ?? defaults.industry,
+        primaryRegulation: persisted.primaryRegulation ?? defaults.primaryRegulation,
+        secondaryRegulation: persisted.secondaryRegulation ?? defaults.secondaryRegulation,
+      }
   const nextConfig = {
-    region: args.region ?? persisted.region ?? defaults.region,
-    industry: args.industry ?? persisted.industry ?? defaults.industry,
-    primaryRegulation: args.primaryRegulation ?? persisted.primaryRegulation ?? defaults.primaryRegulation,
-    secondaryRegulation: args.secondaryRegulation ?? persisted.secondaryRegulation ?? defaults.secondaryRegulation,
+    region: args.region ?? effectiveBaseline.region,
+    industry: args.industry ?? effectiveBaseline.industry,
+    primaryRegulation: args.primaryRegulation ?? effectiveBaseline.primaryRegulation,
+    secondaryRegulation: args.secondaryRegulation ?? effectiveBaseline.secondaryRegulation,
   }
 
   const isNoop =
-    nextConfig.region === (persisted.region ?? defaults.region) &&
-    nextConfig.industry === (persisted.industry ?? defaults.industry) &&
-    nextConfig.primaryRegulation === (persisted.primaryRegulation ?? defaults.primaryRegulation) &&
-    nextConfig.secondaryRegulation === (persisted.secondaryRegulation ?? defaults.secondaryRegulation)
+    nextConfig.region === effectiveBaseline.region &&
+    nextConfig.industry === effectiveBaseline.industry &&
+    nextConfig.primaryRegulation === effectiveBaseline.primaryRegulation &&
+    nextConfig.secondaryRegulation === effectiveBaseline.secondaryRegulation
 
   if (args.dryRun === true) {
     printInfo(`Dry run: would refresh native agents in ${args.scope} scope`)
-    printInfo(`Dry run: would refresh native commands in ${args.scope} scope`)
+    printInfo("Dry run: would refresh global native commands")
     printInfo(`Dry run: would refresh native skills in ${args.scope} scope`)
     if (args.refreshConfig === true || !isNoop) {
       printInfo(`Dry run: would rewrite Wunderkind config in ${args.scope} scope`)
@@ -286,7 +303,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
     return 1
   }
 
-  const nativeCommandsResult = writeNativeCommandFiles(args.scope)
+  const nativeCommandsResult = writeNativeCommandFiles()
   if (!nativeCommandsResult.success) {
     printError(`Failed to refresh native command files: ${nativeCommandsResult.error}`)
     return 1
@@ -299,7 +316,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   }
 
   printSuccess(`Native agents refreshed ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
-  printSuccess(`Native commands refreshed ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
+  printSuccess(`Global native commands refreshed ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
   printSuccess(`Native skills refreshed ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)
   printBox(
     [

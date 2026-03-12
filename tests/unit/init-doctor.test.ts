@@ -33,17 +33,17 @@ const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
 const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock(() => null)
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/wunderkind.config.jsonc" }))
-const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockDetectNativeAgentFiles = mock((scope: "global" | "project") => ({
   dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
   presentCount: 12,
   totalCount: 12,
   allPresent: true,
 }))
-const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
-const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
-const mockDetectNativeCommandFiles = mock((scope: "global" | "project") => ({
-  dir: scope === "global" ? "/tmp/global-commands" : `${process.cwd()}/.opencode/commands`,
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockDetectNativeCommandFiles = mock(() => ({
+  dir: "/tmp/global-commands",
   presentCount: 1,
   totalCount: 1,
   allPresent: true,
@@ -366,11 +366,17 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
     }))
-    mockDetectNativeCommandFiles.mockImplementation((scope: "global" | "project") => ({
-      dir: scope === "global" ? "/tmp/global-commands" : `${process.cwd()}/.opencode/commands`,
-      presentCount: scope === "global" ? 0 : 1,
-      totalCount: 1,
+    mockDetectNativeAgentFiles.mockImplementation((scope: "global" | "project") => ({
+      dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
+      presentCount: scope === "global" ? 0 : 12,
+      totalCount: 12,
       allPresent: scope !== "global",
+    }))
+    mockDetectNativeCommandFiles.mockImplementation(() => ({
+      dir: "/tmp/global-commands",
+      presentCount: 0,
+      totalCount: 1,
+      allPresent: false,
     }))
     mockDetectNativeSkillFiles.mockImplementation((scope: "global" | "project") => ({
       dir: scope === "global" ? "/tmp/global-skills" : `${process.cwd()}/.opencode/skills`,
@@ -479,6 +485,8 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("global native agents dir:"))).toBe(true)
       expect(messages.some((m) => m.includes("global native commands dir:"))).toBe(true)
       expect(messages.some((m) => m.includes("global native skills dir:"))).toBe(true)
+      expect(messages.some((m) => m.includes("project native agents dir:"))).toBe(false)
+      expect(messages.some((m) => m.includes("project native skills dir:"))).toBe(false)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -641,9 +649,3 @@ describe("runDoctor", () => {
     }
   })
 })
-    mockDetectNativeAgentFiles.mockImplementation((scope: "global" | "project") => ({
-      dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
-      presentCount: scope === "global" ? 0 : 12,
-      totalCount: 12,
-      allPresent: scope !== "global",
-    }))

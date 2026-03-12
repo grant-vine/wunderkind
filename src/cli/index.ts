@@ -109,7 +109,7 @@ program
     [
       "Refresh Wunderkind-owned native assets without resetting project-local customizations.",
       "",
-      "Refreshes native agents, commands, and skills for the selected scope.",
+      "Refreshes native agents and skills for the selected scope, plus the global native commands.",
     ].join("\n"),
   )
   .option("--no-tui", "Reserved for future interactive upgrade support")
@@ -124,7 +124,8 @@ program
       "  bunx @grant-vine/wunderkind upgrade --scope=global",
       "",
       "Current behavior:",
-      "  - refreshes Wunderkind native agents, commands, and skills in the requested scope",
+      "  - refreshes Wunderkind native agents and skills in the requested scope",
+      "  - refreshes Wunderkind native commands globally",
       "  - preserves project-local soul/docs settings unless explicit config overrides are passed",
       "  - supports --dry-run and --refresh-config for safe testing",
     ].join("\n"),
@@ -258,7 +259,7 @@ program
     [
       "Safely remove Wunderkind plugin wiring from OpenCode config.",
       "",
-      "Removes plugin registration and, on global uninstall, deletes Wunderkind's global config file.",
+      "Removes plugin registration and, on global uninstall, deletes Wunderkind's shared global capabilities and global config file.",
       "Leaves project-local customizations and bootstrap artifacts untouched.",
     ].join("\n"),
   )

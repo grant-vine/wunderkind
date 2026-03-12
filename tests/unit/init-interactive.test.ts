@@ -50,9 +50,9 @@ mock.module("@clack/prompts", () => ({
 const mockDetectCurrentConfig = mock(() => DEFAULT_DETECTED_CONFIG)
 
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
-const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
-const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
-const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,

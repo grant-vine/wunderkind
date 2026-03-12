@@ -355,7 +355,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       return 1
     }
 
-    const nativeCommandsResult = writeNativeCommandFiles("project")
+    const nativeCommandsResult = writeNativeCommandFiles()
     if (!nativeCommandsResult.success) {
       console.error(`Error: Failed to write native command files: ${nativeCommandsResult.error}`)
       return 1

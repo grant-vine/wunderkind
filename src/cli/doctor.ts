@@ -107,17 +107,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         `${color.dim(projectOpenCodePath)} ${color.dim(`(${projectOpenCodeResolution.source})`)}`,
       )
       const globalNativeAgents = detectNativeAgentFiles("global")
-      const projectNativeAgents = detectNativeAgentFiles("project")
-      const globalNativeCommands = detectNativeCommandFiles("global")
-      const projectNativeCommands = detectNativeCommandFiles("project")
+      const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
-      const projectNativeSkills = detectNativeSkillFiles("project")
       line("global native agents dir:", `${status(globalNativeAgents.allPresent)} ${color.dim(globalNativeAgents.dir)}`)
-      line("project native agents dir:", `${status(projectNativeAgents.allPresent)} ${color.dim(projectNativeAgents.dir)}`)
       line("global native commands dir:", `${status(globalNativeCommands.allPresent)} ${color.dim(globalNativeCommands.dir)}`)
-      line("project native commands dir:", `${status(projectNativeCommands.allPresent)} ${color.dim(projectNativeCommands.dir)}`)
       line("global native skills dir:", `${status(globalNativeSkills.allPresent)} ${color.dim(globalNativeSkills.dir)}`)
-      line("project native skills dir:", `${status(projectNativeSkills.allPresent)} ${color.dim(projectNativeSkills.dir)}`)
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
       if (omoVersion.configPath) {
@@ -150,11 +144,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const hasEvidence = existsSync(sisyphusEvidencePath)
       const hasDocsReadme = existsSync(docsReadmePath)
       const globalNativeAgents = detectNativeAgentFiles("global")
-      const projectNativeAgents = detectNativeAgentFiles("project")
-      const globalNativeCommands = detectNativeCommandFiles("global")
-      const projectNativeCommands = detectNativeCommandFiles("project")
+      const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
-      const projectNativeSkills = detectNativeSkillFiles("project")
 
       if (!localConfigExists) warnings.push(`missing local config: ${localConfigPath}`)
       if (!hasAgents) warnings.push(`missing soul file: ${agentsPath}`)
@@ -171,15 +162,6 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (detected.globalInstalled === true && !globalNativeSkills.allPresent) {
         warnings.push(`missing native global skill files: ${globalNativeSkills.dir}`)
       }
-      if (localConfigExists && !projectNativeAgents.allPresent) {
-        warnings.push(`missing native project agent files: ${projectNativeAgents.dir}`)
-      }
-      if (localConfigExists && !projectNativeCommands.allPresent) {
-        warnings.push(`missing native project command files: ${projectNativeCommands.dir}`)
-      }
-      if (localConfigExists && !projectNativeSkills.allPresent) {
-        warnings.push(`missing native project skill files: ${projectNativeSkills.dir}`)
-      }
 
       section(options.verbose ? "Project Health" : "Project health")
       line("cwd:", color.dim(cwd))
@@ -190,18 +172,6 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("global native agents present:", status(globalNativeAgents.allPresent))
       line("global native commands present:", status(globalNativeCommands.allPresent))
       line("global native skills present:", status(globalNativeSkills.allPresent))
-      line(
-        "project native agents present:",
-        projectNativeAgents.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
-      )
-      line(
-        "project native commands present:",
-        projectNativeCommands.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
-      )
-      line(
-        "project native skills present:",
-        projectNativeSkills.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
-      )
 
       if (options.verbose) {
         section("Project Configuration")
