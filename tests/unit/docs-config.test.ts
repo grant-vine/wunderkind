@@ -67,9 +67,10 @@ describe("docs-config", () => {
   it("buildDocsInstruction references the docs-index workflow", () => {
     const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
     expect(instruction).toContain("/docs-index")
-    expect(instruction).toContain("parallel background task")
-    expect(instruction).toContain("explicit completion result")
-    expect(instruction).toContain("partial index")
+    expect(instruction).toContain("Refresh its contents if it already exists")
+    expect(instruction).toContain("create it if missing")
+    expect(instruction).toContain("optional follow-up")
+    expect(instruction).not.toContain("explicit completion result")
   })
 
   it("exports the exact eligible docs agent set", () => {
@@ -89,7 +90,7 @@ describe("docs-config", () => {
   it("freezes docs-index as an executable plugin command", () => {
     expect(DOCS_INDEX_RUNTIME_STATUS.invocation).toBe("/docs-index")
     expect(DOCS_INDEX_RUNTIME_STATUS.executable).toBe(true)
-    expect(DOCS_INDEX_RUNTIME_STATUS.reason).toContain("plugin command")
+    expect(DOCS_INDEX_RUNTIME_STATUS.reason).toContain("lightweight refresh/bootstrap")
   })
 
   it("buildDocsInstruction throws for unknown agent key", () => {

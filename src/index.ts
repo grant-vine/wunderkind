@@ -28,6 +28,8 @@ Documentation output is enabled for this project. Use these resolved runtime val
 - docHistoryMode: ${docHistoryMode}
 - docs scope: current project root only
 
+Treat these canonical targets as managed home files. Within \`/docs-index\`, use a refresh or bootstrap flow: refresh them if present or bootstrap them if missing.
+
 Eligible Wunderkind docs targets:
 ${docsTargets}
 `.trim())

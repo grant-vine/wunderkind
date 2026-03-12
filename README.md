@@ -236,7 +236,7 @@ When enabled, agents can persist their decisions and strategies to your project'
 
 1. **Enable** via `wunderkind init --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
-3. **Index** via `/docs-index`. This is an executable plugin command that coordinates parallel documentation output from eligible agents, writes a project documentation index, and runs `init-deep` on successful completion.
+3. **Refresh or bootstrap** via `/docs-index`. This is an executable plugin command that asks eligible Wunderkind agents to refresh their canonical managed docs or create them if missing, then updates the docs index and can optionally offer `init-deep` as a follow-up question.
 
 ---
 
