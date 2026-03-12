@@ -1,7 +1,7 @@
 ---
 description: >
   Support Engineer — Technical support lead for triage, severity assessment, and engineering handoff.
-mode: primary
+mode: all
 temperature: 0.1
 permission:
   write: deny

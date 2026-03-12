@@ -1,7 +1,7 @@
 ---
 description: >
   Operations Lead — SRE-minded operator for incident response, runbooks, and production readiness.
-mode: primary
+mode: all
 temperature: 0.1
 permission:
   write: deny

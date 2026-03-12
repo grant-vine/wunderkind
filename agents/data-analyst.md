@@ -1,7 +1,7 @@
 ---
 description: >
   Data Analyst — Analytics specialist for funnels, experiments, metrics, and measurement clarity.
-mode: primary
+mode: all
 temperature: 0.2
 permission:
   write: deny

@@ -1,7 +1,7 @@
 ---
 description: >
   DevRel Wunderkind — Developer relations specialist for docs, DX, tutorials, and community adoption.
-mode: primary
+mode: all
 temperature: 0.2
 permission:
   write: deny

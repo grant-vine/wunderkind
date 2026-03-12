@@ -2,7 +2,7 @@ import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { buildPersistentContextSection } from "./shared-prompt-sections.js"
 
-const MODE: AgentMode = "primary"
+const MODE: AgentMode = "all"
 
 export const FULLSTACK_WUNDERKIND_METADATA: AgentPromptMetadata = {
   category: "specialist",

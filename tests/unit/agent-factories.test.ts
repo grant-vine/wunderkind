@@ -1,4 +1,6 @@
 import { describe, it, expect } from "bun:test"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import {
   createMarketingWunderkindAgent,
   createCreativeDirectorAgent,
@@ -74,8 +76,8 @@ describe("New agent factory structure", () => {
         expect(config.model).toBe("test-model")
       })
 
-      it("mode is primary", () => {
-        expect(factory.mode).toBe("primary")
+      it("mode is all", () => {
+        expect(factory.mode).toBe("all")
       })
 
       it("metadata triggers is non-empty", () => {
@@ -141,6 +143,35 @@ describe("New agent factory structure", () => {
       }
     })
   })
+})
+
+describe("all shipped wunderkind specialists are directly usable and delegatable", () => {
+  const ALL_SPECIALISTS = [
+    ["marketing-wunderkind", createMarketingWunderkindAgent],
+    ["creative-director", createCreativeDirectorAgent],
+    ["product-wunderkind", createProductWunderkindAgent],
+    ["fullstack-wunderkind", createFullstackWunderkindAgent],
+    ["brand-builder", createBrandBuilderAgent],
+    ["qa-specialist", createQaSpecialistAgent],
+    ["operations-lead", createOperationsLeadAgent],
+    ["ciso", createCisoAgent],
+    ["devrel-wunderkind", createDevrelWunderkindAgent],
+    ["legal-counsel", createLegalCounselAgent],
+    ["data-analyst", createDataAnalystAgent],
+    ["support-engineer", createSupportEngineerAgent],
+  ] as const
+
+  for (const [name, factory] of ALL_SPECIALISTS) {
+    it(`${name} factory mode is all`, () => {
+      expect(factory.mode).toBe("all")
+    })
+
+    it(`${name} generated markdown frontmatter uses mode all`, () => {
+      const markdown = readFileSync(join(process.cwd(), "agents", `${name}.md`), "utf-8")
+      expect(markdown).toContain("mode: all")
+      expect(markdown).not.toContain("mode: primary")
+    })
+  }
 })
 
 describe("Documentation Output static sections", () => {

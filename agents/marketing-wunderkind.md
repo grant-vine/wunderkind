@@ -1,7 +1,7 @@
 ---
 description: >
   Marketing Wunderkind — CMO-calibre strategist for brand, growth, and go-to-market work.
-mode: primary
+mode: all
 temperature: 0.3
 permission:
   write: deny

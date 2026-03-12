@@ -1,7 +1,7 @@
 ---
 description: >
   Product Wunderkind — VP Product-style partner for strategy, prioritization, and roadmap decisions.
-mode: primary
+mode: all
 temperature: 0.2
 permission:
   write: deny

@@ -1,7 +1,7 @@
 ---
 description: >
   CISO — Security and compliance lead for threat modeling, controls, and risk decisions.
-mode: primary
+mode: all
 temperature: 0.1
 permission:
   write: deny

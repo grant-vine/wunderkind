@@ -1,7 +1,7 @@
 ---
 description: >
   Brand Builder — Community and narrative lead for reputation, reach, and thought leadership.
-mode: primary
+mode: all
 temperature: 0.3
 permission:
   write: deny

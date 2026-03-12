@@ -1,7 +1,7 @@
 ---
 description: >
   QA Specialist — Test strategy and risk-based validation partner for quality and reliability.
-mode: primary
+mode: all
 temperature: 0.1
 permission:
   write: deny

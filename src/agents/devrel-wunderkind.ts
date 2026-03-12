@@ -3,7 +3,7 @@ import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
 import { buildPersistentContextSection } from "./shared-prompt-sections.js"
 
-const MODE: AgentMode = "primary"
+const MODE: AgentMode = "all"
 
 export const DEVREL_WUNDERKIND_METADATA: AgentPromptMetadata = {
   category: "specialist",

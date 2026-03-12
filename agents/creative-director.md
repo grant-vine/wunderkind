@@ -1,7 +1,7 @@
 ---
 description: >
   Creative Director — Brand and UI/UX lead for design systems, visuals, and product experience.
-mode: primary
+mode: all
 temperature: 0.4
 permission:
   write: deny
