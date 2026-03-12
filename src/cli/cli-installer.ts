@@ -5,8 +5,10 @@ import {
   detectCurrentConfig,
   detectLegacyConfig,
   getDefaultGlobalConfig,
-  readGlobalWunderkindConfig,
+  readWunderkindConfigForScope,
   writeNativeAgentFiles,
+  writeNativeCommandFiles,
+  writeNativeSkillFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -90,6 +92,8 @@ export function validateNonTuiArgs(args: InstallArgs): { valid: boolean; errors:
 
 export interface UpgradeArgs {
   scope: InstallScope
+  dryRun?: boolean
+  refreshConfig?: boolean
   region?: string
   industry?: string
   primaryRegulation?: string
@@ -171,6 +175,20 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   printSuccess(`Native agents written ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
 
+  const nativeCommandsResult = writeNativeCommandFiles(args.scope)
+  if (!nativeCommandsResult.success) {
+    printError(`Failed to write native command files: ${nativeCommandsResult.error}`)
+    return 1
+  }
+  printSuccess(`Native commands written ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
+
+  const nativeSkillsResult = writeNativeSkillFiles(args.scope)
+  if (!nativeSkillsResult.success) {
+    printError(`Failed to write native skill files: ${nativeSkillsResult.error}`)
+    return 1
+  }
+  printSuccess(`Native skills written ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)
+
   printStep(step++, totalSteps, "Updating .gitignore with AI tooling traces...")
   const gitignoreResult = addAiTracesToGitignore()
   if (gitignoreResult.added.length > 0) {
@@ -220,7 +238,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   printHeader(true)
 
   const defaults = getDefaultGlobalConfig()
-  const persisted = readGlobalWunderkindConfig() ?? {}
+  const persisted = readWunderkindConfigForScope(args.scope) ?? {}
   const nextConfig = {
     region: args.region ?? persisted.region ?? defaults.region,
     industry: args.industry ?? persisted.industry ?? defaults.industry,
@@ -234,27 +252,58 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
     nextConfig.primaryRegulation === (persisted.primaryRegulation ?? defaults.primaryRegulation) &&
     nextConfig.secondaryRegulation === (persisted.secondaryRegulation ?? defaults.secondaryRegulation)
 
-  if (isNoop) {
-    printInfo("No changes required. Wunderkind is already up to date for the requested scope.")
+  if (args.dryRun === true) {
+    printInfo(`Dry run: would refresh native agents in ${args.scope} scope`)
+    printInfo(`Dry run: would refresh native commands in ${args.scope} scope`)
+    printInfo(`Dry run: would refresh native skills in ${args.scope} scope`)
+    if (args.refreshConfig === true || !isNoop) {
+      printInfo(`Dry run: would rewrite Wunderkind config in ${args.scope} scope`)
+    }
     return 0
   }
 
-  const configResult = writeWunderkindConfig(
-    {
-      ...detected,
-      ...nextConfig,
-    },
-    "global",
-  )
+  if (args.refreshConfig === true || !isNoop) {
+    const configResult = writeWunderkindConfig(
+      {
+        ...persisted,
+        ...detected,
+        ...nextConfig,
+      },
+      args.scope,
+    )
 
-  if (!configResult.success) {
-    printError(`Failed: ${configResult.error}`)
+    if (!configResult.success) {
+      printError(`Failed: ${configResult.error}`)
+      return 1
+    }
+
+    printSuccess(`${args.scope === "global" ? "Global baseline" : "Project config"} updated ${SYMBOLS.arrow} ${color.dim(configResult.configPath)}`)
+  }
+
+  const nativeAgentsResult = writeNativeAgentFiles(args.scope)
+  if (!nativeAgentsResult.success) {
+    printError(`Failed to refresh native agent files: ${nativeAgentsResult.error}`)
     return 1
   }
 
-  printSuccess(`Global baseline updated ${SYMBOLS.arrow} ${color.dim(configResult.configPath)}`)
+  const nativeCommandsResult = writeNativeCommandFiles(args.scope)
+  if (!nativeCommandsResult.success) {
+    printError(`Failed to refresh native command files: ${nativeCommandsResult.error}`)
+    return 1
+  }
+
+  const nativeSkillsResult = writeNativeSkillFiles(args.scope)
+  if (!nativeSkillsResult.success) {
+    printError(`Failed to refresh native skill files: ${nativeSkillsResult.error}`)
+    return 1
+  }
+
+  printSuccess(`Native agents refreshed ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
+  printSuccess(`Native commands refreshed ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
+  printSuccess(`Native skills refreshed ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)
   printBox(
     [
+      `  ${color.bold("Scope:")}               ${color.cyan(args.scope)}`,
       `  ${color.bold("Region:")}              ${color.cyan(nextConfig.region)}`,
       `  ${color.bold("Industry:")}            ${color.cyan(nextConfig.industry || color.dim("(not set)"))}`,
       `  ${color.bold("Primary regulation:")} ${color.cyan(nextConfig.primaryRegulation)}`,

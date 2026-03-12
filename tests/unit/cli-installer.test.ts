@@ -45,6 +45,8 @@ const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
 const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
   region: "Global",
   industry: "",
@@ -59,6 +61,8 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
+  writeNativeCommandFiles: mockWriteNativeCommandFiles,
+  writeNativeSkillFiles: mockWriteNativeSkillFiles,
   getDefaultGlobalConfig: mockGetDefaultGlobalConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
 }))
@@ -131,6 +135,8 @@ describe("runCliInstaller", () => {
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
+    mockWriteNativeCommandFiles.mockClear()
+    mockWriteNativeSkillFiles.mockClear()
     mockGetDefaultGlobalConfig.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
     mockAddAiTracesToGitignore.mockClear()
@@ -140,6 +146,8 @@ describe("runCliInstaller", () => {
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
     mockReadWunderkindConfigForScope.mockImplementation(() => null)
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: true, added: [".wunderkind/"], alreadyPresent: [] }))
   })
@@ -187,11 +195,33 @@ describe("runCliInstaller", () => {
     }
   })
 
+  it("calls native command and skill writers for project scope install", async () => {
+    const restore = silenceConsole()
+    try {
+      await runCliInstaller(baseArgs({ scope: "project" }))
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
   it("calls writeNativeAgentFiles for global scope install", async () => {
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "global" }))
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("calls native command and skill writers for global scope install", async () => {
+    const restore = silenceConsole()
+    try {
+      await runCliInstaller(baseArgs({ scope: "global" }))
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
     } finally {
       restore()
     }
@@ -270,6 +300,9 @@ describe("runCliUpgrade", () => {
     mockDetectCurrentConfig.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
+    mockWriteNativeAgentFiles.mockClear()
+    mockWriteNativeCommandFiles.mockClear()
+    mockWriteNativeSkillFiles.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
 
     mockDetectLegacyConfig.mockImplementation(() => false)
@@ -298,12 +331,43 @@ describe("runCliUpgrade", () => {
     }
   })
 
-  it("reports no-op when no global baseline changes are requested", async () => {
+  it("refreshes native assets by default even when no baseline overrides are requested", async () => {
     const restore = silenceConsole()
     try {
       const code = await runCliUpgrade({ scope: "global" })
       expect(code).toBe(0)
       expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("supports dry-run without writing config or native assets", async () => {
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global", dryRun: true })
+      expect(code).toBe(0)
+      expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(0)
+    } finally {
+      restore()
+    }
+  })
+
+  it("rewrites config when refresh-config is passed", async () => {
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global", refreshConfig: true })
+      expect(code).toBe(0)
+      expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
     } finally {
       restore()
     }
@@ -318,6 +382,48 @@ describe("runCliUpgrade", () => {
       expect(configArg.region).toBe("South Africa")
       expect(configArg.teamCulture).toBe("pragmatic-balanced")
       expect(configArg.docsEnabled).toBe(false)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("preserves project baseline fields on project refresh-config when no overrides are provided", async () => {
+    mockDetectCurrentConfig.mockImplementation(() =>
+      makeDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: false,
+        registrationScope: "project",
+        region: "Project Region",
+        industry: "Project Industry",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }),
+    )
+    mockReadWunderkindConfigForScope.mockImplementation((scope: InstallScope) =>
+      scope === "project"
+        ? {
+            region: "Project Region",
+            industry: "Project Industry",
+            primaryRegulation: "POPIA",
+            secondaryRegulation: "GDPR",
+          }
+        : null,
+    )
+
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "project", refreshConfig: true })
+      expect(code).toBe(0)
+      const configArg = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(configArg.region).toBe("Project Region")
+      expect(configArg.industry).toBe("Project Industry")
+      expect(configArg.primaryRegulation).toBe("POPIA")
+      expect(configArg.secondaryRegulation).toBe("GDPR")
     } finally {
       restore()
     }

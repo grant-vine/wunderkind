@@ -67,8 +67,9 @@ describe("CLI help copy", () => {
   it("includes upgrade command help text", () => {
     const output = runCliHelp("upgrade", "--help")
 
-    expect(output).toContain("Upgrade the shared Wunderkind global baseline")
-    expect(output).toContain("validates install state plus")
+    expect(output).toContain("Refresh Wunderkind-owned native assets")
+    expect(output).toContain("--dry-run")
+    expect(output).toContain("--refresh-config")
   })
 
   it("includes verbose doctor help text", () => {

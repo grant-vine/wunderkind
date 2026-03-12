@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { basename, dirname, join, relative } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
+import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
 import type {
@@ -22,6 +23,7 @@ import type {
   LegalPersonality,
   OpsPersonality,
   OrgStructure,
+  PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
   QaPersonality,
@@ -39,9 +41,14 @@ const LEGACY_CONFIG_JSONC = join(CONFIG_DIR, "config.jsonc")
 const GLOBAL_WUNDERKIND_DIR = join(homedir(), ".wunderkind")
 const GLOBAL_WUNDERKIND_CONFIG = join(GLOBAL_WUNDERKIND_DIR, "wunderkind.config.jsonc")
 const GLOBAL_OPENCODE_AGENTS_DIR = join(CONFIG_DIR, "agents")
+const GLOBAL_OPENCODE_COMMANDS_DIR = join(CONFIG_DIR, "commands")
+const GLOBAL_OPENCODE_SKILLS_DIR = join(CONFIG_DIR, "skills")
+const GLOBAL_OPENCODE_NODE_MODULES = join(CONFIG_DIR, "node_modules")
+const GLOBAL_CACHE_DIR = join(homedir(), ".cache", "opencode")
 const WUNDERKIND_DIR = join(process.cwd(), ".wunderkind")
 const WUNDERKIND_CONFIG = join(WUNDERKIND_DIR, "wunderkind.config.jsonc")
 const LEGACY_WUNDERKIND_CONFIG = join(process.cwd(), "wunderkind.config.jsonc")
+const OMO_PACKAGE_NAME = "oh-my-opencode"
 
 interface OpenCodeConfig {
   plugin?: string[]
@@ -168,6 +175,75 @@ function parseConfig(path: string): OpenCodeConfig | null {
   } catch {
     return null
   }
+}
+
+function readJsonVersion(filePath: string): string | null {
+  try {
+    const parsed = JSON.parse(readFileSync(filePath, "utf-8")) as unknown
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
+    const version = (parsed as Record<string, unknown>)["version"]
+    return typeof version === "string" ? version : null
+  } catch {
+    return null
+  }
+}
+
+function normalizeDependencyVersion(entry: string | null): string | null {
+  if (!entry) return null
+  const match = entry.match(/\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/)
+  return match?.[0] ?? null
+}
+
+function findPluginEntry(entries: readonly string[], packageName: string): string | null {
+  return entries.find((entry) => entry === packageName || entry.startsWith(`${packageName}@`) || entry.startsWith(`file://`)) ?? null
+}
+
+function detectLoadedPackageVersion(packageName: string): { version: string | null; packagePath: string | null } {
+  const candidates = [
+    join(GLOBAL_OPENCODE_NODE_MODULES, packageName, "package.json"),
+    join(GLOBAL_CACHE_DIR, "node_modules", packageName, "package.json"),
+  ]
+
+  for (const candidate of candidates) {
+    if (!existsSync(candidate)) continue
+    return {
+      version: readJsonVersion(candidate),
+      packagePath: candidate,
+    }
+  }
+
+  return { version: null, packagePath: null }
+}
+
+function getOwnPackageVersion(): string | null {
+  return readJsonVersion(fileURLToPath(new URL("../../../package.json", import.meta.url)))
+}
+
+export function detectPluginVersionInfo(packageName: string): PluginVersionInfo {
+  const configResolution = resolveOpenCodeConfigPath("global")
+  const configPath = existsSync(configResolution.path) ? configResolution.path : null
+  const config = configPath ? parseConfig(configPath) : null
+  const registeredEntry = findPluginEntry((config?.plugin ?? []) as string[], packageName)
+  const loaded = detectLoadedPackageVersion(packageName)
+
+  return {
+    packageName,
+    currentVersion: packageName === PACKAGE_NAME ? getOwnPackageVersion() : null,
+    registeredEntry,
+    registeredVersion: normalizeDependencyVersion(registeredEntry),
+    loadedVersion: loaded.version,
+    configPath,
+    loadedPackagePath: loaded.packagePath,
+    registered: registeredEntry !== null,
+  }
+}
+
+export function detectWunderkindVersionInfo(): PluginVersionInfo {
+  return detectPluginVersionInfo(PACKAGE_NAME)
+}
+
+export function detectOmoVersionInfo(): PluginVersionInfo {
+  return detectPluginVersionInfo(OMO_PACKAGE_NAME)
 }
 
 function parseWunderkindConfig(path: string): Record<string, unknown> | null {
@@ -413,7 +489,13 @@ export function readWunderkindConfigForScope(scope: InstallScope): Partial<Insta
     return readGlobalWunderkindConfig()
   }
 
-  return readProjectWunderkindConfig()
+  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  if (!projectConfig) return null
+
+  return {
+    ...coerceGlobalConfig(projectConfig),
+    ...coerceProjectConfig(projectConfig),
+  }
 }
 
 export function detectCurrentConfig(): DetectedConfig {
@@ -576,9 +658,69 @@ export function getNativeAgentDir(scope: InstallScope): string {
   return scope === "global" ? GLOBAL_OPENCODE_AGENTS_DIR : join(process.cwd(), ".opencode", "agents")
 }
 
+export function getNativeCommandsDir(scope: InstallScope): string {
+  return scope === "global" ? GLOBAL_OPENCODE_COMMANDS_DIR : join(process.cwd(), ".opencode", "commands")
+}
+
+export function getNativeSkillsDir(scope: InstallScope): string {
+  return scope === "global" ? GLOBAL_OPENCODE_SKILLS_DIR : join(process.cwd(), ".opencode", "skills")
+}
+
 export function getNativeAgentFilePaths(scope: InstallScope): string[] {
   const dir = getNativeAgentDir(scope)
   return WUNDERKIND_AGENT_IDS.map((id) => join(dir, `${id}.md`))
+}
+
+function getPackagedCommandFilePaths(): string[] {
+  const commandsDir = fileURLToPath(new URL("../../../commands", import.meta.url))
+  if (!existsSync(commandsDir)) return []
+  return readdirSync(commandsDir)
+    .filter((entry) => entry.endsWith(".md"))
+    .map((entry) => join(commandsDir, entry))
+}
+
+function collectFilesRecursively(rootDir: string): string[] {
+  if (!existsSync(rootDir)) return []
+
+  const results: string[] = []
+  for (const entry of readdirSync(rootDir)) {
+    const fullPath = join(rootDir, entry)
+    const stat = statSync(fullPath)
+    if (stat.isDirectory()) {
+      results.push(...collectFilesRecursively(fullPath))
+    } else {
+      results.push(fullPath)
+    }
+  }
+  return results
+}
+
+function getPackagedSkillDirectories(): string[] {
+  const skillsDir = fileURLToPath(new URL("../../../skills", import.meta.url))
+  if (!existsSync(skillsDir)) return []
+  return readdirSync(skillsDir)
+    .map((entry) => join(skillsDir, entry))
+    .filter((entry) => statSync(entry).isDirectory())
+}
+
+export function getNativeCommandFilePaths(scope: InstallScope): string[] {
+  const dir = getNativeCommandsDir(scope)
+  return getPackagedCommandFilePaths().map((source) => join(dir, basename(source)))
+}
+
+export function getNativeSkillDirectories(scope: InstallScope): string[] {
+  const dir = getNativeSkillsDir(scope)
+  return getPackagedSkillDirectories().map((source) => join(dir, basename(source)))
+}
+
+function copyFileSet(sourceFiles: string[], sourceRoot: string, targetRoot: string): void {
+  mkdirSync(targetRoot, { recursive: true })
+  for (const sourceFile of sourceFiles) {
+    const relativePath = relative(sourceRoot, sourceFile)
+    const targetFile = join(targetRoot, relativePath)
+    mkdirSync(dirname(targetFile), { recursive: true })
+    writeFileSync(targetFile, readFileSync(sourceFile, "utf-8"), "utf-8")
+  }
 }
 
 export function writeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
@@ -589,6 +731,33 @@ export function writeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
     for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
       writeFileSync(join(targetDir, `${definition.id}.md`), renderNativeAgentMarkdown(definition), "utf-8")
     }
+    return { success: true, configPath: targetDir }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
+
+export function writeNativeCommandFiles(scope: InstallScope): ConfigMergeResult {
+  const targetDir = getNativeCommandsDir(scope)
+  const sourceFiles = getPackagedCommandFilePaths()
+  const sourceRoot = fileURLToPath(new URL("../../../commands", import.meta.url))
+
+  try {
+    copyFileSet(sourceFiles, sourceRoot, targetDir)
+    return { success: true, configPath: targetDir }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
+
+export function writeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
+  const targetDir = getNativeSkillsDir(scope)
+  const skillDirs = getPackagedSkillDirectories()
+  const sourceRoot = fileURLToPath(new URL("../../../skills", import.meta.url))
+
+  try {
+    const sourceFiles = skillDirs.flatMap((skillDir) => collectFilesRecursively(skillDir))
+    copyFileSet(sourceFiles, sourceRoot, targetDir)
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -608,6 +777,22 @@ export function detectNativeAgentFiles(scope: InstallScope): { dir: string; pres
   }
 }
 
+export function detectNativeCommandFiles(scope: InstallScope): { dir: string; presentCount: number; totalCount: number; allPresent: boolean } {
+  const dir = getNativeCommandsDir(scope)
+  const presentCount = getNativeCommandFilePaths(scope).filter((filePath) => existsSync(filePath)).length
+  const totalCount = getPackagedCommandFilePaths().length
+
+  return { dir, presentCount, totalCount, allPresent: presentCount === totalCount }
+}
+
+export function detectNativeSkillFiles(scope: InstallScope): { dir: string; presentCount: number; totalCount: number; allPresent: boolean } {
+  const dir = getNativeSkillsDir(scope)
+  const presentCount = getNativeSkillDirectories(scope).filter((dirPath) => existsSync(dirPath)).length
+  const totalCount = getPackagedSkillDirectories().length
+
+  return { dir, presentCount, totalCount, allPresent: presentCount === totalCount }
+}
+
 export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
   const filePaths = getNativeAgentFilePaths(scope)
   const targetDir = getNativeAgentDir(scope)
@@ -622,7 +807,56 @@ export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
     }
 
     if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
-      rmSync(targetDir, { recursive: false, force: true })
+      rmSync(targetDir, { recursive: true, force: true })
+      changed = true
+    }
+
+    return { success: true, configPath: targetDir, changed }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
+
+export function removeNativeCommandFiles(scope: InstallScope): ConfigMergeResult {
+  const filePaths = getNativeCommandFilePaths(scope)
+  const targetDir = getNativeCommandsDir(scope)
+
+  try {
+    let changed = false
+    for (const filePath of filePaths) {
+      if (existsSync(filePath)) {
+        rmSync(filePath, { force: true })
+        changed = true
+      }
+    }
+
+    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
+      rmSync(targetDir, { recursive: true, force: true })
+      changed = true
+    }
+
+    return { success: true, configPath: targetDir, changed }
+  } catch (err) {
+    return { success: false, configPath: targetDir, error: String(err) }
+  }
+}
+
+export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
+  const skillDirs = getNativeSkillDirectories(scope)
+  const targetDir = getNativeSkillsDir(scope)
+
+  try {
+    let changed = false
+    for (const skillDir of skillDirs) {
+      if (existsSync(skillDir)) {
+        rmSync(skillDir, { recursive: true, force: true })
+        changed = true
+      }
+    }
+
+    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
+      rmSync(targetDir, { recursive: true, force: true })
+      changed = true
     }
 
     return { success: true, configPath: targetDir, changed }

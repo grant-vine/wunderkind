@@ -2,6 +2,8 @@ import color from "picocolors"
 import {
   detectCurrentConfig,
   removeNativeAgentFiles,
+  removeNativeCommandFiles,
+  removeNativeSkillFiles,
   removeGlobalWunderkindConfig,
   removePluginFromOpenCodeConfig,
 } from "./config-manager/index.js"
@@ -52,6 +54,18 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
         console.log(`${color.green("✓")} Removed native agent files from ${target} scope (${color.dim(nativeAgentResult.configPath)})`)
       } else {
         console.log(`${color.dim("- ")}Native agent files already absent in ${target} scope (${color.dim(nativeAgentResult.configPath)})`)
+      }
+
+      const nativeCommandResult = removeNativeCommandFiles(target)
+      if (!nativeCommandResult.success) {
+        console.error(`Failed to remove native command files from ${target} scope: ${nativeCommandResult.error}`)
+        return 1
+      }
+
+      const nativeSkillResult = removeNativeSkillFiles(target)
+      if (!nativeSkillResult.success) {
+        console.error(`Failed to remove native skill files from ${target} scope: ${nativeSkillResult.error}`)
+        return 1
       }
 
       if (target === "global") {

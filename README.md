@@ -162,7 +162,7 @@ Generated Wunderkind config files now include a top-level `$schema` field for ed
 
 The schema is scope-aware:
 - global config validates only baseline fields (`region`, `industry`, `primaryRegulation`, `secondaryRegulation`)
-- project config validates only soul/personality/docs fields
+- project config validates soul/personality/docs fields and also permits project-local baseline overrides when needed
 
 ---
 
@@ -176,6 +176,7 @@ wunderkind doctor
 
 `wunderkind doctor` reports:
 - Installed version and scope (Global vs Project)
+- Detected Wunderkind and OMO version state
 - Location of configuration files
 - Presence and status of project soul files (in a project context)
 - Current Documentation Output configuration and index status

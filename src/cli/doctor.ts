@@ -3,9 +3,12 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import color from "picocolors"
 import {
+  detectOmoVersionInfo,
   detectNativeAgentFiles,
+  detectNativeCommandFiles,
+  detectNativeSkillFiles,
   detectCurrentConfig,
-  readGlobalWunderkindConfig,
+  detectWunderkindVersionInfo,
   readProjectWunderkindConfig,
   resolveOpenCodeConfigPath,
 } from "./config-manager/index.js"
@@ -37,7 +40,6 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const cwd = process.cwd()
     const inProject = isProjectContext(cwd)
     const detected = detectCurrentConfig()
-    const globalConfig = readGlobalWunderkindConfig()
     const projectConfig = readProjectWunderkindConfig()
     const globalOpenCodeResolution = resolveOpenCodeConfigPath("global")
     const projectOpenCodeResolution = resolveOpenCodeConfigPath("project")
@@ -48,6 +50,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const localConfigPath = join(cwd, ".wunderkind", "wunderkind.config.jsonc")
     const globalConfigExists = existsSync(globalConfigPath)
     const localConfigExists = existsSync(localConfigPath)
+    const wunderkindVersion = detectWunderkindVersionInfo()
+    const omoVersion = detectOmoVersionInfo()
 
     const warnings: string[] = []
 
@@ -75,6 +79,23 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     }
     line("project registration:", projectRegistrationStatus)
 
+    section("Version Status")
+    line("wunderkind cli version:", color.cyan(wunderkindVersion.currentVersion ?? "unknown"))
+    line(
+      "oh-my-opencode registration:",
+      omoVersion.registered
+        ? `${color.green("✓ yes")} ${color.dim(`(${omoVersion.registeredEntry})`)}`
+        : color.dim("✗ not detected"),
+    )
+    line("oh-my-opencode loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+
+    const versionAdvice = !omoVersion.registered
+      ? "OMO not detected — upgrade Wunderkind independently unless you intentionally use OMO separately."
+      : omoVersion.loadedVersion === null
+        ? "OMO is registered but its loaded version could not be determined locally — verify before upgrading both together."
+        : "Versions are advisory only — upgrade Wunderkind and OMO independently unless your test case requires both."
+    line("upgrade guidance:", color.dim(versionAdvice))
+
     if (options.verbose) {
       section("Resolved Paths")
       line(
@@ -87,17 +108,31 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       )
       const globalNativeAgents = detectNativeAgentFiles("global")
       const projectNativeAgents = detectNativeAgentFiles("project")
+      const globalNativeCommands = detectNativeCommandFiles("global")
+      const projectNativeCommands = detectNativeCommandFiles("project")
+      const globalNativeSkills = detectNativeSkillFiles("global")
+      const projectNativeSkills = detectNativeSkillFiles("project")
       line("global native agents dir:", `${status(globalNativeAgents.allPresent)} ${color.dim(globalNativeAgents.dir)}`)
       line("project native agents dir:", `${status(projectNativeAgents.allPresent)} ${color.dim(projectNativeAgents.dir)}`)
+      line("global native commands dir:", `${status(globalNativeCommands.allPresent)} ${color.dim(globalNativeCommands.dir)}`)
+      line("project native commands dir:", `${status(projectNativeCommands.allPresent)} ${color.dim(projectNativeCommands.dir)}`)
+      line("global native skills dir:", `${status(globalNativeSkills.allPresent)} ${color.dim(globalNativeSkills.dir)}`)
+      line("project native skills dir:", `${status(projectNativeSkills.allPresent)} ${color.dim(projectNativeSkills.dir)}`)
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
+      if (omoVersion.configPath) {
+        line("oh-my-opencode config source:", color.dim(omoVersion.configPath))
+      }
+      if (omoVersion.loadedPackagePath) {
+        line("oh-my-opencode loaded package:", color.dim(omoVersion.loadedPackagePath))
+      }
 
       section("Active Configuration")
-      line("region:", color.cyan(globalConfig?.region ?? detected.region))
-      line("industry:", color.cyan((globalConfig?.industry ?? detected.industry) || color.dim("(not set)")))
-      line("primary regulation:", color.cyan(globalConfig?.primaryRegulation ?? detected.primaryRegulation))
-      if ((globalConfig?.secondaryRegulation ?? detected.secondaryRegulation).trim() !== "") {
-        line("secondary regulation:", color.cyan(globalConfig?.secondaryRegulation ?? detected.secondaryRegulation))
+      line("region:", color.cyan(detected.region))
+      line("industry:", color.cyan(detected.industry || color.dim("(not set)")))
+      line("primary regulation:", color.cyan(detected.primaryRegulation))
+      if (detected.secondaryRegulation.trim() !== "") {
+        line("secondary regulation:", color.cyan(detected.secondaryRegulation))
       }
     }
 
@@ -116,6 +151,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const hasDocsReadme = existsSync(docsReadmePath)
       const globalNativeAgents = detectNativeAgentFiles("global")
       const projectNativeAgents = detectNativeAgentFiles("project")
+      const globalNativeCommands = detectNativeCommandFiles("global")
+      const projectNativeCommands = detectNativeCommandFiles("project")
+      const globalNativeSkills = detectNativeSkillFiles("global")
+      const projectNativeSkills = detectNativeSkillFiles("project")
 
       if (!localConfigExists) warnings.push(`missing local config: ${localConfigPath}`)
       if (!hasAgents) warnings.push(`missing soul file: ${agentsPath}`)
@@ -126,8 +165,20 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (detected.globalInstalled === true && !globalNativeAgents.allPresent) {
         warnings.push(`missing native global agent files: ${globalNativeAgents.dir}`)
       }
+      if (detected.globalInstalled === true && !globalNativeCommands.allPresent) {
+        warnings.push(`missing native global command files: ${globalNativeCommands.dir}`)
+      }
+      if (detected.globalInstalled === true && !globalNativeSkills.allPresent) {
+        warnings.push(`missing native global skill files: ${globalNativeSkills.dir}`)
+      }
       if (localConfigExists && !projectNativeAgents.allPresent) {
         warnings.push(`missing native project agent files: ${projectNativeAgents.dir}`)
+      }
+      if (localConfigExists && !projectNativeCommands.allPresent) {
+        warnings.push(`missing native project command files: ${projectNativeCommands.dir}`)
+      }
+      if (localConfigExists && !projectNativeSkills.allPresent) {
+        warnings.push(`missing native project skill files: ${projectNativeSkills.dir}`)
       }
 
       section(options.verbose ? "Project Health" : "Project health")
@@ -137,9 +188,19 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line(".sisyphus/notepads present:", status(hasNotepads))
       line(".sisyphus/evidence present:", status(hasEvidence))
       line("global native agents present:", status(globalNativeAgents.allPresent))
+      line("global native commands present:", status(globalNativeCommands.allPresent))
+      line("global native skills present:", status(globalNativeSkills.allPresent))
       line(
         "project native agents present:",
         projectNativeAgents.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
+      )
+      line(
+        "project native commands present:",
+        projectNativeCommands.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
+      )
+      line(
+        "project native skills present:",
+        projectNativeSkills.allPresent ? color.green("✓ yes") : detected.globalInstalled === true ? color.dim("✗ no") : color.red("✗ no"),
       )
 
       if (options.verbose) {

@@ -51,11 +51,15 @@ const mockDetectCurrentConfig = mock(() => DEFAULT_DETECTED_CONFIG)
 
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
+  writeNativeCommandFiles: mockWriteNativeCommandFiles,
+  writeNativeSkillFiles: mockWriteNativeSkillFiles,
 }))
 
 import { runInit } from "../../src/cli/init.js"
@@ -68,6 +72,8 @@ describe("runInit interactive personality prompts", () => {
     mockIsCancel.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
+    mockWriteNativeCommandFiles.mockClear()
+    mockWriteNativeSkillFiles.mockClear()
     mockDetectCurrentConfig.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => DEFAULT_DETECTED_CONFIG)
     mockConfirm.mockImplementation(async () => false)
@@ -115,6 +121,8 @@ describe("runInit interactive personality prompts", () => {
       expect(mockSelect).toHaveBeenCalledTimes(14)
       expect(mockConfirm).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.teamCulture).toBe("formal-strict")
@@ -173,6 +181,8 @@ describe("runInit interactive personality prompts", () => {
       expect(code).toBe(0)
       expect(mockConfirm).toHaveBeenCalledTimes(1)
       expect(mockSelect).toHaveBeenCalledTimes(2)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.teamCulture).toBe("formal-strict")
@@ -231,6 +241,8 @@ describe("runInit interactive personality prompts", () => {
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(15)
       expect(mockConfirm).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.docsEnabled).toBe(true)

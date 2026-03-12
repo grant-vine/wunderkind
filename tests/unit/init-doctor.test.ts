@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import type { DetectedConfig } from "../../src/cli/types.js"
 
-const mockDetectCurrentConfig = mock(() => ({
+const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   isInstalled: false,
   scope: "global" as const,
   region: "Global",
@@ -39,6 +40,40 @@ const mockDetectNativeAgentFiles = mock((scope: "global" | "project") => ({
   totalCount: 12,
   allPresent: true,
 }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/.opencode/skills" }))
+const mockDetectNativeCommandFiles = mock((scope: "global" | "project") => ({
+  dir: scope === "global" ? "/tmp/global-commands" : `${process.cwd()}/.opencode/commands`,
+  presentCount: 1,
+  totalCount: 1,
+  allPresent: true,
+}))
+const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
+  dir: scope === "global" ? "/tmp/global-skills" : `${process.cwd()}/.opencode/skills`,
+  presentCount: 11,
+  totalCount: 11,
+  allPresent: true,
+}))
+const mockDetectWunderkindVersionInfo = mock(() => ({
+  packageName: "@grant-vine/wunderkind",
+  currentVersion: "0.9.4" as string | null,
+  registeredEntry: "@grant-vine/wunderkind" as string | null,
+  registeredVersion: null,
+  loadedVersion: "0.9.4" as string | null,
+  configPath: "/tmp/opencode.json" as string | null,
+  loadedPackagePath: "/tmp/node_modules/@grant-vine/wunderkind/package.json" as string | null,
+  registered: true,
+}))
+const mockDetectOmoVersionInfo = mock(() => ({
+  packageName: "oh-my-opencode",
+  currentVersion: null,
+  registeredEntry: "oh-my-opencode@latest" as string | null,
+  registeredVersion: null,
+  loadedVersion: "3.11.0" as string | null,
+  configPath: "/tmp/opencode.json" as string | null,
+  loadedPackagePath: "/tmp/node_modules/oh-my-opencode/package.json" as string | null,
+  registered: true,
+}))
 const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
   scope === "global"
     ? { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }
@@ -48,10 +83,16 @@ const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
+  detectNativeCommandFiles: mockDetectNativeCommandFiles,
+  detectNativeSkillFiles: mockDetectNativeSkillFiles,
+  detectOmoVersionInfo: mockDetectOmoVersionInfo,
+  detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
+  writeNativeCommandFiles: mockWriteNativeCommandFiles,
+  writeNativeSkillFiles: mockWriteNativeSkillFiles,
   resolveOpenCodeConfigPath: mockResolveOpenCodeConfigPath,
 }))
 
@@ -109,7 +150,13 @@ describe("runInit", () => {
     mockDetectCurrentConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
+    mockWriteNativeCommandFiles.mockClear()
+    mockWriteNativeSkillFiles.mockClear()
     mockDetectNativeAgentFiles.mockClear()
+    mockDetectNativeCommandFiles.mockClear()
+    mockDetectNativeSkillFiles.mockClear()
+    mockDetectWunderkindVersionInfo.mockClear()
+    mockDetectOmoVersionInfo.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => ({
       isInstalled: false,
       scope: "global" as const,
@@ -188,6 +235,8 @@ describe("runInit", () => {
       const code = await runInit({ noTui: true })
       expect(code).toBe(0)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
     } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
@@ -245,6 +294,9 @@ describe("runDoctor", () => {
       const code = await runDoctorWithOptions({})
       expect(code).toBe(0)
       expect(messages.some((m) => m.includes("Install Summary"))).toBe(true)
+      expect(messages.some((m) => m.includes("Version Status"))).toBe(true)
+      expect(messages.some((m) => m.includes("wunderkind cli version:"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-opencode loaded version:"))).toBe(true)
       expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
@@ -269,6 +321,7 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(true)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-opencode loaded package:"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -313,6 +366,18 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
     }))
+    mockDetectNativeCommandFiles.mockImplementation((scope: "global" | "project") => ({
+      dir: scope === "global" ? "/tmp/global-commands" : `${process.cwd()}/.opencode/commands`,
+      presentCount: scope === "global" ? 0 : 1,
+      totalCount: 1,
+      allPresent: scope !== "global",
+    }))
+    mockDetectNativeSkillFiles.mockImplementation((scope: "global" | "project") => ({
+      dir: scope === "global" ? "/tmp/global-skills" : `${process.cwd()}/.opencode/skills`,
+      presentCount: scope === "global" ? 0 : 11,
+      totalCount: 11,
+      allPresent: scope !== "global",
+    }))
     console.log = (...args: unknown[]) => {
       messages.push(args.map((arg) => String(arg)).join(" "))
     }
@@ -322,11 +387,44 @@ describe("runDoctor", () => {
       const code = await runDoctorWithOptions({})
       expect(code).toBe(0)
       expect(messages.some((m) => m.includes("missing native global agent files"))).toBe(true)
+      expect(messages.some((m) => m.includes("missing native global command files"))).toBe(true)
+      expect(messages.some((m) => m.includes("missing native global skill files"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("shows neutral OMO advice when OMO is not detected", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-opencode",
+      currentVersion: null,
+      registeredEntry: null,
+      registeredVersion: null,
+      loadedVersion: null,
+      configPath: null,
+      loadedPackagePath: null,
+      registered: false,
+    }))
+
+    try {
+      const code = await runDoctorWithOptions({})
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("oh-my-opencode registration:"))).toBe(true)
+      expect(messages.some((m) => m.includes("✗ not detected"))).toBe(true)
+      expect(messages.some((m) => m.includes("Upgrade guidance:") || m.includes("upgrade guidance:"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
     }
   })
 
@@ -379,11 +477,65 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Agent Personalities"))).toBe(true)
       expect(messages.some((m) => m.includes("pragmatic-risk-manager"))).toBe(true)
       expect(messages.some((m) => m.includes("global native agents dir:"))).toBe(true)
+      expect(messages.some((m) => m.includes("global native commands dir:"))).toBe(true)
+      expect(messages.some((m) => m.includes("global native skills dir:"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("shows effective project baseline overrides in verbose Active Configuration", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    mockDetectCurrentConfig.mockImplementation((): DetectedConfig => ({
+      isInstalled: true,
+      scope: "project",
+      projectInstalled: true,
+      globalInstalled: true,
+      registrationScope: "both",
+      projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+      globalOpenCodeConfigPath: "/tmp/opencode.json",
+      region: "Project Region",
+      industry: "Project Industry",
+      primaryRegulation: "POPIA",
+      secondaryRegulation: "GDPR",
+      teamCulture: "pragmatic-balanced" as const,
+      orgStructure: "flat" as const,
+      cisoPersonality: "pragmatic-risk-manager" as const,
+      ctoPersonality: "code-archaeologist" as const,
+      cmoPersonality: "data-driven" as const,
+      qaPersonality: "risk-based-pragmatist" as const,
+      productPersonality: "outcome-obsessed" as const,
+      opsPersonality: "on-call-veteran" as const,
+      creativePersonality: "pragmatic-problem-solver" as const,
+      brandPersonality: "authentic-builder" as const,
+      devrelPersonality: "dx-engineer" as const,
+      legalPersonality: "pragmatic-advisor" as const,
+      supportPersonality: "systematic-triage" as const,
+      dataAnalystPersonality: "insight-storyteller" as const,
+      docsEnabled: false,
+      docsPath: "./docs",
+      docHistoryMode: "overwrite" as const,
+    }))
+
+    try {
+      const code = await runDoctorWithOptions({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("region:") && m.includes("Project Region"))).toBe(true)
+      expect(messages.some((m) => m.includes("industry:") && m.includes("Project Industry"))).toBe(true)
+      expect(messages.some((m) => m.includes("primary regulation:") && m.includes("POPIA"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
     }
   })
 

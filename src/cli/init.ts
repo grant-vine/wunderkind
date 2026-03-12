@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { detectCurrentConfig, writeNativeAgentFiles, writeWunderkindConfig } from "./config-manager/index.js"
+import { detectCurrentConfig, writeNativeAgentFiles, writeNativeCommandFiles, writeNativeSkillFiles, writeWunderkindConfig } from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
@@ -365,6 +365,18 @@ export async function runInit(options: InitOptions): Promise<number> {
     const nativeAgentsResult = writeNativeAgentFiles("project")
     if (!nativeAgentsResult.success) {
       console.error(`Error: Failed to write native agent files: ${nativeAgentsResult.error}`)
+      return 1
+    }
+
+    const nativeCommandsResult = writeNativeCommandFiles("project")
+    if (!nativeCommandsResult.success) {
+      console.error(`Error: Failed to write native command files: ${nativeCommandsResult.error}`)
+      return 1
+    }
+
+    const nativeSkillsResult = writeNativeSkillFiles("project")
+    if (!nativeSkillsResult.success) {
+      console.error(`Error: Failed to write native skill files: ${nativeSkillsResult.error}`)
       return 1
     }
 

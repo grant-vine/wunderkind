@@ -111,3 +111,14 @@ export interface DetectedConfig {
   docsPath: string
   docHistoryMode: DocHistoryMode
 }
+
+export interface PluginVersionInfo {
+  packageName: string
+  currentVersion: string | null
+  registeredEntry: string | null
+  registeredVersion: string | null
+  loadedVersion: string | null
+  configPath: string | null
+  loadedPackagePath: string | null
+  registered: boolean
+}

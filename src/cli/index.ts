@@ -107,13 +107,15 @@ program
   .command("upgrade")
   .description(
     [
-      "Upgrade the shared Wunderkind global baseline without resetting project-local customizations.",
+      "Refresh Wunderkind-owned native assets without resetting project-local customizations.",
       "",
-      "This first wave is non-interactive and currently validates install state plus no-op safety only.",
+      "Refreshes native agents, commands, and skills for the selected scope.",
     ].join("\n"),
   )
   .option("--no-tui", "Reserved for future interactive upgrade support")
   .option("--scope <scope>", "Upgrade scope: global or project")
+  .option("--dry-run", "Show what would be refreshed without writing files")
+  .option("--refresh-config", "Rewrite Wunderkind config in canonical current format")
   .addHelpText(
     "after",
     [
@@ -122,12 +124,12 @@ program
       "  bunx @grant-vine/wunderkind upgrade --scope=global",
       "",
       "Current behavior:",
-      "  - validates an existing install in the requested scope",
-      "  - preserves all project-local soul/docs settings",
-      "  - currently performs a safe no-op unless future baseline override flags are added",
+      "  - refreshes Wunderkind native agents, commands, and skills in the requested scope",
+      "  - preserves project-local soul/docs settings unless explicit config overrides are passed",
+      "  - supports --dry-run and --refresh-config for safe testing",
     ].join("\n"),
   )
-  .action((opts: { scope?: string | undefined }) => {
+  .action((opts: { scope?: string | undefined; dryRun?: boolean | undefined; refreshConfig?: boolean | undefined }) => {
     if (opts.scope !== undefined && opts.scope !== "global" && opts.scope !== "project") {
       console.error(`Error: --scope must be \"global\" or \"project\", got: \"${opts.scope}\"`)
       process.exit(1)
@@ -135,6 +137,8 @@ program
 
     runCliUpgrade({
       scope: (opts.scope as InstallScope | undefined) ?? "global",
+      dryRun: opts.dryRun === true,
+      refreshConfig: opts.refreshConfig === true,
     }).then((exitCode) => {
       process.exit(exitCode)
     })

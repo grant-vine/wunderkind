@@ -7,6 +7,8 @@ import {
   getDefaultGlobalConfig,
   readWunderkindConfigForScope,
   writeNativeAgentFiles,
+  writeNativeCommandFiles,
+  writeNativeSkillFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -234,9 +236,25 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     return 1
   }
 
+  const nativeCommandsResult = writeNativeCommandFiles(scope)
+  if (!nativeCommandsResult.success) {
+    spinner.stop(color.red(`Failed to write native command files: ${nativeCommandsResult.error}`))
+    p.outro(color.red("Installation failed."))
+    return 1
+  }
+
+  const nativeSkillsResult = writeNativeSkillFiles(scope)
+  if (!nativeSkillsResult.success) {
+    spinner.stop(color.red(`Failed to write native skill files: ${nativeSkillsResult.error}`))
+    p.outro(color.red("Installation failed."))
+    return 1
+  }
+
   p.log.success(`Plugin added to ${color.cyan(pluginResult.configPath)}`)
   p.log.success(`Config written to ${color.cyan(configResult.configPath)}`)
   p.log.success(`Native agents written to ${color.cyan(nativeAgentsResult.configPath)}`)
+  p.log.success(`Native commands written to ${color.cyan(nativeCommandsResult.configPath)}`)
+  p.log.success(`Native skills written to ${color.cyan(nativeSkillsResult.configPath)}`)
 
   if (shouldUpdateGitignore) {
     const gitignoreResult = addAiTracesToGitignore()

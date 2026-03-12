@@ -39,10 +39,16 @@ const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 
 const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
 const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
+const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/commands", changed: true }))
+const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/skills", changed: true }))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  removeNativeAgentFiles: mockRemoveNativeAgentFiles,
+  removeNativeCommandFiles: mockRemoveNativeCommandFiles,
+  removeNativeSkillFiles: mockRemoveNativeSkillFiles,
   removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
 }))
 
@@ -52,6 +58,9 @@ describe("runUninstall", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
     mockRemovePluginFromOpenCodeConfig.mockClear()
+    mockRemoveNativeAgentFiles.mockClear()
+    mockRemoveNativeCommandFiles.mockClear()
+    mockRemoveNativeSkillFiles.mockClear()
     mockRemoveGlobalWunderkindConfig.mockClear()
   })
 
@@ -67,6 +76,9 @@ describe("runUninstall", () => {
       const firstCallScope = mockRemovePluginFromOpenCodeConfig.mock.calls[0]?.[0]
       expect(firstCallScope).toBe("global")
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(1)
     } finally {
       console.log = originalLog
@@ -94,6 +106,9 @@ describe("runUninstall", () => {
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
       const first = mockRemovePluginFromOpenCodeConfig.mock.calls[0]?.[0]
       expect(first).toBe("project")
+      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.log = originalLog
@@ -113,6 +128,9 @@ describe("runUninstall", () => {
       const firstCallScope = mockRemovePluginFromOpenCodeConfig.mock.calls[0]?.[0]
       expect(firstCallScope).toBe("project")
       expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeAgentFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeCommandFiles).toHaveBeenCalledTimes(1)
+      expect(mockRemoveNativeSkillFiles).toHaveBeenCalledTimes(1)
       expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.log = originalLog
@@ -140,6 +158,32 @@ describe("runUninstall", () => {
       expect(code).toBe(0)
       expect(messages.some((m) => m.includes("already absent"))).toBe(true)
       expect(messages.some((m) => m.includes("Removed plugin registration"))).toBe(false)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when native agent removal fails", async () => {
+    mockRemoveNativeAgentFiles.mockImplementation(() => ({
+      success: false,
+      configPath: "/tmp/agents",
+      changed: false,
+      error: "EISDIR",
+    }))
+
+    const errors: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+      expect(errors.some((m) => m.includes("Failed to remove native agent files"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
