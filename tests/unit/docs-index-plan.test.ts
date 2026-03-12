@@ -12,16 +12,46 @@ describe("docs-index plan", () => {
   it("builds one entry per eligible docs agent", () => {
     const plan = buildDocsIndexPlan("./docs")
 
-    expect(plan.docsPath).toBe("./docs")
+    expect(plan.docsPath).toBe("docs")
     expect(plan.entries.length).toBe(9)
-    expect(plan.entries.every((entry) => entry.targetPath.startsWith("./docs/"))).toBe(true)
+    expect(plan.entries.every((entry) => entry.targetPath.startsWith("docs/"))).toBe(true)
   })
 
   it("normalizes trailing slash in docsPath", () => {
     const plan = buildDocsIndexPlan("./docs/")
 
-    expect(plan.docsPath).toBe("./docs")
-    expect(plan.entries[0]?.targetPath.startsWith("./docs/")).toBe(true)
+    expect(plan.docsPath).toBe("docs")
+    expect(plan.entries[0]?.targetPath.startsWith("docs/")).toBe(true)
+  })
+
+  it("rejects absolute docsPath values at runtime", () => {
+    try {
+      buildDocsIndexPlan("/tmp/docs")
+      throw new Error("Expected buildDocsIndexPlan to reject absolute docsPath")
+    } catch (error) {
+      expect(error instanceof Error).toBe(true)
+      const message = error instanceof Error ? error.message : ""
+      expect(message).toBe("docsPath must be a relative path")
+    }
+  })
+
+  it("rejects parent traversal docsPath values at runtime", () => {
+    for (const invalidPath of ["../docs", "safe/../docs"]) {
+      try {
+        buildDocsIndexPlan(invalidPath)
+        throw new Error(`Expected buildDocsIndexPlan to reject ${invalidPath}`)
+      } catch (error) {
+        expect(error instanceof Error).toBe(true)
+        const message = error instanceof Error ? error.message : ""
+        expect(message).toBe("docsPath must not traverse parent directories")
+      }
+    }
+  })
+
+  it("falls back to ./docs for blank docsPath and keeps targets project-local", () => {
+    const plan = buildDocsIndexPlan("   ")
+    expect(plan.docsPath).toBe("docs")
+    expect(plan.entries.every((entry) => entry.targetPath.startsWith("docs/"))).toBe(true)
   })
 
   it("detects no collisions for the current canonical map", () => {

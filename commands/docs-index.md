@@ -11,7 +11,7 @@ This command is invoked as `/docs-index`.
 
 ## Responsibilities
 
-1. Inspect the configured docs directory and existing documentation files.
+1. Inspect only the configured docs directory inside the current project root and only the files relevant to this workflow.
 2. Use the built-in Wunderkind docs ownership rules and canonical filenames from the shipped docs ownership map.
 3. Preflight the docs-index plan and abort early on any collision or invalid target state.
 4. Launch one parallel background task per docs-eligible Wunderkind agent.
@@ -26,6 +26,8 @@ This command is invoked as `/docs-index`.
 - One background task per eligible docs agent.
 - Use canonical filenames from Wunderkind's built-in ownership map and normalize non-canonical legacy files.
 - Do not let individual agents invent output paths; use the explicit per-agent target paths from the docs-index plan.
+- Treat the current working directory as the trust boundary. Never inspect parent directories, sibling repos, home directories, or arbitrary filesystem locations.
+- Never glob or search outside the configured docs directory, `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and this shipped `/docs-index` command asset.
 - If the docs-index plan reports collisions, abort before fan-out.
 - Each child must emit an explicit completion result for its own canonical target.
 - If a critical failure occurs in generation or normalization, do **not** run `init-deep`.
@@ -34,7 +36,7 @@ This command is invoked as `/docs-index`.
 ## Notes
 
 - This command is shipped as `/docs-index`.
-- Use the configured docs path and history mode from project-local Wunderkind config.
+- Use the configured docs path and history mode from project-local Wunderkind config. The docs path must remain relative to the current project root.
 - The coordinator owns orchestration and the docs index; individual agents own their own document outputs.
 - Full success means all planned canonical files exist after the run and all children explicitly reported `complete`.
 - Partial success means some child docs completed and can be indexed, but `init-deep` must be skipped.

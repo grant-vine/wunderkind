@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
-import { isAbsolute, join, normalize } from "node:path"
+import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs"
+import { isAbsolute, join, normalize, relative, resolve } from "node:path"
 import type { DocHistoryMode } from "./types.js"
 
 const DOC_HISTORY_MODES: DocHistoryMode[] = ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"]
@@ -19,6 +19,30 @@ export function validateDocsPath(docsPath: string): { valid: boolean; error?: st
   }
 
   return { valid: true }
+}
+
+export function resolveProjectLocalDocsPath(docsPath: string, cwd: string): {
+  docsPath: string
+  absolutePath: string
+} {
+  const validation = validateDocsPath(docsPath)
+  if (!validation.valid) {
+    throw new Error(validation.error ?? "Invalid docsPath")
+  }
+
+  const normalizedDocsPath = normalize(docsPath.trim() === "" ? "./docs" : docsPath.trim())
+  const projectRoot = realpathSync(cwd)
+  const absolutePath = resolve(projectRoot, normalizedDocsPath)
+  const relativeToRoot = relative(projectRoot, absolutePath)
+
+  if (relativeToRoot === "" || relativeToRoot.startsWith("..") || isAbsolute(relativeToRoot)) {
+    throw new Error("docsPath must resolve inside the current project root")
+  }
+
+  return {
+    docsPath: normalizedDocsPath.endsWith("/") ? normalizedDocsPath.slice(0, -1) : normalizedDocsPath,
+    absolutePath,
+  }
 }
 
 export function validateDocHistoryMode(mode: string): mode is DocHistoryMode {

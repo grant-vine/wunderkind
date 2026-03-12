@@ -1,4 +1,5 @@
 import { AGENT_DOCS_CONFIG, getDocsEligibleAgentKeys } from "./docs-config.js"
+import { resolveProjectLocalDocsPath } from "../cli/docs-output-helper.js"
 
 export interface DocsIndexPlanEntry {
   agentKey: string
@@ -26,14 +27,8 @@ export interface DocsIndexAggregation {
   canRunInitDeep: boolean
 }
 
-function normalizeDocsPath(docsPath: string): string {
-  const trimmed = docsPath.trim()
-  if (trimmed === "") return "./docs"
-  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed
-}
-
-export function buildDocsIndexPlan(docsPath: string): DocsIndexPlan {
-  const normalizedDocsPath = normalizeDocsPath(docsPath)
+export function buildDocsIndexPlan(docsPath: string, cwd: string = process.cwd()): DocsIndexPlan {
+  const normalizedDocsPath = resolveProjectLocalDocsPath(docsPath, cwd).docsPath
   const entries = getDocsEligibleAgentKeys().map((agentKey) => {
     const config = AGENT_DOCS_CONFIG[agentKey]
     if (!config) {

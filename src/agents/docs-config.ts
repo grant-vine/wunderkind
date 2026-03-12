@@ -87,6 +87,7 @@ History mode: ${docHistoryMode}
 - overwrite-archive: Overwrite the current file and archive the old one.
 
 Use the configured docs path exactly as provided: ${docsPath}
+The docs path is always relative to the current project root. Do not inspect or write outside that root.
 
 After writing, participate in the \`/docs-index\` workflow to refresh the project documentation index.
 

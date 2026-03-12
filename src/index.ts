@@ -26,6 +26,7 @@ Documentation output is enabled for this project. Use these resolved runtime val
 
 - docsPath: ${docsPath}
 - docHistoryMode: ${docHistoryMode}
+- docs scope: current project root only
 
 Eligible Wunderkind docs targets:
 ${docsTargets}
