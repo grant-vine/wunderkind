@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.8.0  
+**Package:** `@grant-vine/wunderkind` v0.9.9  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
