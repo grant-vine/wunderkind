@@ -28,7 +28,14 @@ Documentation output is enabled for this project. Use these resolved runtime val
 - docHistoryMode: ${docHistoryMode}
 - docs scope: current project root only
 
-Treat these canonical targets as managed home files. Within \`/docs-index\`, use a refresh or bootstrap flow: refresh them if present or bootstrap them if missing.
+### History Mode Behavior
+
+\`/docs-index\` uses a shared UTC timestamp contract (format: \`YYYY-MM-DDTHH-mm-ssZ\`, e.g. \`2026-03-12T18-37-52Z\`) for timestamped history modes:
+
+- **\`append-dated\`**: Appends a new section heading \`## Update <UTC_TOKEN>\` to the canonical home file. Multiple same-day updates use collision suffixes: \`## Update <UTC_TOKEN> (2)\`, \`(3)\`, etc.
+- **\`new-dated-file\`**: Writes a timestamped file \`<basename>--<UTC_TOKEN>.md\` alongside the canonical home file. For collisions, use suffixes: \`<basename>--<UTC_TOKEN>--2.md\`, \`--3.md\`, etc. These files are managed family members of the canonical home file, not legacy artifacts.
+
+Treat the canonical unsuffixed files below as managed home files. Within \`/docs-index\`, refresh them if present or bootstrap them if missing for \`append-dated\`. For \`new-dated-file\`, write timestamped family files alongside the canonical home file.
 
 Eligible Wunderkind docs targets:
 ${docsTargets}

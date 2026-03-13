@@ -147,8 +147,8 @@ Interactive `wunderkind init` always asks for team culture, org structure, and d
 | Mode | Description |
 |---|---|
 | `overwrite` | Replaces the file contents each time (default) |
-| `append-dated` | Appends a new dated section to the file |
-| `new-dated-file` | Creates a new file with a date suffix |
+| `append-dated` | Appends a UTC-timestamped section like `## Update 2026-03-12T18-37-52Z` to the canonical file |
+| `new-dated-file` | Creates a UTC-timestamped file like `marketing-strategy--2026-03-12T18-37-52Z.md` beside the canonical file |
 | `overwrite-archive` | Overwrites the current file and archives the old one |
 
 ### JSON Schema
@@ -236,7 +236,7 @@ When enabled, agents can persist their decisions and strategies to your project'
 
 1. **Enable** via `wunderkind init --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
-3. **Refresh or bootstrap** via `/docs-index`. This is an executable plugin command that asks eligible Wunderkind agents to refresh their canonical managed docs or create them if missing, then updates the docs index and can optionally offer `init-deep` as a follow-up question.
+3. **Refresh or bootstrap** via `/docs-index`. This executable plugin command uses one shared UTC token per run (`YYYY-MM-DDTHH-mm-ssZ`, for example `2026-03-12T18-37-52Z`). In `append-dated`, it updates canonical files with headings like `## Update 2026-03-12T18-37-52Z`. In `new-dated-file`, it writes managed family files like `marketing-strategy--2026-03-12T18-37-52Z.md` beside the canonical file. Existing date-only artifacts are preserved unchanged.
 
 ---
 

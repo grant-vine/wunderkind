@@ -54,7 +54,7 @@ describe("runtime docs-output system injection", () => {
     expect(countSentinel(output.system)).toBe(0)
   })
 
-  it("injects docs section with docsPath and docHistoryMode when docsEnabled is true", async () => {
+  it("injects docs section with UTC timestamp contract and history mode semantics", async () => {
     mockReadWunderkindConfig.mockImplementation(() => ({
       docsEnabled: true,
       docsPath: "./docs/output",
@@ -71,8 +71,21 @@ describe("runtime docs-output system injection", () => {
     expect(output.system.some((entry) => entry.includes("Eligible Wunderkind docs targets:"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("docs scope: current project root only"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("managed home files"))).toBe(true)
-    expect(output.system.some((entry) => entry.includes("refresh or bootstrap"))).toBe(true)
-    expect(output.system.some((entry) => entry.includes("explicit completion result"))).toBe(false)
+    
+    // Assert presence of UTC timestamp contract wording
+    const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+    expect(docsContent).toMatch(/shared UTC timestamp contract/i)
+    expect(docsContent).toMatch(/YYYY-MM-DDTHH-mm-ssZ/i)
+    expect(docsContent).toMatch(/2026-03-12T18-37-52Z/)
+    expect(docsContent).toMatch(/## Update <UTC_TOKEN>/)
+    expect(docsContent).toMatch(/## Update <UTC_TOKEN> \(2\)/)
+    expect(docsContent).toMatch(/<basename>--<UTC_TOKEN>\.md/)
+    expect(docsContent).toMatch(/<basename>--<UTC_TOKEN>--2\.md/)
+    expect(docsContent).toMatch(/managed family members/)
+    
+    // Assert absence of vague wording
+    expect(docsContent).not.toMatch(/refresh or bootstrap/)
+    expect(docsContent).not.toMatch(/explicit completion result/)
   })
 
   it("does not duplicate docs section when transform runs twice", async () => {
