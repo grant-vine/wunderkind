@@ -223,11 +223,11 @@ export const DOCS_HISTORY_META: Record<DocHistoryMode, PersonalityMeta> = {
   },
   "append-dated": {
     label: "append-dated",
-    hint: "Appends a new dated section",
+    hint: "Appends a new UTC-timestamped section",
   },
   "new-dated-file": {
     label: "new-dated-file",
-    hint: "Creates a new file with a date suffix",
+    hint: "Creates a new UTC-timestamped file",
   },
   "overwrite-archive": {
     label: "overwrite-archive",

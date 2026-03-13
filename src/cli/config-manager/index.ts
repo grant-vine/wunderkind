@@ -472,7 +472,7 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  "docsEnabled": ${JSON.stringify(config.docsEnabled)},`,
     `  // Directory path where docs outputs are written`,
     `  "docsPath": ${JSON.stringify(config.docsPath)},`,
-    `  // History mode: "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"`,
+    `  // History mode: "overwrite" | "append-dated" (UTC-timestamped sections) | "new-dated-file" (UTC-timestamped files) | "overwrite-archive"`,
     `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)}`,
     `}`,
     ``,
