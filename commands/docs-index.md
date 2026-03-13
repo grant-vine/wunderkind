@@ -22,8 +22,8 @@ This command is invoked as `/docs-index`.
 ## Constraints
 
 - Only docs-eligible Wunderkind agents should participate.
-- Use canonical filenames from Wunderkind's built-in ownership map and normalize non-canonical legacy files.
-- Do not let individual agents invent output paths; keep each eligible agent in its canonical managed home file.
+- Use canonical filenames from Wunderkind's built-in ownership map. Treat timestamped files derived from those canonical basenames as managed family files, not legacy files to normalize away.
+- Do not let individual agents invent output paths. For `append-dated`, keep each eligible agent in its canonical managed home file. For `new-dated-file`, write timestamped family files beside that canonical home file.
 - Treat the current working directory as the trust boundary. Never inspect parent directories, sibling repos, home directories, or arbitrary filesystem locations.
 - Never glob or search outside the configured docs directory, `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and this shipped `/docs-index` command asset.
 - Surface partial failures clearly, but still keep the docs index aligned with the successfully refreshed or created outputs.
@@ -32,8 +32,11 @@ This command is invoked as `/docs-index`.
 
 - This command is shipped as `/docs-index`.
 - Use the configured docs path and history mode from project-local Wunderkind config. The docs path must remain relative to the current project root.
-- The coordinator owns the docs index and overall summary; individual agents own their own canonical managed home files.
-- Refresh or bootstrap each canonical file in place: refresh if present, create it if missing.
+- The coordinator owns the docs index and overall summary; individual agents own their own canonical managed home files and any timestamped managed family files derived from them.
+- Use one shared UTC token per `/docs-index` run. Timestamp format: `YYYY-MM-DDTHH-mm-ssZ`, for example `2026-03-12T18-37-52Z`.
+- `append-dated` appends canonical headings like `## Update 2026-03-12T18-37-52Z`; collisions use `## Update 2026-03-12T18-37-52Z (2)`.
+- `new-dated-file` writes family files like `marketing-strategy--2026-03-12T18-37-52Z.md`; collisions use `marketing-strategy--2026-03-12T18-37-52Z--2.md`.
+- Existing date-only sections and files remain valid history and must not be rewritten or normalized away.
 - Partial success is acceptable for docs refresh.
 - After the run, ask the user whether to run `init-deep` as an optional follow-up.
 

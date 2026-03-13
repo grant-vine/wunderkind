@@ -78,18 +78,31 @@ export function buildDocsInstruction(
     throw new Error(`Unknown agent key: ${agentKey}`)
   }
 
+  const managedOutputInstruction =
+    docHistoryMode === "new-dated-file"
+      ? "Within `/docs-index`, treat the canonical unsuffixed file as your managed home lane. Do not rewrite that canonical file for this mode. Instead, create or refresh a UTC-timestamped managed family file alongside it, using the shared run token and the configured collision suffix rules."
+      : "Within `/docs-index`, treat this file as your managed home file. Refresh its contents if it already exists, or create it if missing."
+
   return `When docs output is enabled, write to: ${docsPath}/${config.canonicalFilename}
 
 History mode: ${docHistoryMode}
 - overwrite: Replace the file contents each time.
-- append-dated: Append a dated section to the file.
-- new-dated-file: Create a new file with a date suffix.
+- append-dated: Append a UTC-timestamped section heading like \`## Update 2026-03-12T18-37-52Z\` to the canonical home file.
+- new-dated-file: Create a UTC-timestamped managed family file like \`marketing-strategy--2026-03-12T18-37-52Z.md\` alongside the canonical home file.
 - overwrite-archive: Overwrite the current file and archive the old one.
+
+UTC Timestamp Contract:
+- Use one shared base UTC token per \`/docs-index\` run.
+- Timestamp format: \`YYYY-MM-DDTHH-mm-ssZ\`.
+- Append collisions use headings like \`## Update 2026-03-12T18-37-52Z (2)\`.
+- New dated-file collisions use filenames like \`marketing-strategy--2026-03-12T18-37-52Z--2.md\`.
+- Timestamped files derived from canonical basenames are managed family files, not legacy artifacts.
+- Existing date-only sections and files should remain untouched.
 
 Use the configured docs path exactly as provided: ${docsPath}
 The docs path is always relative to the current project root. Do not inspect or write outside that root.
 
-Within \`/docs-index\`, treat this file as your managed home file. Refresh its contents if it already exists, or create it if missing.
+${managedOutputInstruction}
 
 Each eligible docs agent owns its own canonical document output and should stay within that managed lane unless the user explicitly asks for something broader.
 

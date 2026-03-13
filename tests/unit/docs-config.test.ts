@@ -73,6 +73,31 @@ describe("docs-config", () => {
     expect(instruction).not.toContain("explicit completion result")
   })
 
+  it("buildDocsInstruction includes the UTC timestamp contract examples", () => {
+    const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "append-dated")
+
+    expect(instruction).toContain("UTC Timestamp Contract")
+    expect(instruction).toContain("YYYY-MM-DDTHH-mm-ssZ")
+    expect(instruction).toContain("## Update 2026-03-12T18-37-52Z")
+    expect(instruction).toContain("## Update 2026-03-12T18-37-52Z (2)")
+    expect(instruction).toContain("marketing-strategy--2026-03-12T18-37-52Z.md")
+    expect(instruction).toContain("marketing-strategy--2026-03-12T18-37-52Z--2.md")
+  })
+
+  it("buildDocsInstruction preserves legacy date-only artifacts and managed family semantics", () => {
+    const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "new-dated-file")
+
+    expect(instruction).toContain("Use one shared base UTC token per `/docs-index` run")
+    expect(instruction).toContain("managed family files, not legacy artifacts")
+    expect(instruction).toContain("Existing date-only sections and files should remain untouched")
+    expect(instruction).toContain("treat the canonical unsuffixed file as your managed home lane")
+    expect(instruction).toContain("Do not rewrite that canonical file for this mode")
+    expect(instruction).toContain("create or refresh a UTC-timestamped managed family file alongside it")
+    expect(instruction).not.toContain("Refresh its contents if it already exists, or create it if missing")
+    expect(instruction).not.toContain("Append a dated section to the file")
+    expect(instruction).not.toContain("Create a new file with a date suffix")
+  })
+
   it("exports the exact eligible docs agent set", () => {
     expect(getDocsEligibleAgentKeys()).toEqual([
       "marketing-wunderkind",
