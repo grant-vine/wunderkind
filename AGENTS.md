@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.8.0  
+**Package:** `@grant-vine/wunderkind` v0.9.10  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
@@ -212,6 +212,6 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
-- **oh-my-openagent must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+- **oh-my-openagent must be installed before wunderkind** — canonical npm package is `oh-my-openagent`, while upstream technical identifiers remain `oh-my-opencode` (CLI command) and `oh-my-opencode.jsonc` (config filename). The TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent categories are configured via `oh-my-opencode.jsonc` at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.

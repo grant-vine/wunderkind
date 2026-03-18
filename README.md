@@ -68,6 +68,8 @@ The TUI will guide you through:
 3. Configuring your shared baseline context: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
+> Note: upstream's canonical npm package is `oh-my-openagent`, while the upstream CLI command and config filename remain `oh-my-opencode` and `oh-my-opencode.jsonc`.
+
 ### Non-interactive install
 
 For CI/CD or scripted environments, use the `install` command with the `--no-tui` flag.
