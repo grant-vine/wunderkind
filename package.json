@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.9.8",
+  "version": "0.9.10",
   "description": "Wunderkind \u2014 specialist AI agent addon for OpenCode with 12 professional agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -36,7 +36,7 @@
     "@opencode-ai/plugin": "^1.2.18",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
-    "oh-my-opencode": "^3.11.0",
+    "oh-my-openagent": "3.12.2",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
