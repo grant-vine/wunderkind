@@ -216,6 +216,63 @@ function detectLoadedPackageVersion(packageName: string): { version: string | nu
   return { version: null, packagePath: null }
 }
 
+function detectLoadedPackageSources(packageName: string): {
+  global: { version: string | null; packagePath: string | null }
+  cache: { version: string | null; packagePath: string | null }
+} {
+  const globalPath = join(GLOBAL_OPENCODE_NODE_MODULES, packageName, "package.json")
+  const cachePath = join(GLOBAL_CACHE_DIR, "node_modules", packageName, "package.json")
+
+  return {
+    global: {
+      version: existsSync(globalPath) ? readJsonVersion(globalPath) : null,
+      packagePath: existsSync(globalPath) ? globalPath : null,
+    },
+    cache: {
+      version: existsSync(cachePath) ? readJsonVersion(cachePath) : null,
+      packagePath: existsSync(cachePath) ? cachePath : null,
+    },
+  }
+}
+
+function compareVersions(left: string, right: string): number | null {
+  const normalize = (value: string): [number, number, number] | null => {
+    const match = value.match(/^(\d+)\.(\d+)\.(\d+)/)
+    if (!match) return null
+    const [, major, minor, patch] = match
+    return [Number(major), Number(minor), Number(patch)]
+  }
+
+  const leftParts = normalize(left)
+  const rightParts = normalize(right)
+  if (!leftParts || !rightParts) return null
+
+  const majorDelta = leftParts[0] - rightParts[0]
+  if (majorDelta !== 0) return majorDelta
+
+  const minorDelta = leftParts[1] - rightParts[1]
+  if (minorDelta !== 0) return minorDelta
+
+  const patchDelta = leftParts[2] - rightParts[2]
+  if (patchDelta !== 0) return patchDelta
+
+  return 0
+}
+
+function buildStaleOverrideWarning(options: {
+  packageName: string
+  globalVersion: string | null
+  cacheVersion: string | null
+}): string | null {
+  const { packageName, globalVersion, cacheVersion } = options
+  if (!globalVersion || !cacheVersion) return null
+
+  const comparison = compareVersions(globalVersion, cacheVersion)
+  if (comparison === null || comparison >= 0) return null
+
+  return `global ${packageName} ${globalVersion} likely overrides newer cache ${cacheVersion}`
+}
+
 function getOwnPackageVersion(): string | null {
   return readJsonVersion(fileURLToPath(new URL("../../../package.json", import.meta.url)))
 }
@@ -236,6 +293,7 @@ export function detectPluginVersionInfo(packageName: string): PluginVersionInfo 
     configPath,
     loadedPackagePath: loaded.packagePath,
     registered: registeredEntry !== null,
+    staleOverrideWarning: null,
   }
 }
 
@@ -255,7 +313,18 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
 
   const loadedCanonical = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
   const loadedLegacy = detectLoadedPackageVersion(OMO_LEGACY_PACKAGE_NAME)
+  const loadedCanonicalSources = detectLoadedPackageSources(OMO_CANONICAL_PACKAGE_NAME)
+  const loadedLegacySources = detectLoadedPackageSources(OMO_LEGACY_PACKAGE_NAME)
   const loaded = loadedCanonical.version !== null || loadedCanonical.packagePath !== null ? loadedCanonical : loadedLegacy
+  const loadedSources =
+    loadedCanonicalSources.global.packagePath !== null || loadedCanonicalSources.cache.packagePath !== null
+      ? loadedCanonicalSources
+      : loadedLegacySources
+  const staleOverrideWarning = buildStaleOverrideWarning({
+    packageName: OMO_CANONICAL_PACKAGE_NAME,
+    globalVersion: loadedSources.global.version,
+    cacheVersion: loadedSources.cache.version,
+  })
 
   return {
     packageName: OMO_CANONICAL_PACKAGE_NAME,
@@ -266,6 +335,8 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     configPath,
     loadedPackagePath: loaded.packagePath,
     registered: registeredEntry !== null,
+    loadedSources,
+    staleOverrideWarning,
   }
 }
 

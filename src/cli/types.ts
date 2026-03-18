@@ -121,4 +121,9 @@ export interface PluginVersionInfo {
   configPath: string | null
   loadedPackagePath: string | null
   registered: boolean
+  loadedSources?: {
+    global: { version: string | null; packagePath: string | null }
+    cache: { version: string | null; packagePath: string | null }
+  }
+  staleOverrideWarning?: string | null
 }
