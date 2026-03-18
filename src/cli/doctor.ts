@@ -89,10 +89,17 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     )
     line("oh-my-openagent loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
 
+    if (omoVersion.staleOverrideWarning) {
+      warnings.push(omoVersion.staleOverrideWarning)
+      line("oh-my-openagent warning:", color.yellow(omoVersion.staleOverrideWarning))
+    }
+
     const versionAdvice = !omoVersion.registered
       ? "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately."
       : omoVersion.loadedVersion === null
         ? "oh-my-openagent is registered but its loaded version could not be determined locally — verify before upgrading both together."
+        : omoVersion.staleOverrideWarning
+          ? "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode."
         : "Versions are advisory only — upgrade Wunderkind and oh-my-openagent independently unless your test case requires both."
     line("upgrade guidance:", color.dim(versionAdvice))
 
@@ -119,6 +126,20 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       }
       if (omoVersion.loadedPackagePath) {
         line("oh-my-openagent loaded package:", color.dim(omoVersion.loadedPackagePath))
+      }
+      if (omoVersion.loadedSources?.global.packagePath) {
+        const globalVersionLabel = omoVersion.loadedSources.global.version ?? "unknown"
+        line(
+          "oh-my-openagent global package:",
+          `${color.dim(omoVersion.loadedSources.global.packagePath)} ${color.dim(`(${globalVersionLabel})`)}`,
+        )
+      }
+      if (omoVersion.loadedSources?.cache.packagePath) {
+        const cacheVersionLabel = omoVersion.loadedSources.cache.version ?? "unknown"
+        line(
+          "oh-my-openagent cache package:",
+          `${color.dim(omoVersion.loadedSources.cache.packagePath)} ${color.dim(`(${cacheVersionLabel})`)}`,
+        )
       }
 
       section("Active Configuration")

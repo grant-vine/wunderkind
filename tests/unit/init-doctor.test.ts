@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import type { DetectedConfig } from "../../src/cli/types.js"
+import type { DetectedConfig, PluginVersionInfo } from "../../src/cli/types.js"
 
 const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   isInstalled: false,
@@ -54,7 +54,7 @@ const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
   totalCount: 11,
   allPresent: true,
 }))
-const mockDetectWunderkindVersionInfo = mock(() => ({
+const mockDetectWunderkindVersionInfo = mock<() => PluginVersionInfo>(() => ({
   packageName: "@grant-vine/wunderkind",
   currentVersion: "0.9.4" as string | null,
   registeredEntry: "@grant-vine/wunderkind" as string | null,
@@ -63,8 +63,9 @@ const mockDetectWunderkindVersionInfo = mock(() => ({
   configPath: "/tmp/opencode.json" as string | null,
   loadedPackagePath: "/tmp/node_modules/@grant-vine/wunderkind/package.json" as string | null,
   registered: true,
+  staleOverrideWarning: null,
 }))
-const mockDetectOmoVersionInfo = mock(() => ({
+const mockDetectOmoVersionInfo = mock<() => PluginVersionInfo>(() => ({
   packageName: "oh-my-openagent",
   currentVersion: null,
   registeredEntry: "oh-my-openagent@3.12.2" as string | null,
@@ -73,6 +74,17 @@ const mockDetectOmoVersionInfo = mock(() => ({
   configPath: "/tmp/opencode.json" as string | null,
   loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json" as string | null,
   registered: true,
+  loadedSources: {
+    global: {
+      version: "3.12.2" as string | null,
+      packagePath: "/tmp/node_modules/oh-my-openagent/package.json" as string | null,
+    },
+    cache: {
+      version: null,
+      packagePath: null,
+    },
+  },
+  staleOverrideWarning: null,
 }))
 const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
   scope === "global"
@@ -322,6 +334,93 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
       expect(messages.some((m) => m.includes("oh-my-openagent loaded package:"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-openagent global package:"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("warns when a stale global OMO install likely overrides a newer cache version", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@latest" as string | null,
+      registeredVersion: null,
+      loadedVersion: "3.12.2" as string | null,
+      configPath: "/tmp/opencode.json" as string | null,
+      loadedPackagePath: "/Users/grantv/.config/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+      registered: true,
+      loadedSources: {
+        global: {
+          version: "3.12.2" as string | null,
+          packagePath: "/Users/grantv/.config/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+        },
+        cache: {
+          version: "3.12.3" as string | null,
+          packagePath: "/Users/grantv/.cache/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+        },
+      },
+      staleOverrideWarning: "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
+    }))
+
+    try {
+      const code = await runDoctorWithOptions({})
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("oh-my-openagent warning:"))).toBe(true)
+      expect(messages.some((m) => m.includes("global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3"))).toBe(true)
+      expect(messages.some((m) => m.includes("refresh the global install and restart OpenCode"))).toBe(true)
+      expect(messages.some((m) => m.includes("Warnings"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("shows both global and cache OMO package sources in verbose mode when they differ", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@latest" as string | null,
+      registeredVersion: null,
+      loadedVersion: "3.12.2" as string | null,
+      configPath: "/tmp/opencode.json" as string | null,
+      loadedPackagePath: "/Users/grantv/.config/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+      registered: true,
+      loadedSources: {
+        global: {
+          version: "3.12.2" as string | null,
+          packagePath: "/Users/grantv/.config/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+        },
+        cache: {
+          version: "3.12.3" as string | null,
+          packagePath: "/Users/grantv/.cache/opencode/node_modules/oh-my-openagent/package.json" as string | null,
+        },
+      },
+      staleOverrideWarning: "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
+    }))
+
+    try {
+      const code = await runDoctorWithOptions({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("oh-my-openagent global package:") && m.includes("3.12.2"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-openagent cache package:") && m.includes("3.12.3"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -420,6 +519,11 @@ describe("runDoctor", () => {
       configPath: null,
       loadedPackagePath: null,
       registered: false,
+      loadedSources: {
+        global: { version: null, packagePath: null },
+        cache: { version: null, packagePath: null },
+      },
+      staleOverrideWarning: null,
     }))
 
     try {
