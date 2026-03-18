@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
@@ -586,6 +586,45 @@ describe("readWunderkindConfig", () => {
       } else {
         writeFileSync(globalConfigPath, globalBackup)
       }
+    }
+  })
+})
+
+describe("detectOmoVersionInfo", () => {
+  it("falls back to the legacy oh-my-opencode package when canonical OMO is absent", async () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-omo-legacy-detect-"))
+    const originalCwd = process.cwd()
+    const fakeHome = join(testRoot, "fake-home")
+    const fakeLegacyPackagePath = join(fakeHome, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
+
+    try {
+      mkdirSync(join(fakeHome, ".config", "opencode"), { recursive: true })
+      mkdirSync(join(fakeHome, ".cache", "opencode", "node_modules", "oh-my-opencode"), { recursive: true })
+      process.chdir(testRoot)
+
+      mock.module("node:os", () => ({
+        homedir: () => fakeHome,
+      }))
+
+      writeFileSync(join(fakeHome, ".config", "opencode", "opencode.json"), JSON.stringify({ plugin: ["oh-my-opencode@3.12.2"] }))
+      writeFileSync(fakeLegacyPackagePath, JSON.stringify({ version: "3.12.2" }))
+
+      const { detectOmoVersionInfo } = await import(`../../src/cli/config-manager/index.ts?omo-legacy-test=${Date.now()}`)
+      const versionInfo = detectOmoVersionInfo()
+
+      expect(versionInfo.packageName).toBe("oh-my-openagent")
+      expect(versionInfo.registered).toBe(true)
+      expect(versionInfo.registeredEntry).toBe("oh-my-opencode@3.12.2")
+      expect(versionInfo.registeredVersion).toBe("3.12.2")
+      expect(versionInfo.loadedVersion).toBe("3.12.2")
+      expect(versionInfo.loadedPackagePath).toBe(fakeLegacyPackagePath)
+      expect(versionInfo.configPath).toBe(join(fakeHome, ".config", "opencode", "opencode.json"))
+    } finally {
+      process.chdir(originalCwd)
+      mock.module("node:os", () => ({
+        homedir,
+      }))
+      rmSync(testRoot, { recursive: true, force: true })
     }
   })
 })

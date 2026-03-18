@@ -65,13 +65,13 @@ const mockDetectWunderkindVersionInfo = mock(() => ({
   registered: true,
 }))
 const mockDetectOmoVersionInfo = mock(() => ({
-  packageName: "oh-my-opencode",
+  packageName: "oh-my-openagent",
   currentVersion: null,
-  registeredEntry: "oh-my-opencode@latest" as string | null,
+  registeredEntry: "oh-my-openagent@3.12.2" as string | null,
   registeredVersion: null,
-  loadedVersion: "3.11.0" as string | null,
+  loadedVersion: "3.12.2" as string | null,
   configPath: "/tmp/opencode.json" as string | null,
-  loadedPackagePath: "/tmp/node_modules/oh-my-opencode/package.json" as string | null,
+  loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json" as string | null,
   registered: true,
 }))
 const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
@@ -296,7 +296,7 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Install Summary"))).toBe(true)
       expect(messages.some((m) => m.includes("Version Status"))).toBe(true)
       expect(messages.some((m) => m.includes("wunderkind cli version:"))).toBe(true)
-      expect(messages.some((m) => m.includes("oh-my-opencode loaded version:"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-openagent loaded version:"))).toBe(true)
       expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
@@ -321,7 +321,7 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(true)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
-      expect(messages.some((m) => m.includes("oh-my-opencode loaded package:"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-openagent loaded package:"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -412,7 +412,7 @@ describe("runDoctor", () => {
     }
     console.error = () => {}
     mockDetectOmoVersionInfo.mockImplementation(() => ({
-      packageName: "oh-my-opencode",
+      packageName: "oh-my-openagent",
       currentVersion: null,
       registeredEntry: null,
       registeredVersion: null,
@@ -425,7 +425,7 @@ describe("runDoctor", () => {
     try {
       const code = await runDoctorWithOptions({})
       expect(code).toBe(0)
-      expect(messages.some((m) => m.includes("oh-my-opencode registration:"))).toBe(true)
+      expect(messages.some((m) => m.includes("oh-my-openagent registration:"))).toBe(true)
       expect(messages.some((m) => m.includes("✗ not detected"))).toBe(true)
       expect(messages.some((m) => m.includes("Upgrade guidance:") || m.includes("upgrade guidance:"))).toBe(true)
     } finally {

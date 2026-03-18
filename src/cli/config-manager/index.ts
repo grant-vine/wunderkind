@@ -48,7 +48,8 @@ const GLOBAL_CACHE_DIR = join(homedir(), ".cache", "opencode")
 const WUNDERKIND_DIR = join(process.cwd(), ".wunderkind")
 const WUNDERKIND_CONFIG = join(WUNDERKIND_DIR, "wunderkind.config.jsonc")
 const LEGACY_WUNDERKIND_CONFIG = join(process.cwd(), "wunderkind.config.jsonc")
-const OMO_PACKAGE_NAME = "oh-my-opencode"
+const OMO_CANONICAL_PACKAGE_NAME = "oh-my-openagent"
+const OMO_LEGACY_PACKAGE_NAME = "oh-my-opencode"
 
 interface OpenCodeConfig {
   plugin?: string[]
@@ -243,7 +244,29 @@ export function detectWunderkindVersionInfo(): PluginVersionInfo {
 }
 
 export function detectOmoVersionInfo(): PluginVersionInfo {
-  return detectPluginVersionInfo(OMO_PACKAGE_NAME)
+  const configResolution = resolveOpenCodeConfigPath("global")
+  const configPath = existsSync(configResolution.path) ? configResolution.path : null
+  const config = configPath ? parseConfig(configPath) : null
+  const plugins = (config?.plugin ?? []) as string[]
+
+  const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
+  const registeredLegacyEntry = findPluginEntry(plugins, OMO_LEGACY_PACKAGE_NAME)
+  const registeredEntry = registeredCanonicalEntry ?? registeredLegacyEntry
+
+  const loadedCanonical = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
+  const loadedLegacy = detectLoadedPackageVersion(OMO_LEGACY_PACKAGE_NAME)
+  const loaded = loadedCanonical.version !== null || loadedCanonical.packagePath !== null ? loadedCanonical : loadedLegacy
+
+  return {
+    packageName: OMO_CANONICAL_PACKAGE_NAME,
+    currentVersion: null,
+    registeredEntry,
+    registeredVersion: normalizeDependencyVersion(registeredEntry),
+    loadedVersion: loaded.version,
+    configPath,
+    loadedPackagePath: loaded.packagePath,
+    registered: registeredEntry !== null,
+  }
 }
 
 function parseWunderkindConfig(path: string): Record<string, unknown> | null {

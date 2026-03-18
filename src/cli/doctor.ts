@@ -82,18 +82,18 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     section("Version Status")
     line("wunderkind cli version:", color.cyan(wunderkindVersion.currentVersion ?? "unknown"))
     line(
-      "oh-my-opencode registration:",
+      "oh-my-openagent registration:",
       omoVersion.registered
         ? `${color.green("✓ yes")} ${color.dim(`(${omoVersion.registeredEntry})`)}`
         : color.dim("✗ not detected"),
     )
-    line("oh-my-opencode loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+    line("oh-my-openagent loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
 
     const versionAdvice = !omoVersion.registered
-      ? "OMO not detected — upgrade Wunderkind independently unless you intentionally use OMO separately."
+      ? "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately."
       : omoVersion.loadedVersion === null
-        ? "OMO is registered but its loaded version could not be determined locally — verify before upgrading both together."
-        : "Versions are advisory only — upgrade Wunderkind and OMO independently unless your test case requires both."
+        ? "oh-my-openagent is registered but its loaded version could not be determined locally — verify before upgrading both together."
+        : "Versions are advisory only — upgrade Wunderkind and oh-my-openagent independently unless your test case requires both."
     line("upgrade guidance:", color.dim(versionAdvice))
 
     if (options.verbose) {
@@ -115,10 +115,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
       if (omoVersion.configPath) {
-        line("oh-my-opencode config source:", color.dim(omoVersion.configPath))
+        line("oh-my-openagent config source:", color.dim(omoVersion.configPath))
       }
       if (omoVersion.loadedPackagePath) {
-        line("oh-my-opencode loaded package:", color.dim(omoVersion.loadedPackagePath))
+        line("oh-my-openagent loaded package:", color.dim(omoVersion.loadedPackagePath))
       }
 
       section("Active Configuration")
