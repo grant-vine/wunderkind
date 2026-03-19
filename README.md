@@ -8,12 +8,12 @@ Wunderkind — specialist AI agent addon for OpenCode that extends your team wit
 > Wunderkind is still pre-1.0. Keep Wunderkind and oh-my-openagent up to date together; older installs are not expected to remain compatible.
 
 > [!WARNING]
-> **Breaking changes in this version.** Desloppify support has been removed from the Wunderkind product contract. If you are upgrading from a version that included Desloppify, be aware of the following breaking changes:
-> - The `--desloppify-enabled` flag is removed from `wunderkind init`. Passing it will now fail as an unknown flag.
-> - The `desloppifyEnabled` config key is no longer written or read. Existing config files that contain it are silently tolerated — the key is ignored on read and will not be written back.
-> - `.desloppify/` is no longer added to `.gitignore` by `wunderkind gitignore`.
-> - The Desloppify first-trigger fallback message is removed from all agent prompts.
-> - The `code-health` skill is now an audit/reporting tool only — it does not install or invoke Desloppify or any other automated cleanup tool.
+> **Breaking changes in this version.** The automated code-cleanup product surface has been fully removed from the Wunderkind product contract. If you are upgrading from an older version that included this feature, the following surfaces have changed:
+> - The `init` flag that enabled the cleanup tool no longer exists. Passing it will fail as an unknown flag.
+> - The corresponding config key is no longer written or read. Existing config files that contain it are silently tolerated — the key is ignored on read and will not be written back.
+> - The managed gitignore entry for the cleanup tool's working directory is no longer added by `wunderkind gitignore`.
+> - The first-trigger fallback message that referenced the cleanup tool has been removed from all agent prompts.
+> - The `code-health` skill is now an audit/reporting tool only — it does not install or invoke any automated cleanup tool.
 
 ---
 

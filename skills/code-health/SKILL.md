@@ -134,4 +134,4 @@ This skill is complete only when:
 3. The six audit workflow steps are explicit.
 4. The report shape includes: Executive Summary, Findings by Severity, Priority Action List, Systemic Patterns, Appendix.
 5. The skill explicitly states it is read-only and does not mutate code or create external artifacts.
-6. No Desloppify, Python install guidance, or auto-cleanup language appears anywhere in the file.
+6. No references to automated code-cleanup tools, package-manager install workflows, or any language suggesting the skill mutates code appear anywhere in the file.
