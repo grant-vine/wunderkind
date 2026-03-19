@@ -1,0 +1,51 @@
+Task: Task 10 - Consolidate marketing, brand, and devrel into one growth/comms specialist
+Date: 2026-03-19
+
+Changed domain files:
+- src/agents/marketing-wunderkind.ts
+- src/agents/brand-builder.ts
+- src/agents/devrel-wunderkind.ts
+
+Additional compatibility fix applied during verification:
+- src/agents/support-engineer.ts
+  Reason: existing template-literal escaping in a retired stub broke `tsc` during `bun run build`; fixed escaping only, no scope expansion.
+
+Task 13 handoff artifact created:
+- .sisyphus/plans/task-10-shared-infra-todo.md
+
+What changed:
+- Expanded `marketing-wunderkind` to absorb brand-builder capabilities: community strategy, thought leadership, PR, public reputation, forum strategy, sponsorship/ambassador planning, and brand/community ROI gating.
+- Expanded `marketing-wunderkind` to absorb devrel capabilities: developer advocacy, docs-led launches, tutorials, migration guidance, DX audits, onboarding friction reduction, and time-to-first-value thinking.
+- Kept `social-media-maven` and `technical-writer` as explicitly owned marketing skills; noted the Task 4 reassignment of `technical-writer` from DevRel.
+- Converted `brand-builder` and `devrel-wunderkind` into explicit deprecated compatibility stubs that point future work to `marketing-wunderkind` while Task 13 removes shared registrations.
+- Recorded exact shared-file cleanup requirements for Task 13, including manifest removal, OMO registration removal, docs-config cleanup, personality/schema key retirement, README/config surface updates, and shared test updates.
+
+Verification run:
+1. `npx tsc --noEmit`
+   - Result: PASS
+
+2. `bun run build`
+   - Result: PASS
+   - Output included regenerated files:
+     - agents/marketing-wunderkind.md
+     - agents/brand-builder.md
+     - agents/devrel-wunderkind.md
+     - other shipped agent markdown files
+
+3. `bun test tests/unit/`
+   - Result: FAIL (unrelated pre-existing compatibility stub)
+   - Isolated failing surface after Task 10 fixes:
+     - tests/unit/agent-factories.test.ts
+     - failing agent: `data-analyst`
+   - Failure pattern:
+     - description no longer begins with `USE FOR:`
+     - prompt no longer contains `Before acting, read`
+     - prompt no longer contains `Personality`
+     - prompt no longer contains `OpenCode orchestrated workflow`
+     - prompt no longer contains `.sisyphus/`
+     - `task` permission is no longer denied
+
+Notes:
+- The Task 10 domain work itself typechecks and builds cleanly.
+- Full unit-suite green status now depends on a separate retired-agent compatibility cleanup for `data-analyst`, which is outside Task 10's requested domain-scoped file set.
+- Suggested commit message when the broader branch is ready: `refactor(comms): merge marketing brand and devrel`
