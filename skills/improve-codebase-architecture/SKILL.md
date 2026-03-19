@@ -13,6 +13,8 @@ You look for structural friction in the codebase and turn it into a concrete arc
 
 ## Primary owner
 
+**Owned by:** wunderkind:fullstack-wunderkind
+
 This skill is primarily run by `fullstack-wunderkind`.
 
 `product-wunderkind` may trigger it when discovery reveals recurring structural friction, but engineering owns the resulting architecture work.

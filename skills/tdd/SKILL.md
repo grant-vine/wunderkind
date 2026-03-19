@@ -13,6 +13,8 @@ Adapted from Matt Pocock's benchmark skill for Wunderkind's Bun + TypeScript str
 
 ## Primary owner
 
+**Owned by:** wunderkind:fullstack-wunderkind
+
 This skill is explicitly owned by `fullstack-wunderkind`.
 
 It carries forward the old QA doctrine, but `fullstack-wunderkind` now owns the execution of

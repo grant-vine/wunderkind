@@ -14,6 +14,8 @@ filesystem-first workflow.
 
 ## Primary owner
 
+**Owned by:** wunderkind:product-wunderkind
+
 This skill is primarily run by `product-wunderkind` when the goal is to shape agent
 behavior and capability boundaries.
 

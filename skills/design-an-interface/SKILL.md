@@ -13,6 +13,8 @@ Adapted from Matt Pocock's benchmark skill for Wunderkind's engineering workflow
 
 ## Primary owner
 
+**Owned by:** wunderkind:fullstack-wunderkind
+
 This skill is explicitly owned by `fullstack-wunderkind`.
 
 If the design question expands into broader structural friction or RFC-worthy boundary

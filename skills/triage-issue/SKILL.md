@@ -34,6 +34,8 @@ You investigate a bug or support issue, frame repro confidence and severity, and
 
 ## Wunderkind ownership
 
+**Owned by:** wunderkind:product-wunderkind
+
 - `product-wunderkind` owns first-pass triage: intake quality, repro confidence framing, severity classification, acceptance clarity, and backlog-ready handoff
 - `fullstack-wunderkind` owns root-cause diagnosis, red-green coverage, and implementation when needed
 

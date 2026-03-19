@@ -13,6 +13,8 @@ Use this skill when the explicit goal is to improve code quality with Desloppify
 
 ## Primary owner
 
+**Owned by:** wunderkind:fullstack-wunderkind
+
 This skill is owned by `fullstack-wunderkind` as the surviving steward for code quality tooling, TDD, architecture, and engineering methods.
 
 ## Filesystem scope
@@ -64,7 +66,7 @@ Wunderkind must not auto-install Python or Desloppify silently.
 If `desloppifyEnabled` is false or absent, or Desloppify is not installed, show this one-time fallback message exactly:
 
 ```text
-To enable Desloppify code-health support, run `wunderkind init` and opt in, then install: Python 3.11+ required, then `python -m pip install --upgrade 'desloppify[full]'`
+Desloppify code-health support is not enabled for this project. Run `wunderkind init --no-tui --desloppify-enabled=yes` to enable it, then install Desloppify with `python -m pip install --upgrade 'desloppify[full]'`.
 ```
 
 ## Hard rules
