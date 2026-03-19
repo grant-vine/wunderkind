@@ -75,3 +75,4 @@ Disposition rule: `retain` and `merge` apply to base-agent authority in `src/age
 | `fullstack-wunderkind` | `vercel-architect` | extract-as-skill | `fullstack-wunderkind` | `skills/vercel-architect/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains a platform-engineering specialization. |
 | `creative-director` | `visual-artist` | extract-as-skill | `creative-director` | `skills/visual-artist/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it stays with the retained design owner. |
 | `product-wunderkind` | `write-a-skill` | extract-as-skill | `product-wunderkind` | `skills/write-a-skill/SKILL.md` | `SKILL-STANDARD.md` marks this revise; it survives as the practical authoring workflow anchored by the repo skill standard. |
+| `fullstack-wunderkind` | `code-health` | extract-as-skill | `fullstack-wunderkind` | `skills/code-health/SKILL.md` | Opt-in Desloppify code-health workflow. Shipped as a new skill in Task 6; missing from original matrix. |

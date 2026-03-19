@@ -109,7 +109,7 @@ Facilitate a sprint retrospective and capture actionable outcomes.
 3. Categorise findings:
    - **Technical debt**: recurring code issues, slow tests, brittle E2E — route fixes to `wunderkind:fullstack-wunderkind`
    - **Process gaps**: unclear acceptance criteria, late QA, missing definition of done
-   - **Tooling**: slow builds, broken CI, environment instability — route to `wunderkind:operations-lead`
+   - **Tooling**: slow builds, broken CI, environment instability — route to `wunderkind:fullstack-wunderkind`
 4. Write action items: each must have an owner, a due date, and a measurable success criteria
 5. Prioritise: maximum 3 action items per retrospective — too many = none get done
 

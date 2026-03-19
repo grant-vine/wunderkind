@@ -30,7 +30,8 @@ export const WUNDERKIND_AGENT_DEFINITIONS: readonly WunderkindAgentDefinition[] 
   {
     id: "product-wunderkind",
     roleLabel: "Product Wunderkind",
-    summary: "VP Product-style partner for strategy, prioritization, and roadmap decisions.",
+    summary:
+      "Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.",
     factory: createProductWunderkindAgent,
   },
   {

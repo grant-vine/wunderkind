@@ -128,7 +128,7 @@ Recommend a license for a new open source project.
 
 When a licensing question intersects with regulatory compliance obligations (GDPR data processing, HIPAA data handling), escalate to `legal-counsel` for the regulatory layer.
 
-When a licensing question requires engineering decisions (how to structure the codebase to avoid copyleft contamination), escalate to `devrel-wunderkind` to route to `fullstack-wunderkind`.
+When a licensing question requires engineering decisions (how to structure the codebase to avoid copyleft contamination), escalate directly to `fullstack-wunderkind`.
 
 ---
 

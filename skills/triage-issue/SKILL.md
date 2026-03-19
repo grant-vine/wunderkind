@@ -1,15 +1,15 @@
 ---
 name: triage-issue
 description: >
-  USE FOR: bug triage, issue investigation, root cause analysis, support handoff,
-  incident reproduction, red-green planning, defect documentation, issue scoping,
-  support-to-engineering transitions.
+  USE FOR: bug triage, issue investigation, support handoff,
+  incident reproduction, defect documentation, issue scoping,
+  support-to-engineering transitions, acceptance clarity, backlog-ready issue shaping.
 
 ---
 
 # Triage Issue
 
-You investigate a bug or support issue, identify the likely root cause, and produce a durable handoff artifact before implementation begins.
+You investigate a bug or support issue, frame repro confidence and severity, and produce a durable handoff artifact before implementation begins. Engineering owns root-cause diagnosis and fix implementation; product owns intake quality and acceptance clarity.
 
 ## Output mode
 
@@ -20,22 +20,22 @@ You investigate a bug or support issue, identify the likely root cause, and prod
 
 1. Problem summary
 2. Reproduction clues / evidence
-3. Likely root cause
-4. Affected behavior and risk
+3. Suspected area and risk
+4. Affected behavior and severity
 5. Proposed red-green test cycle
 6. Acceptance criteria
 
 ## Workflow
 
-1. Reproduce or narrow the issue using repo evidence
-2. Distinguish symptom from root cause
-3. Capture a minimal safe fix direction
-4. Hand off to product/fullstack with test-first guidance
+1. Assess and frame repro confidence from available evidence
+2. Frame severity and acceptance criteria from observable behavior
+3. Capture a safe fix direction for engineering handoff
+4. Hand off to fullstack-wunderkind with test-first guidance and clear acceptance criteria
 
 ## Wunderkind ownership
 
-- `product-wunderkind` owns first-pass triage and acceptance clarity
-- `fullstack-wunderkind` validates red-green coverage and owns implementation when needed
+- `product-wunderkind` owns first-pass triage: intake quality, repro confidence framing, severity classification, acceptance clarity, and backlog-ready handoff
+- `fullstack-wunderkind` owns root-cause diagnosis, red-green coverage, and implementation when needed
 
 ## Hard rules
 

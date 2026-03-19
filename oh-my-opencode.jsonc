@@ -44,7 +44,7 @@
       "mode": "primary",
       "category": "writing",
       "color": "#3B82F6",
-      "description": "VP Product: roadmaps, OKRs, PRDs, user research, sprint planning, task decomposition."
+      "description": "Default orchestrator and front door for all Wunderkind requests. Routes mixed-domain and ambiguous work. VP Product authority: roadmaps, OKRs, PRDs, issue intake, acceptance review, sprint planning, and decomposition."
     },
 
     // ── Engineering ─────────────────────────────────────────────────────────────

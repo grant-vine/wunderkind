@@ -280,6 +280,10 @@ python -m pip install --upgrade 'desloppify[full]'
 
 Desloppify keeps local state in `.desloppify/`, and `wunderkind gitignore` adds that directory to `.gitignore` for you.
 
+### First-trigger fallback
+
+If Desloppify code-health work is requested but `desloppifyEnabled` is `false` or Desloppify is not installed, agents will respond once with: "Desloppify code-health support is not enabled for this project. Run `wunderkind init --no-tui --desloppify-enabled=yes` to enable it, then install Desloppify with `python -m pip install --upgrade 'desloppify[full]'`." The message is shown once and not repeated.
+
 ---
 
 ## Init-Deep Workflow
@@ -316,7 +320,7 @@ Wunderkind installs native markdown assets into OpenCode's supported directories
 |---|---|---|
 | `marketing-wunderkind` | CMO-calibre strategist for brand, community, developer advocacy, docs-led launches, and GTM | `writing` |
 | `creative-director` | Brand & UI/UX lead | `visual-engineering` |
-| `product-wunderkind` | VP Product | `writing` |
+| `product-wunderkind` | Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesises across specialists. VP Product authority: roadmaps, OKRs, PRDs, issue intake, acceptance review, sprint planning, and decomposition. | `writing` |
 | `fullstack-wunderkind` | CTO-calibre engineer | `unspecified-high` |
 | `ciso` | Security architecture, OWASP, compliance | `unspecified-high` |
 | `legal-counsel` | Legal and regulatory compliance | `writing` |

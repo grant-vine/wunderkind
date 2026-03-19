@@ -104,28 +104,43 @@ ${soulOverlay}
         }
       }
 
+      if (wunderkindConfig?.desloppifyEnabled === true) {
+        output.system.push(`
+## Wunderkind Desloppify Code Health
+
+Desloppify code-health support is enabled for this project. When you identify code-health work that qualifies (dead code, unused exports, lint violations, complexity hotspots), use the \`code-health\` skill.
+
+First-trigger fallback: if a user or agent requests Desloppify-style code health work but \`desloppifyEnabled\` is false or Desloppify is not installed, respond once with: "Desloppify code-health support is not enabled for this project. Run \`wunderkind init --no-tui --desloppify-enabled=yes\` to enable it, then install Desloppify with \`python -m pip install --upgrade 'desloppify[full]'\`." Do not repeat this message.
+`.trim())
+      }
+
       output.system.push(`
 ## Wunderkind Native Agents
 
 The following specialist agents are available as native OpenCode agents. Delegate to them when their domain matches.
 
-### Primary Agents
+### Orchestrator
+
+- product-wunderkind — **Default front door for all Wunderkind requests.** Start here for mixed-domain, ambiguous, or cross-functional work. product-wunderkind clarifies intent, routes to the right specialist, and synthesises the final answer. VP Product authority: roadmaps, OKRs, PRDs, issue intake, acceptance review, sprint planning, experiments, and decomposition.
+
+### Specialists
 
 - marketing-wunderkind — Brand strategy, go-to-market, content marketing, SEO/SEM, paid media, PR, community, developer advocacy, docs-led launches, tutorials, migration guidance, funnels, attribution, and channel ROI
 - creative-director — Brand identity, design systems, UI/UX, typography, colour palettes, accessibility, design tokens, visual language
-- product-wunderkind — Product strategy, roadmaps, OKRs, user research, PRDs, sprint planning, prioritisation, issue intake, acceptance review, experiments, and task decomposition
 - fullstack-wunderkind — Full-stack engineering, frontend, backend, database, infrastructure, Vercel, AI integration, architecture, TDD, technical diagnosis, reliability, runbooks, incidents, and admin tooling
 - ciso — Security architecture, OWASP, threat modelling, compliance (GDPR/CCPA/POPIA/LGPD), pen testing coordination, security incidents, and breach response
 - legal-counsel — OSS licensing, TOS/Privacy Policy drafting, DPAs, CLAs, contract review, GDPR/CCPA legal obligations
 
-### Delegation Rules
+### Routing
 
-- Use product-wunderkind for planning, PRDs, issue intake, acceptance review, product usage readouts, experiments, and decomposition.
-- Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability.
-- Use marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work.
-- Use creative-director for visual, UX, and design-system work.
-- Use ciso for security architecture, compliance controls, threat modeling, and security-incident posture.
-- Use legal-counsel for OSS licensing and legal/compliance review.
+- Default: route all Wunderkind requests to product-wunderkind first unless the domain is clearly single-specialist.
+- Route directly to marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work.
+- Route directly to fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability.
+- Route directly to creative-director for visual, UX, and design-system work.
+- Route directly to ciso for security architecture, compliance controls, threat modeling, and security-incident posture.
+- Route directly to legal-counsel for OSS licensing and legal/compliance review.
+
+Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work. Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability. Use legal-counsel for OSS licensing and legal/compliance review.
 
 ### Project Configuration
 

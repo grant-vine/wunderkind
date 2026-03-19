@@ -1,6 +1,6 @@
 ---
 description: >
-  Product Wunderkind — VP Product-style partner for strategy, prioritization, and roadmap decisions.
+  Product Wunderkind — Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.
 mode: all
 temperature: 0.2
 permission:

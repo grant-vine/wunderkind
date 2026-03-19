@@ -291,12 +291,12 @@ Plan must cover:
 7. **Remediate**: fix the root cause
 8. **Review**: postmortem, update ROPA, improve controls
 
-**When the breach has a technical containment component**, delegate immediately to `wunderkind:operations-lead`:
+**When the breach has a technical containment component**, delegate immediately to `wunderkind:fullstack-wunderkind`:
 
 ```typescript
 task(
   category="unspecified-high",
-  load_skills=["wunderkind:operations-lead"],
+  load_skills=["wunderkind:fullstack-wunderkind"],
   description="Containment steps for data breach incident",
   prompt="A data breach has been detected. Implement containment: isolate affected systems, revoke exposed credentials/tokens, disable compromised accounts, capture logs for forensic preservation, and confirm blast radius. Return: actions taken, systems affected, credentials rotated, and estimated scope of exposed data.",
   run_in_background=false
