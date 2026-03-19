@@ -27,7 +27,7 @@ export const CISO_METADATA: AgentPromptMetadata = {
   avoidWhen: [
     "General engineering work (use fullstack-wunderkind)",
     "Operations/SRE work (use operations-lead)",
-    "Test writing (use qa-specialist, which escalates to ciso when security gaps are found)",
+    "General test writing or regression execution (use fullstack-wunderkind; escalate to ciso when security gaps are found)",
     "OSS license compatibility, TOS/Privacy Policy drafting, DPAs, CLAs, or contract review (use legal-counsel)",
   ],
 }

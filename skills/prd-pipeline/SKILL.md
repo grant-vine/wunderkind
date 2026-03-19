@@ -50,9 +50,8 @@ If the mode is missing, treat it as `filesystem`.
 
 ## Wunderkind ownership
 
-- `product-wunderkind` owns PRD creation and decomposition
-- `qa-specialist` reviews acceptance criteria and testability
-- `fullstack-wunderkind` validates implementation sequencing and technical shape
+- `product-wunderkind` owns PRD creation, decomposition, and acceptance-criteria/testability review
+- `fullstack-wunderkind` validates implementation sequencing, technical shape, and regression/testing execution needs
 
 ## Hard rules
 

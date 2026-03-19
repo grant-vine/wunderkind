@@ -30,13 +30,12 @@ You investigate a bug or support issue, identify the likely root cause, and prod
 1. Reproduce or narrow the issue using repo evidence
 2. Distinguish symptom from root cause
 3. Capture a minimal safe fix direction
-4. Hand off to QA/fullstack with test-first guidance
+4. Hand off to product/fullstack with test-first guidance
 
 ## Wunderkind ownership
 
-- `support-engineer` owns first-pass triage
-- `qa-specialist` validates red-green coverage
-- `fullstack-wunderkind` owns implementation when needed
+- `product-wunderkind` owns first-pass triage and acceptance clarity
+- `fullstack-wunderkind` validates red-green coverage and owns implementation when needed
 
 ## Hard rules
 

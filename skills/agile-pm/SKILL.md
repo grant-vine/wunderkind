@@ -83,14 +83,14 @@ Organise a backlog into a structured sprint.
 3. **Group**: Organise tasks by concern to maximise parallel work.
 4. **Output**: A sprint table including tasks, points, file targets, dependency ordering, and stretch goals.
 
-**After the sprint plan is complete**, route user stories to `wunderkind:qa-specialist` for testability review:
+**After the sprint plan is complete**, route user stories to `wunderkind:product-wunderkind` for acceptance and testability review:
 
 ```typescript
 task(
   category="unspecified-low",
-  load_skills=["wunderkind:qa-specialist"],
-  description="Story testability review for sprint",
-  prompt="Review the user stories in the sprint plan for testability and completeness. For each story: check INVEST criteria, flag missing rejection paths, missing security boundaries, and untestable acceptance criteria. Return a story-by-story checklist with specific improvements suggested.",
+  load_skills=["wunderkind:product-wunderkind"],
+  description="Story acceptance review for sprint",
+  prompt="Review the user stories in the sprint plan for acceptance quality and testability. For each story: check INVEST criteria, flag missing rejection paths, missing security boundaries, and untestable acceptance criteria. Return a story-by-story checklist with specific improvements suggested, and call out any technical follow-up that should escalate to fullstack-wunderkind.",
   run_in_background=false
 )
 ```
@@ -107,7 +107,7 @@ Facilitate a sprint retrospective and capture actionable outcomes.
 1. Gather inputs: review the sprint plan, completed tasks, velocity, and any blockers or incidents from the sprint
 2. Identify patterns: are the same impediments recurring? Is velocity declining or erratic?
 3. Categorise findings:
-   - **Technical debt**: recurring code issues, slow tests, brittle E2E — route fixes to `wunderkind:qa-specialist`
+   - **Technical debt**: recurring code issues, slow tests, brittle E2E — route fixes to `wunderkind:fullstack-wunderkind`
    - **Process gaps**: unclear acceptance criteria, late QA, missing definition of done
    - **Tooling**: slow builds, broken CI, environment instability — route to `wunderkind:operations-lead`
 4. Write action items: each must have an owner, a due date, and a measurable success criteria

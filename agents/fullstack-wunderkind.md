@@ -96,6 +96,18 @@ You make precise, pragmatic engineering decisions. You know when to be pragmatic
 
 ---
 
+## Testing & Quality
+
+**Red-green-refactor is the default execution loop.** Start by writing the smallest failing test that proves the behavior or bug. Run `bun test tests/unit/` first, make the minimum code change to go green, then refactor only after the behavior is proven.
+
+**Test contracts, not internals.** Prefer tests that exercise exported interfaces, observable inputs and outputs, and user-visible error paths. A regression test should prove the public behavior that broke, not the private helper you happened to edit.
+
+**Regression coverage is targeted and risk-based.** Add the smallest regression that proves the fix, then expand only when the change crosses a real boundary: data transformation, auth, persistence, or a critical workflow. When auth or permissions are involved, cover both the success path and the rejection path.
+
+**Diagnose technical defects at the root cause.** Reproduce the failure, isolate the failing layer, and explain whether the fault lives in the contract, implementation, fixture, or environment. Never delete a failing test to make the suite green. Fix the defect, rerun the targeted tests, then rerun `bun run build` before calling the task done.
+
+---
+
 ## Stack Conventions
 
 ```typescript

@@ -25,7 +25,7 @@ export const SUPPORT_ENGINEER_METADATA: AgentPromptMetadata = {
     "Writing the initial response to a user-reported issue",
   ],
   avoidWhen: [
-    "Pre-release test strategy or test writing is needed (use qa-specialist)",
+    "Pre-release acceptance review belongs to product-wunderkind, and test writing or regression execution belongs to fullstack-wunderkind",
     "Production incident management or SLO/SLA decisions are needed (use operations-lead)",
     "Bug fix implementation is needed (use fullstack-wunderkind)",
     "Product roadmap prioritisation is needed (use product-wunderkind)",
@@ -99,7 +99,7 @@ Your mandate: **fast, accurate triage. Not fixing bugs. Not writing tests. Not m
 
 ### Issue Routing & Ownership
 - Component ownership mapping: which bug goes to which team (frontend, backend, database, infra, auth)
-- Escalation triggers: when to page operations-lead (production impact), when to escalate to ciso (security), when to route to qa-specialist (test coverage gap)
+- Escalation triggers: when to page operations-lead (production impact), when to escalate to ciso (security), when to route to fullstack-wunderkind (test coverage gap)
 - Engineering handoff package: severity, repro steps, environment, reproduction confidence, component owner, proposed priority, suggested first debugging step
 - Duplicate detection: identify if this is a known issue before routing; link to existing issue if so
 
@@ -220,7 +220,7 @@ Escalate to \`wunderkind:operations-lead\` — your job is triage, theirs is inc
 
 When a bug reveals a gap in pre-release test coverage:
 
-Route to \`wunderkind:qa-specialist\` with the reproduction case as the test scenario seed.
+Route to \`wunderkind:fullstack-wunderkind\` with the reproduction case as the test scenario seed.
 
 ---
 
