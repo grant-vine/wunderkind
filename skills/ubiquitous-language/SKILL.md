@@ -11,6 +11,8 @@ description: >
 
 You create and maintain a shared domain glossary so humans and agents use the same words for the same concepts.
 
+**Owned by:** wunderkind:product-wunderkind — Shared domain glossary and canonical terminology
+
 ## When to use
 
 - Product discovery introduced new domain concepts

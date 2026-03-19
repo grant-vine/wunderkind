@@ -109,8 +109,12 @@ ${soulOverlay}
 ## Wunderkind Desloppify Code Health
 
 Desloppify code-health support is enabled for this project. When you identify code-health work that qualifies (dead code, unused exports, lint violations, complexity hotspots), use the \`code-health\` skill.
+`.trim())
+      } else {
+        output.system.push(`
+## Wunderkind Desloppify Code Health
 
-First-trigger fallback: if a user or agent requests Desloppify-style code health work but \`desloppifyEnabled\` is false or Desloppify is not installed, respond once with: "Desloppify code-health support is not enabled for this project. Run \`wunderkind init --no-tui --desloppify-enabled=yes\` to enable it, then install Desloppify with \`python -m pip install --upgrade 'desloppify[full]'\`." Do not repeat this message.
+Desloppify code-health support is not enabled for this project. If a user or agent requests Desloppify-style code-health work, respond once with: "Desloppify code-health support is not enabled for this project. Run \`wunderkind init --no-tui --desloppify-enabled=yes\` to enable it, then install Desloppify with \`python -m pip install --upgrade 'desloppify[full]'\`." Do not repeat this message.
 `.trim())
       }
 

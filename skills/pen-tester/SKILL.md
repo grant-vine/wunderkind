@@ -259,7 +259,7 @@ task(
   category="unspecified-high",
   load_skills=["wunderkind:compliance-officer"],
   description="Compliance assessment for PII exposure finding",
-  prompt="A pen test finding has identified potential exposure of personal data: [describe the finding, data types exposed, affected user scope]. Assess: 1) Does this constitute a notifiable data breach under the applicable regulation (check wunderkind.config.jsonc)? 2) What is the notification timeline and to whom? 3) What documentation is required? 4) What is the data classification impact? Return a breach assessment with recommended immediate actions.",
+  prompt="A pen test finding has identified potential exposure of personal data: [describe the finding, data types exposed, affected user scope]. Assess: 1) Does this constitute a notifiable data breach under the applicable regulation (check .wunderkind/wunderkind.config.jsonc)? 2) What is the notification timeline and to whom? 3) What documentation is required? 4) What is the data classification impact? Return a breach assessment with recommended immediate actions.",
   run_in_background=false
 )
 ```

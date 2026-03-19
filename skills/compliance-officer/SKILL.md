@@ -26,18 +26,18 @@ You are a sub-skill of the CISO agent and are invoked for compliance assessments
 
 ## Regional Configuration
 
-**Read `wunderkind.config.jsonc` at the start of any compliance or regulatory task.**
+**Read `.wunderkind/wunderkind.config.jsonc` at the start of any compliance or regulatory task.**
 
-Look for this file first in the project root, then in the plugin root. Key fields:
+Find this file at `.wunderkind/wunderkind.config.jsonc` in the project directory. Key fields:
 
 | Field | Effect on this skill |
 |---|---|
-| `PRIMARY_REGULATION` | The primary regulation to assess against (defaults to GDPR if blank) |
-| `SECONDARY_REGULATION` | Any additional regulation to layer on top |
-| `REGION` | Used to select applicable local regulatory nuance |
-| `INDUSTRY` | Flags sector-specific obligations (e.g. healthcare → HIPAA awareness, finance → PCI DSS) |
+| `primaryRegulation` | The primary regulation to assess against (defaults to GDPR if blank) |
+| `secondaryRegulation` | Any additional regulation to layer on top |
+| `region` | Used to select applicable local regulatory nuance |
+| `industry` | Flags sector-specific obligations (e.g. healthcare → HIPAA awareness, finance → PCI DSS) |
 
-If `wunderkind.config.jsonc` is absent or fields are blank, default to **GDPR as the global baseline** — it is the most comprehensive and widely adopted framework, and compliance with it satisfies most other frameworks' core requirements.
+If `.wunderkind/wunderkind.config.jsonc` is absent or fields are blank, default to **GDPR as the global baseline** — it is the most comprehensive and widely adopted framework, and compliance with it satisfies most other frameworks' core requirements.
 
 Regional guidance is **additive, never subtractive**: global best practices are never reduced for a specific region.
 
@@ -228,7 +228,7 @@ Compare current state against requirements. For each gap:
 ### `/compliance-assessment <regulation>`
 Perform a compliance assessment against the applicable regulation.
 
-**First**: read `wunderkind.config.jsonc`. If `PRIMARY_REGULATION` is set, assess against that regulation. If blank, default to GDPR. If a regulation is explicitly passed as an argument, use that regardless of config.
+**First**: read `.wunderkind/wunderkind.config.jsonc`. If `primaryRegulation` is set, assess against that regulation. If blank, default to GDPR. If a regulation is explicitly passed as an argument, use that regardless of config.
 
 Supported regulations: GDPR, POPIA, CCPA/CPRA, PIPEDA, LGPD, PDPA (Singapore/Thailand), APP (Australia).
 
@@ -352,4 +352,4 @@ When a data subject request arrives:
 4. **Data minimisation is a design constraint**: the question at design time is "what data do we actually need?" not "what data might be useful?"
 5. **Rights are operational, not theoretical**: having a privacy policy that mentions rights is not the same as having the ability to fulfil a SAR within the required timeline
 6. **No cross-border transfer without a mechanism**: data cannot leave a jurisdiction without an appropriate transfer mechanism (adequacy decision, SCCs, BCRs)
-7. **Config-first**: always read `wunderkind.config.jsonc` before starting any compliance assessment — assess against the right regulation for the project's jurisdiction
+7. **Config-first**: always read `.wunderkind/wunderkind.config.jsonc` before starting any compliance assessment — assess against the right regulation for the project's jurisdiction

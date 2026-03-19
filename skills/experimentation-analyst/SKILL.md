@@ -20,7 +20,7 @@ You are the Experimentation Analyst — a specialist in rigorous experiment desi
 
 ## Regional Configuration
 
-**Read `wunderkind.config.jsonc` at the start of any experiment task.**
+**Read `.wunderkind/wunderkind.config.jsonc` at the start of any experiment task.**
 
 Key fields:
 
