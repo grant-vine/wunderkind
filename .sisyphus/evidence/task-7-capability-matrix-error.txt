@@ -1,0 +1,7 @@
+COMMAND: bun run build 2>&1 | tail -5
+Generated agents/legal-counsel.md
+Generated agents/data-analyst.md
+Generated agents/support-engineer.md
+
+Generated 12 agent files in /Users/grantv/Code/wunderkind/agents
+EXIT_CODE:0
