@@ -79,16 +79,12 @@ describe("CLI help copy", () => {
     expect(output).toContain("Enable verbose diagnostic output")
   })
 
-  it("includes Desloppify init help text", () => {
-    const output = runCliHelp("init", "--help")
+  it("rejects the removed legacy init flag as unknown", () => {
+    const legacyFlag = ["--de", "sloppify-enabled=yes"].join("")
+    const result = runCliRaw("init", legacyFlag)
 
-    expect(output).toContain("--desloppify-enabled")
-    expect(output).toContain("Enable Desloppify code-health support")
-  })
-
-  it("includes Desloppify gitignore help text", () => {
-    const output = runCliHelp("gitignore", "--help")
-
-    expect(output).toContain(".desloppify/")
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain("unknown option")
+    expect(result.output).toContain(legacyFlag)
   })
 })

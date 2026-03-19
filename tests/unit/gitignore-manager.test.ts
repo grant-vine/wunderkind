@@ -15,7 +15,7 @@ describe("addAiTracesToGitignore", () => {
       const gitignorePath = join(testRoot, ".gitignore")
 
       expect(result.success).toBe(true)
-      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".desloppify/", ".sisyphus/", ".opencode/"])
+      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".opencode/"])
       expect(result.alreadyPresent).toEqual([])
       expect(existsSync(gitignorePath)).toBe(true)
 
@@ -23,7 +23,6 @@ describe("addAiTracesToGitignore", () => {
       expect(written).toContain("# AI tooling traces — managed by wunderkind")
       expect(written).toContain(".wunderkind/")
       expect(written).toContain("AGENTS.md")
-      expect(written).toContain(".desloppify/")
       expect(written).toContain(".sisyphus/")
       expect(written).toContain(".opencode/")
     } finally {
@@ -47,11 +46,10 @@ describe("addAiTracesToGitignore", () => {
       expect(firstResult.success).toBe(true)
       expect(secondResult.success).toBe(true)
       expect(secondResult.added).toEqual([])
-      expect(secondResult.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md", ".desloppify/", ".sisyphus/", ".opencode/"])
+      expect(secondResult.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".opencode/"])
       expect(written.match(/# AI tooling traces — managed by wunderkind/g)?.length).toBe(1)
       expect(written.match(/\.wunderkind\//g)?.length).toBe(1)
       expect(written.match(/AGENTS\.md/g)?.length).toBe(1)
-      expect(written.match(/\.desloppify\//g)?.length).toBe(1)
       expect(written.match(/\.sisyphus\//g)?.length).toBe(1)
       expect(written.match(/\.opencode\//g)?.length).toBe(1)
     } finally {
@@ -78,7 +76,6 @@ describe("addAiTracesToGitignore", () => {
           "AGENTS.md",
           "",
           "coverage/",
-          ".desloppify/",
         ].join("\n"),
         "utf-8",
       )
@@ -89,13 +86,12 @@ describe("addAiTracesToGitignore", () => {
 
       expect(result.success).toBe(true)
       expect(result.added).toEqual([".sisyphus/", ".opencode/"])
-      expect(result.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md", ".desloppify/"])
+      expect(result.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md"])
       expect(written).toContain("node_modules/")
       expect(written).toContain("dist/")
       expect(written).toContain("coverage/")
       expect(written.match(/# AI tooling traces — managed by wunderkind/g)?.length).toBe(1)
       expect(written).toContain("# AI tooling traces — managed by wunderkind\n.sisyphus/\n.opencode/\n.wunderkind/\nAGENTS.md")
-      expect(written).toContain(".desloppify/")
     } finally {
       process.chdir(originalCwd)
       rmSync(testRoot, { recursive: true, force: true })

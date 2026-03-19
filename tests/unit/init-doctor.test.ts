@@ -23,7 +23,6 @@ const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
   prdPipelineMode: "filesystem" as const,
-  desloppifyEnabled: false,
 }))
 
 const mockReadGlobalWunderkindConfig = mock(() => null)
@@ -191,7 +190,6 @@ describe("runInit", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
   })
 
@@ -235,7 +233,6 @@ describe("runInit", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
 
     try {
@@ -278,7 +275,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
     mockReadGlobalWunderkindConfig.mockImplementation(() => null)
     mockReadProjectWunderkindConfig.mockImplementation(() => null)
@@ -326,7 +322,6 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
       expect(messages.some((m) => m.includes("oh-my-openagent loaded package:"))).toBe(true)
       expect(messages.some((m) => m.includes("oh-my-openagent global package:"))).toBe(true)
-      expect(messages.some((m) => m.includes("desloppifyEnabled:") && m.includes("false"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -434,7 +429,6 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite",
-      desloppifyEnabled: false,
     }))
 
     mockDetectCurrentConfig.mockImplementation(() => ({
@@ -461,7 +455,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
 
     try {
@@ -473,7 +466,6 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("legend:") && m.includes("● = project override, ○ = inherited default"))).toBe(true)
       expect(messages.some((m) => m.includes("Workflow Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("PRD pipeline mode:") && m.includes("filesystem"))).toBe(true)
-      expect(messages.some((m) => m.includes("desloppifyEnabled:") && m.includes("● project override"))).toBe(true)
       expect(messages.some((m) => m.includes("GitHub remote detected:") && m.includes("✓ yes"))).toBe(true)
     } finally {
       console.log = originalLog
@@ -513,7 +505,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
     mockDetectNativeAgentFiles.mockImplementation((scope: "global" | "project") => ({
       dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
@@ -620,7 +611,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
     console.log = (...args: unknown[]) => {
       messages.push(args.map((arg) => String(arg)).join(" "))
@@ -678,7 +668,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
 
     try {
@@ -724,7 +713,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
 
     try {
@@ -771,7 +759,6 @@ describe("runDoctor", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
-      desloppifyEnabled: false,
     }))
 
     try {

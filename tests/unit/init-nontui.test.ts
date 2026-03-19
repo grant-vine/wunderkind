@@ -30,7 +30,6 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     docsPath: "./docs",
     docHistoryMode: "overwrite" as const,
     prdPipelineMode: "filesystem" as const,
-    desloppifyEnabled: false,
     ...overrides,
   }
 }
@@ -97,7 +96,6 @@ describe("runInit non-interactive branching", () => {
         docsEnabled: true,
         docsPath: "./notes/docs",
         docHistoryMode: "rolling",
-        desloppifyEnabled: true,
       })
 
       expect(code).toBe(0)
@@ -110,7 +108,6 @@ describe("runInit non-interactive branching", () => {
       expect(writtenConfig.docsEnabled).toBe(true)
       expect(writtenConfig.docsPath).toBe("./notes/docs")
       expect(writtenConfig.docHistoryMode).toBe("overwrite")
-      expect(writtenConfig.desloppifyEnabled).toBe(true)
 
       expect(existsSync(join(tempProject, "AGENTS.md"))).toBe(true)
       expect(existsSync(join(tempProject, ".sisyphus", "plans"))).toBe(true)

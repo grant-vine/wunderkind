@@ -48,7 +48,6 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
     docsPath: "./docs",
     docHistoryMode: "overwrite" as const,
     prdPipelineMode: "filesystem" as const,
-    desloppifyEnabled: false,
   }),
   detectLegacyConfig: () => false,
 }))
@@ -238,7 +237,6 @@ describe("runTuiInstaller init handoff", () => {
         docsPath: "./docs",
         docHistoryMode: "overwrite" as const,
         prdPipelineMode: "filesystem" as const,
-        desloppifyEnabled: false,
       }),
       detectLegacyConfig: () => false,
     }))
