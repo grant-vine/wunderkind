@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
+import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
 
 const mockText = mock(async () => "")
 const mockSelect = mock(async () => "")
@@ -19,7 +20,7 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   globalOpenCodeConfigPath: "/tmp/opencode.json",
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
   teamCulture: "pragmatic-balanced" as const,
   orgStructure: "flat" as const,
@@ -38,6 +39,7 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
+  prdPipelineMode: "filesystem" as const,
 }
 
 mock.module("@clack/prompts", () => ({
@@ -53,9 +55,17 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockDetectGitHubWorkflowReadiness = mock<(cwd: string) => GitHubWorkflowReadiness>(() => ({
+  isGitRepo: true,
+  hasGitHubRemote: true,
+  ghInstalled: true,
+  authVerified: true,
+  authCheckAttempted: true,
+}))
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
@@ -74,8 +84,16 @@ describe("runInit interactive personality prompts", () => {
     mockWriteNativeAgentFiles.mockClear()
     mockWriteNativeCommandFiles.mockClear()
     mockWriteNativeSkillFiles.mockClear()
+    mockDetectGitHubWorkflowReadiness.mockClear()
     mockDetectCurrentConfig.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => DEFAULT_DETECTED_CONFIG)
+    mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
+      isGitRepo: true,
+      hasGitHubRemote: true,
+      ghInstalled: true,
+      authVerified: true,
+      authCheckAttempted: true,
+    }))
     mockConfirm.mockImplementation(async () => false)
   })
 
@@ -106,6 +124,7 @@ describe("runInit interactive personality prompts", () => {
       "cautious-gatekeeper",
       "knowledge-builder",
       "rigorous-statistician",
+      "filesystem",
     ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
@@ -119,7 +138,7 @@ describe("runInit interactive personality prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(14)
+      expect(mockSelect).toHaveBeenCalledTimes(15)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
@@ -131,6 +150,7 @@ describe("runInit interactive personality prompts", () => {
       expect(installConfig.cisoPersonality).toBe("educator-collaborator")
       expect(installConfig.dataAnalystPersonality).toBe("rigorous-statistician")
       expect(installConfig.docsEnabled).toBe(false)
+      expect(installConfig.prdPipelineMode).toBe("filesystem")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -168,7 +188,7 @@ describe("runInit interactive personality prompts", () => {
     const confirmAnswers = [false, false]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
-    const selectAnswers = ["formal-strict", "hierarchical"]
+    const selectAnswers = ["formal-strict", "hierarchical", "filesystem"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -182,7 +202,7 @@ describe("runInit interactive personality prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
-      expect(mockSelect).toHaveBeenCalledTimes(2)
+      expect(mockSelect).toHaveBeenCalledTimes(3)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
@@ -192,6 +212,7 @@ describe("runInit interactive personality prompts", () => {
       expect(installConfig.cisoPersonality).toBe("educator-collaborator")
       expect(installConfig.ctoPersonality).toBe("startup-bro")
       expect(installConfig.dataAnalystPersonality).toBe("pragmatic-quant")
+      expect(installConfig.prdPipelineMode).toBe("filesystem")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -228,6 +249,7 @@ describe("runInit interactive personality prompts", () => {
       "cautious-gatekeeper",
       "knowledge-builder",
       "rigorous-statistician",
+      "github",
       "append-dated",
     ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
@@ -242,7 +264,7 @@ describe("runInit interactive personality prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(15)
+      expect(mockSelect).toHaveBeenCalledTimes(16)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -250,6 +272,7 @@ describe("runInit interactive personality prompts", () => {
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.docsEnabled).toBe(true)
       expect(installConfig.docHistoryMode).toBe("append-dated")
+      expect(installConfig.prdPipelineMode).toBe("github")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)

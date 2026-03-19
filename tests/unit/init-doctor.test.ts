@@ -9,7 +9,7 @@ const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   scope: "global" as const,
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
   teamCulture: "pragmatic-balanced" as const,
   orgStructure: "flat" as const,
@@ -28,10 +28,11 @@ const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
+  prdPipelineMode: "filesystem" as const,
 }))
 
 const mockReadGlobalWunderkindConfig = mock(() => null)
-const mockReadProjectWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock<() => Record<string, unknown> | null>(() => null)
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/wunderkind.config.jsonc" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockDetectNativeAgentFiles = mock((scope: "global" | "project") => ({
@@ -94,6 +95,13 @@ const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectGitHubWorkflowReadiness: () => ({
+    isGitRepo: true,
+    hasGitHubRemote: true,
+    ghInstalled: true,
+    authVerified: true,
+    authCheckAttempted: true,
+  }),
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
   detectNativeCommandFiles: mockDetectNativeCommandFiles,
   detectNativeSkillFiles: mockDetectNativeSkillFiles,
@@ -174,7 +182,7 @@ describe("runInit", () => {
       scope: "global" as const,
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -193,6 +201,7 @@ describe("runInit", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
   })
 
@@ -222,7 +231,7 @@ describe("runInit", () => {
       globalOpenCodeConfigPath: "/tmp/opencode.json",
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -241,6 +250,7 @@ describe("runInit", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
 
     try {
@@ -269,7 +279,7 @@ describe("runDoctor", () => {
       scope: "global" as const,
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -288,6 +298,7 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
     mockReadGlobalWunderkindConfig.mockImplementation(() => null)
     mockReadProjectWunderkindConfig.mockImplementation(() => null)
@@ -427,25 +438,34 @@ describe("runDoctor", () => {
     }
   })
 
-  it("warns when global install exists but native global agents are absent", async () => {
+  it("renders baseline override markers in verbose Active Configuration", async () => {
     const messages: string[] = []
     const originalLog = console.log
     const originalError = console.error
-    const originalCwd = process.cwd()
-    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-omo-warning-"))
-    writeFileSync(join(tempProject, "package.json"), "{}")
-    process.chdir(tempProject)
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    mockReadProjectWunderkindConfig.mockImplementation(() => ({
+      teamCulture: "pragmatic-balanced",
+      orgStructure: "flat",
+      docsEnabled: false,
+      docsPath: "./docs",
+      docHistoryMode: "overwrite",
+    }))
+
     mockDetectCurrentConfig.mockImplementation(() => ({
       isInstalled: true,
-      scope: "global" as const,
+      scope: "project" as const,
       projectInstalled: true,
       globalInstalled: true,
       registrationScope: "both" as const,
       projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
       globalOpenCodeConfigPath: "/tmp/opencode.json",
       region: "Global",
-      industry: "",
-      primaryRegulation: "GDPR",
+      industry: "Software Development Services",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -464,6 +484,63 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
+    }))
+
+    try {
+      const code = await runDoctorWithOptions({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("region:") && m.includes("Global") && m.includes("○ inherited default"))).toBe(true)
+      expect(messages.some((m) => m.includes("industry:") && m.includes("Software Development Services") && m.includes("○ inherited default"))).toBe(true)
+      expect(messages.some((m) => m.includes("primary regulation:") && m.includes("(not set)") && m.includes("○ inherited default"))).toBe(true)
+      expect(messages.some((m) => m.includes("legend:") && m.includes("● = project override, ○ = inherited default"))).toBe(true)
+      expect(messages.some((m) => m.includes("Workflow Configuration"))).toBe(true)
+      expect(messages.some((m) => m.includes("PRD pipeline mode:") && m.includes("filesystem"))).toBe(true)
+      expect(messages.some((m) => m.includes("GitHub remote detected:") && m.includes("✓ yes"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("warns when global install exists but native global agents are absent", async () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-omo-warning-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectCurrentConfig.mockImplementation(() => ({
+      isInstalled: true,
+      scope: "global" as const,
+      projectInstalled: true,
+      globalInstalled: true,
+      registrationScope: "both" as const,
+      projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+      globalOpenCodeConfigPath: "/tmp/opencode.json",
+      region: "Global",
+      industry: "",
+      primaryRegulation: "",
+      secondaryRegulation: "",
+      teamCulture: "pragmatic-balanced" as const,
+      orgStructure: "flat" as const,
+      cisoPersonality: "pragmatic-risk-manager" as const,
+      ctoPersonality: "code-archaeologist" as const,
+      cmoPersonality: "data-driven" as const,
+      qaPersonality: "risk-based-pragmatist" as const,
+      productPersonality: "outcome-obsessed" as const,
+      opsPersonality: "on-call-veteran" as const,
+      creativePersonality: "pragmatic-problem-solver" as const,
+      brandPersonality: "authentic-builder" as const,
+      devrelPersonality: "dx-engineer" as const,
+      legalPersonality: "pragmatic-advisor" as const,
+      supportPersonality: "systematic-triage" as const,
+      dataAnalystPersonality: "insight-storyteller" as const,
+      docsEnabled: false,
+      docsPath: "./docs",
+      docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
     mockDetectNativeAgentFiles.mockImplementation((scope: "global" | "project") => ({
       dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
@@ -556,7 +633,7 @@ describe("runDoctor", () => {
       globalOpenCodeConfigPath: "/tmp/opencode.json",
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -575,6 +652,7 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
     console.log = (...args: unknown[]) => {
       messages.push(args.map((arg) => String(arg)).join(" "))
@@ -637,6 +715,7 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
 
     try {
@@ -668,7 +747,7 @@ describe("runDoctor", () => {
       registrationScope: "global" as const,
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -687,6 +766,7 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
 
     try {
@@ -719,7 +799,7 @@ describe("runDoctor", () => {
       registrationScope: "none" as const,
       region: "Global",
       industry: "",
-      primaryRegulation: "GDPR",
+      primaryRegulation: "",
       secondaryRegulation: "",
       teamCulture: "pragmatic-balanced" as const,
       orgStructure: "flat" as const,
@@ -738,6 +818,7 @@ describe("runDoctor", () => {
       docsEnabled: false,
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
+      prdPipelineMode: "filesystem" as const,
     }))
 
     try {

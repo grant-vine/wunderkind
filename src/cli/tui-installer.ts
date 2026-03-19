@@ -53,7 +53,7 @@ async function promptRegulation(message: string, initialValue: string, isRequire
   const custom = isRequired
     ? await p.text({
         message: "Enter regulation name:",
-        placeholder: "GDPR",
+        placeholder: "POPIA",
         initialValue: knownValues.includes(initialValue as typeof knownValues[number]) ? "" : initialValue,
         validate: (v) => (v.trim() ? undefined : "Regulation name is required"),
       })
@@ -154,7 +154,6 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     message: "What region is your product based in?",
     placeholder: "Global",
     initialValue: installBase.region,
-    validate: (v) => (v.trim() ? undefined : "Region is required"),
   })
   if (p.isCancel(region)) {
     p.cancel("Installation cancelled.")
@@ -174,7 +173,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   const primaryRegulation = await promptRegulation(
     "What is your primary data-protection regulation?",
     installBase.primaryRegulation,
-    true,
+    false,
   )
   if (primaryRegulation === null) return 1
 
@@ -188,7 +187,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   const config = {
     region: (region as string).trim() || "Global",
     industry: (industry as string).trim(),
-    primaryRegulation: primaryRegulation || "GDPR",
+    primaryRegulation: primaryRegulation,
     secondaryRegulation: secondaryRegulation,
     teamCulture: detected.teamCulture,
     orgStructure: detected.orgStructure,
@@ -207,6 +206,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     docsEnabled: detected.docsEnabled,
     docsPath: detected.docsPath,
     docHistoryMode: detected.docHistoryMode,
+    prdPipelineMode: detected.prdPipelineMode,
   }
 
   const spinner = p.spinner()
@@ -273,7 +273,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
       `Scope:               ${color.cyan(scope)}`,
       `Region:              ${color.cyan(config.region)}`,
       `Industry:            ${color.cyan(config.industry || color.dim("(not set)"))}`,
-      `Primary regulation:  ${color.cyan(config.primaryRegulation)}`,
+      `Primary regulation:  ${color.cyan(config.primaryRegulation || color.dim("(not set)"))}`,
       config.secondaryRegulation ? `Secondary:           ${color.cyan(config.secondaryRegulation)}` : "",
       ``,
       `${color.dim("Advanced team/personality and docs settings are managed via 'wunderkind init'.")}`,

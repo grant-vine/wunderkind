@@ -43,7 +43,7 @@ Use this resolved Wunderkind configuration as the authoritative runtime context 
 
 - region: ${wunderkindConfig.region ?? "Global"}
 - industry: ${(wunderkindConfig.industry ?? "").trim() !== "" ? wunderkindConfig.industry : "(not set)"}
-- primary regulation: ${wunderkindConfig.primaryRegulation ?? "GDPR"}
+- primary regulation: ${(wunderkindConfig.primaryRegulation ?? "").trim() !== "" ? wunderkindConfig.primaryRegulation : "(not set)"}
 - secondary regulation: ${(wunderkindConfig.secondaryRegulation ?? "").trim() !== "" ? wunderkindConfig.secondaryRegulation : "(not set)"}
 - team culture: ${wunderkindConfig.teamCulture ?? "pragmatic-balanced"}
 - org structure: ${wunderkindConfig.orgStructure ?? "flat"}

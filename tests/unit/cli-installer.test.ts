@@ -16,7 +16,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
   globalOpenCodeConfigPath: "/tmp/opencode.json",
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
   teamCulture: "pragmatic-balanced" as const,
   orgStructure: "flat" as const,
@@ -50,7 +50,7 @@ const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp
 const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "industry" | "primaryRegulation" | "secondaryRegulation">>(() => ({
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
 }))
 const mockReadWunderkindConfigForScope = mock<(scope: InstallScope) => Partial<InstallConfig> | null>(() => null)
@@ -103,26 +103,8 @@ function baseArgs(overrides: Partial<InstallArgs> = {}): InstallArgs {
 }
 
 describe("validateNonTuiArgs", () => {
-  it("returns error containing 'region' when region is missing", () => {
+  it("allows missing global baseline flags when defaults are acceptable", () => {
     const result = validateNonTuiArgs(baseArgs({ region: undefined }))
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes("region"))).toBe(true)
-  })
-
-  it("returns error containing 'industry' when industry is missing", () => {
-    const result = validateNonTuiArgs(baseArgs({ industry: undefined }))
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes("industry"))).toBe(true)
-  })
-
-  it("returns error containing 'primary-regulation' when primaryRegulation is missing", () => {
-    const result = validateNonTuiArgs(baseArgs({ primaryRegulation: undefined }))
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes("primary-regulation"))).toBe(true)
-  })
-
-  it("returns empty errors array when all required fields are present", () => {
-    const result = validateNonTuiArgs(baseArgs())
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
   })
@@ -355,7 +337,7 @@ describe("runCliUpgrade", () => {
         ? {
             region: "Australia",
             industry: "SaaS",
-            primaryRegulation: "GDPR",
+            primaryRegulation: "",
             secondaryRegulation: "",
           }
         : null,

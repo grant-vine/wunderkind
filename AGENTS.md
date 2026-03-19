@@ -41,7 +41,7 @@ wunderkind/
 
 ```
 ~/.wunderkind/                   # Global config baseline
-└── wunderkind.config.jsonc      # Global config baseline (region, industry, regulations only)
+└── wunderkind.config.jsonc      # Global config defaults (region, industry, regulations — optional if built-in defaults are acceptable)
 ```
 
 ---
@@ -168,7 +168,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 | `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
 | `wunderkind:data-analyst` | Data analysis and insights | writing |
 
-Sub-skills: `social-media-maven` (marketing) · `visual-artist` (creative) · `agile-pm` (product) · `db-architect` + `vercel-architect` (fullstack) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso).
+Sub-skills: `social-media-maven` (marketing) · `visual-artist` (creative) · `agile-pm` + `grill-me` + `ubiquitous-language` + `prd-pipeline` (product) · `db-architect` + `vercel-architect` + `improve-codebase-architecture` (fullstack) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `triage-issue` (support/qa).
 
 ---
 
@@ -182,13 +182,19 @@ node bin/wunderkind.js --help        # test CLI locally
 node bin/wunderkind.js install --help
 
 # Non-interactive install — global scope (default)
+node bin/wunderkind.js install --no-tui --scope=global
+
+# Non-interactive install — global scope with explicit shared defaults
 node bin/wunderkind.js install --no-tui \
   --scope=global \
   --region="South Africa" \
   --industry=SaaS \
   --primary-regulation=POPIA
 
-# Non-interactive install — project scope (writes opencode.json in cwd)
+# Non-interactive install — project scope using inherited defaults
+node bin/wunderkind.js install --no-tui --scope=project
+
+# Non-interactive install — project scope with explicit local overrides
 node bin/wunderkind.js install --no-tui \
   --scope=project \
   --region=EU \
@@ -215,3 +221,5 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **oh-my-openagent must be installed before wunderkind** — canonical npm package is `oh-my-openagent`, while upstream technical identifiers remain `oh-my-opencode` (CLI command) and `oh-my-opencode.jsonc` (config filename). The TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent categories are configured via `oh-my-opencode.jsonc` at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
+- **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
+- **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.

@@ -2,6 +2,7 @@ export type BooleanArg = "no" | "yes"
 export type InstallScope = "global" | "project"
 export type InstallRegistrationScope = InstallScope | "both" | "none"
 export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
+export type PrdPipelineMode = "filesystem" | "github"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -43,6 +44,7 @@ export interface ProjectConfig {
   docsEnabled: boolean
   docsPath: string
   docHistoryMode: DocHistoryMode
+  prdPipelineMode: PrdPipelineMode
 }
 
 export interface InstallArgs {
@@ -110,6 +112,7 @@ export interface DetectedConfig {
   docsEnabled: boolean
   docsPath: string
   docHistoryMode: DocHistoryMode
+  prdPipelineMode: PrdPipelineMode
 }
 
 export interface PluginVersionInfo {
@@ -127,3 +130,5 @@ export interface PluginVersionInfo {
   }
   staleOverrideWarning?: string | null
 }
+
+export type BaselineConfigKey = keyof GlobalConfig

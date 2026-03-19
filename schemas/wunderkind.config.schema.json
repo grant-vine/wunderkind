@@ -15,7 +15,7 @@
         "primaryRegulation": { "type": "string" },
         "secondaryRegulation": { "type": "string" }
       },
-      "required": ["$schema", "region", "industry", "primaryRegulation", "secondaryRegulation"],
+      "required": ["$schema"],
       "additionalProperties": false
     },
     {
@@ -23,10 +23,10 @@
       "type": "object",
       "properties": {
         "$schema": { "type": "string" },
-        "region": { "type": "string" },
-        "industry": { "type": "string" },
-        "primaryRegulation": { "type": "string" },
-        "secondaryRegulation": { "type": "string" },
+        "region": { "type": "string", "description": "Optional project-level override for the inherited global region default." },
+        "industry": { "type": "string", "description": "Optional project-level override for the inherited global industry default." },
+        "primaryRegulation": { "type": "string", "description": "Optional project-level override for the inherited global primary regulation default." },
+        "secondaryRegulation": { "type": "string", "description": "Optional project-level override for the inherited global secondary regulation default." },
         "teamCulture": { "enum": ["formal-strict", "pragmatic-balanced", "experimental-informal"] },
         "orgStructure": { "enum": ["flat", "hierarchical"] },
         "cisoPersonality": { "enum": ["paranoid-enforcer", "pragmatic-risk-manager", "educator-collaborator"] },
@@ -43,7 +43,8 @@
         "dataAnalystPersonality": { "enum": ["rigorous-statistician", "insight-storyteller", "pragmatic-quant"] },
         "docsEnabled": { "type": "boolean" },
         "docsPath": { "type": "string" },
-        "docHistoryMode": { "enum": ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"] }
+        "docHistoryMode": { "enum": ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"] },
+        "prdPipelineMode": { "enum": ["filesystem", "github"] }
       },
       "required": [
         "$schema",

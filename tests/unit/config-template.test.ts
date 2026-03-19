@@ -33,12 +33,15 @@ describe("wunderkind config schema asset", () => {
   it("uses the expected canonical schema URL as its id", () => {
     const schema = JSON.parse(readFileSync(new URL("../../schemas/wunderkind.config.schema.json", import.meta.url), "utf8")) as {
       $id?: string
-      oneOf?: unknown[]
+      oneOf?: Array<{ properties?: Record<string, unknown>; required?: string[] }>
     }
 
     expect(schema.$id).toBe(WUNDERKIND_SCHEMA_URL)
     expect(Array.isArray(schema.oneOf)).toBe(true)
     expect(schema.oneOf?.length).toBe(2)
+    const projectSchema = schema.oneOf?.[1]
+    expect(projectSchema?.properties?.prdPipelineMode).toBeDefined()
+    expect(projectSchema?.required).not.toContain("prdPipelineMode")
   })
 })
 

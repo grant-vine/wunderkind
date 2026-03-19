@@ -1,7 +1,14 @@
 import * as p from "@clack/prompts"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { detectCurrentConfig, writeNativeAgentFiles, writeNativeCommandFiles, writeNativeSkillFiles, writeWunderkindConfig } from "./config-manager/index.js"
+import {
+  detectCurrentConfig,
+  detectGitHubWorkflowReadiness,
+  writeNativeAgentFiles,
+  writeNativeCommandFiles,
+  writeNativeSkillFiles,
+  writeWunderkindConfig,
+} from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
@@ -18,6 +25,7 @@ import type {
   OpsPersonality,
   OrgStructure,
   ProductPersonality,
+  PrdPipelineMode,
   QaPersonality,
   SupportPersonality,
   TeamCulture,
@@ -28,6 +36,7 @@ export interface InitOptions {
   docsEnabled?: boolean
   docsPath?: string
   docHistoryMode?: string
+  prdPipelineMode?: PrdPipelineMode
 }
 
 const PROJECT_CONTEXT_MARKERS = ["package.json", "bun.lockb", "bun.lock", "tsconfig.json", "pyproject.toml", ".git"] as const
@@ -68,6 +77,11 @@ const TEAM_CULTURE_OPTIONS: Array<{ value: TeamCulture; label: string; hint: str
 const ORG_STRUCTURE_OPTIONS: Array<{ value: OrgStructure; label: string; hint: string }> = [
   { value: "flat", label: "flat", hint: "Peer collaboration and user escalation" },
   { value: "hierarchical", label: "hierarchical", hint: "Domain authority with explicit veto paths" },
+]
+
+const PRD_PIPELINE_MODE_OPTIONS: Array<{ value: PrdPipelineMode; label: string; hint: string }> = [
+  { value: "filesystem", label: "filesystem", hint: "Write PRDs, plans, and issues into .sisyphus/ files" },
+  { value: "github", label: "github", hint: "Use gh/GitHub workflows for PRD and issue output when ready" },
 ]
 
 async function promptSelect<T extends string>(
@@ -117,6 +131,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       docsEnabled: options.docsEnabled ?? detected.docsEnabled,
       docsPath: options.docsPath ?? detected.docsPath,
       docHistoryMode: normalizeDocHistoryMode(options.docHistoryMode ?? detected.docHistoryMode),
+      prdPipelineMode: options.prdPipelineMode ?? detected.prdPipelineMode,
     }
 
     if (!noTui) {
@@ -296,6 +311,13 @@ export async function runInit(options: InitOptions): Promise<number> {
 
       let docsPath = config.docsPath
       let docHistoryMode: DocHistoryMode = config.docHistoryMode
+      const prdPipelineMode = await promptSelect<PrdPipelineMode>(
+        "PRD / planning workflow mode:",
+        PRD_PIPELINE_MODE_OPTIONS,
+        config.prdPipelineMode,
+      )
+      if (prdPipelineMode === null) return 1
+
       if (docsEnabled) {
         const docsPathRaw = await p.text({
           message: "Docs output directory path (relative):",
@@ -328,6 +350,22 @@ export async function runInit(options: InitOptions): Promise<number> {
       config.docsEnabled = docsEnabled
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
+      config.prdPipelineMode = prdPipelineMode
+    }
+
+    if (config.prdPipelineMode === "github") {
+      const githubReadiness = detectGitHubWorkflowReadiness(cwd)
+      if (!githubReadiness.isGitRepo) {
+        console.log("Warning: GitHub PRD mode selected, but this folder is not a git repository yet.")
+      } else if (!githubReadiness.hasGitHubRemote) {
+        console.log("Warning: GitHub PRD mode selected, but no GitHub remote was detected. Filesystem mode may be safer until remotes are configured.")
+      }
+
+      if (!githubReadiness.ghInstalled) {
+        console.log("Warning: GitHub PRD mode selected, but `gh` is not installed. GitHub-backed PRD workflows will not be ready until GitHub CLI is available.")
+      } else if (githubReadiness.authCheckAttempted && !githubReadiness.authVerified) {
+        console.log("Warning: GitHub PRD mode selected, but `gh auth status` could not verify GitHub readiness. You may need to authenticate before using GitHub-backed workflows.")
+      }
     }
 
     if (config.docsEnabled) {

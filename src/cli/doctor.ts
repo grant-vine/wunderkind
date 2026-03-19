@@ -3,12 +3,14 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import color from "picocolors"
 import {
+  detectGitHubWorkflowReadiness,
   detectOmoVersionInfo,
   detectNativeAgentFiles,
   detectNativeCommandFiles,
   detectNativeSkillFiles,
   detectCurrentConfig,
   detectWunderkindVersionInfo,
+  getProjectOverrideMarker,
   readProjectWunderkindConfig,
   resolveOpenCodeConfigPath,
 } from "./config-manager/index.js"
@@ -29,6 +31,14 @@ function section(title: string): void {
 
 function line(label: string, value: string): void {
   console.log(`${color.dim("- ")}${color.bold(label)} ${value}`)
+}
+
+function configValue(value: string): string {
+  return value.trim() !== "" ? value : "(not set)"
+}
+
+function renderBaselineLine(label: string, value: string, marker: "●" | "○", sourceLabel: string): void {
+  line(label, `${color.cyan(configValue(value))} ${color.dim(`${marker} ${sourceLabel}`)}`)
 }
 
 export async function runDoctor(): Promise<number> {
@@ -143,11 +153,37 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       }
 
       section("Active Configuration")
-      line("region:", color.cyan(detected.region))
-      line("industry:", color.cyan(detected.industry || color.dim("(not set)")))
-      line("primary regulation:", color.cyan(detected.primaryRegulation))
-      if (detected.secondaryRegulation.trim() !== "") {
-        line("secondary regulation:", color.cyan(detected.secondaryRegulation))
+      const regionMarker = getProjectOverrideMarker("region", projectConfig ?? null)
+      const industryMarker = getProjectOverrideMarker("industry", projectConfig ?? null)
+      const primaryRegulationMarker = getProjectOverrideMarker("primaryRegulation", projectConfig ?? null)
+      const secondaryRegulationMarker = getProjectOverrideMarker("secondaryRegulation", projectConfig ?? null)
+      renderBaselineLine("region:", detected.region, regionMarker.marker, regionMarker.sourceLabel)
+      renderBaselineLine("industry:", detected.industry, industryMarker.marker, industryMarker.sourceLabel)
+      renderBaselineLine(
+        "primary regulation:",
+        detected.primaryRegulation,
+        primaryRegulationMarker.marker,
+        primaryRegulationMarker.sourceLabel,
+      )
+      renderBaselineLine(
+        "secondary regulation:",
+        detected.secondaryRegulation,
+        secondaryRegulationMarker.marker,
+        secondaryRegulationMarker.sourceLabel,
+      )
+      line("legend:", color.dim("● = project override, ○ = inherited default"))
+
+      section("Workflow Configuration")
+      line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
+
+      const githubReadiness = detectGitHubWorkflowReadiness(cwd)
+      line("git repository:", status(githubReadiness.isGitRepo))
+      line("GitHub remote detected:", status(githubReadiness.hasGitHubRemote))
+      line("gh installed:", status(githubReadiness.ghInstalled))
+      if (githubReadiness.authCheckAttempted) {
+        line("gh auth verified:", status(githubReadiness.authVerified))
+      } else {
+        line("gh auth verified:", color.dim("not checked"))
       }
     }
 
@@ -201,6 +237,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         line("docs-output enabled:", status((projectConfig?.docsEnabled ?? detected.docsEnabled) === true))
         line("docs-output path:", color.cyan(projectConfig?.docsPath ?? detected.docsPath))
         line("docs-output history mode:", color.cyan(projectConfig?.docHistoryMode ?? detected.docHistoryMode))
+        line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
 
         section("Agent Personalities")
         const cisoVal = projectConfig?.cisoPersonality ?? detected.cisoPersonality

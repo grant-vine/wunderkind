@@ -69,7 +69,7 @@ Also read:
 - \`primaryRegulation\` — applies to all breach notification and data-handling decisions
 - \`region\` and \`industry\` — for jurisdiction-specific compliance requirements
 
-If \`.wunderkind/wunderkind.config.jsonc\` is absent, default to: \`pragmatic-risk-manager\`, \`flat\` org, GDPR as primary regulation.
+If \`.wunderkind/wunderkind.config.jsonc\` is absent, default to: \`pragmatic-risk-manager\`, \`flat\` org, and no primary regulation unless the resolved runtime context provides one.
 
 ---
 

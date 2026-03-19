@@ -25,10 +25,11 @@ program
       "Adds twelve specialist native OpenCode agents covering",
       "marketing, design, product, engineering, brand, QA, operations,",
       "security, devrel, legal, support, and data analysis — each",
-      "pre-tuned to your region, industry, and data-protection regulation.",
+      "guided by your region, industry, and data-protection defaults when configured.",
       "",
       "Examples:",
       "  bunx @grant-vine/wunderkind install",
+      "  bunx @grant-vine/wunderkind install --no-tui",
       "  bunx @grant-vine/wunderkind install --no-tui \\",
       "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
       "  bunx @grant-vine/wunderkind upgrade --scope=global",
@@ -48,7 +49,7 @@ program
       "non-interactive use in CI or scripted environments.",
     ].join("\n"),
   )
-  .option("--no-tui", "Run non-interactive CLI installer (requires --region, --industry, --primary-regulation)")
+  .option("--no-tui", "Run non-interactive CLI installer with optional baseline default flags")
   .option("--region <region>", "Geographic region, e.g. 'South Africa', 'United States', 'Global'")
   .option("--industry <industry>", "Industry vertical, e.g. SaaS, FinTech, eCommerce, HealthTech")
   .option(
@@ -68,7 +69,10 @@ program
       "  # Interactive (default):",
       "  bunx @grant-vine/wunderkind install",
       "",
-      "  # Non-interactive:",
+      "  # Non-interactive with inherited defaults:",
+      "  bunx @grant-vine/wunderkind install --no-tui",
+      "",
+      "  # Non-interactive with explicit global baseline defaults:",
       "  bunx @grant-vine/wunderkind install --no-tui \\",
       "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
       "",
@@ -193,6 +197,8 @@ program
       "Initialize Wunderkind in the current project folder.",
       "",
       "Bootstraps project-local soul/personality config and soul files (.sisyphus, AGENTS.md, docs README).",
+      "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
+      "Init also configures the PRD/planning workflow mode for this project.",
       "Requires Wunderkind to already be installed via `wunderkind install`.",
     ].join("\n"),
   )
@@ -206,6 +212,10 @@ program
       "",
       "Example:",
       "  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs",
+      "",
+      "PRD workflow modes:",
+      "  - filesystem: writes PRDs/plans/issues into .sisyphus/",
+      "  - github: expects gh plus a GitHub-backed repo; doctor reports readiness",
     ].join("\n"),
   )
   .action(async (opts: {

@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { basename, dirname, join, relative } from "node:path"
@@ -23,9 +24,11 @@ import type {
   LegalPersonality,
   OpsPersonality,
   OrgStructure,
+  BaselineConfigKey,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
+  PrdPipelineMode,
   QaPersonality,
   SupportPersonality,
   TeamCulture,
@@ -74,6 +77,7 @@ const PROJECT_CONFIG_KEYS = [
   "docsEnabled",
   "docsPath",
   "docHistoryMode",
+  "prdPipelineMode",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -81,7 +85,7 @@ type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
 const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
   teamCulture: "pragmatic-balanced",
   orgStructure: "flat",
@@ -100,6 +104,7 @@ const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite",
+  prdPipelineMode: "filesystem",
 }
 
 const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
@@ -127,6 +132,7 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   docsEnabled: DEFAULT_INSTALL_CONFIG.docsEnabled,
   docsPath: DEFAULT_INSTALL_CONFIG.docsPath,
   docHistoryMode: DEFAULT_INSTALL_CONFIG.docHistoryMode,
+  prdPipelineMode: DEFAULT_INSTALL_CONFIG.prdPipelineMode,
 }
 
 export function getDefaultInstallConfig(): InstallConfig {
@@ -362,6 +368,63 @@ function coerceGlobalConfig(source: Record<string, unknown>): Partial<GlobalConf
   return result
 }
 
+export interface ConfigSourceMarker {
+  marker: "●" | "○"
+  sourceLabel: "project override" | "inherited default"
+}
+
+export interface GitHubWorkflowReadiness {
+  isGitRepo: boolean
+  hasGitHubRemote: boolean
+  ghInstalled: boolean
+  authVerified: boolean
+  authCheckAttempted: boolean
+}
+
+function commandSucceeds(command: string, args: string[]): boolean {
+  const result = spawnSync(command, args, { stdio: "ignore" })
+  return result.status === 0
+}
+
+function stdout(command: string, args: string[]): string {
+  const result = spawnSync(command, args, { encoding: "utf8" })
+  return result.status === 0 ? result.stdout.trim() : ""
+}
+
+export function detectGitHubWorkflowReadiness(cwd: string): GitHubWorkflowReadiness {
+  const isGitRepo = commandSucceeds("git", ["-C", cwd, "rev-parse", "--is-inside-work-tree"])
+  if (!isGitRepo) {
+    return {
+      isGitRepo,
+      hasGitHubRemote: false,
+      ghInstalled: false,
+      authVerified: false,
+      authCheckAttempted: false,
+    }
+  }
+
+  const remoteList = stdout("git", ["-C", cwd, "remote", "-v"])
+  const hasGitHubRemote = /github\./i.test(remoteList)
+  const ghInstalled = commandSucceeds("gh", ["--version"])
+  const authCheckAttempted = ghInstalled && hasGitHubRemote
+  const authVerified = authCheckAttempted ? commandSucceeds("gh", ["auth", "status", "-h", "github.com"]) : false
+
+  return {
+    isGitRepo,
+    hasGitHubRemote,
+    ghInstalled,
+    authVerified,
+    authCheckAttempted,
+  }
+}
+
+export function getProjectOverrideMarker(key: BaselineConfigKey, projectConfig: Record<string, unknown> | null): ConfigSourceMarker {
+  const hasOverride = projectConfig !== null && key in projectConfig && typeof projectConfig[key] === "string"
+  return hasOverride
+    ? { marker: "●", sourceLabel: "project override" }
+    : { marker: "○", sourceLabel: "inherited default" }
+}
+
 function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectConfig> {
   const result: Partial<ProjectConfig> = {}
 
@@ -390,6 +453,7 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["docsEnabled"] === "boolean") result.docsEnabled = source["docsEnabled"]
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
+  if (typeof source["prdPipelineMode"] === "string") result.prdPipelineMode = source["prdPipelineMode"] as PrdPipelineMode
 
   return result
 }
@@ -567,7 +631,11 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // Directory path where docs outputs are written`,
     `  "docsPath": ${JSON.stringify(config.docsPath)},`,
     `  // History mode: "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"`,
-    `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)}`,
+    `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)},`,
+    `  // PRD / planning workflow mode`,
+    `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
+    `  // PRD pipeline mode: "filesystem" | "github"`,
+    `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode)}`,
     `}`,
     ``,
   )
@@ -678,6 +746,7 @@ export function detectCurrentConfig(): DetectedConfig {
     docsEnabled: projectLocal?.docsEnabled ?? legacyGlobalProject.docsEnabled ?? defaults.docsEnabled,
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
+    prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
   }
 }
 

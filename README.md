@@ -65,7 +65,7 @@ or
 The TUI will guide you through:
 1. Installing oh-my-openagent if it isn't already (runs its own setup flow first).
 2. Selecting the install scope (Global vs Project).
-3. Configuring your shared baseline context: region, industry, and data-protection regulations.
+3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
 > Note: upstream's canonical npm package is `oh-my-openagent`, while the upstream CLI command and config filename remain `oh-my-opencode` and `oh-my-opencode.jsonc`.
@@ -81,6 +81,12 @@ For CI/CD or scripted environments, use the `install` command with the `--no-tui
 > See the [oh-my-openagent docs](https://github.com/code-yeongyu/oh-my-openagent) for all available options.
 
 ```bash
+bunx @grant-vine/wunderkind install --no-tui --scope=global
+```
+
+Or provide explicit shared defaults during install:
+
+```bash
 bunx @grant-vine/wunderkind install --no-tui \
   --scope=global \
   --region="South Africa" \
@@ -88,7 +94,13 @@ bunx @grant-vine/wunderkind install --no-tui \
   --primary-regulation=POPIA
 ```
 
-To install at the project scope:
+To install at the project scope with inherited defaults:
+
+```bash
+bunx @grant-vine/wunderkind install --no-tui --scope=project
+```
+
+Or install at the project scope with explicit project-local baseline overrides:
 
 ```bash
 bunx @grant-vine/wunderkind install --no-tui \
@@ -136,7 +148,13 @@ wunderkind init [options]
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect.
+Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+
+Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
+- `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
+- `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready
+
+If `prdPipelineMode` is absent in an older project config, Wunderkind treats it as `filesystem`.
 
 `wunderkind init` creates the following project "soul files":
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
@@ -163,8 +181,8 @@ Generated Wunderkind config files now include a top-level `$schema` field for ed
   - `https://raw.githubusercontent.com/grant-vine/wunderkind/<tag>/schemas/wunderkind.config.schema.json`
 
 The schema is scope-aware:
-- global config validates only baseline fields (`region`, `industry`, `primaryRegulation`, `secondaryRegulation`)
-- project config validates soul/personality/docs fields and also permits project-local baseline overrides when needed
+- global config validates shared baseline defaults (`region`, `industry`, `primaryRegulation`, `secondaryRegulation`) but allows them to be omitted when inherited defaults are acceptable
+- project config validates soul/personality/docs fields and also permits sparse project-local baseline overrides when needed
 
 ---
 
@@ -189,9 +207,14 @@ wunderkind doctor
 
 `wunderkind doctor --verbose` additionally shows:
 - Full path resolution for global and project OpenCode configs
-- Active region, industry, and regulation baseline
+- Active region, industry, and regulation baseline with source markers
+- PRD workflow mode and GitHub-readiness signals
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
+
+Legend:
+- `●` = project override
+- `○` = inherited default
 
 Example output (project context with defaults):
 
@@ -285,48 +308,56 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 | `social-media-maven` | marketing-wunderkind | Social media strategy & content |
 | `visual-artist` | creative-director | Colour palettes, design tokens, WCAG |
 | `agile-pm` | product-wunderkind | Sprint planning, task decomposition |
+| `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
+| `ubiquitous-language` | product-wunderkind | Shared domain glossary & canonical terminology |
+| `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
+| `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, module boundaries, deep modules |
 | `security-analyst` | ciso | OWASP Top 10, vulnerability assessment |
 | `pen-tester` | ciso | Penetration testing, ASVS, attack simulation |
 | `compliance-officer` | ciso | GDPR, POPIA, data classification |
+| `triage-issue` | support-engineer / qa-specialist | Root-cause triage and red-green handoff |
 
 ---
 
 ## Configuration
 
 Wunderkind uses a split configuration model:
-- global config stores shared market/regulation baseline
-- project config stores soul/personality/docs settings
+- global config stores shared market/regulation defaults
+- project config stores soul/personality/docs/workflow settings plus only the baseline values that intentionally override those defaults
 
 | File | Scope |
 |---|---|
 | `~/.wunderkind/wunderkind.config.jsonc` | Global baseline (applies to all projects) |
-| `.wunderkind/wunderkind.config.jsonc` | Per-project soul/personality/docs settings |
+| `.wunderkind/wunderkind.config.jsonc` | Per-project soul/personality/docs/workflow settings and sparse baseline overrides |
 
-Edit the global file to change region/industry/regulation defaults after install. Edit the project file to change team culture, personalities, or docs-output settings after init.
+Edit the global file to change region/industry/regulation defaults after install. Edit the project file to change team culture, personalities, docs-output settings, PRD workflow mode, or only the baseline values that differ for this project after init.
 
 ### Configuration Reference
 
 ```jsonc
-// Global baseline config
+// Global baseline config (all fields optional; omitted values fall back to built-in defaults)
 {
   "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   // Geographic region — e.g. "South Africa", "United States", "United Kingdom", "Australia"
-  "region": "South Africa",
+  "region": "Global",
   // Industry vertical — e.g. "SaaS", "FinTech", "eCommerce", "HealthTech"
-  "industry": "SaaS",
+  "industry": "",
   // Primary data-protection regulation — e.g. "GDPR", "POPIA", "CCPA", "LGPD"
-  "primaryRegulation": "POPIA",
+  "primaryRegulation": "",
   // Optional secondary regulation
   "secondaryRegulation": ""
 }
 ```
 
 ```jsonc
-// Project-local soul/docs config
+// Project-local soul/docs config (sparse overrides only)
 {
   "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
+  // Optional project-specific baseline override example:
+  // "industry": "Software Development Services",
+
   // Team culture baseline — affects all agents' communication style and decision rigour
   "teamCulture": "pragmatic-balanced",
   // Org structure — "flat" (peers) | "hierarchical" (domain authority applies)
@@ -349,7 +380,10 @@ Edit the global file to change region/industry/regulation defaults after install
   // Documentation Output (Init-only customizations)
   "docsEnabled": false,
   "docsPath": "./docs",
-  "docHistoryMode": "overwrite"
+  "docHistoryMode": "overwrite",
+
+  // PRD / planning workflow mode
+  "prdPipelineMode": "filesystem"
 }
 ```
 
@@ -472,6 +506,14 @@ Each agent's behaviour is controlled by a `*Personality` key in your project con
 ~/.wunderkind/
   wunderkind.config.jsonc     # global config baseline
 ```
+
+## Research Inputs
+
+Wunderkind's evolving workflow strategy is informed in part by Matt Pocock's public skills repository:
+
+- https://github.com/mattpocock/skills
+
+We plan to adapt selected ideas such as ubiquitous language, structured questioning, and PRD/planning flows to Wunderkind's filesystem-first `.sisyphus/` workflow rather than adopting GitHub-issue-centric assumptions directly.
 
 ---
 
