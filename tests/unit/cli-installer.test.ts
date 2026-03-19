@@ -35,6 +35,8 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
+  prdPipelineMode: "filesystem" as const,
+  desloppifyEnabled: false,
     ...overrides,
   }
 }

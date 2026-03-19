@@ -1,0 +1,86 @@
+---
+name: code-health
+description: >
+  USE FOR: Desloppify-driven cleanup passes, code quality tightening, sloppiness reduction,
+  iterative engineering hygiene work, and opt-in code-health workflows tied to
+  `.wunderkind/wunderkind.config.jsonc` or `.desloppify/` state.
+
+---
+
+# Code Health
+
+Use this skill when the explicit goal is to improve code quality with Desloppify rather than to ship net-new product behavior.
+
+## Primary owner
+
+This skill is owned by `fullstack-wunderkind` as the surviving steward for code quality tooling, TDD, architecture, and engineering methods.
+
+## Filesystem scope
+
+- Main runtime toggle: `.wunderkind/wunderkind.config.jsonc` via `desloppifyEnabled`
+- Local tool state: `.desloppify/`
+- Supporting repo surfaces: `README.md`, `AGENTS.md`, `skills/code-health/SKILL.md`
+- Verification surface: relevant files in `src/` and `tests/unit/`
+
+`.desloppify/` is local state and should be gitignored via `wunderkind gitignore`.
+
+## When to trigger
+
+Use this skill when:
+
+- the user explicitly asks for code quality cleanup, sloppiness reduction, or a Desloppify pass
+- `desloppifyEnabled: true` is set and the task is code-health focused
+- the work is primarily about tightening, simplifying, or de-risking existing code
+
+## Anti-triggers
+
+Do not trigger this skill for:
+
+- every normal coding task by default
+- product feature delivery where code health is secondary
+- docs-only, copy-only, or generated-file changes
+- projects where `desloppifyEnabled` is absent or false unless the user explicitly asks for this workflow
+
+## Process
+
+1. Confirm that the task is code-health focused, not just ordinary implementation work.
+2. Check whether `desloppifyEnabled` is true in project config.
+3. If Desloppify support is enabled, verify Python 3.11+ is available and Desloppify is installed.
+4. Use the official install path only: `python -m pip install --upgrade 'desloppify[full]'`.
+5. Expect local state to live in `.desloppify/`, and keep that directory out of version control.
+
+## Python prerequisite
+
+Desloppify requires Python 3.11+.
+
+- macOS: install Python with Homebrew or from `python.org`
+- Linux: install Python with your distro package manager or from `python.org`
+- Windows: install Python from `python.org`
+
+Wunderkind must not auto-install Python or Desloppify silently.
+
+## Fallback message
+
+If `desloppifyEnabled` is false or absent, or Desloppify is not installed, show this one-time fallback message exactly:
+
+```text
+To enable Desloppify code-health support, run `wunderkind init` and opt in, then install: Python 3.11+ required, then `python -m pip install --upgrade 'desloppify[full]'`
+```
+
+## Hard rules
+
+1. Desloppify is opt-in only; never assume it is always available.
+2. Use only the official install command: `python -m pip install --upgrade 'desloppify[full]'`.
+3. Do not claim Homebrew, pipx, or another package manager as an approved Desloppify install path.
+4. Treat `.desloppify/` as local machine state and keep it gitignored.
+5. Fall back cleanly to ordinary engineering work when this skill is not enabled.
+
+## Review gate
+
+This skill is complete only when:
+
+1. `fullstack-wunderkind` is named as the owner.
+2. The trigger and anti-trigger boundaries keep it opt-in instead of universal.
+3. The Python 3.11+ prerequisite and official install command are explicit.
+4. `.desloppify/` is identified as local state.
+5. The one-time fallback message is preserved exactly.

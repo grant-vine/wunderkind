@@ -45,6 +45,7 @@ export interface ProjectConfig {
   docsPath: string
   docHistoryMode: DocHistoryMode
   prdPipelineMode: PrdPipelineMode
+  desloppifyEnabled?: boolean
 }
 
 export interface InstallArgs {
@@ -113,6 +114,7 @@ export interface DetectedConfig {
   docsPath: string
   docHistoryMode: DocHistoryMode
   prdPipelineMode: PrdPipelineMode
+  desloppifyEnabled: boolean
 }
 
 export interface PluginVersionInfo {

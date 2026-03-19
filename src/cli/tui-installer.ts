@@ -14,6 +14,7 @@ import {
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import { isProjectContext, runInit } from "./init.js"
 import type {
+  InstallConfig,
   InstallScope,
 } from "./types.js"
 
@@ -184,7 +185,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
   )
   if (secondaryRegulation === null) return 1
 
-  const config = {
+  const config: InstallConfig = {
     region: (region as string).trim() || "Global",
     industry: (industry as string).trim(),
     primaryRegulation: primaryRegulation,
@@ -207,6 +208,10 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     docsPath: detected.docsPath,
     docHistoryMode: detected.docHistoryMode,
     prdPipelineMode: detected.prdPipelineMode,
+  }
+
+  if (detected.desloppifyEnabled) {
+    config.desloppifyEnabled = true
   }
 
   const spinner = p.spinner()

@@ -56,3 +56,21 @@
 - Audited all 19 shipped skills and recorded an explicit disposition for each in the new Skill Inventory table so no skill remains owner-ambiguous under the six-agent target topology.
 - Reassigned `triage-issue` to `product-wunderkind`, `technical-writer` to `marketing-wunderkind`, `tdd` to `fullstack-wunderkind`, and `experimentation-analyst` to `product-wunderkind` because its current scope is feature and product experiment oriented rather than campaign-only analysis.
 - Updated `README.md` and `AGENTS.md` to point at the new standard and to expose the 19-skill ownership map on the public documentation surface.
+
+## [2026-03-19] Task 6 Desloppify code-health opt-in
+- Added `skills/code-health/SKILL.md` under `fullstack-wunderkind` with an explicit opt-in trigger boundary, the exact one-time fallback message, Python 3.11+ prerequisite notes, the official `python -m pip install --upgrade 'desloppify[full]'` command, and `.desloppify/` as local gitignored state.
+- `desloppifyEnabled` works best as a sparse project config field: omit it when absent, default it to `false` in `detectCurrentConfig()`, and only write it into `.wunderkind/wunderkind.config.jsonc` when init explicitly sets it or an existing project config already has it enabled.
+- The relevant CLI surfaces for this feature are split across `src/cli/index.ts` for `--desloppify-enabled`, `src/cli/init.ts` for the interactive prompt, `src/cli/config-manager/index.ts` for JSONC rendering/coercion, `src/cli/doctor.ts` for verbose marker output, and `src/cli/gitignore-manager.ts` for `.desloppify/`.
+
+## [2026-03-19] Task 5 doctrine handoff
+
+- `skills/design-an-interface/SKILL.md` needed more than imported benchmark wording: the stable Wunderkind trigger is high-complexity boundary design only, with explicit anti-triggers for trivial helpers, minor parameter additions, and one-obvious-solution work.
+- `skills/tdd/SKILL.md` now acts as the repo-level TDD contract for `fullstack-wunderkind`, with red-green-refactor, public-interface testing, vertical-slice doctrine, and Bun/TypeScript strict-mode verification commands spelled out directly.
+- QA doctrine was split cleanly across the surviving authority surfaces: `src/agents/fullstack-wunderkind.ts` now owns test execution, regression depth, and technical defect diagnosis; `src/agents/product-wunderkind.ts` now owns acceptance review, INVEST gating, and escalation of technical defects to engineering.
+- A contradiction sweep was necessary beyond the four primary files: adjacent skills and agent prompts that still routed testing work to `qa-specialist` had to be minimally redirected so the handoff survives `bun run build` without regenerating stale guidance.
+
+## [2026-03-19] Task 7 capability preservation matrix
+- Created `.sisyphus/plans/capability-matrix.md` as the single authoritative crosswalk from the current 12-agent topology to the retained six-agent topology, using the exact schema `Current Owner | Capability/Skill | Disposition | Surviving Owner | Artifact Path | Notes`.
+- Split removed-agent authority explicitly: `support-engineer` intake and repro shaping merge into `product-wunderkind`, technical handoff merges into `fullstack-wunderkind`; `operations-lead` reliability and runbooks merge into `fullstack-wunderkind`, while security-incident posture merges into `ciso`.
+- Represented all 19 shipped skills as `extract-as-skill` rows and carried the Task 4 keep/revise inventory into notes so the matrix can stay topology-focused while still preserving the skill-standard disposition context.
+- Explicitly called out the three audit-sensitive skills: `technical-writer` survives under `marketing-wunderkind`, `experimentation-analyst` survives under `product-wunderkind`, and `oss-licensing-advisor` stays under retained `legal-counsel`.

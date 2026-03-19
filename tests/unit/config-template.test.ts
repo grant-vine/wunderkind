@@ -41,7 +41,9 @@ describe("wunderkind config schema asset", () => {
     expect(schema.oneOf?.length).toBe(2)
     const projectSchema = schema.oneOf?.[1]
     expect(projectSchema?.properties?.prdPipelineMode).toBeDefined()
+    expect(projectSchema?.properties?.desloppifyEnabled).toBeDefined()
     expect(projectSchema?.required).not.toContain("prdPipelineMode")
+    expect(projectSchema?.required).not.toContain("desloppifyEnabled")
   })
 })
 

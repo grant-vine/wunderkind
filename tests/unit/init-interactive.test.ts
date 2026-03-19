@@ -40,6 +40,7 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
   prdPipelineMode: "filesystem" as const,
+  desloppifyEnabled: false,
 }
 
 mock.module("@clack/prompts", () => ({
@@ -106,7 +107,7 @@ describe("runInit interactive personality prompts", () => {
 
     const textAnswers: string[] = []
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    const confirmAnswers = [true, false]
+    const confirmAnswers = [true, false, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
     const selectAnswers = [
@@ -139,7 +140,7 @@ describe("runInit interactive personality prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(15)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -151,6 +152,7 @@ describe("runInit interactive personality prompts", () => {
       expect(installConfig.dataAnalystPersonality).toBe("rigorous-statistician")
       expect(installConfig.docsEnabled).toBe(false)
       expect(installConfig.prdPipelineMode).toBe("filesystem")
+      expect(installConfig.desloppifyEnabled).toBe(true)
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -185,7 +187,7 @@ describe("runInit interactive personality prompts", () => {
 
     const textAnswers: string[] = []
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    const confirmAnswers = [false, false]
+    const confirmAnswers = [false, false, false]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
     const selectAnswers = ["formal-strict", "hierarchical", "filesystem"]
@@ -201,7 +203,7 @@ describe("runInit interactive personality prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockSelect).toHaveBeenCalledTimes(3)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -213,6 +215,7 @@ describe("runInit interactive personality prompts", () => {
       expect(installConfig.ctoPersonality).toBe("startup-bro")
       expect(installConfig.dataAnalystPersonality).toBe("pragmatic-quant")
       expect(installConfig.prdPipelineMode).toBe("filesystem")
+      expect(installConfig.desloppifyEnabled).toBe(false)
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -231,7 +234,7 @@ describe("runInit interactive personality prompts", () => {
 
     const textAnswers = ["./my-docs"]
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
-    const confirmAnswers = [true, true]
+    const confirmAnswers = [true, true, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
     const selectAnswers = [
@@ -265,7 +268,7 @@ describe("runInit interactive personality prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(16)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
@@ -273,6 +276,7 @@ describe("runInit interactive personality prompts", () => {
       expect(installConfig.docsEnabled).toBe(true)
       expect(installConfig.docHistoryMode).toBe("append-dated")
       expect(installConfig.prdPipelineMode).toBe("github")
+      expect(installConfig.desloppifyEnabled).toBe(true)
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)

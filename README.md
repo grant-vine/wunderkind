@@ -5,7 +5,7 @@ Wunderkind — specialist AI agent addon for OpenCode that extends your team wit
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
 > [!IMPORTANT]
-> **Breaking change (0.7.0)**: This is a pre-1.0 release. Older installs are not supported. Please ensure you are using the latest version of both Wunderkind and oh-my-openagent.
+> Wunderkind is still pre-1.0. Keep Wunderkind and oh-my-openagent up to date together; older installs are not expected to remain compatible.
 
 ---
 
@@ -15,9 +15,9 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 | Command | Purpose | Modifies |
 |---|---|---|
-| `wunderkind install` | Registers the plugin in OpenCode | `opencode.json` (Global or Project) |
-| `wunderkind upgrade` | Upgrade lifecycle entry point for existing installs | None yet (surface only) |
-| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/` |
+| `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
+| `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
+| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, project-local native agents/skills |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
 | `wunderkind gitignore` | Adds AI traces to `.gitignore` | `.gitignore` |
@@ -122,10 +122,11 @@ Wunderkind exposes an explicit upgrade lifecycle command:
 wunderkind upgrade --scope=global
 ```
 
-Current first-wave upgrade behavior is intentionally narrow:
-- it validates that Wunderkind is already installed in the requested scope
-- it preserves all project-local soul/docs settings
-- it currently behaves as a safe no-op until future baseline override flags are introduced
+Current upgrade behavior:
+- refreshes Wunderkind native agents and native skills in the requested scope
+- refreshes Wunderkind's shipped native command assets globally
+- preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
+- supports `--dry-run` and `--refresh-config` for safe testing
 
 This keeps the lifecycle concept explicit without overloading `install`.
 
@@ -146,9 +147,10 @@ wunderkind init [options]
 | `--docs-path <path>` | Relative path for agent docs output | `./docs` |
 | `--docs-history-mode <mode>` | Update style: `overwrite` (default), `append-dated`, `new-dated-file`, `overwrite-archive` | `overwrite` |
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
+| `--desloppify-enabled <yes\|no>` | Enable opt-in Desloppify code-health support | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+Interactive `wunderkind init` always asks for team culture, org structure, docs-output settings, and whether to enable Desloppify code-health support. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
@@ -209,6 +211,7 @@ wunderkind doctor
 - Full path resolution for global and project OpenCode configs
 - Active region, industry, and regulation baseline with source markers
 - PRD workflow mode and GitHub-readiness signals
+- Desloppify opt-in status with project-vs-inherited markers
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
 
@@ -259,9 +262,44 @@ wunderkind uninstall --scope=project
 
 When enabled, agents can persist their decisions and strategies to your project's docs folder.
 
-1. **Enable** via `wunderkind init --docs-path ./docs`
+1. **Enable** via interactive `wunderkind init`, or non-interactively with `wunderkind init --no-tui --docs-enabled=yes --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
 3. **Refresh or bootstrap** via `/docs-index`. This is an executable plugin command that asks eligible Wunderkind agents to refresh their canonical managed docs or create them if missing, then updates the docs index and can optionally offer `init-deep` as a follow-up question.
+
+---
+
+## Desloppify Code Health
+
+Desloppify support is opt-in and project-local.
+
+1. Enable it during `wunderkind init`, or run `wunderkind init --no-tui --desloppify-enabled=yes`.
+2. Desloppify requires Python 3.11+.
+3. Install Python by platform:
+   - macOS: Homebrew or `python.org`
+   - Linux: your package manager or `python.org`
+   - Windows: `python.org`
+4. Install Desloppify with the official command only:
+
+```bash
+python -m pip install --upgrade 'desloppify[full]'
+```
+
+Desloppify keeps local state in `.desloppify/`, and `wunderkind gitignore` adds that directory to `.gitignore` for you.
+
+---
+
+## Init-Deep Workflow
+
+`init-deep` is an oh-my-openagent workflow concept, not a Wunderkind CLI command.
+
+Wunderkind supports that upstream bootstrap flow in this order:
+
+1. Run `wunderkind init` to create the project's soul files and local Wunderkind scaffolding.
+2. Have an agent populate `AGENTS.md` with project knowledge, conventions, and operating context.
+3. Systematically explore the codebase and capture durable findings in `.sisyphus/` notepads and evidence.
+4. Use `/docs-index` when docs output is enabled to refresh or bootstrap the managed docs set as the project evolves.
+
+Treat this as the recommended audit/bootstrap process for bringing a project up to a high-context Wunderkind baseline.
 
 ---
 
@@ -272,28 +310,28 @@ When enabled, agents can persist their decisions and strategies to your project'
 | `global` (default) | Adds the plugin to `~/.config/opencode/opencode.json`. Agents are available in all projects. |
 | `project` | Adds the plugin to `./opencode.json` (created if missing). Agents are limited to the current project. |
 
-Wunderkind installs its native agent markdown files into OpenCode's supported agent directories. Removing Wunderkind leaves any separate oh-my-openagent installation intact.
+Wunderkind installs native markdown assets into OpenCode's supported directories. Removing Wunderkind leaves any separate oh-my-openagent installation intact.
 
-> **Native agent install note**: Wunderkind now registers its specialist agents through OpenCode-native markdown agent files. Global installs write to `~/.config/opencode/agents/`; project installs and `wunderkind init` write to `.opencode/agents/` for project-local precedence.
+> **Native asset install note**: Wunderkind registers its specialist agents and skills through OpenCode-native markdown files. Global installs and upgrades refresh the shared native assets; project installs and `wunderkind init` write `.opencode/agents/` and `.opencode/skills/` for project-local precedence. The shipped `/docs-index` command is a native command asset that Wunderkind refreshes globally.
 
 ---
 
 ## Agents
 
-| Agent Key | Role | Category |
+| Agent Key | Role | OpenCode Category |
 |---|---|---|
-| `marketing-wunderkind` | CMO-calibre strategist | primary |
-| `creative-director` | Brand & UI/UX lead | primary |
-| `product-wunderkind` | VP Product | primary |
-| `fullstack-wunderkind` | CTO-calibre engineer | primary |
-| `brand-builder` | Community, PR, thought leadership | primary |
-| `qa-specialist` | TDD, coverage, user story review | primary |
-| `operations-lead` | SRE/SLO, runbooks, incident response | primary |
-| `ciso` | Security architecture, OWASP, compliance | primary |
-| `devrel-wunderkind` | Developer relations and advocacy | primary |
-| `legal-counsel` | Legal and regulatory compliance | primary |
-| `support-engineer` | Technical support and troubleshooting | primary |
-| `data-analyst` | Data analysis and insights | primary |
+| `marketing-wunderkind` | CMO-calibre strategist | `writing` |
+| `creative-director` | Brand & UI/UX lead | `visual-engineering` |
+| `product-wunderkind` | VP Product | `writing` |
+| `fullstack-wunderkind` | CTO-calibre engineer | `unspecified-high` |
+| `brand-builder` | Community, PR, thought leadership | `writing` |
+| `qa-specialist` | TDD, coverage, user story review | `unspecified-high` |
+| `operations-lead` | SRE/SLO, runbooks, incident response | `unspecified-high` |
+| `ciso` | Security architecture, OWASP, compliance | `unspecified-high` |
+| `devrel-wunderkind` | Developer relations and advocacy | `writing` |
+| `legal-counsel` | Legal and regulatory compliance | `writing` |
+| `support-engineer` | Technical support and troubleshooting | `writing` |
+| `data-analyst` | Data analysis and insights | `writing` |
 
 Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are static defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`.
 
@@ -303,6 +341,8 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 
 ## Sub-skills
 
+Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, and review gates.
+
 | Skill Name | Parent Agent | Domain |
 |---|---|---|
 | `social-media-maven` | marketing-wunderkind | Social media strategy & content |
@@ -311,13 +351,20 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 | `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
 | `ubiquitous-language` | product-wunderkind | Shared domain glossary & canonical terminology |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
+| `triage-issue` | product-wunderkind | Root-cause triage and red-green handoff |
+| `experimentation-analyst` | product-wunderkind | Product experiments, feature readouts, and statistical interpretation |
+| `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
+| `code-health` | fullstack-wunderkind | Opt-in Desloppify cleanup and code-health workflows |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, module boundaries, deep modules |
+| `design-an-interface` | fullstack-wunderkind | High-complexity API and abstraction design |
+| `tdd` | fullstack-wunderkind | Red-green-refactor loops for Bun + strict TypeScript |
 | `security-analyst` | ciso | OWASP Top 10, vulnerability assessment |
 | `pen-tester` | ciso | Penetration testing, ASVS, attack simulation |
 | `compliance-officer` | ciso | GDPR, POPIA, data classification |
-| `triage-issue` | support-engineer / qa-specialist | Root-cause triage and red-green handoff |
+| `technical-writer` | marketing-wunderkind | Developer docs, guides, and reference writing |
+| `oss-licensing-advisor` | legal-counsel | Open source license compliance and compatibility |
 
 ---
 
@@ -383,7 +430,10 @@ Edit the global file to change region/industry/regulation defaults after install
   "docHistoryMode": "overwrite",
 
   // PRD / planning workflow mode
-  "prdPipelineMode": "filesystem"
+  "prdPipelineMode": "filesystem",
+
+  // Optional Desloppify code-health workflow toggle
+  "desloppifyEnabled": true
 }
 ```
 
@@ -537,7 +587,7 @@ Run this command to ensure `.wunderkind/` and other AI tooling directories are g
 wunderkind gitignore
 ```
 
-This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+This adds `.wunderkind/`, `AGENTS.md`, `.desloppify/`, `.sisyphus/`, and `.opencode/` to your `.gitignore` if they aren't already present.
 
 ---
 

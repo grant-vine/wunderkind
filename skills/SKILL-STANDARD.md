@@ -148,6 +148,7 @@ A skill is complete only when all of the following are true:
 |---|---|---|---|
 | `agile-pm` | `product-wunderkind` | revise | Keep as a product planning skill, but update removed-agent references and align the file to the full trigger/anti-trigger standard. |
 | `compliance-officer` | `ciso` | keep | Still maps directly to security, privacy controls, and regulatory guidance under the retained topology. |
+| `code-health` | `fullstack-wunderkind` | keep | Owns explicit, opt-in Desloppify cleanup workflows instead of auto-triggering on every coding task. |
 | `db-architect` | `fullstack-wunderkind` | keep | Remains a distinct engineering specialty with clear database and migration scope. |
 | `design-an-interface` | `fullstack-wunderkind` | keep | Newly imported and already follows the intended trigger and anti-trigger shape. |
 | `experimentation-analyst` | `product-wunderkind` | revise | Reassign from removed `data-analyst`; center this skill on product experiments and feature readouts, with marketing consulted for campaign analytics. |

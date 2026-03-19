@@ -78,4 +78,17 @@ describe("CLI help copy", () => {
 
     expect(output).toContain("Enable verbose diagnostic output")
   })
+
+  it("includes Desloppify init help text", () => {
+    const output = runCliHelp("init", "--help")
+
+    expect(output).toContain("--desloppify-enabled")
+    expect(output).toContain("Enable Desloppify code-health support")
+  })
+
+  it("includes Desloppify gitignore help text", () => {
+    const output = runCliHelp("gitignore", "--help")
+
+    expect(output).toContain(".desloppify/")
+  })
 })

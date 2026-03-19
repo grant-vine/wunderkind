@@ -78,6 +78,7 @@ const PROJECT_CONFIG_KEYS = [
   "docsPath",
   "docHistoryMode",
   "prdPipelineMode",
+  "desloppifyEnabled",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -454,6 +455,7 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
   if (typeof source["prdPipelineMode"] === "string") result.prdPipelineMode = source["prdPipelineMode"] as PrdPipelineMode
+  if (typeof source["desloppifyEnabled"] === "boolean") result.desloppifyEnabled = source["desloppifyEnabled"]
 
   return result
 }
@@ -635,10 +637,18 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // PRD / planning workflow mode`,
     `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
     `  // PRD pipeline mode: "filesystem" | "github"`,
-    `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode)}`,
-    `}`,
-    ``,
   )
+
+  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode)}${config.desloppifyEnabled !== undefined ? "," : ""}`)
+
+  if (config.desloppifyEnabled !== undefined) {
+    lines.push(
+      `  // Optional code-health workflow toggle for the fullstack-owned Desloppify skill`,
+      `  "desloppifyEnabled": ${JSON.stringify(config.desloppifyEnabled)}`,
+    )
+  }
+
+  lines.push(`}`, ``)
 
   return lines.join("\n")
 }
@@ -698,6 +708,7 @@ export function detectCurrentConfig(): DetectedConfig {
     projectOpenCodeConfigPath: projectResolution.path,
     globalOpenCodeConfigPath: globalResolution.path,
     ...defaults,
+    desloppifyEnabled: false,
   }
 
   const registration = detectRegistration()
@@ -747,6 +758,7 @@ export function detectCurrentConfig(): DetectedConfig {
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
     prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
+    desloppifyEnabled: projectLocal?.desloppifyEnabled ?? legacyGlobalProject.desloppifyEnabled ?? false,
   }
 }
 

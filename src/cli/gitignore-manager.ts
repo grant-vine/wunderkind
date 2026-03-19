@@ -6,6 +6,7 @@ const GITIGNORE_PATH = join(process.cwd(), ".gitignore")
 const AI_TRACE_ENTRIES = [
   ".wunderkind/",
   "AGENTS.md",
+  ".desloppify/",
   ".sisyphus/",
   ".opencode/",
 ] as const
