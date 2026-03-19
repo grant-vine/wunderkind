@@ -75,8 +75,8 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 - **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
 - **`upgrade`** (`src/cli/cli-installer.ts`) — Refreshes Wunderkind-owned native agents and skills for the selected scope, plus global native commands.
-- **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.desloppify/`, `.sisyphus/`, and `.opencode/` to `.gitignore` idempotently.
-- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, and records the optional Desloppify code-health opt-in.
+- **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to `.gitignore` idempotently.
+- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, and sets the PRD pipeline mode for the project.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
 - **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
 
@@ -218,7 +218,7 @@ node bin/wunderkind.js install --no-tui \
   --primary-regulation=GDPR
 
 # Gitignore helper
-node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .desloppify/, .sisyphus/, .opencode/ to .gitignore
+node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, .opencode/ to .gitignore
 ```
 
 ---
@@ -239,8 +239,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .desloppify/
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
-- **Desloppify is a cross-cutting fullstack-owned code-health capability** — `desloppifyEnabled` lives in project config, defaults to `false` when absent, and `.desloppify/` stays local and gitignored.
-- **Desloppify first-trigger fallback** — when an agent or user requests Desloppify-style code-health work but `desloppifyEnabled` is `false` or Desloppify is not installed, the runtime harness is configured to respond once with the exact fallback message: "Desloppify code-health support is not enabled for this project. Run `wunderkind init --no-tui --desloppify-enabled=yes` to enable it, then install Desloppify with `python -m pip install --upgrade 'desloppify[full]'`." This message is shown once and not repeated.
+- **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke Desloppify, Python, or any automated cleanup tool. There is no `desloppifyEnabled` config key; stale on-disk configs that contain it are silently ignored on read.
 - **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
 - **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.sisyphus/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
 - **Audit-style reviewer freshness rule** — when using Metis, Momus, oracle, or any equivalent critic agent for a review pass, always spawn a **fresh agent/session** for each new round after fixes are made. Never reuse the previous reviewer session — reused sessions narrow their attention to previously reported findings instead of performing a fresh audit.

@@ -7,6 +7,14 @@ Wunderkind — specialist AI agent addon for OpenCode that extends your team wit
 > [!IMPORTANT]
 > Wunderkind is still pre-1.0. Keep Wunderkind and oh-my-openagent up to date together; older installs are not expected to remain compatible.
 
+> [!WARNING]
+> **Breaking changes in this version.** Desloppify support has been removed from the Wunderkind product contract. If you are upgrading from a version that included Desloppify, be aware of the following breaking changes:
+> - The `--desloppify-enabled` flag is removed from `wunderkind init`. Passing it will now fail as an unknown flag.
+> - The `desloppifyEnabled` config key is no longer written or read. Existing config files that contain it are silently tolerated — the key is ignored on read and will not be written back.
+> - `.desloppify/` is no longer added to `.gitignore` by `wunderkind gitignore`.
+> - The Desloppify first-trigger fallback message is removed from all agent prompts.
+> - The `code-health` skill is now an audit/reporting tool only — it does not install or invoke Desloppify or any other automated cleanup tool.
+
 ---
 
 ## CLI
@@ -147,10 +155,9 @@ wunderkind init [options]
 | `--docs-path <path>` | Relative path for agent docs output | `./docs` |
 | `--docs-history-mode <mode>` | Update style: `overwrite` (default), `append-dated`, `new-dated-file`, `overwrite-archive` | `overwrite` |
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
-| `--desloppify-enabled <yes\|no>` | Enable opt-in Desloppify code-health support | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, docs-output settings, and whether to enable Desloppify code-health support. It can also optionally create project-local SOUL files for any retained persona; if you skip that step, Wunderkind keeps the neutral retained prompts and current/default personality settings already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona; if you skip that step, Wunderkind keeps the neutral retained prompts and current/default personality settings already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
@@ -211,7 +218,6 @@ wunderkind doctor
 - Full path resolution for global and project OpenCode configs
 - Active region, industry, and regulation baseline with source markers
 - PRD workflow mode and GitHub-readiness signals
-- Desloppify opt-in status with project-vs-inherited markers
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
 
@@ -262,27 +268,13 @@ When enabled, agents can persist their decisions and strategies to your project'
 
 ---
 
-## Desloppify Code Health
+## Code Health
 
-Desloppify support is opt-in and project-local.
+The `code-health` skill (owned by `fullstack-wunderkind`) produces a structured, evidence-based code health audit report with severity-ranked findings. It is an analysis and reporting tool only — it does not mutate code, run automated cleanup tools, or create GitHub issues or RFCs.
 
-1. Enable it during `wunderkind init`, or run `wunderkind init --no-tui --desloppify-enabled=yes`.
-2. Desloppify requires Python 3.11+.
-3. Install Python by platform:
-   - macOS: Homebrew or `python.org`
-   - Linux: your package manager or `python.org`
-   - Windows: `python.org`
-4. Install Desloppify with the official command only:
+Use it when you want a prioritised list of engineering hygiene findings (coupling, testability, dependency risk, systemic patterns) before deciding what to fix. The audit report is produced as structured markdown in the agent response, with findings grouped by severity: `critical`, `high`, `medium`, `low`, and `informational`.
 
-```bash
-python -m pip install --upgrade 'desloppify[full]'
-```
-
-Desloppify keeps local state in `.desloppify/`, and `wunderkind gitignore` adds that directory to `.gitignore` for you.
-
-### First-trigger fallback
-
-If Desloppify code-health work is requested but `desloppifyEnabled` is `false` or Desloppify is not installed, agents will respond once with: "Desloppify code-health support is not enabled for this project. Run `wunderkind init --no-tui --desloppify-enabled=yes` to enable it, then install Desloppify with `python -m pip install --upgrade 'desloppify[full]'`." The message is shown once and not repeated.
+To request an audit, ask `fullstack-wunderkind` directly or invoke the `code-health` skill.
 
 ---
 
@@ -347,7 +339,7 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `experimentation-analyst` | product-wunderkind | Product experiments, feature readouts, and statistical interpretation |
 | `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
-| `code-health` | fullstack-wunderkind | Opt-in Desloppify cleanup and code-health workflows |
+| `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, module boundaries, deep modules |
 | `design-an-interface` | fullstack-wunderkind | High-complexity API and abstraction design |
@@ -417,10 +409,7 @@ Edit the global file to change region/industry/regulation defaults after install
   "docHistoryMode": "overwrite",
 
   // PRD / planning workflow mode
-  "prdPipelineMode": "filesystem",
-
-  // Optional Desloppify code-health workflow toggle
-  "desloppifyEnabled": true
+  "prdPipelineMode": "filesystem"
 }
 ```
 
@@ -528,7 +517,7 @@ Run this command to ensure `.wunderkind/` and other AI tooling directories are g
 wunderkind gitignore
 ```
 
-This adds `.wunderkind/`, `AGENTS.md`, `.desloppify/`, `.sisyphus/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to your `.gitignore` if they aren't already present.
 
 ---
 
