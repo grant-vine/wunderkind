@@ -223,18 +223,12 @@ Example output (project context with defaults):
 
 ```
 Agent Personalities
-- ciso:         pragmatic-risk-manager  (Balances risk vs. velocity; default posture)
-- fullstack:    code-archaeologist  (Deep digs into legacy systems; explains history)
-- marketing:    data-driven  (Metrics and attribution first; no vanity metrics)
-- qa:           risk-based-pragmatist  (Tests what matters most; ships with confidence)
-- product:      outcome-obsessed  (Business outcomes and measurable impact first)
-- ops:          on-call-veteran  (Incident-hardened; runbook-first)
-- creative:     pragmatic-problem-solver  (Design that ships; form follows function)
-- brand:        authentic-builder  (No spin; build trust through radical transparency)
-- devrel:       dx-engineer  (Developer experience as a product; DX metrics)
-- legal:        pragmatic-advisor  (Risk-calibrated; enables the business to move)
-- support:      systematic-triage  (Classification, routing, and severity-driven)
-- data analyst: insight-storyteller  (Translates data into narratives for decisions)
+- ciso:       pragmatic-risk-manager   (Balances risk vs. velocity; default posture)
+- fullstack:  code-archaeologist       (Deep digs into legacy systems; explains history)
+- marketing:  data-driven              (Metrics and attribution first; no vanity metrics)
+- product:    outcome-obsessed         (Business outcomes and measurable impact first)
+- creative:   pragmatic-problem-solver (Design that ships; form follows function)
+- legal:      pragmatic-advisor        (Risk-calibrated; enables the business to move)
 ```
 
 ---

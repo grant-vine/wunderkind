@@ -1,0 +1,7 @@
+   14920 agents/ciso.md
+   10491 agents/creative-director.md
+   19009 agents/fullstack-wunderkind.md
+   11356 agents/legal-counsel.md
+   12051 agents/marketing-wunderkind.md
+   19188 agents/product-wunderkind.md
+   87015 total

@@ -88,7 +88,7 @@ Documentation Output (`docs-output`) allows agents to write persistent files to 
 
 ### Configuration (`src/agents/docs-config.ts`)
 
-`AGENT_DOCS_CONFIG` maps all 12 agent keys to their `canonicalFilename` and `eligible` status. When adding a new agent, add an entry to this record first.
+`AGENT_DOCS_CONFIG` maps all 6 retained agent keys to their `canonicalFilename` and `eligible` status. When adding a new agent, add an entry to this record first.
 
 - **`canonicalFilename`**: The filename agents are instructed to write to (e.g. `marketing-strategy.md`).
 - **`eligible`**: Boolean flag determining if an agent is authorized to write to disk.
@@ -174,20 +174,14 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 
 | Agent key | Role | Category |
 |---|---|---|
-| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | writing |
+| `wunderkind:marketing-wunderkind` | CMO-calibre strategist (brand, community, devrel, GTM) | writing |
 | `wunderkind:creative-director` | Brand & UI/UX lead | visual-engineering |
-| `wunderkind:product-wunderkind` | VP Product | writing |
+| `wunderkind:product-wunderkind` | VP Product — default orchestrator/front door | writing |
 | `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | unspecified-high |
-| `wunderkind:brand-builder` | Community, PR, thought leadership | writing |
-| `wunderkind:qa-specialist` | TDD, coverage, user story review | unspecified-high |
-| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | unspecified-high |
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
-| `wunderkind:devrel-wunderkind` | Developer relations and advocacy | writing |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
-| `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
-| `wunderkind:data-analyst` | Data analysis and insights | writing |
 
-Sub-skills: `social-media-maven` + `technical-writer` (marketing) · `visual-artist` (creative) · `agile-pm` + `grill-me` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `write-a-skill` (product) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal).
+Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
 
 ---
 
