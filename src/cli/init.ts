@@ -25,7 +25,6 @@ export interface InitOptions {
   docsPath?: string
   docHistoryMode?: string
   prdPipelineMode?: PrdPipelineMode
-  desloppifyEnabled?: boolean
 }
 
 const PROJECT_CONTEXT_MARKERS = ["package.json", "bun.lockb", "bun.lock", "tsconfig.json", "pyproject.toml", ".git"] as const
@@ -227,13 +226,6 @@ export async function runInit(options: InitOptions): Promise<number> {
       prdPipelineMode: options.prdPipelineMode ?? detected.prdPipelineMode,
     }
 
-    if (detected.desloppifyEnabled) {
-      config.desloppifyEnabled = true
-    }
-    if (options.desloppifyEnabled !== undefined) {
-      config.desloppifyEnabled = options.desloppifyEnabled
-    }
-
     if (!noTui) {
       const teamCulture = await promptSelect(
         "Team culture baseline:",
@@ -333,13 +325,6 @@ export async function runInit(options: InitOptions): Promise<number> {
       )
       if (prdPipelineMode === null) return 1
 
-      const desloppifyEnabledRaw = await p.confirm({
-        message: "Enable Desloppify code-health support? (requires Python 3.11+)",
-        initialValue: config.desloppifyEnabled === true,
-      })
-      if (p.isCancel(desloppifyEnabledRaw)) return 1
-      const desloppifyEnabled = desloppifyEnabledRaw
-
       if (docsEnabled) {
         const docsPathRaw = await p.text({
           message: "Docs output directory path (relative):",
@@ -373,7 +358,6 @@ export async function runInit(options: InitOptions): Promise<number> {
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
       config.prdPipelineMode = prdPipelineMode
-      config.desloppifyEnabled = desloppifyEnabled
     }
 
     if (config.prdPipelineMode === "github") {

@@ -154,7 +154,7 @@ program
     [
       "Add AI tooling traces to .gitignore in the current directory.",
       "",
-      "Adds entries for: .wunderkind/, AGENTS.md, .desloppify/, .sisyphus/, .opencode/",
+      "Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/, .opencode/",
       "Skips entries that are already present. Safe to run multiple times.",
     ].join("\n"),
   )
@@ -203,7 +203,6 @@ program
   )
   .option("--no-tui", "Run non-interactive project bootstrap")
   .option("--docs-enabled <yes|no>", "Enable docs output during init")
-  .option("--desloppify-enabled <yes|no>", "Enable Desloppify code-health support during init")
   .option("--docs-path <path>", "Docs output path (relative to current project)")
   .option("--doc-history-mode <mode>", "Doc history mode: overwrite | append-dated | new-dated-file | overwrite-archive")
   .addHelpText(
@@ -212,7 +211,6 @@ program
       "",
       "Example:",
       "  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs",
-      "  bunx @grant-vine/wunderkind init --no-tui --desloppify-enabled=yes",
       "",
       "PRD workflow modes:",
       "  - filesystem: writes PRDs/plans/issues into .sisyphus/",
@@ -222,12 +220,10 @@ program
   .action(async (opts: {
     tui: boolean
     docsEnabled?: string | undefined
-    desloppifyEnabled?: string | undefined
     docsPath?: string | undefined
     docHistoryMode?: string | undefined
   }) => {
     let docsEnabled: boolean | undefined
-    let desloppifyEnabled: boolean | undefined
     if (typeof opts.docsEnabled === "string") {
       const normalized = opts.docsEnabled.trim().toLowerCase()
       if (normalized === "yes" || normalized === "y" || normalized === "true") {
@@ -240,22 +236,9 @@ program
       }
     }
 
-    if (typeof opts.desloppifyEnabled === "string") {
-      const normalized = opts.desloppifyEnabled.trim().toLowerCase()
-      if (normalized === "yes" || normalized === "y" || normalized === "true") {
-        desloppifyEnabled = true
-      } else if (normalized === "no" || normalized === "n" || normalized === "false") {
-        desloppifyEnabled = false
-      } else {
-        console.error(`Error: --desloppify-enabled must be yes|no, got: "${opts.desloppifyEnabled}"`)
-        process.exit(1)
-      }
-    }
-
     const initOptions: {
       noTui: boolean
       docsEnabled?: boolean
-      desloppifyEnabled?: boolean
       docsPath?: string
       docHistoryMode?: DocHistoryMode
     } = {
@@ -263,7 +246,6 @@ program
     }
 
     if (docsEnabled !== undefined) initOptions.docsEnabled = docsEnabled
-    if (desloppifyEnabled !== undefined) initOptions.desloppifyEnabled = desloppifyEnabled
     if (opts.docsPath !== undefined) initOptions.docsPath = opts.docsPath
     if (opts.docHistoryMode !== undefined) initOptions.docHistoryMode = opts.docHistoryMode as DocHistoryMode
 

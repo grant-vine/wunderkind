@@ -204,10 +204,6 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     prdPipelineMode: detected.prdPipelineMode,
   }
 
-  if (detected.desloppifyEnabled) {
-    config.desloppifyEnabled = true
-  }
-
   const spinner = p.spinner()
 
   spinner.start("Applying configuration")

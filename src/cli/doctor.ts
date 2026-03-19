@@ -41,10 +41,6 @@ function renderBaselineLine(label: string, value: string, marker: "●" | "○",
   line(label, `${color.cyan(configValue(value))} ${color.dim(`${marker} ${sourceLabel}`)}`)
 }
 
-function renderBooleanSettingLine(label: string, value: boolean, marker: "●" | "○", sourceLabel: string): void {
-  line(label, `${color.cyan(String(value))} ${color.dim(`${marker} ${sourceLabel}`)}`)
-}
-
 export async function runDoctor(): Promise<number> {
   return runDoctorWithOptions({})
 }
@@ -236,22 +232,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
       if (options.verbose) {
         section("Project Configuration")
-        const desloppifyMarker =
-          projectConfig !== null && "desloppifyEnabled" in projectConfig && typeof projectConfig.desloppifyEnabled === "boolean"
-            ? { marker: "●" as const, sourceLabel: "project override" as const }
-            : { marker: "○" as const, sourceLabel: "inherited default" as const }
         line("team culture:", color.cyan(projectConfig?.teamCulture ?? detected.teamCulture))
         line("org structure:", color.cyan(projectConfig?.orgStructure ?? detected.orgStructure))
         line("docs-output enabled:", status((projectConfig?.docsEnabled ?? detected.docsEnabled) === true))
         line("docs-output path:", color.cyan(projectConfig?.docsPath ?? detected.docsPath))
         line("docs-output history mode:", color.cyan(projectConfig?.docHistoryMode ?? detected.docHistoryMode))
         line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
-        renderBooleanSettingLine(
-          "desloppifyEnabled:",
-          projectConfig?.desloppifyEnabled ?? detected.desloppifyEnabled,
-          desloppifyMarker.marker,
-          desloppifyMarker.sourceLabel,
-        )
 
         section("Agent Personalities")
         const cisoVal = projectConfig?.cisoPersonality ?? detected.cisoPersonality

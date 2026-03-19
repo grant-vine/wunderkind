@@ -143,10 +143,6 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     prdPipelineMode: detected.prdPipelineMode,
   }
 
-  if (detected.desloppifyEnabled) {
-    config.desloppifyEnabled = true
-  }
-
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")
   const pluginResult = addPluginToOpenCodeConfig(args.scope)
   if (!pluginResult.success) {
@@ -275,10 +271,6 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
       ...persisted,
       ...detected,
       ...nextConfig,
-    }
-
-    if (args.scope === "project" && persisted.desloppifyEnabled === undefined && detected.desloppifyEnabled !== true) {
-      delete configForWrite.desloppifyEnabled
     }
 
     const configResult = writeWunderkindConfig(configForWrite, args.scope)

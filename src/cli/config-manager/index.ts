@@ -66,7 +66,6 @@ const PROJECT_CONFIG_KEYS = [
   "docsPath",
   "docHistoryMode",
   "prdPipelineMode",
-  "desloppifyEnabled",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -421,7 +420,6 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
   if (typeof source["prdPipelineMode"] === "string") result.prdPipelineMode = source["prdPipelineMode"] as PrdPipelineMode
-  if (typeof source["desloppifyEnabled"] === "boolean") result.desloppifyEnabled = source["desloppifyEnabled"]
 
   return result
 }
@@ -597,14 +595,7 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // PRD pipeline mode: "filesystem" | "github"`,
   )
 
-  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode)}${config.desloppifyEnabled !== undefined ? "," : ""}`)
-
-  if (config.desloppifyEnabled !== undefined) {
-    lines.push(
-      `  // Optional code-health workflow toggle for the fullstack-owned Desloppify skill`,
-      `  "desloppifyEnabled": ${JSON.stringify(config.desloppifyEnabled)}`,
-    )
-  }
+  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")}`)
 
   lines.push(`}`, ``)
 
@@ -666,7 +657,6 @@ export function detectCurrentConfig(): DetectedConfig {
     projectOpenCodeConfigPath: projectResolution.path,
     globalOpenCodeConfigPath: globalResolution.path,
     ...defaults,
-    desloppifyEnabled: false,
   }
 
   const registration = detectRegistration()
@@ -710,7 +700,6 @@ export function detectCurrentConfig(): DetectedConfig {
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
     prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
-    desloppifyEnabled: projectLocal?.desloppifyEnabled ?? legacyGlobalProject.desloppifyEnabled ?? false,
   }
 }
 
@@ -1031,7 +1020,7 @@ export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
     rmSync(GLOBAL_WUNDERKIND_CONFIG, { force: true })
 
     if (existsSync(GLOBAL_WUNDERKIND_DIR) && readdirSync(GLOBAL_WUNDERKIND_DIR).length === 0) {
-      rmSync(GLOBAL_WUNDERKIND_DIR, { recursive: false, force: true })
+      rmSync(GLOBAL_WUNDERKIND_DIR, { recursive: true, force: true })
     }
 
     return { success: true, configPath: GLOBAL_WUNDERKIND_CONFIG, changed: true }

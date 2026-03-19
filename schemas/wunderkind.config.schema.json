@@ -38,8 +38,7 @@
         "docsEnabled": { "type": "boolean" },
         "docsPath": { "type": "string" },
         "docHistoryMode": { "enum": ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"] },
-        "prdPipelineMode": { "enum": ["filesystem", "github"] },
-        "desloppifyEnabled": { "type": "boolean", "description": "Enable opt-in Desloppify code-health workflow support" }
+        "prdPipelineMode": { "enum": ["filesystem", "github"] }
       },
       "required": [
         "$schema",

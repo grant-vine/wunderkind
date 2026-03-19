@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { homedir, tmpdir } from "node:os"
+import { join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
 
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
@@ -26,7 +29,6 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
   prdPipelineMode: "filesystem" as const,
-  desloppifyEnabled: false,
     ...overrides,
   }
 }
@@ -184,6 +186,34 @@ describe("runUninstall", () => {
     } finally {
       console.log = originalLog
       console.error = originalError
+    }
+  })
+
+  it("removes an empty global Wunderkind directory after deleting the global config file", async () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-uninstall-empty-global-dir-"))
+    const fakeHome = join(testRoot, "fake-home")
+    const globalDir = join(fakeHome, ".wunderkind")
+    const globalConfigPath = join(globalDir, "wunderkind.config.jsonc")
+
+    try {
+      mkdirSync(globalDir, { recursive: true })
+      writeFileSync(globalConfigPath, "{}\n")
+      mock.module("node:os", () => ({ homedir: () => fakeHome }))
+
+      const { removeGlobalWunderkindConfig } = await import(
+        `../../src/cli/config-manager/index.ts?uninstall-empty-global-dir=${Date.now()}`,
+      )
+
+      const result = removeGlobalWunderkindConfig()
+
+      expect(result.success).toBe(true)
+      expect(result.changed).toBe(true)
+      expect(result.configPath).toBe(globalConfigPath)
+      expect(existsSync(globalConfigPath)).toBe(false)
+      expect(existsSync(globalDir)).toBe(false)
+    } finally {
+      mock.module("node:os", () => ({ homedir }))
+      rmSync(testRoot, { recursive: true, force: true })
     }
   })
 })
