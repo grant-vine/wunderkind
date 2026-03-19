@@ -82,9 +82,16 @@ export function buildDocsInstruction(
 
 History mode: ${docHistoryMode}
 - overwrite: Replace the file contents each time.
-- append-dated: Append a dated section to the file.
-- new-dated-file: Create a new file with a date suffix.
+- append-dated: Append a dated section to the file (e.g. ## Update 2026-03-12T18-37-52Z).
+- new-dated-file: Create a new file with a UTC timestamp suffix (e.g. marketing-strategy--2026-03-12T18-37-52Z.md).
 - overwrite-archive: Overwrite the current file and archive the old one.
+
+UTC Timestamp Contract:
+- Always use the exact ISO 8601 UTC format: YYYY-MM-DDTHH-mm-ssZ
+- Example: 2026-03-12T18-37-52Z
+- Within a single \`/docs-index\` run, all participating agents reuse the same shared base timestamp token provided in the prompt context.
+- Timestamped files derived from canonical basenames (e.g. basename--<timestamp>.md) are managed family files belonging to that agent's document set.
+- Existing date-only files or sections (e.g. YYYY-MM-DD) remain untouched; do not migrate them.
 
 Use the configured docs path exactly as provided: ${docsPath}
 The docs path is always relative to the current project root. Do not inspect or write outside that root.
