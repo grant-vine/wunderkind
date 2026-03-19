@@ -1,6 +1,6 @@
 # Wunderkind
 
-Wunderkind — specialist AI agent addon for OpenCode that extends your team with 12 professional agents covering marketing, design, product, engineering, brand building, QA, operations, security, devrel, legal, support, and data analysis.
+Wunderkind — specialist AI agent addon for OpenCode that extends your team with 6 retained specialist agents covering marketing, design, product, engineering, security, and legal.
 
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
@@ -150,7 +150,7 @@ wunderkind init [options]
 | `--desloppify-enabled <yes\|no>` | Enable opt-in Desloppify code-health support | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, docs-output settings, and whether to enable Desloppify code-health support. It can also optionally walk you through specialist personality overrides; if you skip that step, Wunderkind keeps the current/default specialist personalities already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+Interactive `wunderkind init` always asks for team culture, org structure, docs-output settings, and whether to enable Desloppify code-health support. It can also optionally create project-local SOUL files for any retained persona; if you skip that step, Wunderkind keeps the neutral retained prompts and current/default personality settings already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
@@ -320,20 +320,14 @@ Wunderkind installs native markdown assets into OpenCode's supported directories
 
 | Agent Key | Role | OpenCode Category |
 |---|---|---|
-| `marketing-wunderkind` | CMO-calibre strategist | `writing` |
+| `marketing-wunderkind` | CMO-calibre strategist for brand, community, developer advocacy, docs-led launches, and GTM | `writing` |
 | `creative-director` | Brand & UI/UX lead | `visual-engineering` |
 | `product-wunderkind` | VP Product | `writing` |
 | `fullstack-wunderkind` | CTO-calibre engineer | `unspecified-high` |
-| `brand-builder` | Community, PR, thought leadership | `writing` |
-| `qa-specialist` | TDD, coverage, user story review | `unspecified-high` |
-| `operations-lead` | SRE/SLO, runbooks, incident response | `unspecified-high` |
 | `ciso` | Security architecture, OWASP, compliance | `unspecified-high` |
-| `devrel-wunderkind` | Developer relations and advocacy | `writing` |
 | `legal-counsel` | Legal and regulatory compliance | `writing` |
-| `support-engineer` | Technical support and troubleshooting | `writing` |
-| `data-analyst` | Data analysis and insights | `writing` |
 
-Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are static defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`.
+Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are neutral defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`, plus optional project-local SOUL overlays in `.wunderkind/souls/<agent-key>.md`.
 
 > **About prompt size:** Wunderkind specialists are intentionally more focused and domain-heavy than many generic assistants. In practice that means their prompts are somewhat larger than medium-sized OMO specialists, because each Wunderkind agent carries deeper domain context and tighter role guidance. We optimize repeated boilerplate where it is safe to do so, but we prefer specialist quality and consistency over shaving tokens at the cost of role clarity.
 
@@ -351,7 +345,7 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
 | `ubiquitous-language` | product-wunderkind | Shared domain glossary & canonical terminology |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
-| `triage-issue` | product-wunderkind | Root-cause triage and red-green handoff |
+| `triage-issue` | product-wunderkind | Issue intake, repro shaping, acceptance clarity, and backlog-ready handoff |
 | `experimentation-analyst` | product-wunderkind | Product experiments, feature readouts, and statistical interpretation |
 | `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
@@ -372,7 +366,8 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 
 Wunderkind uses a split configuration model:
 - global config stores shared market/regulation defaults
-- project config stores soul/personality/docs/workflow settings plus only the baseline values that intentionally override those defaults
+- project config stores personality/docs/workflow settings plus only the baseline values that intentionally override those defaults
+- project-local SOUL files in `.wunderkind/souls/` store long-form persona customization and durable learned context
 
 | File | Scope |
 |---|---|
@@ -410,19 +405,13 @@ Edit the global file to change region/industry/regulation defaults after install
   // Org structure — "flat" (peers) | "hierarchical" (domain authority applies)
   "orgStructure": "flat",
 
-  // Agent personalities — controls each agent's default character archetype
+  // Agent personalities — controls each retained agent's default character archetype
   "cisoPersonality": "pragmatic-risk-manager",
   "ctoPersonality": "code-archaeologist",
   "cmoPersonality": "data-driven",
-  "qaPersonality": "risk-based-pragmatist",
   "productPersonality": "outcome-obsessed",
-  "opsPersonality": "on-call-veteran",
   "creativePersonality": "pragmatic-problem-solver",
-  "brandPersonality": "authentic-builder",
-  "devrelPersonality": "dx-engineer",
   "legalPersonality": "pragmatic-advisor",
-  "supportPersonality": "systematic-triage",
-  "dataAnalystPersonality": "insight-storyteller",
 
   // Documentation Output (Init-only customizations)
   "docsEnabled": false,
@@ -448,48 +437,32 @@ Each agent's behaviour is controlled by a `*Personality` key in your project con
 | Value | What it means |
 |---|---|
 | `paranoid-enforcer` | Maximum threat paranoia; blocks anything unproven |
-| `pragmatic-risk-manager` | Balances risk vs. velocity; default posture (default) |
-| `educator-collaborator` | Guides teams through security thinking collaboratively |
+| `pragmatic-risk-manager` | Balances risk, incident urgency, compliance impact, and delivery speed; default posture (default) |
+| `educator-collaborator` | Guides teams through security thinking, incident posture, and compliance tradeoffs collaboratively |
 
 ### CTO / Fullstack (`ctoPersonality`)
 
 | Value | What it means |
 |---|---|
-| `grizzled-sysadmin` | Battle-hardened ops mindset; stability over novelty |
-| `startup-bro` | Move fast; bias toward shipping |
-| `code-archaeologist` | Deep digs into legacy systems; explains history (default) |
+| `grizzled-sysadmin` | Battle-hardened ops mindset; stability, runbooks, supportability, and regression proof over novelty |
+| `startup-bro` | Move fast; bias toward shipping, direct technical triage, and pragmatic test depth |
+| `code-archaeologist` | Deep digs into legacy systems, flaky tests, and recurring incident history before changing architecture (default) |
 
 ### CMO / Marketing (`cmoPersonality`)
 
 | Value | What it means |
 |---|---|
-| `data-driven` | Metrics and attribution first; no vanity metrics (default) |
-| `brand-storyteller` | Narrative and emotional resonance over raw data |
-| `growth-hacker` | Experiments, loops, and funnel obsession |
-
-### QA (`qaPersonality`)
-
-| Value | What it means |
-|---|---|
-| `rule-enforcer` | Strict standards; gates every release |
-| `risk-based-pragmatist` | Tests what matters most; ships with confidence (default) |
-| `rubber-duck` | Walks devs through their own bugs; collaborative |
+| `data-driven` | Metrics, attribution, community health, docs adoption, activation, and TTFV first; no vanity metrics (default) |
+| `brand-storyteller` | Narrative, PR trust-building, thought leadership, and developer education over raw data alone |
+| `growth-hacker` | Experiments, onboarding loops, docs-led adoption, community flywheels, and funnel obsession |
 
 ### Product (`productPersonality`)
 
 | Value | What it means |
 |---|---|
-| `user-advocate` | User pain and delight over internal efficiency |
-| `velocity-optimizer` | Throughput and cycle time over perfect specs |
-| `outcome-obsessed` | Business outcomes and measurable impact first (default) |
-
-### Operations (`opsPersonality`)
-
-| Value | What it means |
-|---|---|
-| `on-call-veteran` | Incident-hardened; runbook-first (default) |
-| `efficiency-maximiser` | Automates everything; cost and throughput focused |
-| `process-purist` | Change management and process integrity |
+| `user-advocate` | User pain, issue clarity, adoption friction, and acceptance quality over internal efficiency |
+| `velocity-optimizer` | Throughput, backlog-ready triage, and rapid experiment cadence over perfect specs |
+| `outcome-obsessed` | Business outcomes, acceptance rigor, issue intake quality, and usage-driven prioritization first (default) |
 
 ### Creative Director (`creativePersonality`)
 
@@ -499,22 +472,6 @@ Each agent's behaviour is controlled by a `*Personality` key in your project con
 | `bold-provocateur` | Intentionally disruptive visual choices |
 | `pragmatic-problem-solver` | Design that ships; form follows function (default) |
 
-### Brand Builder (`brandPersonality`)
-
-| Value | What it means |
-|---|---|
-| `community-evangelist` | Builds through authentic community engagement |
-| `pr-spinner` | Narrative control and media-savvy messaging |
-| `authentic-builder` | No spin; build trust through radical transparency (default) |
-
-### DevRel (`devrelPersonality`)
-
-| Value | What it means |
-|---|---|
-| `community-champion` | Forum presence, events, OSS contribution |
-| `docs-perfectionist` | Every API documented; no gaps tolerated |
-| `dx-engineer` | Developer experience as a product; DX metrics (default) |
-
 ### Legal Counsel (`legalPersonality`)
 
 | Value | What it means |
@@ -522,22 +479,6 @@ Each agent's behaviour is controlled by a `*Personality` key in your project con
 | `cautious-gatekeeper` | Blocks anything legally ambiguous |
 | `pragmatic-advisor` | Risk-calibrated; enables the business to move (default) |
 | `plain-english-counselor` | Translates legalese into plain language |
-
-### Support Engineer (`supportPersonality`)
-
-| Value | What it means |
-|---|---|
-| `empathetic-resolver` | Treats every ticket as a relationship |
-| `systematic-triage` | Classification, routing, and severity-driven (default) |
-| `knowledge-builder` | Every fix becomes a doc; knowledge loop focus |
-
-### Data Analyst (`dataAnalystPersonality`)
-
-| Value | What it means |
-|---|---|
-| `rigorous-statistician` | Significance, confidence intervals, no p-hacking |
-| `insight-storyteller` | Translates data into narratives for decisions (default) |
-| `pragmatic-quant` | Good-enough analysis fast; directional signals |
 
 ---
 
@@ -548,6 +489,8 @@ Each agent's behaviour is controlled by a `*Personality` key in your project con
 ```
 .wunderkind/
   wunderkind.config.jsonc     # per-project config override
+  souls/
+    <agent-key>.md            # optional project-local SOUL overlays for retained personas
 ```
 
 ### Global (`~/.wunderkind/`)

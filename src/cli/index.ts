@@ -22,9 +22,8 @@ program
     [
       "Wunderkind — specialist AI agents for any software product team.",
       "",
-      "Adds twelve specialist native OpenCode agents covering",
-      "marketing, design, product, engineering, brand, QA, operations,",
-      "security, devrel, legal, support, and data analysis — each",
+      "Adds six retained native OpenCode agents covering",
+      "marketing, design, product, engineering, security, and legal — each",
       "guided by your region, industry, and data-protection defaults when configured.",
       "",
       "Examples:",
@@ -196,7 +195,7 @@ program
     [
       "Initialize Wunderkind in the current project folder.",
       "",
-      "Bootstraps project-local soul/personality config and soul files (.sisyphus, AGENTS.md, docs README).",
+      "Bootstraps project-local config, optional retained-persona SOUL files, and soul files (.sisyphus, AGENTS.md, docs README).",
       "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
       "Init also configures the PRD/planning workflow mode for this project.",
       "Requires Wunderkind to already be installed via `wunderkind install`.",

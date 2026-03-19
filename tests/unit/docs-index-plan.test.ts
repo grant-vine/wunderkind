@@ -10,7 +10,7 @@ describe("docs-index plan", () => {
     const plan = buildDocsIndexPlan("./docs")
 
     expect(plan.docsPath).toBe("docs")
-    expect(plan.entries.length).toBe(9)
+    expect(plan.entries.length).toBe(5)
     expect(plan.entries.every((entry) => entry.targetPath.startsWith("docs/"))).toBe(true)
   })
 

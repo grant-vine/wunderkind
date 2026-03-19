@@ -21,12 +21,12 @@
 
   "agents": {
     // ── Marketing ──────────────────────────────────────────────────────────────
-    // CMO-calibre: go-to-market, brand, content, SEO/SEM, paid media, analytics
+    // CMO-calibre: go-to-market, brand, community, developer advocacy, docs-led launches, analytics
     "wunderkind:marketing-wunderkind": {
       "mode": "primary",
       "category": "writing",
       "color": "#FF6B35",
-      "description": "CMO-calibre marketing strategist. Brand, GTM, content, SEO/SEM, paid media, analytics, PR."
+      "description": "CMO-calibre marketing strategist. Brand, GTM, community, PR, developer advocacy, docs-led launches, tutorials, migration support, funnel analytics, and DX adoption work."
     },
 
     // ── Design ─────────────────────────────────────────────────────────────────
@@ -56,33 +56,6 @@
       "description": "CTO-calibre full-stack engineer. Frontend, backend, DB, Vercel, architecture, AI integration."
     },
 
-    // ── Brand & Community ───────────────────────────────────────────────────────
-    // Community strategy, thought leadership, PR, spend gating
-    "wunderkind:brand-builder": {
-      "mode": "primary",
-      "category": "writing",
-      "color": "#F59E0B",
-      "description": "Community strategy, thought leadership, PR narrative, forum targeting, ROI gating."
-    },
-
-    // ── Quality ─────────────────────────────────────────────────────────────────
-    // TDD, test writing, Playwright/Vitest, coverage analysis, story review
-    "wunderkind:qa-specialist": {
-      "mode": "primary",
-      "category": "unspecified-high",
-      "color": "#06B6D4",
-      "description": "TDD, test writing, Playwright, Vitest, coverage analysis, user story review, security boundary testing."
-    },
-
-    // ── Operations ──────────────────────────────────────────────────────────────
-    // SRE/SLO, admin tooling (build-first), runbooks, incident response, observability
-    "wunderkind:operations-lead": {
-      "mode": "primary",
-      "category": "unspecified-high",
-      "color": "#EF4444",
-      "description": "SRE/SLO, admin tooling (build-first), runbooks, incident response, observability."
-    },
-
     // ── Security ────────────────────────────────────────────────────────────────
     // CISO: security architecture, OWASP, threat modelling, compliance, pen testing
     "wunderkind:ciso": {
@@ -92,15 +65,6 @@
       "description": "CISO: security architecture, OWASP, threat modelling, GDPR/CCPA/POPIA, pen testing, breach response."
     },
 
-    // ── DevRel ──────────────────────────────────────────────────────────────────
-    // Developer relations, DX, API docs, tutorials, migration guides, OSS community
-    "wunderkind:devrel-wunderkind": {
-      "mode": "primary",
-      "category": "writing",
-      "color": "#8B5CF6",
-      "description": "Developer relations, DX, API docs, tutorials, migration guides, OSS community, getting started guides."
-    },
-
     // ── Legal ────────────────────────────────────────────────────────────────────
     // OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA obligations
     "wunderkind:legal-counsel": {
@@ -108,24 +72,6 @@
       "category": "writing",
       "color": "#6366F1",
       "description": "OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA compliance obligations."
-    },
-
-    // ── Support ──────────────────────────────────────────────────────────────────
-    // Bug triage, issue classification, repro steps, severity rating, engineering handoff
-    "wunderkind:support-engineer": {
-      "mode": "primary",
-      "category": "writing",
-      "color": "#F97316",
-      "description": "Bug triage, issue classification, repro steps, severity rating, engineering handoff, support synthesis."
-    },
-
-    // ── Data Analyst ─────────────────────────────────────────────────────────────
-    // Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments
-    "wunderkind:data-analyst": {
-      "mode": "primary",
-      "category": "writing",
-      "color": "#14B8A6",
-      "description": "Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiments, metric definitions."
     }
   }
 }

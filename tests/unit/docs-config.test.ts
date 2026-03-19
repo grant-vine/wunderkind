@@ -12,14 +12,8 @@ const EXPECTED_AGENT_KEYS = [
   "creative-director",
   "product-wunderkind",
   "fullstack-wunderkind",
-  "brand-builder",
-  "qa-specialist",
-  "operations-lead",
   "ciso",
-  "devrel-wunderkind",
   "legal-counsel",
-  "support-engineer",
-  "data-analyst",
 ] as const
 
 describe("docs-config", () => {
@@ -28,7 +22,7 @@ describe("docs-config", () => {
     expect(AGENT_DOCS_CONFIG === null).toBe(false)
   })
 
-  it("contains all 12 expected agent keys", () => {
+  it("contains all 6 expected agent keys", () => {
     for (const key of EXPECTED_AGENT_KEYS) {
       expect(AGENT_DOCS_CONFIG[key]).toBeDefined()
     }
@@ -92,11 +86,7 @@ describe("docs-config", () => {
       "creative-director",
       "product-wunderkind",
       "fullstack-wunderkind",
-      "brand-builder",
-      "qa-specialist",
-      "operations-lead",
       "ciso",
-      "devrel-wunderkind",
     ])
   })
 

@@ -260,24 +260,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         line("fullstack:", `${color.cyan(ctoVal)}  ${color.dim(`(${PERSONALITY_META.cto[ctoVal]?.hint ?? ctoVal})`)}`)
         const cmoVal = projectConfig?.cmoPersonality ?? detected.cmoPersonality
         line("marketing:", `${color.cyan(cmoVal)}  ${color.dim(`(${PERSONALITY_META.cmo[cmoVal]?.hint ?? cmoVal})`)}`)
-        const qaVal = projectConfig?.qaPersonality ?? detected.qaPersonality
-        line("qa:", `${color.cyan(qaVal)}  ${color.dim(`(${PERSONALITY_META.qa[qaVal]?.hint ?? qaVal})`)}`)
         const productVal = projectConfig?.productPersonality ?? detected.productPersonality
         line("product:", `${color.cyan(productVal)}  ${color.dim(`(${PERSONALITY_META.product[productVal]?.hint ?? productVal})`)}`)
-        const opsVal = projectConfig?.opsPersonality ?? detected.opsPersonality
-        line("ops:", `${color.cyan(opsVal)}  ${color.dim(`(${PERSONALITY_META.ops[opsVal]?.hint ?? opsVal})`)}`)
         const creativeVal = projectConfig?.creativePersonality ?? detected.creativePersonality
         line("creative:", `${color.cyan(creativeVal)}  ${color.dim(`(${PERSONALITY_META.creative[creativeVal]?.hint ?? creativeVal})`)}`)
-        const brandVal = projectConfig?.brandPersonality ?? detected.brandPersonality
-        line("brand:", `${color.cyan(brandVal)}  ${color.dim(`(${PERSONALITY_META.brand[brandVal]?.hint ?? brandVal})`)}`)
-        const devrelVal = projectConfig?.devrelPersonality ?? detected.devrelPersonality
-        line("devrel:", `${color.cyan(devrelVal)}  ${color.dim(`(${PERSONALITY_META.devrel[devrelVal]?.hint ?? devrelVal})`)}`)
         const legalVal = projectConfig?.legalPersonality ?? detected.legalPersonality
         line("legal:", `${color.cyan(legalVal)}  ${color.dim(`(${PERSONALITY_META.legal[legalVal]?.hint ?? legalVal})`)}`)
-        const supportVal = projectConfig?.supportPersonality ?? detected.supportPersonality
-        line("support:", `${color.cyan(supportVal)}  ${color.dim(`(${PERSONALITY_META.support[supportVal]?.hint ?? supportVal})`)}`)
-        const dataAnalystVal = projectConfig?.dataAnalystPersonality ?? detected.dataAnalystPersonality
-        line("data analyst:", `${color.cyan(dataAnalystVal)}  ${color.dim(`(${PERSONALITY_META.dataAnalyst[dataAnalystVal]?.hint ?? dataAnalystVal})`)}`)
       } else {
         line("docs-output enabled:", status((projectConfig?.docsEnabled ?? detected.docsEnabled) === true))
       }

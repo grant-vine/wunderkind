@@ -36,8 +36,8 @@ describe("CLI help copy", () => {
   it("uses native OpenCode agent branding in top-level help text", () => {
     const output = runCliHelp("--help")
 
-    expect(output).toContain("Adds twelve specialist native OpenCode agents covering")
-    expect(output).toContain("security, devrel, legal, support, and data analysis")
+    expect(output).toContain("Adds six retained native OpenCode agents covering")
+    expect(output).toContain("marketing, design, product, engineering, security, and legal")
   })
 
   it("does not run install implicitly on bare invocation", () => {

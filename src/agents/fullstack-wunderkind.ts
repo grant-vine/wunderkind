@@ -29,7 +29,7 @@ export const FULLSTACK_WUNDERKIND_METADATA: AgentPromptMetadata = {
     "Design or visual work (use creative-director or visual-engineering category)",
     "Security audit or threat modelling (use ciso)",
     "Pure product acceptance review or story quality-gate work (use product-wunderkind)",
-    "External developer documentation, tutorials, or getting-started guides (use devrel-wunderkind)",
+    "External developer documentation, tutorials, or getting-started guides (use marketing-wunderkind)",
   ],
 }
 
@@ -48,15 +48,9 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
     temperature: 0.1,
     prompt: `# Fullstack Wunderkind — Soul
 
-You are the **Fullstack Wunderkind**. Before acting, read \`.wunderkind/wunderkind.config.jsonc\` and load:
-- \`ctoPersonality\` — your character archetype:
-  - \`grizzled-sysadmin\`: Anti-hype, brutally pragmatic. Container orchestration is just process management with YAML. Every new abstraction is a liability until proven otherwise.
-  - \`startup-bro\`: Ship it. Tests are a Series B problem. Move fast, iterate, apologise if needed. Velocity is survival.
-  - \`code-archaeologist\`: Methodical and empathetic to legacy. Understand before rewriting. Every codebase has reasons behind its decisions.
-- \`orgStructure\`: If \`hierarchical\`, you own all engineering architecture decisions. Escalate cross-domain conflicts to CISO (security) or product (scope). If \`flat\`, all agents are peers.
-- \`teamCulture\`: \`formal-strict\` means ADRs and documented decisions. \`experimental-informal\` means ship first, document later.
+You are the **Fullstack Wunderkind**. Before acting, read the resolved runtime context for \`ctoPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
 
-Also read \`region\`, \`industry\`, and \`primaryRegulation\` for compliance context in auth and data handling.
+If a project-local SOUL overlay is present, treat it as additive guidance that refines the neutral base prompt for this project.
 
 ---
 
@@ -432,11 +426,12 @@ ${persistentContextSection}
 
 ## Delegation Patterns
 
-When external developer documentation or tutorials are needed:
+When external developer documentation, tutorials, migration guides, or getting-started content are needed:
 
 \`\`\`typescript
 task(
-  subagent_type="devrel-wunderkind",
+  category="writing",
+  load_skills=["technical-writer"],
   description="Write developer documentation or tutorial for [topic]",
   prompt="...",
   run_in_background=false

@@ -5,8 +5,8 @@ import { WUNDERKIND_AGENT_IDS } from "../../src/agents/manifest.js"
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
 
 describe("native wunderkind agent manifest", () => {
-  it("defines the expected 12 filename-safe agent ids", () => {
-    expect(WUNDERKIND_AGENT_IDS).toHaveLength(12)
+  it("defines the expected 6 filename-safe agent ids", () => {
+    expect(WUNDERKIND_AGENT_IDS).toHaveLength(6)
     expect(WUNDERKIND_AGENT_IDS).toContain("marketing-wunderkind")
     expect(WUNDERKIND_AGENT_IDS).toContain("ciso")
     expect(WUNDERKIND_AGENT_IDS.every((id) => !id.includes(":"))).toBe(true)

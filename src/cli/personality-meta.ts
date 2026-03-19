@@ -11,15 +11,9 @@ export const PERSONALITY_META: Record<
   | "ciso"
   | "cto"
   | "cmo"
-  | "qa"
   | "product"
-  | "ops"
   | "creative"
-  | "brand"
-  | "devrel"
-  | "legal"
-  | "support"
-  | "dataAnalyst",
+  | "legal",
   Record<string, PersonalityMeta>
 > = {
   teamCulture: {
@@ -53,81 +47,53 @@ export const PERSONALITY_META: Record<
     },
     "pragmatic-risk-manager": {
       label: "pragmatic-risk-manager",
-      hint: "Balances risk vs. velocity; default posture",
+      hint: "Balances risk, incident urgency, compliance impact, and delivery speed; default posture",
     },
     "educator-collaborator": {
       label: "educator-collaborator",
-      hint: "Guides teams through security thinking collaboratively",
+      hint: "Guides teams through security thinking, incident posture, and compliance tradeoffs collaboratively",
     },
   },
   cto: {
     "grizzled-sysadmin": {
       label: "grizzled-sysadmin",
-      hint: "Battle-hardened ops mindset; stability over novelty",
+      hint: "Battle-hardened ops mindset; stability, runbooks, supportability, and regression proof over novelty",
     },
     "startup-bro": {
       label: "startup-bro",
-      hint: "Move fast; bias toward shipping",
+      hint: "Move fast; bias toward shipping, direct technical triage, and pragmatic test depth when risk permits",
     },
     "code-archaeologist": {
       label: "code-archaeologist",
-      hint: "Deep digs into legacy systems; explains history",
+      hint: "Deep digs into legacy systems, flaky tests, and recurring incident history before changing architecture",
     },
   },
   cmo: {
     "data-driven": {
       label: "data-driven",
-      hint: "Metrics and attribution first; no vanity metrics",
+      hint: "Metrics, attribution, community health, docs adoption, activation, and TTFV first; no vanity metrics",
     },
     "brand-storyteller": {
       label: "brand-storyteller",
-      hint: "Narrative and emotional resonance over raw data",
+      hint: "Narrative, PR trust-building, thought leadership, and developer education over raw data alone",
     },
     "growth-hacker": {
       label: "growth-hacker",
-      hint: "Experiments, loops, and funnel obsession",
-    },
-  },
-  qa: {
-    "rule-enforcer": {
-      label: "rule-enforcer",
-      hint: "Strict standards; gates every release",
-    },
-    "risk-based-pragmatist": {
-      label: "risk-based-pragmatist",
-      hint: "Tests what matters most; ships with confidence",
-    },
-    "rubber-duck": {
-      label: "rubber-duck",
-      hint: "Walks devs through their own bugs; collaborative",
+      hint: "Experiments, onboarding loops, docs-led adoption, community flywheels, and funnel obsession",
     },
   },
   product: {
     "user-advocate": {
       label: "user-advocate",
-      hint: "User pain and delight over internal efficiency",
+      hint: "User pain, issue clarity, adoption friction, and acceptance quality over internal efficiency",
     },
     "velocity-optimizer": {
       label: "velocity-optimizer",
-      hint: "Throughput and cycle time over perfect specs",
+      hint: "Throughput, backlog-ready triage, and rapid experiment cadence over perfect specs",
     },
     "outcome-obsessed": {
       label: "outcome-obsessed",
-      hint: "Business outcomes and measurable impact first",
-    },
-  },
-  ops: {
-    "on-call-veteran": {
-      label: "on-call-veteran",
-      hint: "Incident-hardened; runbook-first",
-    },
-    "efficiency-maximiser": {
-      label: "efficiency-maximiser",
-      hint: "Automates everything; cost and throughput focused",
-    },
-    "process-purist": {
-      label: "process-purist",
-      hint: "Change management and process integrity",
+      hint: "Business outcomes, acceptance rigor, issue intake quality, and usage-driven prioritization first",
     },
   },
   creative: {
@@ -144,34 +110,6 @@ export const PERSONALITY_META: Record<
       hint: "Design that ships; form follows function",
     },
   },
-  brand: {
-    "community-evangelist": {
-      label: "community-evangelist",
-      hint: "Builds through authentic community engagement",
-    },
-    "pr-spinner": {
-      label: "pr-spinner",
-      hint: "Narrative control and media-savvy messaging",
-    },
-    "authentic-builder": {
-      label: "authentic-builder",
-      hint: "No spin; build trust through radical transparency",
-    },
-  },
-  devrel: {
-    "community-champion": {
-      label: "community-champion",
-      hint: "Forum presence, events, OSS contribution",
-    },
-    "docs-perfectionist": {
-      label: "docs-perfectionist",
-      hint: "Every API documented; no gaps tolerated",
-    },
-    "dx-engineer": {
-      label: "dx-engineer",
-      hint: "Developer experience as a product; DX metrics",
-    },
-  },
   legal: {
     "cautious-gatekeeper": {
       label: "cautious-gatekeeper",
@@ -184,34 +122,6 @@ export const PERSONALITY_META: Record<
     "plain-english-counselor": {
       label: "plain-english-counselor",
       hint: "Translates legalese into plain language",
-    },
-  },
-  support: {
-    "empathetic-resolver": {
-      label: "empathetic-resolver",
-      hint: "Treats every ticket as a relationship",
-    },
-    "systematic-triage": {
-      label: "systematic-triage",
-      hint: "Classification, routing, and severity-driven",
-    },
-    "knowledge-builder": {
-      label: "knowledge-builder",
-      hint: "Every fix becomes a doc; knowledge loop focus",
-    },
-  },
-  dataAnalyst: {
-    "rigorous-statistician": {
-      label: "rigorous-statistician",
-      hint: "Significance, confidence intervals, no p-hacking",
-    },
-    "insight-storyteller": {
-      label: "insight-storyteller",
-      hint: "Translates data into narratives for decisions",
-    },
-    "pragmatic-quant": {
-      label: "pragmatic-quant",
-      hint: "Good-enough analysis fast; directional signals",
     },
   },
 }

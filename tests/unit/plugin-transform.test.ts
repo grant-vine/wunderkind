@@ -1,0 +1,188 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import type { ProjectConfig } from "../../src/cli/types.js"
+
+const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
+const ORIGINAL_CWD = process.cwd()
+
+const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
+
+mock.module("../../src/cli/config-manager/index.js", () => ({
+  readWunderkindConfig: mockReadWunderkindConfig,
+}))
+
+import WunderkindPlugin from "../../src/index.js"
+
+type PluginInput = Parameters<typeof WunderkindPlugin>[0]
+type PluginResult = Awaited<ReturnType<typeof WunderkindPlugin>>
+type SystemTransform = NonNullable<PluginResult["experimental.chat.system.transform"]>
+type TransformInput = Parameters<SystemTransform>[0]
+type TransformOutput = Parameters<SystemTransform>[1]
+
+type TestOutput = {
+  system: string[]
+}
+
+async function runSystemTransform(output: TestOutput): Promise<void> {
+  const pluginResult = await WunderkindPlugin({} as PluginInput)
+  const transform = pluginResult["experimental.chat.system.transform"]
+
+  if (!transform) {
+    throw new Error("Expected experimental.chat.system.transform to exist")
+  }
+
+  await transform({} as TransformInput, output as TransformOutput)
+}
+
+describe("Wunderkind plugin transform", () => {
+  beforeEach(() => {
+    mockReadWunderkindConfig.mockClear()
+    mockReadWunderkindConfig.mockImplementation(() => null)
+    process.chdir(ORIGINAL_CWD)
+  })
+
+  it("always injects the native agent catalog and delegation rules", async () => {
+    const output: TestOutput = { system: [] }
+
+    await runSystemTransform(output)
+
+    const nativeAgentsSection = output.system.find((entry) => entry.includes("## Wunderkind Native Agents"))
+    if (!nativeAgentsSection) {
+      throw new Error("Expected native agents section")
+    }
+
+    expect(nativeAgentsSection).toContain("marketing-wunderkind")
+    expect(nativeAgentsSection).toContain("creative-director")
+    expect(nativeAgentsSection).toContain("product-wunderkind")
+    expect(nativeAgentsSection).toContain("fullstack-wunderkind")
+    expect(nativeAgentsSection).toContain("ciso")
+    expect(nativeAgentsSection).toContain("legal-counsel")
+    expect(nativeAgentsSection).not.toContain("brand-builder")
+    expect(nativeAgentsSection).not.toContain("qa-specialist")
+    expect(nativeAgentsSection).not.toContain("operations-lead")
+    expect(nativeAgentsSection).not.toContain("devrel-wunderkind")
+    expect(nativeAgentsSection).not.toContain("support-engineer")
+    expect(nativeAgentsSection).not.toContain("data-analyst")
+    expect(nativeAgentsSection).toContain(
+      "Use marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work",
+    )
+    expect(nativeAgentsSection).toContain(
+      "Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability",
+    )
+    expect(nativeAgentsSection).toContain("Use legal-counsel for OSS licensing and legal/compliance review")
+  })
+
+  it("injects resolved runtime context with fallback labels for blank baseline fields", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      region: "South Africa",
+      industry: "",
+      primaryRegulation: "",
+      secondaryRegulation: "GDPR",
+      teamCulture: "experimental-informal",
+      orgStructure: "hierarchical",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await runSystemTransform(output)
+
+    const runtimeContextSection = output.system.find((entry) => entry.includes("## Wunderkind Resolved Runtime Context"))
+    if (!runtimeContextSection) {
+      throw new Error("Expected runtime context section")
+    }
+
+    expect(runtimeContextSection).toContain("- region: South Africa")
+    expect(runtimeContextSection).toContain("- industry: (not set)")
+    expect(runtimeContextSection).toContain("- primary regulation: (not set)")
+    expect(runtimeContextSection).toContain("- secondary regulation: GDPR")
+    expect(runtimeContextSection).toContain("- team culture: experimental-informal")
+    expect(runtimeContextSection).toContain("- org structure: hierarchical")
+  })
+
+  it("does not inject runtime context when no Wunderkind config is available", async () => {
+    const output: TestOutput = { system: [] }
+
+    await runSystemTransform(output)
+
+    expect(output.system.some((entry) => entry.includes("## Wunderkind Resolved Runtime Context"))).toBe(false)
+  })
+
+  it("injects a SOUL overlay for the detected retained persona when a project-local file exists", async () => {
+    const tempDir = join(tmpdir(), `wunderkind-soul-${Date.now()}`)
+    const soulsDir = join(tempDir, ".wunderkind", "souls")
+    const soulContent = [
+      "<!-- wunderkind:soul-file:v1 -->",
+      "# Product Wunderkind SOUL",
+      "",
+      "- agentKey: product-wunderkind",
+      "",
+      "## Customization",
+      "- Priority lens: Optimize for activation first.",
+      "- Challenge style: Push back on weak evidence early.",
+      "- Project memory: Filesystem-first planning is the norm.",
+      "- Anti-goals: Avoid roadmap theater.",
+      "",
+      "## Durable Knowledge",
+      "",
+    ].join("\n")
+
+    mkdirSync(soulsDir, { recursive: true })
+    writeFileSync(join(soulsDir, "product-wunderkind.md"), soulContent, "utf-8")
+    process.chdir(tempDir)
+
+    const output: TestOutput = { system: ["# Product Wunderkind\nBase retained prompt"] }
+
+    try {
+      await runSystemTransform(output)
+      const soulSection = output.system.find((entry) => entry.includes("## Wunderkind SOUL Overlay"))
+      expect(soulSection).toBeDefined()
+      expect(soulSection).toContain("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")
+      expect(soulSection).toContain(soulContent.trim())
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("skips SOUL injection when the persona sentinel is already present", async () => {
+    const tempDir = join(tmpdir(), `wunderkind-soul-idempotent-${Date.now()}`)
+    const soulsDir = join(tempDir, ".wunderkind", "souls")
+
+    mkdirSync(soulsDir, { recursive: true })
+    writeFileSync(join(soulsDir, "product-wunderkind.md"), "# Product Wunderkind SOUL\n", "utf-8")
+    process.chdir(tempDir)
+
+    const output: TestOutput = {
+      system: [
+        "# Product Wunderkind\nBase retained prompt",
+        "<!-- wunderkind:soul-runtime-start:product-wunderkind -->\n## Wunderkind SOUL Overlay\n\nAlready injected",
+      ],
+    }
+
+    try {
+      await runSystemTransform(output)
+      expect(output.system.filter((entry) => entry.includes("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")).length).toBe(1)
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("skips docs injection when the docs sentinel is already present", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsEnabled: true,
+      docsPath: "./docs/output",
+      docHistoryMode: "append-dated",
+    }))
+    const output: TestOutput = {
+      system: [
+        `${DOCS_OUTPUT_SENTINEL}\n## Documentation Output\n\nAlready injected`,
+      ],
+    }
+
+    await runSystemTransform(output)
+
+    expect(output.system.filter((entry) => entry.includes(DOCS_OUTPUT_SENTINEL)).length).toBe(1)
+    expect(output.system.filter((entry) => entry.includes("## Documentation Output")).length).toBe(1)
+    expect(output.system.some((entry) => entry.includes("./docs/output") && entry.includes("append-dated"))).toBe(false)
+  })
+})

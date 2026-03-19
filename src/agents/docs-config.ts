@@ -34,36 +34,12 @@ export const AGENT_DOCS_CONFIG: Record<string, AgentDocsConfig> = {
     canonicalFilename: "engineering-decisions.md",
     eligible: true,
   },
-  "brand-builder": {
-    canonicalFilename: "brand-guidelines.md",
-    eligible: true,
-  },
-  "qa-specialist": {
-    canonicalFilename: "qa-decisions.md",
-    eligible: true,
-  },
-  "operations-lead": {
-    canonicalFilename: "ops-runbooks.md",
-    eligible: true,
-  },
   ciso: {
     canonicalFilename: "security-decisions.md",
     eligible: true,
   },
-  "devrel-wunderkind": {
-    canonicalFilename: "devrel-decisions.md",
-    eligible: true,
-  },
   "legal-counsel": {
     canonicalFilename: "legal-notes.md",
-    eligible: false,
-  },
-  "support-engineer": {
-    canonicalFilename: "support-notes.md",
-    eligible: false,
-  },
-  "data-analyst": {
-    canonicalFilename: "data-analysis.md",
     eligible: false,
   },
 }

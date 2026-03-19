@@ -7,30 +7,24 @@ import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
 import type {
-  BrandPersonality,
   CisoPersonality,
   CmoPersonality,
   ConfigMergeResult,
   CreativePersonality,
   CtoPersonality,
-  DataAnalystPersonality,
   DetectedConfig,
   DocHistoryMode,
-  DevrelPersonality,
   GlobalConfig,
   InstallConfig,
   InstallRegistrationScope,
   InstallScope,
   LegalPersonality,
-  OpsPersonality,
   OrgStructure,
   BaselineConfigKey,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
   PrdPipelineMode,
-  QaPersonality,
-  SupportPersonality,
   TeamCulture,
 } from "../types.js"
 
@@ -65,15 +59,9 @@ const PROJECT_CONFIG_KEYS = [
   "cisoPersonality",
   "ctoPersonality",
   "cmoPersonality",
-  "qaPersonality",
   "productPersonality",
-  "opsPersonality",
   "creativePersonality",
-  "brandPersonality",
-  "devrelPersonality",
   "legalPersonality",
-  "supportPersonality",
-  "dataAnalystPersonality",
   "docsEnabled",
   "docsPath",
   "docHistoryMode",
@@ -93,15 +81,9 @@ const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   cisoPersonality: "pragmatic-risk-manager",
   ctoPersonality: "code-archaeologist",
   cmoPersonality: "data-driven",
-  qaPersonality: "risk-based-pragmatist",
   productPersonality: "outcome-obsessed",
-  opsPersonality: "on-call-veteran",
   creativePersonality: "pragmatic-problem-solver",
-  brandPersonality: "authentic-builder",
-  devrelPersonality: "dx-engineer",
   legalPersonality: "pragmatic-advisor",
-  supportPersonality: "systematic-triage",
-  dataAnalystPersonality: "insight-storyteller",
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite",
@@ -121,15 +103,9 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   cisoPersonality: DEFAULT_INSTALL_CONFIG.cisoPersonality,
   ctoPersonality: DEFAULT_INSTALL_CONFIG.ctoPersonality,
   cmoPersonality: DEFAULT_INSTALL_CONFIG.cmoPersonality,
-  qaPersonality: DEFAULT_INSTALL_CONFIG.qaPersonality,
   productPersonality: DEFAULT_INSTALL_CONFIG.productPersonality,
-  opsPersonality: DEFAULT_INSTALL_CONFIG.opsPersonality,
   creativePersonality: DEFAULT_INSTALL_CONFIG.creativePersonality,
-  brandPersonality: DEFAULT_INSTALL_CONFIG.brandPersonality,
-  devrelPersonality: DEFAULT_INSTALL_CONFIG.devrelPersonality,
   legalPersonality: DEFAULT_INSTALL_CONFIG.legalPersonality,
-  supportPersonality: DEFAULT_INSTALL_CONFIG.supportPersonality,
-  dataAnalystPersonality: DEFAULT_INSTALL_CONFIG.dataAnalystPersonality,
   docsEnabled: DEFAULT_INSTALL_CONFIG.docsEnabled,
   docsPath: DEFAULT_INSTALL_CONFIG.docsPath,
   docHistoryMode: DEFAULT_INSTALL_CONFIG.docHistoryMode,
@@ -434,23 +410,13 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["cisoPersonality"] === "string") result.cisoPersonality = source["cisoPersonality"] as CisoPersonality
   if (typeof source["ctoPersonality"] === "string") result.ctoPersonality = source["ctoPersonality"] as CtoPersonality
   if (typeof source["cmoPersonality"] === "string") result.cmoPersonality = source["cmoPersonality"] as CmoPersonality
-  if (typeof source["qaPersonality"] === "string") result.qaPersonality = source["qaPersonality"] as QaPersonality
   if (typeof source["productPersonality"] === "string") {
     result.productPersonality = source["productPersonality"] as ProductPersonality
   }
-  if (typeof source["opsPersonality"] === "string") result.opsPersonality = source["opsPersonality"] as OpsPersonality
   if (typeof source["creativePersonality"] === "string") {
     result.creativePersonality = source["creativePersonality"] as CreativePersonality
   }
-  if (typeof source["brandPersonality"] === "string") result.brandPersonality = source["brandPersonality"] as BrandPersonality
-  if (typeof source["devrelPersonality"] === "string") result.devrelPersonality = source["devrelPersonality"] as DevrelPersonality
   if (typeof source["legalPersonality"] === "string") result.legalPersonality = source["legalPersonality"] as LegalPersonality
-  if (typeof source["supportPersonality"] === "string") {
-    result.supportPersonality = source["supportPersonality"] as SupportPersonality
-  }
-  if (typeof source["dataAnalystPersonality"] === "string") {
-    result.dataAnalystPersonality = source["dataAnalystPersonality"] as DataAnalystPersonality
-  }
   if (typeof source["docsEnabled"] === "boolean") result.docsEnabled = source["docsEnabled"]
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
@@ -603,29 +569,21 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     ``,
     `  // Agent personalities — controls each agent's default character archetype`,
     `  // CISO: "paranoid-enforcer" | "pragmatic-risk-manager" | "educator-collaborator"`,
+    `  // Also carries security-incident posture and compliance-impact escalation style`,
     `  "cisoPersonality": ${JSON.stringify(config.cisoPersonality)},`,
     `  // CTO/Fullstack: "grizzled-sysadmin" | "startup-bro" | "code-archaeologist"`,
+    `  // Also carries TDD, regression, technical triage, reliability, runbook, and supportability posture`,
     `  "ctoPersonality": ${JSON.stringify(config.ctoPersonality)},`,
     `  // CMO/Marketing: "data-driven" | "brand-storyteller" | "growth-hacker"`,
+    `  // Also carries brand, community, developer advocacy, docs adoption, funnel, and campaign-analysis posture`,
     `  "cmoPersonality": ${JSON.stringify(config.cmoPersonality)},`,
-    `  // QA: "rule-enforcer" | "risk-based-pragmatist" | "rubber-duck"`,
-    `  "qaPersonality": ${JSON.stringify(config.qaPersonality)},`,
     `  // Product: "user-advocate" | "velocity-optimizer" | "outcome-obsessed"`,
+    `  // Also carries issue intake, repro shaping, acceptance review, experiment readouts, and backlog-ready triage posture`,
     `  "productPersonality": ${JSON.stringify(config.productPersonality)},`,
-    `  // Operations: "on-call-veteran" | "efficiency-maximiser" | "process-purist"`,
-    `  "opsPersonality": ${JSON.stringify(config.opsPersonality)},`,
     `  // Creative Director: "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"`,
     `  "creativePersonality": ${JSON.stringify(config.creativePersonality)},`,
-    `  // Brand Builder: "community-evangelist" | "pr-spinner" | "authentic-builder"`,
-    `  "brandPersonality": ${JSON.stringify(config.brandPersonality)},`,
-    `  // DevRel Wunderkind: "community-champion" | "docs-perfectionist" | "dx-engineer"`,
-    `  "devrelPersonality": ${JSON.stringify(config.devrelPersonality)},`,
     `  // Legal Counsel: "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"`,
     `  "legalPersonality": ${JSON.stringify(config.legalPersonality)},`,
-    `  // Support Engineer: "empathetic-resolver" | "systematic-triage" | "knowledge-builder"`,
-    `  "supportPersonality": ${JSON.stringify(config.supportPersonality)},`,
-    `  // Data Analyst: "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"`,
-    `  "dataAnalystPersonality": ${JSON.stringify(config.dataAnalystPersonality)},`,
     ``,
     `  // Docs output settings`,
     `  // Enable or disable writing docs outputs to disk`,
@@ -745,15 +703,9 @@ export function detectCurrentConfig(): DetectedConfig {
     cisoPersonality: projectLocal?.cisoPersonality ?? legacyGlobalProject.cisoPersonality ?? defaults.cisoPersonality,
     ctoPersonality: projectLocal?.ctoPersonality ?? legacyGlobalProject.ctoPersonality ?? defaults.ctoPersonality,
     cmoPersonality: projectLocal?.cmoPersonality ?? legacyGlobalProject.cmoPersonality ?? defaults.cmoPersonality,
-    qaPersonality: projectLocal?.qaPersonality ?? legacyGlobalProject.qaPersonality ?? defaults.qaPersonality,
     productPersonality: projectLocal?.productPersonality ?? legacyGlobalProject.productPersonality ?? defaults.productPersonality,
-    opsPersonality: projectLocal?.opsPersonality ?? legacyGlobalProject.opsPersonality ?? defaults.opsPersonality,
     creativePersonality: projectLocal?.creativePersonality ?? legacyGlobalProject.creativePersonality ?? defaults.creativePersonality,
-    brandPersonality: projectLocal?.brandPersonality ?? legacyGlobalProject.brandPersonality ?? defaults.brandPersonality,
-    devrelPersonality: projectLocal?.devrelPersonality ?? legacyGlobalProject.devrelPersonality ?? defaults.devrelPersonality,
     legalPersonality: projectLocal?.legalPersonality ?? legacyGlobalProject.legalPersonality ?? defaults.legalPersonality,
-    supportPersonality: projectLocal?.supportPersonality ?? legacyGlobalProject.supportPersonality ?? defaults.supportPersonality,
-    dataAnalystPersonality: projectLocal?.dataAnalystPersonality ?? legacyGlobalProject.dataAnalystPersonality ?? defaults.dataAnalystPersonality,
     docsEnabled: projectLocal?.docsEnabled ?? legacyGlobalProject.docsEnabled ?? defaults.docsEnabled,
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
