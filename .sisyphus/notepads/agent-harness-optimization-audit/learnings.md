@@ -74,3 +74,9 @@
 - Split removed-agent authority explicitly: `support-engineer` intake and repro shaping merge into `product-wunderkind`, technical handoff merges into `fullstack-wunderkind`; `operations-lead` reliability and runbooks merge into `fullstack-wunderkind`, while security-incident posture merges into `ciso`.
 - Represented all 19 shipped skills as `extract-as-skill` rows and carried the Task 4 keep/revise inventory into notes so the matrix can stay topology-focused while still preserving the skill-standard disposition context.
 - Explicitly called out the three audit-sensitive skills: `technical-writer` survives under `marketing-wunderkind`, `experimentation-analyst` survives under `product-wunderkind`, and `oss-licensing-advisor` stays under retained `legal-counsel`.
+
+## [2026-03-19] Task 8 orchestrator-first topology
+- Created `.sisyphus/plans/topology-decision.md` as the self-sufficient implementation contract for the retained six-agent topology, including the fixed landing rules, the `product-wunderkind` route/clarify/synthesize/final-answer contract, the canonical-ID reuse rule, and the personality-key retirement mapping.
+- Reframed `src/agents/product-wunderkind.ts` so `product-wunderkind` is explicitly the default front door for all Wunderkind requests while still preserving product craft via the owned skills `grill-me`, `prd-pipeline`, `ubiquitous-language`, and `triage-issue`.
+- Corrected stale product-agent delegation examples so campaign and funnel work routes to `marketing-wunderkind` and post-intake technical issue execution routes to `fullstack-wunderkind`, instead of sending those flows to removed future-state specialist owners.
+- The key safety rule for later tasks is now explicit in both the plan and the prompt: `product-wunderkind` synthesizes and owns final-answer quality, but it must not self-delegate or absorb downstream specialist authority into an infinite orchestration loop.
