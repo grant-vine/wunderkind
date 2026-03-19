@@ -80,3 +80,11 @@
 - Reframed `src/agents/product-wunderkind.ts` so `product-wunderkind` is explicitly the default front door for all Wunderkind requests while still preserving product craft via the owned skills `grill-me`, `prd-pipeline`, `ubiquitous-language`, and `triage-issue`.
 - Corrected stale product-agent delegation examples so campaign and funnel work routes to `marketing-wunderkind` and post-intake technical issue execution routes to `fullstack-wunderkind`, instead of sending those flows to removed future-state specialist owners.
 - The key safety rule for later tasks is now explicit in both the plan and the prompt: `product-wunderkind` synthesizes and owns final-answer quality, but it must not self-delegate or absorb downstream specialist authority into an infinite orchestration loop.
+
+## [2026-03-19] Task 9 SOUL architecture decision
+- Created `.sisyphus/plans/soul-architecture.md` as the implementation contract for optional per-persona SOUL support, fixing the path convention at `.wunderkind/souls/<agent-key>.md` for the six retained agents only.
+- Chose runtime injection in `src/index.ts` rather than build-time generation because `.wunderkind/` is project-local runtime state, `/docs-index` updates need to take effect immediately, and user edits should never require `bun run build`.
+- Fixed the exact SOUL file schema to a Markdown v1 contract with four required customization bullets (`Priority lens`, `Challenge style`, `Project memory`, `Anti-goals`) plus an append-only `## Durable Knowledge` section for later learning events.
+- Made the neutral token-saving rule explicit: no SOUL file means no SOUL payload in base generated agent markdown and no runtime overlay for that persona.
+- Locked the future init flow to an opt-in confirm, a retained-persona multiselect, and four exact framing questions per selected persona so Task 13 can wire the flow without inventing copy or data shape.
+- Defined `/docs-index` update behavior as append-only durable-knowledge entries with project-relative pointers, retained-owner mapping, neutral placeholder creation for missing files, and a dedup rule for repeated refresh output.

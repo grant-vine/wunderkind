@@ -1,0 +1,44 @@
+Task 9 evidence - SOUL architecture decision
+
+Created: 2026-03-19
+Primary artifact: .sisyphus/plans/soul-architecture.md
+
+Read inputs:
+- .sisyphus/plans/agent-harness-optimization-audit.md:553-597
+- .sisyphus/plans/topology-decision.md
+- src/cli/init.ts
+- src/cli/config-manager/index.ts
+- src/cli/doctor.ts
+- src/index.ts
+- src/agents/shared-prompt-sections.ts
+- src/agents/docs-config.ts
+- commands/docs-index.md
+- src/agents/product-wunderkind.ts:54
+- src/agents/fullstack-wunderkind.ts:47
+- src/agents/marketing-wunderkind.ts:56
+- src/agents/creative-director.ts:54
+- src/agents/ciso.ts:55
+- src/agents/legal-counsel.ts:55
+- .sisyphus/notepads/agent-harness-optimization-audit/learnings.md
+- .sisyphus/notepads/agent-harness-optimization-audit/decisions.md
+- tests/unit/plugin-transform.test.ts
+- tests/unit/docs-injection.test.ts
+
+Key evidence captured:
+- Current retained topology is six personas only: product-wunderkind, fullstack-wunderkind, marketing-wunderkind, creative-director, ciso, legal-counsel.
+- Current agent sources still embed static personality prose directly in prompt strings.
+- src/index.ts already performs runtime system-prompt injection for docs output and resolved config, making runtime SOUL overlays the natural extension point.
+- commands/docs-index.md already treats docs files as managed per-agent lanes, which supports appending persona-specific durable pointers after docs refresh.
+- src/agents/docs-config.ts shows legal-counsel is not docs-eligible today, so /docs-index SOUL updates currently apply to the other retained docs owners only.
+
+Decisions fixed in the architecture document:
+- SOUL location convention: .wunderkind/souls/<agent-key>.md
+- SOUL format: markdown v1 file with fixed Customization and Durable Knowledge sections
+- Injection mechanism: runtime in src/index.ts after resolved runtime context and before native agent catalog
+- Neutral rule: no SOUL file means no SOUL payload and no build-time prompt bloat
+- Init flow: opt-in confirm, retained-persona multiselect, four exact framing questions per selected persona
+- Learning-event updates: append-only durable-knowledge entries with project-relative pointers and dedup rule
+
+Verification performed:
+- Confirmed the decision document exists at .sisyphus/plans/soul-architecture.md
+- Confirmed the document specifies exact path, exact file format, injection mechanism, neutral-agent rule, init questions, and /docs-index update behavior
