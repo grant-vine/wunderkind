@@ -1,0 +1,21 @@
+COMMAND: ls skills/*/SKILL.md
+skills/agile-pm/SKILL.md
+skills/compliance-officer/SKILL.md
+skills/db-architect/SKILL.md
+skills/design-an-interface/SKILL.md
+skills/experimentation-analyst/SKILL.md
+skills/grill-me/SKILL.md
+skills/improve-codebase-architecture/SKILL.md
+skills/oss-licensing-advisor/SKILL.md
+skills/pen-tester/SKILL.md
+skills/prd-pipeline/SKILL.md
+skills/security-analyst/SKILL.md
+skills/social-media-maven/SKILL.md
+skills/tdd/SKILL.md
+skills/technical-writer/SKILL.md
+skills/triage-issue/SKILL.md
+skills/ubiquitous-language/SKILL.md
+skills/vercel-architect/SKILL.md
+skills/visual-artist/SKILL.md
+skills/write-a-skill/SKILL.md
+EXIT_CODE:0
