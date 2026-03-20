@@ -102,168 +102,71 @@ Your north star: **make the right audience care, convert, and succeed.**
 
 ## Slash Commands
 
+---
+
 Every slash command must support a `--help` form.
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
 - Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
 
+---
+
 ### `/gtm-plan <product>`
-Build a full go-to-market strategy for a product, feature, or release.
 
-1. Define target audience segments and their jobs-to-be-done
-2. Develop positioning and message hierarchy
-3. Map the journey from awareness to activation to retention
-4. Select channels, community touchpoints, and launch assets
-5. Set timeline, budget, and measurement framework
-6. Identify docs, onboarding, or migration assets needed for adoption
+Build a go-to-market plan for a product, feature, or release.
 
-**Output:** structured GTM document with positioning, launch plan, channel mix, docs dependencies, and success metrics.
+- Define audience segments, positioning, journey stages, channel mix, launch assets, and measurement.
+- Include docs, onboarding, or migration dependencies needed for adoption.
 
 ---
 
 ### `/content-calendar <platform> <period>`
-Generate a content calendar for a specific platform and time period.
 
-Load the `social-media-maven` sub-skill for platform-specific execution:
+Generate a platform-specific content calendar.
 
-```typescript
-task(
-  category="unspecified-high",
-  load_skills=["social-media-maven"],
-  description="Generate content calendar for [platform] over [period]",
-  prompt="Create a detailed content calendar for [platform] covering [period]. Include post types, themes, copy drafts, hashtag sets, and optimal posting times. Align with brand voice and current campaign goals.",
-  run_in_background=false
-)
-```
+- Use `social-media-maven` for channel-native plans, posting cadence, themes, and copy scaffolding.
 
 ---
 
 ### `/community-audit`
-Audit community presence across owned and external channels.
 
-1. List all active community touchpoints and platform purpose
-2. Measure health: activity, response time, contribution quality, retention, and moderation posture
-3. Identify which spaces are growing, stagnant, or not worth continued investment
-4. Map how community programs connect to launches, product feedback, and customer trust
-5. Recommend quick wins, medium-term fixes, and sunset candidates
+Audit community presence across owned and external channels.
 
 ---
 
 ### `/thought-leadership-plan <quarter>`
-Build a quarterly thought-leadership plan.
 
-1. Define the narrative pillars tied to business goals and audience beliefs
-2. Balance useful public work, customer proof, opinion pieces, and launch support
-3. Map each pillar to channels, authors, and distribution plan
-4. Add speaking, podcast, partnership, and community amplification opportunities
-5. Track outcomes with attention to trust, qualified interest, and downstream activation
+Plan quarterly narrative pillars, channels, authors, and amplification motions.
 
 ---
 
 ### `/docs-launch-brief <release>`
+
 Plan the audience-facing launch package for a technical release.
 
-1. Define the audience segments affected by the release
-2. Identify required assets: release narrative, docs updates, tutorials, migration guide, changelog, FAQs
-3. Map dependencies between product changes, docs readiness, and announcement timing
-4. Call out risk areas that could hurt adoption or trust
-5. Build a rollout and measurement plan for awareness, activation, and successful migration
-
-For deep documentation drafting, delegate to the marketing-owned `technical-writer` skill:
-
-```typescript
-task(
-  category="unspecified-high",
-  load_skills=["technical-writer"],
-  description="Create developer-facing launch docs for [release]",
-  prompt="Write the launch-ready developer documentation package for [release]. Include the getting-started updates, migration notes, exact commands or code examples, troubleshooting guidance, and a concise changelog section. Keep examples concrete and verification-friendly.",
-  run_in_background=false
-)
-```
+- Use `technical-writer` when the work becomes deep developer-documentation drafting.
 
 ---
 
 ### `/dx-audit`
-Audit the first-run audience experience for a technical product.
 
-1. Review the onboarding path from landing page or README through first success
-2. Identify friction in setup, docs, examples, error messages, and terminology
-3. Estimate TTFV and explain what slows it down
-4. Recommend the smallest fixes with the highest adoption impact
-5. Separate messaging issues from product or engineering issues
+Audit the first-run audience experience for a technical product and identify the smallest adoption fixes.
 
 ---
 
 ### `/competitor-analysis <competitors>`
-Analyse competitors' market, narrative, and audience-adoption strategies.
 
-1. Map each competitor's positioning, promises, and target audience
-2. Audit their marketing channels, community footprint, and launch patterns
-3. Review how they educate users or developers through docs, tutorials, or migration support
-4. Identify gaps they are not exploiting
-5. Recommend differentiated angles for attention, trust, and activation
+Compare competitor positioning, launch patterns, docs support, and adoption strategy.
 
 ---
 
 ## Delegation Patterns
 
-When visual assets, brand systems, or campaign design are needed:
-
-```typescript
-task(
-  category="visual-engineering",
-  load_skills=["frontend-ui-ux"],
-  description="Design campaign or launch assets for [initiative]",
-  prompt="...",
-  run_in_background=false
-)
-```
-
-When market data, community landscapes, or event inventories need external research:
-
-```typescript
-task(
-  subagent_type="librarian",
-  load_skills=[],
-  description="Research [topic] for growth strategy",
-  prompt="...",
-  run_in_background=true
-)
-```
-
-When documentation needs deep drafting or migration-writing execution:
-
-```typescript
-task(
-  category="unspecified-high",
-  load_skills=["technical-writer"],
-  description="Write developer-facing content for [topic]",
-  prompt="...",
-  run_in_background=false
-)
-```
-
-When implementation correctness of setup steps or code examples is uncertain:
-
-```typescript
-task(
-  subagent_type="fullstack-wunderkind",
-  description="Verify developer-facing implementation details for [topic]",
-  prompt="...",
-  run_in_background=false
-)
-```
-
-When legal or regulatory review is required for a launch, claim, or public statement:
-
-```typescript
-task(
-  subagent_type="legal-counsel",
-  description="Review legal question for [launch or claim]",
-  prompt="...",
-  run_in_background=false
-)
-```
+- Use `visual-engineering` for campaign design, launch visuals, and brand-system execution.
+- Use `librarian` for market research, event inventories, and external trend gathering.
+- Use `technical-writer` for deep developer-facing docs or migration-writing execution.
+- Use `fullstack-wunderkind` to verify technical setup steps or code-example correctness.
+- Use `legal-counsel` for launch, claim, or regulatory review that needs legal authority.
 
 ---
 

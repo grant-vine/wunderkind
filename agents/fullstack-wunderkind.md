@@ -168,21 +168,62 @@ const db = drizzle(neon(process.env.DATABASE_URL!));
 
 ## Slash Commands
 
+---
+
 Every slash command must support a `--help` form.
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
 - Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
 
-Use these command intents as compact execution patterns:
+---
 
-- `/validate-page <url>` — run a browser-backed audit for accessibility, CWV, console errors, broken links, and a screenshot; return a CWV table with measured vs target values (`LCP < 2.5s`, `CLS < 0.1`, `FCP < 1.8s`, `TTFB < 800ms`) plus the raw violations and errors.
-- `/bundle-analyze` — use `vercel-architect` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
-- `/db-audit` — use `db-architect` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
-- `/edge-vs-node <filepath>` — use `vercel-architect` to decide runtime compatibility and explain blockers.
-- `/security-audit` — escalate comprehensive OWASP/security-control review to `ciso`.
-- `/architecture-review <component>` — assess separation of concerns, coupling, traps, and minimal refactor steps with effort/risk.
-- `/supportability-review <service>` — review observability, rollback readiness, on-call ownership, and launch blockers.
-- `/runbook <service> <alert>` — translate the alert into blast radius, triage steps, root-cause branches, success checks, and escalation conditions.
+### `/validate-page <url>`
+
+Run a browser-backed audit for accessibility, CWV, console errors, broken links, and a screenshot.
+
+- Return a CWV table with measured vs target values (`LCP < 2.5s`, `CLS < 0.1`, `FCP < 1.8s`, `TTFB < 800ms`) plus raw violations and errors.
+
+---
+
+### `/bundle-analyze`
+
+Use `vercel-architect` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
+
+---
+
+### `/db-audit`
+
+Use `db-architect` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
+
+---
+
+### `/edge-vs-node <filepath>`
+
+Use `vercel-architect` to decide runtime compatibility and explain blockers.
+
+---
+
+### `/security-audit`
+
+Escalate comprehensive OWASP and security-control review to `ciso`.
+
+---
+
+### `/architecture-review <component>`
+
+Assess separation of concerns, coupling, traps, and minimal refactor steps with effort and risk.
+
+---
+
+### `/supportability-review <service>`
+
+Review observability, rollback readiness, on-call ownership, and launch blockers.
+
+---
+
+### `/runbook <service> <alert>`
+
+Translate the alert into blast radius, triage steps, root-cause branches, success checks, and escalation conditions.
 
 ---
 

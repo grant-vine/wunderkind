@@ -1,3 +1,5 @@
+import type { SlashCommandRegistry } from "./slash-commands.js"
+
 export function buildPersistentContextSection(options: {
   learnings: string
   decisions: string
@@ -38,4 +40,23 @@ export function buildSlashCommandHelpSection(): string {
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run \`/<command> --help\`.
 - Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.`
+}
+
+export function renderSlashCommandRegistry(registry: SlashCommandRegistry): string {
+  const commandBlocks = registry.commands.map((command) => {
+    const details = command.details?.map((detail) => `- ${detail}`).join("\n")
+    return [`### \`${command.command}\``, command.summary, details].filter((part) => part !== undefined && part !== "").join("\n\n")
+  })
+
+  const sectionBlocks = registry.sections?.map((section) => {
+    const items = section.items.map((item) => `- ${item}`).join("\n")
+    return [`## ${section.heading}`, items].join("\n\n")
+  }) ?? []
+
+  return [
+    "## Slash Commands",
+    buildSlashCommandHelpSection(),
+    ...commandBlocks,
+    ...sectionBlocks,
+  ].join("\n\n---\n\n")
 }

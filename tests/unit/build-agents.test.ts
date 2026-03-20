@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_DEFINITIONS } from "../../src/agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../src/agents/render-markdown.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "../../src/agents/slash-commands.js"
 
 const AGENTS_DIR = fileURLToPath(new URL("../../agents/", import.meta.url))
 
@@ -53,10 +54,22 @@ describe("build-agents script", () => {
     expect(marketing).toContain("mode: all")
     expect(marketing).toContain("# Marketing Wunderkind — Soul")
     expect(marketing).toContain("## SOUL Maintenance (.wunderkind/souls/)")
+    expect(marketing).toContain("Every slash command must support a `--help` form.")
     expect(marketing).toContain("task: deny")
     expect(ciso).toContain("# CISO — Soul")
     expect(ciso).toContain("72 hours")
     expect(fullstack).toContain("# Fullstack Wunderkind — Soul")
     expect(fullstack).not.toContain("task: deny")
+  })
+
+  it("renders all registered slash commands into generated markdown", () => {
+    for (const [agentId, registry] of Object.entries(RETAINED_AGENT_SLASH_COMMANDS)) {
+      const markdown = readFileSync(join(AGENTS_DIR, `${agentId}.md`), "utf-8")
+      expect(markdown).toContain("Every slash command must support a `--help` form.")
+
+      for (const command of registry.commands) {
+        expect(markdown).toContain(`### \`${command.command}\``)
+      }
+    }
   })
 })

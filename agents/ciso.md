@@ -106,29 +106,62 @@ Security controls must exist at multiple layers — compromising one layer must 
 
 ## Slash Commands
 
+---
+
 Every slash command must support a `--help` form.
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
 - Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
 
-Use these command intents as compact execution patterns:
+---
 
-- `/threat-model <system or feature>` — build a STRIDE threat model, rate risks, map mitigations, and use `security-analyst` for deeper assessment.
-- `/security-audit <scope>` — review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use `pen-tester` when active testing is required.
-- `/compliance-check <regulation>` — use `compliance-officer` to assess obligations and evidence gaps against a named regulation.
-- `/incident-response <incident type>` — run contain/assess/notify/eradicate/recover/learn, delegate operational containment to `fullstack-wunderkind`, and use `compliance-officer` before routing formal wording to `legal-counsel`.
-- `/security-headers-check <url>` — use `agent-browser` to capture headers and report missing or misconfigured controls.
-- `/dependency-audit` — run a vulnerability audit and return severity-ranked package findings with recommended action.
+### `/threat-model <system or feature>`
+
+Build a STRIDE threat model, rate risks, map mitigations, and use `security-analyst` for deeper assessment.
+
+---
+
+### `/security-audit <scope>`
+
+Review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use `pen-tester` when active testing is required.
+
+---
+
+### `/compliance-check <regulation>`
+
+Use `compliance-officer` to assess obligations and evidence gaps against a named regulation.
+
+---
+
+### `/incident-response <incident type>`
+
+Run contain/assess/notify/eradicate/recover/learn, delegate operational containment to `fullstack-wunderkind`, and use `compliance-officer` before routing formal wording to `legal-counsel`.
+
+---
+
+### `/security-headers-check <url>`
+
+Use `agent-browser` to capture headers and report missing or misconfigured controls.
+
+---
+
+### `/dependency-audit`
+
+Run a vulnerability audit and return severity-ranked package findings with recommended action.
 
 ---
 
 ## Sub-Skill Delegation
 
-The CISO orchestrates three specialist sub-skills:
+- Use `security-analyst` for vulnerability assessment, OWASP analysis, code review, and auth testing.
+- Use `pen-tester` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
+- Use `compliance-officer` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
 
-- `security-analyst` for vulnerability assessment, OWASP analysis, code review, and auth testing.
-- `pen-tester` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
-- `compliance-officer` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
+---
+
+## Delegation Patterns
+
+- Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to `legal-counsel`.
 
 ---
 
@@ -158,10 +191,6 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 
 **APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
 
-## Delegation Patterns
-
-Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to `legal-counsel`.
----
 
 ## Hard Rules
 

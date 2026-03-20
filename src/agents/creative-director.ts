@@ -1,7 +1,8 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
 
@@ -44,7 +45,7 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
     blockers: "missing brand assets, unresolved accessibility failures, design reviews pending",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
-  const slashCommandHelpSection = buildSlashCommandHelpSection()
+  const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["creative-director"])
 
   return {
     description:
@@ -127,154 +128,7 @@ You hold two modes in tension: the wild creative who pushes boundaries and surpr
 
 ---
 
-## Slash Commands
-
-${slashCommandHelpSection}
-
-### \`/brand-identity <brief>\`
-Develop a complete brand identity system from a creative brief.
-
-1. **Discovery**: Ask the Opening Questionnaire (mood, colour preferences, industry, competitors, brand personality, audience, existing assets)
-2. **Exploration**: Present 3 distinct creative directions with rationale
-3. **System**: For the chosen direction, define: colour palette, typography pair, spacing scale, iconography style, photography direction
-4. **Tokens**: Output as CSS custom properties + Tailwind config + W3C Design Token JSON
-5. **Guidelines**: Write brand do/don't rules for each element
-
-Load \`visual-artist\` for palette generation and token export:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["visual-artist"],
-  description="Generate colour system and design tokens for [brand]",
-  prompt="Generate a comprehensive colour palette from [seed colour]. Include primary, secondary, neutral, surface, and semantic colours. Output as CSS custom properties, Tailwind config, and W3C Design Token JSON. Audit all colours for WCAG AA compliance.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/design-audit <url>\`
-Rigorous design and accessibility audit of a live page or design.
-
-Switch to **Audit Mode**: mathematical, unforgiving, precise.
-
-Delegate browser capture:
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["agent-browser"],
-  description="Capture design audit data from [url]",
-  prompt="Navigate to [url]. 1) Screenshot full page to /tmp/design-audit.png 2) Inject axe-core (https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.0/axe.min.js) and run axe.run({ runOnly: ['color-contrast', 'heading-order'] }) 3) Extract computed CSS: all unique colors, font families, font sizes from body, h1-h6, p, a, button 4) Return screenshot path, axe violations, color/font lists",
-  run_in_background=false
-)
-\`\`\`
-
-**Report output:**
-- WCAG contrast violations table (element, foreground, background, ratio, level)
-- Typography hierarchy review (h1-h6 sizes, weights, line-heights)
-- Spacing audit (are margins/paddings multiples of 4px/8px?)
-- Colour consistency (are there rogue one-off hex values?)
-- Quick wins vs strategic fixes prioritised list
-
----
-
-### \`/generate-palette <seed>\`
-Generate a comprehensive, accessible colour system from a seed.
-
-Delegate to \`visual-artist\`:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["visual-artist"],
-  description="Generate accessible colour palette from [seed]",
-  prompt="Run /generate-palette [seed]. Return the full palette with Hex/RGB/HSL values, WCAG contrast ratios, pass/fail status, and usage recommendations for each colour.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/design-system-review\`
-Audit an existing codebase's design system for consistency and completeness.
-
-1. Read \`tailwind.config.ts\`, \`globals.css\`, \`tokens.css\` (or equivalent)
-2. Map all defined tokens: colours, spacing, typography, radius, shadow
-3. Identify gaps: missing semantic colours, inconsistent spacing values, undefined states
-4. Identify redundancies: duplicate values, unused tokens, conflicting definitions
-5. Output a prioritised remediation plan
-
----
-
-### \`/creative-brief <project>\`
-Write a creative brief for any design or campaign project.
-
-Sections:
-- **Project Overview**: What are we making and why?
-- **Audience**: Who will see this? What do they care about?
-- **Objective**: What should they think/feel/do after experiencing this?
-- **Deliverables**: Exact list of outputs with specs
-- **Tone & Mood**: 3-5 adjectives + reference examples
-- **Constraints**: Budget, timeline, technical, brand guardrails
-- **Success Criteria**: How will we know this worked?
-
----
-
-## Sub-Skill Delegation
-
-For detailed colour palette generation, design tokens, and WCAG auditing:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["visual-artist"],
-  description="[specific design system or palette task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-## Delegation Patterns
-
-When implementing designs in code (React, Astro, Tailwind):
-
-\`\`\`typescript
-task(
-  category="visual-engineering",
-  load_skills=["frontend-ui-ux"],
-  description="Implement [component/page] design",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-When browser-based design auditing or screenshot capture is needed:
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["agent-browser"],
-  description="Capture design data from [url]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-When writing brand copy, taglines, or UX writing at scale:
-
-\`\`\`typescript
-task(
-  category="writing",
-  load_skills=[],
-  description="Write [copy type] for [context]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
+${slashCommandsSection}
 
 ---
 

@@ -1,6 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
-import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
 
@@ -40,7 +41,7 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
     blockers: "build failures, type errors not yet resolved, external blockers",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
-  const slashCommandHelpSection = buildSlashCommandHelpSection()
+  const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["fullstack-wunderkind"])
 
   return {
     description:
@@ -200,37 +201,7 @@ const db = drizzle(neon(process.env.DATABASE_URL!));
 
 ---
 
-## Slash Commands
-
-${slashCommandHelpSection}
-
-Use these command intents as compact execution patterns:
-
-- \`/validate-page <url>\` — run a browser-backed audit for accessibility, CWV, console errors, broken links, and a screenshot; return a CWV table with measured vs target values (\`LCP < 2.5s\`, \`CLS < 0.1\`, \`FCP < 1.8s\`, \`TTFB < 800ms\`) plus the raw violations and errors.
-- \`/bundle-analyze\` — use \`vercel-architect\` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
-- \`/db-audit\` — use \`db-architect\` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
-- \`/edge-vs-node <filepath>\` — use \`vercel-architect\` to decide runtime compatibility and explain blockers.
-- \`/security-audit\` — escalate comprehensive OWASP/security-control review to \`ciso\`.
-- \`/architecture-review <component>\` — assess separation of concerns, coupling, traps, and minimal refactor steps with effort/risk.
-- \`/supportability-review <service>\` — review observability, rollback readiness, on-call ownership, and launch blockers.
-- \`/runbook <service> <alert>\` — translate the alert into blast radius, triage steps, root-cause branches, success checks, and escalation conditions.
-
----
-
-## Sub-Skill Delegation
-
-- Use \`tdd\` for red-green-refactor loops, regression hardening, and defect-driven delivery.
-- Use \`vercel-architect\` for Vercel, App Router, Edge runtime, Neon branching, and performance work.
-- Use \`db-architect\` for schema design, query analysis, migrations, and index auditing.
-
----
-
-## Delegation Patterns
-
-- Use \`visual-engineering\` for UI implementation and coded visual work.
-- Use \`agent-browser\` for browser automation, E2E capture, and page validation.
-- Use \`explore\` for codebase mapping and \`librarian\` for external library/documentation research.
-- Use \`git-master\` for git operations and \`technical-writer\` for external developer docs or tutorials.
+${slashCommandsSection}
 
 ---
 

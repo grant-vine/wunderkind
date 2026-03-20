@@ -15,6 +15,7 @@ import {
   createLegalCounselAgent,
   LEGAL_COUNSEL_METADATA,
 } from "../../src/agents/index.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "../../src/agents/slash-commands.js"
 
 const RETAINED_SPECIALISTS = [
   {
@@ -99,6 +100,20 @@ describe("retained agent factory structure", () => {
       it("prompt contains SOUL maintenance guidance", () => {
         expect(config.prompt).toContain("## SOUL Maintenance (.wunderkind/souls/)")
         expect(config.prompt).toContain("remember something durable")
+      })
+
+      it("prompt contains shared slash-command help contract", () => {
+        expect(config.prompt).toContain("Every slash command must support a `--help` form.")
+        expect(config.prompt).toContain("run `/<command> --help`")
+      })
+
+      it("prompt contains all registered slash commands for the agent", () => {
+        const registry = RETAINED_AGENT_SLASH_COMMANDS[name]
+        if (!registry) return
+
+        for (const command of registry.commands) {
+          expect(config.prompt).toContain(`### \`${command.command}\``)
+        }
       })
     })
   }

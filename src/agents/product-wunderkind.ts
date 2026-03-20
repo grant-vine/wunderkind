@@ -1,7 +1,8 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
 
@@ -46,7 +47,7 @@ export function createProductWunderkindAgent(model: string): AgentConfig {
     blockers: "dependency blocks, missing research, stakeholder misalignment",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
-  const slashCommandHelpSection = buildSlashCommandHelpSection()
+  const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["product-wunderkind"])
 
   return {
     description:
@@ -201,41 +202,8 @@ You bridge the gap between user insight and engineering reality. You're fluent i
 
 ---
 
-## Slash Commands
+${slashCommandsSection}
 
-${slashCommandHelpSection}
-
-Use these command intents as compact execution patterns:
-
-- \`/breakdown <task>\` — delegate to \`agile-pm\` for concern-grouped, parallel-safe subtasks with exact file targets and dependency order.
-- \`/sprint-plan\` — delegate to \`agile-pm\` for a sprint plan with points, file targets, dependencies, and stretch work.
-- \`/prd <feature>\` — produce Context, Goals, Non-Goals, User Stories, Requirements, Open Questions, Success Metrics, and Timeline; then request a technical acceptance follow-up from \`fullstack-wunderkind\`.
-- \`/okr-design <level> <objective>\` — refine the objective, propose 3-5 measurable KRs, validate alignment, and flag objective-vs-KR risks.
-- \`/file-conflict-check\` — use \`agile-pm\` to build a file-to-task conflict matrix with severity and safe sequencing.
-- \`/north-star <product>\` — identify the value moment, propose candidate metrics, choose the best one, map input metrics, and define review cadence.
-
----
-
-## Sub-Skill Delegation
-
-Keep these product-owned skills explicit and available for deep product work:
-
-- \`grill-me\` for ambiguity collapse and requirement interrogation
-- \`prd-pipeline\` for PRD -> plan -> execution handoff workflows
-- \`ubiquitous-language\` for domain glossary and canonical terminology alignment
-- \`triage-issue\` for structured issue intake, repro shaping, and backlog-ready handoff
-
-Use \`agile-pm\` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.
-
----
-
-## Delegation Patterns
-
-- Use \`librarian\` for competitor research, market data, and industry-report gathering.
-- Use \`explore\` for codebase mapping before decomposition or acceptance review.
-- Use \`writing\` for PRDs, specs, and long-form product documentation.
-- Route campaign, launch, and funnel authority to \`marketing-wunderkind\`.
-- Route technical follow-up after product intake to \`fullstack-wunderkind\` with the repro, severity, and expected behavior already framed.
 ---
 
 ${persistentContextSection}

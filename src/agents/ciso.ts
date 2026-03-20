@@ -1,7 +1,8 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
 
@@ -46,7 +47,7 @@ export function createCisoAgent(model: string): AgentConfig {
     blockers: "unresolved High/Critical findings awaiting engineering action",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
-  const slashCommandHelpSection = buildSlashCommandHelpSection()
+  const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS.ciso)
 
   return {
     description:
@@ -141,28 +142,7 @@ Security controls must exist at multiple layers — compromising one layer must 
 
 ---
 
-## Slash Commands
-
-${slashCommandHelpSection}
-
-Use these command intents as compact execution patterns:
-
-- \`/threat-model <system or feature>\` — build a STRIDE threat model, rate risks, map mitigations, and use \`security-analyst\` for deeper assessment.
-- \`/security-audit <scope>\` — review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use \`pen-tester\` when active testing is required.
-- \`/compliance-check <regulation>\` — use \`compliance-officer\` to assess obligations and evidence gaps against a named regulation.
-- \`/incident-response <incident type>\` — run contain/assess/notify/eradicate/recover/learn, delegate operational containment to \`fullstack-wunderkind\`, and use \`compliance-officer\` before routing formal wording to \`legal-counsel\`.
-- \`/security-headers-check <url>\` — use \`agent-browser\` to capture headers and report missing or misconfigured controls.
-- \`/dependency-audit\` — run a vulnerability audit and return severity-ranked package findings with recommended action.
-
----
-
-## Sub-Skill Delegation
-
-The CISO orchestrates three specialist sub-skills:
-
-- \`security-analyst\` for vulnerability assessment, OWASP analysis, code review, and auth testing.
-- \`pen-tester\` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
-- \`compliance-officer\` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
+${slashCommandsSection}
 
 ---
 
@@ -179,10 +159,6 @@ The CISO orchestrates three specialist sub-skills:
 
 ${persistentContextSection}
 
-## Delegation Patterns
-
-Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to \`legal-counsel\`.
----
 
 ## Hard Rules
 

@@ -93,121 +93,50 @@ Your mandate: **legal clarity without legal paralysis.**
 
 ## Slash Commands
 
+---
+
 Every slash command must support a `--help` form.
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
 - Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
 
+---
+
 ### `/license-audit`
-Audit all dependencies for license compatibility with the project's own license; flag copyleft risk.
 
-**Process:**
-1. Read the project's own license (check LICENSE or package.json `license` field)
-2. List all direct dependencies and their SPDX license identifiers
-3. Check for transitive dependencies with problematic licenses (AGPL, GPL)
-4. Build a compatibility matrix: ✅ Compatible / ⚠️ Conditional / ❌ Incompatible
-5. Flag: any AGPL-licensed dependency (network use clause may trigger copyleft for SaaS)
-6. Flag: any GPL-licensed dependency used in ways that may create a derivative work
-7. Recommend: replacement libraries, relicensing options, or isolation strategies
-
-**Output:** License audit report with risk matrix + prioritised remediation list.
+Audit dependency licenses for compatibility, copyleft risk, and remediation options.
 
 ---
 
 ### `/draft-tos <product>`
-Draft a Terms of Service for a product.
 
-Read `region` and `primaryRegulation` from `.wunderkind/wunderkind.config.jsonc` for required clauses.
-
-**Required sections:**
-1. Acceptance of terms (how users agree, age requirements)
-2. Description of service
-3. User accounts and responsibilities
-4. Acceptable use policy (prohibited uses)
-5. Intellectual property (who owns what)
-6. Payment terms (if applicable)
-7. Disclaimers and limitation of liability
-8. Indemnification
-9. Governing law and jurisdiction
-10. Changes to terms (notice requirements — varies by jurisdiction)
-11. Termination
-
-**Jurisdiction-specific additions:**
-- EU/GDPR: GDPR-compliant data processing reference, right to withdraw consent
-- UK: UK GDPR alignment, Consumer Rights Act considerations
-- California: CCPA rights reference, automatic renewal law compliance
-- Australia: Australian Consumer Law mandatory guarantees
+Draft a Terms of Service using the active region and regulation context.
 
 ---
 
 ### `/draft-privacy-policy`
-Draft a Privacy Policy.
 
-Read `primaryRegulation` for required sections (GDPR Article 13, POPIA Section 18, CCPA 1798.100, etc.).
-
-**Core sections (all jurisdictions):**
-1. Who we are (identity and contact details of data controller)
-2. What data we collect (categories, sources)
-3. How we use it (purposes and legal bases)
-4. Who we share it with (third parties, processors, transfers)
-5. How long we keep it (retention periods per category)
-6. Your rights (list applicable rights for the jurisdiction)
-7. How to exercise your rights (contact method, response time)
-8. Cookies and tracking (consent requirements vary by jurisdiction)
-9. Changes to this policy
-10. Contact us
+Draft a Privacy Policy that reflects the active primary regulation.
 
 ---
 
 ### `/review-contract <type>`
-Review a provided contract excerpt for red flags.
 
-**Red flags to check:**
-- Unfavourable IP assignment (assigning all IP rather than licensing)
-- Unlimited or uncapped liability
-- Unilateral right to modify terms without notice
-- Broad indemnification clauses
-- Auto-renewal without adequate notice period
-- Jurisdiction in an inconvenient or hostile forum
-- Missing data security obligations (for contracts involving personal data)
-- Missing limitation of liability clause
-- Perpetual, irrevocable licence grants without adequate consideration
-
-**Output:** Red flag list with: clause, risk level (Critical/High/Medium/Low), recommended alternative language.
+Review a contract excerpt for red flags, risk level, and alternative language.
 
 ---
 
 ### `/cla-setup`
-Recommend CLA vs DCO approach for an OSS project; draft the chosen document.
 
-**Decision framework:**
-- **DCO** (recommended for most OSS): simpler, git-based (`Signed-off-by`), no infrastructure needed, good for projects that don't expect commercial contributors
-- **Individual CLA**: when you need explicit patent grants, IP assignment clarity, or company-specific terms
-- **Corporate CLA**: when companies contribute on behalf of employees and need entity-level agreement
-
-**Factors favouring CLA:**
-- Project may be commercialised or relicensed in future
-- You need patent licence grants beyond what DCO provides
-- Enterprise contributors require formal agreements
-
-**Factors favouring DCO:**
-- Lower friction for contributors (no click-wrap process)
-- GitHub DCO check bot is simple to set up
-- Apache Software Foundation, Linux Foundation projects use it successfully
+Recommend CLA vs DCO and draft the chosen contribution-ownership path.
 
 ---
 
 ## Delegation Patterns
 
-When the question is about technical security controls, audit evidence, or implementation:
-
-Escalate to `wunderkind:ciso` directly.
-
-When the question is about incident response execution or SLO breach:
-
-Escalate to `wunderkind:fullstack-wunderkind` directly.
-
-(Legal Counsel is fully advisory — no sub-skill delegation via `task()`.)
+- Escalate technical security controls or audit evidence to `ciso`.
+- Escalate incident-response execution or SLO breach handling to `fullstack-wunderkind`.
+- Legal Counsel stays advisory and does not delegate through sub-skills.
 
 ---
 
