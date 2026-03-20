@@ -25,7 +25,8 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 |---|---|---|
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
-| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, project-local native agents/skills |
+| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, docs README |
+| `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
 | `wunderkind gitignore` | Adds AI traces to `.gitignore` | `.gitignore` |
@@ -37,7 +38,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 Wunderkind distinguishes between **installing** the plugin and **initializing** a project:
 
 1. **Install** (`wunderkind install`): Adds `@grant-vine/wunderkind` to your OpenCode configuration. This makes the agents available to your AI assistant. You typically do this once globally.
-2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, and optional documentation output folders.
+2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates or updates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, optional project-local SOUL files, and optional documentation output folders.
 
 ---
 
@@ -153,11 +154,11 @@ wunderkind init [options]
 | Option | Description | Default |
 |---|---|---|
 | `--docs-path <path>` | Relative path for agent docs output | `./docs` |
-| `--docs-history-mode <mode>` | Update style: `overwrite` (default), `append-dated`, `new-dated-file`, `overwrite-archive` | `overwrite` |
+| `--docs-history-mode <mode>` | Update style: `append-dated` (default), `overwrite`, `new-dated-file`, `overwrite-archive` | `append-dated` |
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona; if you skip that step, Wunderkind keeps the neutral retained prompts and current/default personality settings already in effect. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona. Those SOUL questions are now select-first with an explicit custom-answer fallback, show a compact persona banner before each persona block, and prefill current project-local SOUL answers when you rerun `init` on an already configured project. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
@@ -175,8 +176,8 @@ If `prdPipelineMode` is absent in an older project config, Wunderkind treats it 
 
 | Mode | Description |
 |---|---|
-| `overwrite` | Replaces the file contents each time (default) |
-| `append-dated` | Appends a UTC-timestamped section like `## Update 2026-03-12T18-37-52Z` to the canonical file |
+| `append-dated` | Appends a UTC-timestamped section like `## Update 2026-03-12T18-37-52Z` to the canonical file (default) |
+| `overwrite` | Replaces the file contents each time |
 | `new-dated-file` | Creates a UTC-timestamped file like `marketing-strategy--2026-03-12T18-37-52Z.md` beside the canonical file |
 | `overwrite-archive` | Overwrites the current file and archives the old one |
 
@@ -256,6 +257,16 @@ wunderkind uninstall --scope=project
 
 `wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`, docs folders).
 
+## Cleanup
+
+Remove Wunderkind from just the current project without touching shared global capabilities:
+
+```bash
+wunderkind cleanup
+```
+
+`wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.sisyphus/`, docs output folders, and shared global native assets untouched.
+
 ---
 
 ## Documentation Output
@@ -302,7 +313,7 @@ Treat this as the recommended audit/bootstrap process for bringing a project up 
 
 Wunderkind installs native markdown assets into OpenCode's supported directories. Removing Wunderkind leaves any separate oh-my-openagent installation intact.
 
-> **Native asset install note**: Wunderkind registers its specialist agents and skills through OpenCode-native markdown files. Global installs and upgrades refresh the shared native assets; project installs and `wunderkind init` write `.opencode/agents/` and `.opencode/skills/` for project-local precedence. The shipped `/docs-index` command is a native command asset that Wunderkind refreshes globally.
+> **Native asset install note**: Wunderkind registers its specialist agents and skills through OpenCode-native markdown files. Global installs and upgrades refresh the shared native assets, and the shipped `/docs-index` command is refreshed globally as a native command asset.
 
 ---
 
@@ -358,6 +369,7 @@ Wunderkind uses a split configuration model:
 - global config stores shared market/regulation defaults
 - project config stores personality/docs/workflow settings plus only the baseline values that intentionally override those defaults
 - project-local SOUL files in `.wunderkind/souls/` store long-form persona customization and durable learned context
+- when a user asks an agent to remember a durable project-specific preference or personality adjustment, that instruction should be written back into the matching SOUL file so it survives future sessions
 
 | File | Scope |
 |---|---|
@@ -406,7 +418,7 @@ Edit the global file to change region/industry/regulation defaults after install
   // Documentation Output (Init-only customizations)
   "docsEnabled": false,
   "docsPath": "./docs",
-  "docHistoryMode": "overwrite",
+  "docHistoryMode": "append-dated",
 
   // PRD / planning workflow mode
   "prdPipelineMode": "filesystem"
