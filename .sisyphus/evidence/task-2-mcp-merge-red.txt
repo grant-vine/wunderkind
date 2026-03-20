@@ -1,0 +1,22 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/mcp-helpers.test.ts:
+error: Cannot find module '/Users/grantv/Code/wunderkind/src/cli/mcp-helpers.ts?mcp-helpers=1774000741751' from '/Users/grantv/Code/wunderkind/tests/unit/mcp-helpers.test.ts'
+(fail) mcp helpers > detectStitchMcpPresence > returns missing when neither config contains Stitch [10.66ms]
+(fail) mcp helpers > detectStitchMcpPresence > returns project-local when only project config has the google-stitch key [0.47ms]
+(fail) mcp helpers > detectStitchMcpPresence > returns global-only when only global config has a matching Stitch URL [0.45ms]
+(fail) mcp helpers > detectStitchMcpPresence > returns both when global and project configs each contain Stitch [0.34ms]
+(fail) mcp helpers > mergeStitchMcpConfig > creates a new opencode.json with schema and canonical Stitch MCP config [0.31ms]
+(fail) mcp helpers > mergeStitchMcpConfig > preserves unrelated plugin, agent, tools, and other mcp keys [0.51ms]
+(fail) mcp helpers > mergeStitchMcpConfig > adds schema to an existing config that lacks it [0.51ms]
+(fail) mcp helpers > mergeStitchMcpConfig > does not overwrite a non-drifted existing Stitch entry [0.28ms]
+(fail) mcp helpers > mergeStitchMcpConfig > overwrites a drifted Stitch entry when the URL mismatches after slash trimming [0.40ms]
+(fail) mcp helpers > mergeStitchMcpConfig > overwrites a drifted Stitch entry when oauth is true [0.35ms]
+(fail) mcp helpers > mergeStitchMcpConfig > treats a missing oauth field as non-drifted and leaves the entry untouched [0.50ms]
+(fail) mcp helpers > mergeStitchMcpConfig > uses the file placeholder header and never writes the raw secret into JSON config [0.36ms]
+(fail) mcp helpers > writeStitchSecretFile > writes the trimmed API key to the canonical secret file path [0.37ms]
+(fail) mcp helpers > writeStitchSecretFile > creates the .wunderkind/stitch directory recursively when needed [0.44ms]
+
+ 0 pass
+ 14 fail
+Ran 14 tests across 1 file. [32.00ms]

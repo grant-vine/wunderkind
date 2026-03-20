@@ -41,3 +41,9 @@
 - `coerceProjectConfig()` should validate new enum-backed fields with type guards so invalid `designTool` or `designMcpOwnership` values are ignored while free-form `designPath` still round-trips
 - `renderProjectWunderkindConfig()` writes the design block after `prdPipelineMode`, which keeps the template comments readable and makes the new settings easy to discover in `.wunderkind/wunderkind.config.jsonc`
 - The Stitch adapter contract is stable as a constant registry entry: static metadata, canonical design sections, and an OpenCode remote MCP payload that swaps between file and env header templates
+
+## [2026-03-20] Task: task-2
+- Mirror `resolveOpenCodeConfigPath()` precedence locally for project-scoped MCP helpers so callers can target an explicit project root without mutating global config-manager runtime state
+- Treat Stitch presence as either the canonical `mcp.google-stitch` key or any remote MCP entry whose URL matches the adapter URL after trimming one trailing slash; this lets detection recognize reused shared configs
+- Keep merge drift rules intentionally narrow: overwrite only when the Stitch entry is missing, its URL differs after slash trimming, or `oauth` is explicitly `true`; missing `oauth` stays non-drifted and preserves existing headers
+- Separate secret persistence from config merge: `writeStitchSecretFile()` writes the trimmed key to `.wunderkind/stitch/google-stitch-api-key`, while `mergeStitchMcpConfig()` always writes the `{file:...}` authorization placeholder and never raw secret material
