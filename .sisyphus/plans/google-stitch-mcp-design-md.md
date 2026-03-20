@@ -480,7 +480,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(commands): add design md stitch workflow command` | Files: `commands/design-md.md`, tests
 
-- [ ] 8. Extend upgrade, uninstall, docs, and end-to-end lifecycle coverage
+- [x] 8. Extend upgrade, uninstall, docs, and end-to-end lifecycle coverage
 
   **What to do**: Update maintainer-facing docs and lifecycle commands so the new feature is discoverable and stable across upgrade and uninstall. Extend `runCliUpgrade()` so project-scope upgrades preserve `reused-project` and `reused-global` Stitch MCP entries unchanged, but reconcile `wunderkind-managed` project-local Stitch entries back to the current adapter contract without re-prompting for credentials or overwriting the secret file contents. Extend `runUninstall()` and CLI help text with an explicit `--remove-mcp <ask|yes|no>` option. In TTY mode, uninstall must ask before removing any Stitch MCP config; recommended default is `yes` for `wunderkind-managed`, `no` for `reused-project`, and no prompt for `reused-global` because global reused config must remain untouched. In non-TTY mode, default `--remove-mcp` behavior is `no` unless the user explicitly passes `yes`. When removal is approved for `wunderkind-managed`, remove only the project-local `google-stitch` MCP entry and `.wunderkind/stitch/google-stitch-api-key`; when removal is approved for `reused-project`, remove only the project-local `google-stitch` MCP entry and preserve any unrelated MCP config. `reused-global` always preserves the inherited global Stitch entry. Also extend README/init/uninstall help examples for Stitch activation and DESIGN.md workflows, ensure packaged command/native asset copy logic includes `design-md`, and add end-to-end regression tests covering: fresh project-local Stitch setup, reuse-existing detection, partial setup warnings, strict `DESIGN.md` bootstrap, upgrade reconciliation for managed entries, uninstall prompts/cleanup decisions, and repeated init idempotency. Add one explicit regression proving that a project with design workflow disabled remains unchanged. Extend the existing native-command packaging coverage so it proves `commands/design-md.md` is written alongside `docs-index` rather than relying only on typecheck success.
   **Must NOT do**: Do not add marketing copy about unsupported live bi-directional sync; do not silently change unrelated docs examples; do not remove reused global Stitch config during uninstall.
@@ -538,10 +538,10 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
-- [ ] F1. Plan Compliance Audit — oracle
-- [ ] F2. Code Quality Review — unspecified-high
-- [ ] F3. Real Manual QA — unspecified-high (+ playwright if UI)
-- [ ] F4. Scope Fidelity Check — deep
+- [x] F1. Plan Compliance Audit — oracle
+- [x] F2. Code Quality Review — unspecified-high
+- [x] F3. Real Manual QA — unspecified-high (+ playwright if UI)
+- [x] F4. Scope Fidelity Check — deep
 
 ## Success Criteria
 - Wunderkind can opt a project into Google Stitch support through `init` without changing base install semantics.
