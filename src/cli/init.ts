@@ -4,6 +4,7 @@ import { join } from "node:path"
 import {
   detectCurrentConfig,
   detectGitHubWorkflowReadiness,
+  readWunderkindConfig,
   writeNativeAgentFiles,
   writeNativeCommandFiles,
   writeNativeSkillFiles,
@@ -100,6 +101,23 @@ function getReusedStitchOwnership(presence: StitchPresence): Extract<DesignMcpOw
 
 function getDefaultStitchSetup(presence: StitchPresence): StitchSetupChoice {
   return presence === "missing" ? "project-local" : "reuse"
+}
+
+function isDesignWorkflowEnabled(config: Pick<InstallConfig, "designTool" | "designPath" | "designMcpOwnership">): boolean {
+  return (
+    config.designTool === "google-stitch" ||
+    config.designMcpOwnership !== "none" ||
+    normalizeDesignPath(config.designPath ?? "./DESIGN.md") !== "./DESIGN.md"
+  )
+}
+
+function getInitialStitchSetup(
+  presence: StitchPresence,
+  ownership: DesignMcpOwnership,
+): StitchSetupChoice {
+  if (ownership === "wunderkind-managed") return "project-local"
+  if (ownership === "reused-project" || ownership === "reused-global") return "reuse"
+  return getDefaultStitchSetup(presence)
 }
 
 const SOUL_PERSONA_BANNERS: Record<SoulPersonaDefinition["agentKey"], readonly [string, string, string]> = {
@@ -576,33 +594,34 @@ export async function runInit(options: InitOptions): Promise<number> {
     const noTui = options.noTui === true || !process.stdin.isTTY || !process.stdout.isTTY
     const soulAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
     const existingSoulAnswers = readExistingSoulAnswers(cwd)
-    let designTool: DesignTool = "none"
-    let designPath = normalizeDesignPath(options.designPath ?? detected.designPath)
-    let designMcpOwnership: DesignMcpOwnership = "none"
+    const persisted = readWunderkindConfig()
+    let designTool: DesignTool = persisted?.designTool ?? detected.designTool
+    let designPath = normalizeDesignPath(options.designPath ?? persisted?.designPath ?? detected.designPath)
+    let designMcpOwnership: DesignMcpOwnership = persisted?.designMcpOwnership ?? detected.designMcpOwnership
     let shouldMergeStitchProjectConfig = false
     let stitchSecretValue: string | null = null
     let shouldBootstrapDesignFile = false
 
     const config: InstallConfig = {
-      region: detected.region,
-      industry: detected.industry,
-      primaryRegulation: detected.primaryRegulation,
-      secondaryRegulation: detected.secondaryRegulation,
-      teamCulture: detected.teamCulture,
-      orgStructure: detected.orgStructure,
-      cisoPersonality: detected.cisoPersonality,
-      ctoPersonality: detected.ctoPersonality,
-      cmoPersonality: detected.cmoPersonality,
-      productPersonality: detected.productPersonality,
-      creativePersonality: detected.creativePersonality,
-      legalPersonality: detected.legalPersonality,
-      docsEnabled: options.docsEnabled ?? detected.docsEnabled,
-      docsPath: options.docsPath ?? detected.docsPath,
-      docHistoryMode: normalizeDocHistoryMode(options.docHistoryMode ?? detected.docHistoryMode),
-      prdPipelineMode: options.prdPipelineMode ?? detected.prdPipelineMode,
-      designTool: detected.designTool,
-      designPath: detected.designPath,
-      designMcpOwnership: detected.designMcpOwnership,
+      region: persisted?.region ?? detected.region,
+      industry: persisted?.industry ?? detected.industry,
+      primaryRegulation: persisted?.primaryRegulation ?? detected.primaryRegulation,
+      secondaryRegulation: persisted?.secondaryRegulation ?? detected.secondaryRegulation,
+      teamCulture: persisted?.teamCulture ?? detected.teamCulture,
+      orgStructure: persisted?.orgStructure ?? detected.orgStructure,
+      cisoPersonality: persisted?.cisoPersonality ?? detected.cisoPersonality,
+      ctoPersonality: persisted?.ctoPersonality ?? detected.ctoPersonality,
+      cmoPersonality: persisted?.cmoPersonality ?? detected.cmoPersonality,
+      productPersonality: persisted?.productPersonality ?? detected.productPersonality,
+      creativePersonality: persisted?.creativePersonality ?? detected.creativePersonality,
+      legalPersonality: persisted?.legalPersonality ?? detected.legalPersonality,
+      docsEnabled: options.docsEnabled ?? persisted?.docsEnabled ?? detected.docsEnabled,
+      docsPath: options.docsPath ?? persisted?.docsPath ?? detected.docsPath,
+      docHistoryMode: normalizeDocHistoryMode(options.docHistoryMode ?? persisted?.docHistoryMode ?? detected.docHistoryMode),
+      prdPipelineMode: options.prdPipelineMode ?? persisted?.prdPipelineMode ?? detected.prdPipelineMode,
+      designTool: persisted?.designTool ?? detected.designTool,
+      designPath: persisted?.designPath ?? detected.designPath,
+      designMcpOwnership: persisted?.designMcpOwnership ?? detected.designMcpOwnership,
     }
 
     if (!noTui) {
@@ -779,7 +798,13 @@ export async function runInit(options: InitOptions): Promise<number> {
           { value: "no", label: "No", hint: "Skip design workflow bootstrap" },
           { value: "yes", label: "Yes", hint: "Configure DESIGN.md and optional Stitch MCP setup" },
         ],
-        "no",
+        isDesignWorkflowEnabled({
+          designTool,
+          designPath,
+          designMcpOwnership,
+        })
+          ? "yes"
+          : "no",
       )
       if (enableDesignWorkflow === null) return 1
 
@@ -792,14 +817,15 @@ export async function runInit(options: InitOptions): Promise<number> {
             { value: "none", label: "none", hint: "Use only DESIGN.md without MCP setup" },
             { value: "google-stitch", label: "google-stitch", hint: "Connect Google Stitch via MCP" },
           ],
-          "none",
+          designTool,
         )
         if (selectedDesignTool === null) return 1
         designTool = selectedDesignTool
+        designMcpOwnership = designTool === "google-stitch" ? designMcpOwnership : "none"
 
         if (designTool === "google-stitch") {
           const stitchPresence = await detectStitchMcpPresence(cwd)
-          const defaultStitchSetup = getDefaultStitchSetup(stitchPresence)
+          const defaultStitchSetup = getInitialStitchSetup(stitchPresence, designMcpOwnership)
           const stitchSetup = await promptSelect<StitchSetupChoice>(
             "Stitch MCP setup:",
             [
@@ -842,17 +868,28 @@ export async function runInit(options: InitOptions): Promise<number> {
         })
         if (p.isCancel(designPathRaw)) return 1
 
-        designPath = normalizeDesignPath(String(designPathRaw))
+        const normalizedDesignPathInput = String(designPathRaw).trim()
+        designPath = normalizeDesignPath(normalizedDesignPathInput === "" ? designPath : normalizedDesignPathInput)
+      } else {
+        designTool = "none"
+        designMcpOwnership = "none"
       }
     } else {
-      designTool = normalizeDesignTool(options.designTool)
-      designPath = normalizeDesignPath(options.designPath ?? detected.designPath)
+      const hasDesignOverrides =
+        options.designTool !== undefined ||
+        options.designPath !== undefined ||
+        options.stitchSetup !== undefined ||
+        options.stitchApiKeyFile !== undefined
 
-      if (designTool === "google-stitch") {
+      designTool = options.designTool === undefined ? config.designTool ?? "none" : normalizeDesignTool(options.designTool)
+      designPath = normalizeDesignPath(options.designPath ?? config.designPath ?? detected.designPath)
+      designMcpOwnership = options.designTool === undefined ? config.designMcpOwnership ?? "none" : "none"
+
+      if (hasDesignOverrides && designTool === "google-stitch") {
         shouldBootstrapDesignFile = true
 
         const stitchPresence = await detectStitchMcpPresence(cwd)
-        const stitchSetup = normalizeStitchSetup(options.stitchSetup) ?? getDefaultStitchSetup(stitchPresence)
+        const stitchSetup = normalizeStitchSetup(options.stitchSetup) ?? getInitialStitchSetup(stitchPresence, designMcpOwnership)
 
         if (stitchSetup === "reuse") {
           const reusedOwnership = getReusedStitchOwnership(stitchPresence)

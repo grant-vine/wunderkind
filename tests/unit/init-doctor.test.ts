@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
-import type { DetectedConfig, PluginVersionInfo } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, PluginVersionInfo } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
@@ -37,6 +37,7 @@ function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): Detected
 }
 
 const mockDetectCurrentConfig = mock<() => unknown>(() => createDetectedConfig())
+const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
 
 const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock<() => Record<string, unknown> | null>(() => null)
@@ -52,8 +53,8 @@ const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/t
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
 const mockDetectNativeCommandFiles = mock(() => ({
   dir: "/tmp/global-commands",
-  presentCount: 1,
-  totalCount: 1,
+  presentCount: 38,
+  totalCount: 38,
   allPresent: true,
 }))
 const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
@@ -125,6 +126,7 @@ mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectNativeSkillFiles: mockDetectNativeSkillFiles,
   detectOmoVersionInfo: mockDetectOmoVersionInfo,
   detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
+  readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
@@ -277,6 +279,8 @@ describe("runInit", () => {
     mockDetectNativeSkillFiles.mockClear()
     mockDetectWunderkindVersionInfo.mockClear()
     mockDetectOmoVersionInfo.mockClear()
+    mockReadWunderkindConfig.mockClear()
+    mockReadWunderkindConfig.mockImplementation(() => null)
     mockDetectCurrentConfig.mockImplementation(() =>
       createDetectedConfig({
         isInstalled: false,
@@ -631,7 +635,7 @@ describe("runDoctor", () => {
     mockDetectNativeCommandFiles.mockImplementation(() => ({
       dir: "/tmp/global-commands",
       presentCount: 0,
-      totalCount: 1,
+      totalCount: 38,
       allPresent: false,
     }))
     mockDetectNativeSkillFiles.mockImplementation((scope: "global" | "project") => ({

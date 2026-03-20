@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
-import type { DetectedConfig } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig } from "../../src/cli/types.js"
 import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { StitchPresence } from "../../src/cli/mcp-helpers.js"
@@ -53,6 +53,7 @@ mock.module("@clack/prompts", () => ({
 }))
 
 const mockDetectCurrentConfig = mock(() => DEFAULT_DETECTED_CONFIG)
+const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
 
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
@@ -88,6 +89,7 @@ const mockWriteStitchSecretFile = mock<(apiKey: string, cwd: string) => Promise<
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  readWunderkindConfig: mockReadWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
@@ -116,10 +118,12 @@ describe("runInit interactive SOUL prompts", () => {
     mockWriteNativeSkillFiles.mockClear()
     mockDetectGitHubWorkflowReadiness.mockClear()
     mockDetectCurrentConfig.mockClear()
+    mockReadWunderkindConfig.mockClear()
     mockDetectStitchMcpPresence.mockClear()
     mockMergeStitchMcpConfig.mockClear()
     mockWriteStitchSecretFile.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => DEFAULT_DETECTED_CONFIG)
+    mockReadWunderkindConfig.mockImplementation(() => null)
     mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
       isGitRepo: true,
       hasGitHubRemote: true,
@@ -457,6 +461,60 @@ describe("runInit interactive SOUL prompts", () => {
     }
   })
 
+  it("hydrates early prompt defaults from persisted merged config values", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      region: "Project Region",
+      industry: "FinTech",
+      primaryRegulation: "POPIA",
+      secondaryRegulation: "SOC2",
+      teamCulture: "formal-strict",
+      orgStructure: "hierarchical",
+      docsEnabled: true,
+      docsPath: "./persisted-docs",
+      docHistoryMode: "overwrite-archive",
+      prdPipelineMode: "github",
+      designPath: "./designs/brief.md",
+    }))
+
+    const textAnswers = ["Project Region", "FinTech", "./persisted-docs"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+    const confirmAnswers = [false, true, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    const selectAnswers = ["POPIA", "SOC2", "formal-strict", "hierarchical", "github", "overwrite-archive", "no"]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      expect((mockText.mock.calls[0]?.[0] as { initialValue?: string }).initialValue).toBe("Project Region")
+      expect((mockText.mock.calls[1]?.[0] as { initialValue?: string }).initialValue).toBe("FinTech")
+      expect((mockConfirm.mock.calls[1]?.[0] as { initialValue?: boolean }).initialValue).toBe(true)
+      expect((mockSelect.mock.calls[4]?.[0] as { initialValue?: string }).initialValue).toBe("github")
+      expect((mockText.mock.calls[2]?.[0] as { initialValue?: string }).initialValue).toBe("./persisted-docs")
+      expect((mockSelect.mock.calls[5]?.[0] as { initialValue?: string }).initialValue).toBe("overwrite-archive")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
   it("docs path validate callback rejects invalid paths and accepts valid ones", async () => {
     const originalStdinTTY = process.stdin.isTTY
     const originalStdoutTTY = process.stdout.isTTY
@@ -736,6 +794,75 @@ describe("runInit interactive SOUL prompts", () => {
 
       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(writtenConfig.designMcpOwnership).toBe("none")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("rehydrates existing design workflow defaults on rerun", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      designTool: "google-stitch",
+      designPath: "./design/system/DESIGN.md",
+      designMcpOwnership: "reused-project",
+      docsEnabled: true,
+      docsPath: "./docs-output",
+      docHistoryMode: "append-dated",
+    }))
+
+    const textAnswers = ["EU", "SaaS", "./docs-output", ""]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [false, true]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockDetectStitchMcpPresence.mockImplementation(async () => "project-local")
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "filesystem",
+      "append-dated",
+      "yes",
+      "google-stitch",
+      "reuse",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      const enableDesignWorkflowCall = mockSelect.mock.calls[6]?.[0] as { initialValue?: string }
+      expect(enableDesignWorkflowCall.initialValue).toBe("yes")
+
+      const designToolCall = mockSelect.mock.calls[7]?.[0] as { initialValue?: string }
+      expect(designToolCall.initialValue).toBe("google-stitch")
+
+      const stitchSetupCall = mockSelect.mock.calls[8]?.[0] as { initialValue?: string }
+      expect(stitchSetupCall.initialValue).toBe("reuse")
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designTool).toBe("google-stitch")
+      expect(writtenConfig.designPath).toBe("./design/system/DESIGN.md")
+      expect(writtenConfig.designMcpOwnership).toBe("reused-project")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)

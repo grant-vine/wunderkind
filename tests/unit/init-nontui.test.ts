@@ -5,7 +5,7 @@ import { dirname, join } from "node:path"
 import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { StitchPresence } from "../../src/cli/mcp-helpers.js"
-import type { DetectedConfig } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig } from "../../src/cli/types.js"
 
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
@@ -40,6 +40,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
 }
 
 const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => makeDetectedConfig())
+const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
 const mockDetectGitHubWorkflowReadiness = mock<(cwd: string) => GitHubWorkflowReadiness>(() => ({
   isGitRepo: true,
   hasGitHubRemote: true,
@@ -74,6 +75,7 @@ const mockWriteStitchSecretFile = mock<(apiKey: string, cwd: string) => Promise<
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  readWunderkindConfig: mockReadWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
@@ -96,7 +98,9 @@ describe("runInit non-interactive branching", () => {
     mockWriteNativeAgentFiles.mockClear()
     mockWriteNativeCommandFiles.mockClear()
     mockWriteNativeSkillFiles.mockClear()
+    mockReadWunderkindConfig.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
+    mockReadWunderkindConfig.mockImplementation(() => null)
     mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
       isGitRepo: true,
       hasGitHubRemote: true,
@@ -380,6 +384,100 @@ describe("runInit non-interactive branching", () => {
       expect(existsSync(join(tempProject, "notes", "docs", "README.md"))).toBe(true)
       expect(readFileSync(join(tempProject, "notes", "docs", "README.md"), "utf-8")).toContain("# Documentation")
       expect(messages.some((message) => message.includes("Initialized project in"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("uses persisted merged config values for no-TUI baseline and docs defaults", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({
+      region: "Detected Region",
+      industry: "Detected Industry",
+      primaryRegulation: "Detected Primary",
+      secondaryRegulation: "Detected Secondary",
+      docsEnabled: false,
+      docsPath: "./detected-docs",
+      docHistoryMode: "append-dated",
+      prdPipelineMode: "filesystem",
+      designPath: "./detected-design.md",
+    }))
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      region: "Persisted Region",
+      industry: "Persisted Industry",
+      primaryRegulation: "POPIA",
+      secondaryRegulation: "SOC2",
+      docsEnabled: true,
+      docsPath: "./persisted-docs",
+      docHistoryMode: "overwrite-archive",
+      prdPipelineMode: "github",
+      designPath: "./persisted-design.md",
+    }))
+
+    try {
+      const code = await runInit({ noTui: true })
+
+      expect(code).toBe(0)
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.region).toBe("Persisted Region")
+      expect(writtenConfig.industry).toBe("Persisted Industry")
+      expect(writtenConfig.primaryRegulation).toBe("POPIA")
+      expect(writtenConfig.secondaryRegulation).toBe("SOC2")
+      expect(writtenConfig.docsEnabled).toBe(true)
+      expect(writtenConfig.docsPath).toBe("./persisted-docs")
+      expect(writtenConfig.docHistoryMode).toBe("overwrite-archive")
+      expect(writtenConfig.prdPipelineMode).toBe("github")
+      expect(writtenConfig.designPath).toBe("./persisted-design.md")
+      expect(existsSync(join(tempProject, "persisted-docs", "README.md"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("preserves existing design workflow config in no-TUI mode when no design overrides are provided", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      designTool: "google-stitch",
+      designPath: "./design/system/DESIGN.md",
+      designMcpOwnership: "reused-project",
+      docsEnabled: true,
+      docsPath: "./docs-output",
+      docHistoryMode: "append-dated",
+    }))
+
+    try {
+      const code = await runInit({ noTui: true })
+
+      expect(code).toBe(0)
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designTool).toBe("google-stitch")
+      expect(writtenConfig.designPath).toBe("./design/system/DESIGN.md")
+      expect(writtenConfig.designMcpOwnership).toBe("reused-project")
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog
