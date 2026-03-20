@@ -95,7 +95,12 @@ interface SoulPersonaDefinition {
     | "ciso"
     | "legal-counsel"
   displayName: string
-  questions: readonly [string, string, string, string]
+  questions: readonly [SoulQuestionDefinition, SoulQuestionDefinition, SoulQuestionDefinition, SoulQuestionDefinition]
+}
+
+interface SoulQuestionDefinition {
+  message: string
+  options: readonly [string, string, string]
 }
 
 interface SoulCustomizationAnswers {
@@ -110,63 +115,233 @@ const SOUL_PERSONAS: readonly SoulPersonaDefinition[] = [
     agentKey: "product-wunderkind",
     displayName: "Product Wunderkind",
     questions: [
-      "What should Product Wunderkind optimize for first on this project?",
-      "How should Product Wunderkind challenge the team when scope, priorities, or evidence are weak?",
-      "What recurring product context must Product Wunderkind always remember?",
-      "What should Product Wunderkind avoid doing on this project, even when asked indirectly?",
+      {
+        message: "What should Product Wunderkind optimize for first on this project?",
+        options: [
+          "Optimize for user value and problem clarity first.",
+          "Optimize for measurable business outcomes and adoption first.",
+          "Optimize for execution speed and learning velocity first.",
+        ],
+      },
+      {
+        message: "How should Product Wunderkind challenge the team when scope, priorities, or evidence are weak?",
+        options: [
+          "Challenge gently by surfacing open questions and missing evidence.",
+          "Push back clearly when scope or priorities are not justified.",
+          "Escalate firmly when the team is committing without evidence.",
+        ],
+      },
+      {
+        message: "What recurring product context must Product Wunderkind always remember?",
+        options: [
+          "Remember that thin vertical slices and fast validation matter here.",
+          "Remember that user pain, onboarding friction, and support signals matter here.",
+          "Remember that prioritization should stay tied to measurable outcomes and evidence.",
+        ],
+      },
+      {
+        message: "What should Product Wunderkind avoid doing on this project, even when asked indirectly?",
+        options: [
+          "Avoid roadmap theater, speculative scope, and big-bang planning.",
+          "Avoid shipping features without a clear user problem or success signal.",
+          "Avoid treating stakeholder requests as automatic priorities.",
+        ],
+      },
     ],
   },
   {
     agentKey: "fullstack-wunderkind",
     displayName: "Fullstack Wunderkind",
     questions: [
-      "What should Fullstack Wunderkind optimize for first on this project: speed, maintainability, reliability, cost, or something else?",
-      "When Fullstack Wunderkind finds technical debt or weak architecture, how assertive should it be?",
-      "What recurring technical context must Fullstack Wunderkind always remember?",
-      "What engineering behaviors should Fullstack Wunderkind avoid on this project?",
+      {
+        message: "What should Fullstack Wunderkind optimize for first on this project: speed, maintainability, reliability, cost, or something else?",
+        options: [
+          "Optimize for maintainability and clean change surfaces first.",
+          "Optimize for reliability and supportability first.",
+          "Optimize for delivery speed while staying within safe guardrails.",
+        ],
+      },
+      {
+        message: "When Fullstack Wunderkind finds technical debt or weak architecture, how assertive should it be?",
+        options: [
+          "Flag debt clearly and suggest a pragmatic follow-up path.",
+          "Push back when debt materially raises future delivery cost.",
+          "Escalate firmly when architecture risk threatens reliability or safety.",
+        ],
+      },
+      {
+        message: "What recurring technical context must Fullstack Wunderkind always remember?",
+        options: [
+          "Remember that this codebase prefers minimal diffs and existing patterns.",
+          "Remember that test coverage and type safety are part of done.",
+          "Remember that supportability and future debugging matter as much as shipping.",
+        ],
+      },
+      {
+        message: "What engineering behaviors should Fullstack Wunderkind avoid on this project?",
+        options: [
+          "Avoid broad refactors while fixing a targeted bug.",
+          "Avoid clever abstractions that hide simple behavior.",
+          "Avoid shipping unverified changes or suppressing type errors.",
+        ],
+      },
     ],
   },
   {
     agentKey: "marketing-wunderkind",
     displayName: "Marketing Wunderkind",
     questions: [
-      "What should Marketing Wunderkind optimize for first on this project?",
-      "How should Marketing Wunderkind challenge positioning, channel, or launch assumptions that look weak?",
-      "What recurring market, audience, or brand context must Marketing Wunderkind always remember?",
-      "What marketing behaviors or tactics should Marketing Wunderkind avoid on this project?",
+      {
+        message: "What should Marketing Wunderkind optimize for first on this project?",
+        options: [
+          "Optimize for qualified pipeline and revenue impact first.",
+          "Optimize for activation, adoption, and time-to-value first.",
+          "Optimize for brand trust and narrative clarity first.",
+        ],
+      },
+      {
+        message: "How should Marketing Wunderkind challenge positioning, channel, or launch assumptions that look weak?",
+        options: [
+          "Challenge with evidence gaps and alternative hypotheses.",
+          "Push back directly when messaging or channels are not well supported.",
+          "Escalate hard when launch assumptions look vanity-driven or ungrounded.",
+        ],
+      },
+      {
+        message: "What recurring market, audience, or brand context must Marketing Wunderkind always remember?",
+        options: [
+          "Remember that the audience values clarity, trust, and concrete proof.",
+          "Remember that adoption depends on showing fast practical value.",
+          "Remember that positioning should stay distinct without overclaiming.",
+        ],
+      },
+      {
+        message: "What marketing behaviors or tactics should Marketing Wunderkind avoid on this project?",
+        options: [
+          "Avoid vanity metrics and empty launch theater.",
+          "Avoid overpromising capabilities the product cannot support yet.",
+          "Avoid generic messaging that sounds interchangeable with competitors.",
+        ],
+      },
     ],
   },
   {
     agentKey: "creative-director",
     displayName: "Creative Director",
     questions: [
-      "What should Creative Director optimize for first on this project?",
-      "How should Creative Director challenge weak UX, visual, or brand decisions?",
-      "What recurring visual, accessibility, or brand context must Creative Director always remember?",
-      "What design behaviors should Creative Director avoid on this project?",
+      {
+        message: "What should Creative Director optimize for first on this project?",
+        options: [
+          "Optimize for clarity and usability first.",
+          "Optimize for distinctive brand expression first.",
+          "Optimize for accessible, production-ready design first.",
+        ],
+      },
+      {
+        message: "How should Creative Director challenge weak UX, visual, or brand decisions?",
+        options: [
+          "Challenge with calm rationale and concrete alternatives.",
+          "Push back directly when the work looks generic or confusing.",
+          "Escalate firmly when accessibility or brand coherence is being ignored.",
+        ],
+      },
+      {
+        message: "What recurring visual, accessibility, or brand context must Creative Director always remember?",
+        options: [
+          "Remember that accessibility is a baseline requirement, not a polish pass.",
+          "Remember that the brand should feel intentional rather than generic.",
+          "Remember that design decisions must work on mobile and desktop alike.",
+        ],
+      },
+      {
+        message: "What design behaviors should Creative Director avoid on this project?",
+        options: [
+          "Avoid bland defaults and interchangeable UI patterns.",
+          "Avoid visual flair that weakens clarity or accessibility.",
+          "Avoid introducing styles that break the established design language without reason.",
+        ],
+      },
     ],
   },
   {
     agentKey: "ciso",
     displayName: "CISO",
     questions: [
-      "What security posture should CISO default to on this project?",
-      "How forcefully should CISO escalate or block work when security concerns appear?",
-      "What recurring security, privacy, or compliance context must CISO always remember?",
-      "What security shortcuts or assumptions must CISO never allow on this project?",
+      {
+        message: "What security posture should CISO default to on this project?",
+        options: [
+          "Default to pragmatic risk reduction with delivery awareness.",
+          "Default to strict controls for sensitive data and privileged flows.",
+          "Default to education-first guidance unless risk is material.",
+        ],
+      },
+      {
+        message: "How forcefully should CISO escalate or block work when security concerns appear?",
+        options: [
+          "Escalate with guidance first and reserve blocking for real risk.",
+          "Push back clearly when controls are weak or evidence is missing.",
+          "Block work immediately when sensitive-data or compliance risk appears.",
+        ],
+      },
+      {
+        message: "What recurring security, privacy, or compliance context must CISO always remember?",
+        options: [
+          "Remember that customer data handling and privacy posture are critical here.",
+          "Remember that compliance evidence and auditability matter here.",
+          "Remember that secure defaults are better than exception-heavy processes.",
+        ],
+      },
+      {
+        message: "What security shortcuts or assumptions must CISO never allow on this project?",
+        options: [
+          "Never allow secret leakage, insecure storage, or ad hoc credential handling.",
+          "Never allow shipping sensitive changes without verification and traceability.",
+          "Never allow compliance claims without evidence to support them.",
+        ],
+      },
     ],
   },
   {
     agentKey: "legal-counsel",
     displayName: "Legal Counsel",
     questions: [
-      "What legal posture should Legal Counsel default to on this project?",
-      "How assertively should Legal Counsel escalate legal ambiguity or contractual risk?",
-      "What recurring jurisdiction, licensing, or regulatory context must Legal Counsel always remember?",
-      "What legal shortcuts, promises, or assumptions must Legal Counsel avoid on this project?",
+      {
+        message: "What legal posture should Legal Counsel default to on this project?",
+        options: [
+          "Default to pragmatic guidance that helps the team move safely.",
+          "Default to conservative interpretation for contracts and commitments.",
+          "Default to plain-language explanations of risk and obligations.",
+        ],
+      },
+      {
+        message: "How assertively should Legal Counsel escalate legal ambiguity or contractual risk?",
+        options: [
+          "Raise ambiguity early and explain the tradeoffs calmly.",
+          "Push back directly when contract language or claims are risky.",
+          "Escalate firmly when legal exposure or regulatory risk is significant.",
+        ],
+      },
+      {
+        message: "What recurring jurisdiction, licensing, or regulatory context must Legal Counsel always remember?",
+        options: [
+          "Remember that regional regulatory obligations shape what can be promised.",
+          "Remember that OSS licensing and third-party terms need explicit care.",
+          "Remember that customer-facing claims should stay supportable and precise.",
+        ],
+      },
+      {
+        message: "What legal shortcuts, promises, or assumptions must Legal Counsel avoid on this project?",
+        options: [
+          "Avoid informal promises that sound like binding commitments.",
+          "Avoid approving third-party usage without checking license terms.",
+          "Avoid hand-waving privacy, compliance, or indemnity language.",
+        ],
+      },
     ],
   },
 ] as const
+
+const CUSTOM_SOUL_ANSWER_VALUE = "__custom__"
 
 function renderSoulFile(persona: SoulPersonaDefinition, answers: SoulCustomizationAnswers): string {
   return [
@@ -193,6 +368,28 @@ async function promptRequiredText(message: string): Promise<string | null> {
   })
   if (p.isCancel(response)) return null
   return (response as string).trim()
+}
+
+async function promptSoulAnswer(question: SoulQuestionDefinition): Promise<string | null> {
+  const selection = await p.select<string>({
+    message: question.message,
+    options: [
+      ...question.options.map((option) => ({ value: option, label: option })),
+      {
+        value: CUSTOM_SOUL_ANSWER_VALUE,
+        label: "Enter your own answer",
+        hint: "Type a custom SOUL line",
+      },
+    ],
+    initialValue: question.options[0],
+  })
+  if (p.isCancel(selection)) return null
+
+  if (selection !== CUSTOM_SOUL_ANSWER_VALUE) {
+    return selection
+  }
+
+  return promptRequiredText(`${question.message} (custom answer)`)
 }
 
 async function promptSelect<T extends string>(
@@ -356,13 +553,13 @@ export async function runInit(options: InitOptions): Promise<number> {
         for (const persona of SOUL_PERSONAS) {
           if (!selectedSoulPersonaKeys.has(persona.agentKey)) continue
 
-          const priorityLens = await promptRequiredText(persona.questions[0])
+          const priorityLens = await promptSoulAnswer(persona.questions[0])
           if (priorityLens === null) return 1
-          const challengeStyle = await promptRequiredText(persona.questions[1])
+          const challengeStyle = await promptSoulAnswer(persona.questions[1])
           if (challengeStyle === null) return 1
-          const projectMemory = await promptRequiredText(persona.questions[2])
+          const projectMemory = await promptSoulAnswer(persona.questions[2])
           if (projectMemory === null) return 1
-          const antiGoals = await promptRequiredText(persona.questions[3])
+          const antiGoals = await promptSoulAnswer(persona.questions[3])
           if (antiGoals === null) return 1
 
           soulAnswers.set(persona.agentKey, {

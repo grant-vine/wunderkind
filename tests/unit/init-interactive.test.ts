@@ -102,21 +102,24 @@ describe("runInit interactive SOUL prompts", () => {
     Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
     Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
 
-    const textAnswers = [
-      "EU",
-      "SaaS",
-      "Optimize for activation and retention first.",
-      "Push back early when scope expands without evidence.",
-      "This team prefers thin vertical slices and filesystem-first planning.",
-      "Do not generate roadmap theater or big-bang releases.",
-    ]
+    const textAnswers = ["EU", "SaaS"]
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
 
     const confirmAnswers = [true, false, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
     mockMultiselect.mockImplementation(async () => ["product-wunderkind"])
 
-    const selectAnswers = ["GDPR", "POPIA", "formal-strict", "hierarchical", "filesystem"]
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "Optimize for measurable business outcomes and adoption first.",
+      "Push back clearly when scope or priorities are not justified.",
+      "Remember that thin vertical slices and fast validation matter here.",
+      "Avoid roadmap theater, speculative scope, and big-bang planning.",
+      "filesystem",
+    ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -129,7 +132,7 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(5)
+      expect(mockSelect).toHaveBeenCalledTimes(9)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockMultiselect).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
@@ -152,11 +155,63 @@ describe("runInit interactive SOUL prompts", () => {
       expect(soulFile).toContain("<!-- wunderkind:soul-file:v1 -->")
       expect(soulFile).toContain("# Product Wunderkind SOUL")
       expect(soulFile).toContain("- agentKey: product-wunderkind")
-      expect(soulFile).toContain("- Priority lens: Optimize for activation and retention first.")
-      expect(soulFile).toContain("- Challenge style: Push back early when scope expands without evidence.")
-      expect(soulFile).toContain("- Project memory: This team prefers thin vertical slices and filesystem-first planning.")
-      expect(soulFile).toContain("- Anti-goals: Do not generate roadmap theater or big-bang releases.")
+      expect(soulFile).toContain("- Priority lens: Optimize for measurable business outcomes and adoption first.")
+      expect(soulFile).toContain("- Challenge style: Push back clearly when scope or priorities are not justified.")
+      expect(soulFile).toContain("- Project memory: Remember that thin vertical slices and fast validation matter here.")
+      expect(soulFile).toContain("- Anti-goals: Avoid roadmap theater, speculative scope, and big-bang planning.")
       expect(soulFile).toContain("## Durable Knowledge")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("offers select-based SOUL answers with a custom fallback option", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS", "Optimize for partner-led expansion first."]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [true, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockMultiselect.mockImplementation(async () => ["product-wunderkind"])
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "__custom__",
+      "Push back clearly when scope or priorities are not justified.",
+      "Remember that prioritization should stay tied to measurable outcomes and evidence.",
+      "Avoid treating stakeholder requests as automatic priorities.",
+      "filesystem",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      const firstSoulSelectCall = mockSelect.mock.calls[4]?.[0] as { options?: Array<{ value: string; label: string }> }
+      expect(firstSoulSelectCall.options?.some((option) => option.label === "Enter your own answer")).toBe(true)
+
+      const soulPath = join(tempProject, ".wunderkind", "souls", "product-wunderkind.md")
+      expect(readFileSync(soulPath, "utf-8")).toContain("- Priority lens: Optimize for partner-led expansion first.")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
