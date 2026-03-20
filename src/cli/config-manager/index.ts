@@ -10,6 +10,8 @@ import type {
   CisoPersonality,
   CmoPersonality,
   ConfigMergeResult,
+  DesignMcpOwnership,
+  DesignTool,
   CreativePersonality,
   CtoPersonality,
   DetectedConfig,
@@ -32,6 +34,19 @@ const PACKAGE_NAME = "@grant-vine/wunderkind"
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
 const OMO_CANONICAL_PACKAGE_NAME = "oh-my-openagent"
 const OMO_LEGACY_PACKAGE_NAME = "oh-my-opencode"
+
+function isDesignTool(value: unknown): value is DesignTool {
+  return value === "none" || value === "google-stitch"
+}
+
+function isDesignMcpOwnership(value: unknown): value is DesignMcpOwnership {
+  return (
+    value === "none" ||
+    value === "wunderkind-managed" ||
+    value === "reused-project" ||
+    value === "reused-global"
+  )
+}
 
 interface ConfigManagerPaths {
   configDir: string
@@ -141,6 +156,9 @@ const PROJECT_CONFIG_KEYS = [
   "docsPath",
   "docHistoryMode",
   "prdPipelineMode",
+  "designTool",
+  "designPath",
+  "designMcpOwnership",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -162,6 +180,9 @@ const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   docsPath: "./docs",
   docHistoryMode: "append-dated",
   prdPipelineMode: "filesystem",
+  designTool: "none",
+  designPath: "./DESIGN.md",
+  designMcpOwnership: "none",
 }
 
 const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
@@ -184,6 +205,9 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   docsPath: DEFAULT_INSTALL_CONFIG.docsPath,
   docHistoryMode: DEFAULT_INSTALL_CONFIG.docHistoryMode,
   prdPipelineMode: DEFAULT_INSTALL_CONFIG.prdPipelineMode,
+  designTool: DEFAULT_INSTALL_CONFIG.designTool ?? "none",
+  designPath: DEFAULT_INSTALL_CONFIG.designPath ?? "./DESIGN.md",
+  designMcpOwnership: DEFAULT_INSTALL_CONFIG.designMcpOwnership ?? "none",
 }
 
 export function getDefaultInstallConfig(): InstallConfig {
@@ -500,6 +524,9 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
   if (typeof source["prdPipelineMode"] === "string") result.prdPipelineMode = source["prdPipelineMode"] as PrdPipelineMode
+  if (isDesignTool(source["designTool"])) result.designTool = source["designTool"]
+  if (typeof source["designPath"] === "string") result.designPath = source["designPath"]
+  if (isDesignMcpOwnership(source["designMcpOwnership"])) result.designMcpOwnership = source["designMcpOwnership"]
 
   return result
 }
@@ -676,9 +703,17 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // PRD / planning workflow mode`,
     `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
     `  // PRD pipeline mode: "filesystem" | "github"`,
+    `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")},`,
+    ``,
+    `  // Design workflow settings`,
+    `  // Design tool: "none" | "google-stitch"`,
+    `  "designTool": ${JSON.stringify(config.designTool)},`,
+    `  // Relative path to the design brief shared with design tools`,
+    `  "designPath": ${JSON.stringify(config.designPath)},`,
+    `  // MCP ownership: "none" | "wunderkind-managed" | "reused-project" | "reused-global"`,
   )
 
-  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")}`)
+  lines.push(`  "designMcpOwnership": ${JSON.stringify(config.designMcpOwnership)}`)
 
   lines.push(`}`, ``)
 
@@ -744,6 +779,9 @@ export function detectCurrentConfig(): DetectedConfig {
     projectOpenCodeConfigPath: projectResolution.path,
     globalOpenCodeConfigPath: globalResolution.path,
     ...defaults,
+    designTool: defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
+    designPath: defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
+    designMcpOwnership: defaults.designMcpOwnership ?? DEFAULT_PROJECT_CONFIG.designMcpOwnership,
   }
 
   const registration = detectRegistration()
@@ -787,6 +825,13 @@ export function detectCurrentConfig(): DetectedConfig {
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
     prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
+    designTool: projectLocal?.designTool ?? legacyGlobalProject.designTool ?? defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
+    designPath: projectLocal?.designPath ?? legacyGlobalProject.designPath ?? defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
+    designMcpOwnership:
+      projectLocal?.designMcpOwnership ??
+      legacyGlobalProject.designMcpOwnership ??
+      defaults.designMcpOwnership ??
+      DEFAULT_PROJECT_CONFIG.designMcpOwnership,
   }
 }
 
@@ -839,7 +884,10 @@ export function writeWunderkindConfig(installConfig: InstallConfig, scope: Insta
     return writeGlobalWunderkindConfig(installConfig)
   }
 
-  return writeProjectWunderkindConfig(installConfig)
+  return writeProjectWunderkindConfig({
+    ...DEFAULT_PROJECT_CONFIG,
+    ...installConfig,
+  })
 }
 
 export function detectLegacyConfig(): boolean {

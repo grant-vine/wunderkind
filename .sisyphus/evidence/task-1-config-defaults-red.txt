@@ -1,0 +1,78 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/config-template.test.ts:
+100 |     expect(schema.$id).toBe(WUNDERKIND_SCHEMA_URL)
+101 |     expect(Array.isArray(schema.oneOf)).toBe(true)
+102 |     expect(schema.oneOf?.length).toBe(2)
+103 |     const projectSchema = schema.oneOf?.[1]
+104 |     expect(projectSchema?.properties?.prdPipelineMode).toBeDefined()
+105 |     expect(projectSchema?.properties?.designTool).toBeDefined()
+                                                        ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:105:51)
+(fail) wunderkind config schema asset > uses the expected canonical schema URL as its id
+149 | describe("design workflow config template", () => {
+150 |   it("returns design workflow defaults from detected config", async () => {
+151 |     await withSandbox("design-defaults", async (_sandbox, mod) => {
+152 |       const detected = mod.detectCurrentConfig()
+153 | 
+154 |       expect(detected.designTool).toBe("none")
+                                        ^
+error: expect(received).toBe(expected)
+
+Expected: "none"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:154:35)
+      at withSandbox (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:60:11)
+      at async <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:151:11)
+(fail) design workflow config template > returns design workflow defaults from detected config [2.87ms]
+188 | 
+189 |       expect(result.success).toBe(true)
+190 | 
+191 |       const rendered = readFileSync(sandbox.projectConfigPath, "utf8")
+192 | 
+193 |       expect(rendered).toContain("\"designTool\": \"google-stitch\"")
+                             ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "\"designTool\": \"google-stitch\""
+Received: "// Wunderkind project configuration — edit these values to tailor agents to this project\n{\n  \"$schema\": \"https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json\",\n  // Team culture baseline — affects all agents' communication style and decision rigour\n  // \"formal-strict\" | \"pragmatic-balanced\" | \"experimental-informal\"\n  \"teamCulture\": \"pragmatic-balanced\",\n  // Org structure — \"flat\" (peers, escalate to user) | \"hierarchical\" (domain authority applies, CISO has hard veto)\n  \"orgStructure\": \"flat\",\n\n  // Agent personalities — controls each agent's default character archetype\n  // CISO: \"paranoid-enforcer\" | \"pragmatic-risk-manager\" | \"educator-collaborator\"\n  // Also carries security-incident posture and compliance-impact escalation style\n  \"cisoPersonality\": \"pragmatic-risk-manager\",\n  // CTO/Fullstack: \"grizzled-sysadmin\" | \"startup-bro\" | \"code-archaeologist\"\n  // Also carries TDD, regression, technical triage, reliability, runbook, and supportability posture\n  \"ctoPersonality\": \"code-archaeologist\",\n  // CMO/Marketing: \"data-driven\" | \"brand-storyteller\" | \"growth-hacker\"\n  // Also carries brand, community, developer advocacy, docs adoption, funnel, and campaign-analysis posture\n  \"cmoPersonality\": \"data-driven\",\n  // Product: \"user-advocate\" | \"velocity-optimizer\" | \"outcome-obsessed\"\n  // Also carries issue intake, repro shaping, acceptance review, experiment readouts, and backlog-ready triage posture\n  \"productPersonality\": \"outcome-obsessed\",\n  // Creative Director: \"perfectionist-craftsperson\" | \"bold-provocateur\" | \"pragmatic-problem-solver\"\n  \"creativePersonality\": \"pragmatic-problem-solver\",\n  // Legal Counsel: \"cautious-gatekeeper\" | \"pragmatic-advisor\" | \"plain-english-counselor\"\n  \"legalPersonality\": \"pragmatic-advisor\",\n\n  // Docs output settings\n  // Enable or disable writing docs outputs to disk\n  \"docsEnabled\": false,\n  // Directory path where docs outputs are written\n  \"docsPath\": \"./docs\",\n  // History mode: \"overwrite\" | \"append-dated\" (UTC-timestamped sections) | \"new-dated-file\" (UTC-timestamped files) | \"overwrite-archive\"\n  \"docHistoryMode\": \"append-dated\",\n  // PRD / planning workflow mode\n  // \"filesystem\" writes to .sisyphus/; \"github\" expects gh + GitHub repo readiness\n  // PRD pipeline mode: \"filesystem\" | \"github\"\n  \"prdPipelineMode\": \"filesystem\"\n}\n"
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:193:24)
+      at withSandbox (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:60:11)
+      at async <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:181:11)
+(fail) design workflow config template > renders design workflow fields into project config output [1.30ms]
+209 |       )
+210 | 
+211 |       const parsed = mod.readProjectWunderkindConfig()
+212 | 
+213 |       expect(parsed?.designTool).toBeUndefined()
+214 |       expect(parsed?.designPath).toBe("./custom-design.md")
+                                       ^
+error: expect(received).toBe(expected)
+
+Expected: "./custom-design.md"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:214:34)
+      at withSandbox (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:60:11)
+      at async <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:200:11)
+(fail) design workflow config template > drops invalid designTool values during project config coercion [0.97ms]
+
+tests/unit/stitch-adapter.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module '../../src/cli/mcp-adapters.js' from '/Users/grantv/Code/wunderkind/tests/unit/stitch-adapter.test.ts'
+-------------------------------
+
+
+ 6 pass
+ 5 fail
+ 1 error
+ 40 expect() calls
+Ran 11 tests across 2 files. [35.00ms]

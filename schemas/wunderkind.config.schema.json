@@ -38,7 +38,10 @@
         "docsEnabled": { "type": "boolean" },
         "docsPath": { "type": "string" },
         "docHistoryMode": { "enum": ["overwrite", "append-dated", "new-dated-file", "overwrite-archive"] },
-        "prdPipelineMode": { "enum": ["filesystem", "github"] }
+        "prdPipelineMode": { "enum": ["filesystem", "github"] },
+        "designTool": { "enum": ["none", "google-stitch"] },
+        "designPath": { "type": "string" },
+        "designMcpOwnership": { "enum": ["none", "wunderkind-managed", "reused-project", "reused-global"] }
       },
       "required": [
         "$schema",

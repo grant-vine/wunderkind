@@ -3,6 +3,8 @@ export type InstallScope = "global" | "project"
 export type InstallRegistrationScope = InstallScope | "both" | "none"
 export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
 export type PrdPipelineMode = "filesystem" | "github"
+export type DesignTool = "none" | "google-stitch"
+export type DesignMcpOwnership = "none" | "wunderkind-managed" | "reused-project" | "reused-global"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -33,6 +35,9 @@ export interface ProjectConfig {
   docsPath: string
   docHistoryMode: DocHistoryMode
   prdPipelineMode: PrdPipelineMode
+  designTool: DesignTool
+  designPath: string
+  designMcpOwnership: DesignMcpOwnership
 }
 
 export interface InstallArgs {
@@ -55,7 +60,11 @@ export interface InstallArgs {
   docHistoryMode?: string | undefined
 }
 
-export interface InstallConfig extends GlobalConfig, ProjectConfig {}
+export interface InstallConfig extends GlobalConfig, Omit<ProjectConfig, "designTool" | "designPath" | "designMcpOwnership"> {
+  designTool?: DesignTool
+  designPath?: string
+  designMcpOwnership?: DesignMcpOwnership
+}
 
 export interface ConfigMergeResult {
   success: boolean
@@ -89,6 +98,9 @@ export interface DetectedConfig {
   docsPath: string
   docHistoryMode: DocHistoryMode
   prdPipelineMode: PrdPipelineMode
+  designTool: DesignTool
+  designPath: string
+  designMcpOwnership: DesignMcpOwnership
 }
 
 export interface PluginVersionInfo {
