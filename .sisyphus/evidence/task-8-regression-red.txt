@@ -1,0 +1,70 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/uninstall.test.ts:
+510 |         } finally {
+511 |           restore()
+512 |         }
+513 | 
+514 |         const config = readProjectOpenCodeConfig(projectRoot)
+515 |         expect(config.mcp).toBeUndefined()
+                                 ^
+error: expect(received).toBeUndefined()
+
+Received: {
+  "google-stitch": {
+    type: "remote",
+    url: "https://stitch.googleapis.com/mcp",
+    enabled: true,
+    oauth: false,
+    headers: {
+      Authorization: "Bearer {file:.wunderkind/stitch/google-stitch-api-key}",
+    },
+  },
+}
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/uninstall.test.ts:515:28)
+(fail) runUninstall > Stitch MCP cleanup > removes the managed Stitch MCP entry and secret file when removeMcp=yes [2.18ms]
+587 |         } finally {
+588 |           restore()
+589 |         }
+590 | 
+591 |         const config = readProjectOpenCodeConfig(projectRoot)
+592 |         expect(config.mcp).toBeUndefined()
+                                 ^
+error: expect(received).toBeUndefined()
+
+Received: {
+  "google-stitch": {
+    type: "remote",
+    url: "https://stitch.googleapis.com/mcp",
+    enabled: true,
+    oauth: false,
+    headers: {
+      Authorization: "Bearer {file:.wunderkind/stitch/google-stitch-api-key}",
+    },
+  },
+}
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/uninstall.test.ts:592:28)
+(fail) runUninstall > Stitch MCP cleanup > removes only the reused-project Stitch MCP entry when removeMcp=yes [1.15ms]
+
+tests/unit/cli-installer.test.ts:
+709 | 
+710 |       const restore = silenceConsole()
+711 |       try {
+712 |         const code = await runCliUpgrade({ scope: "project" })
+713 |         expect(code).toBe(0)
+714 |         expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(1)
+                                               ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 1
+Received number of calls: 0
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/cli-installer.test.ts:714:42)
+(fail) runCliUpgrade > upgrade Stitch reconciliation > reconciles Stitch MCP config for wunderkind-managed project ownership
+
+ 80 pass
+ 3 fail
+ 235 expect() calls
+Ran 83 tests across 3 files. [80.00ms]

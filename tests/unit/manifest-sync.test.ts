@@ -32,9 +32,21 @@ describe("manifest version sync", () => {
 
 describe("design-md command asset", () => {
   const commandFile = new URL("../../commands/design-md.md", import.meta.url)
+  const docsIndexFile = new URL("../../commands/docs-index.md", import.meta.url)
 
   it("exists as a file", () => {
     expect(statSync(commandFile).isFile()).toBe(true)
+  })
+
+  it("keeps both shipped command assets covered by package publishing", () => {
+    const packageJson = JSON.parse(readText(new URL("../../package.json", import.meta.url))) as {
+      files?: unknown
+    }
+
+    expect(Array.isArray(packageJson.files)).toBe(true)
+    expect(packageJson.files).toContain("commands/")
+    expect(statSync(commandFile).isFile()).toBe(true)
+    expect(statSync(docsIndexFile).isFile()).toBe(true)
   })
 
   it("declares the creative-director owner in frontmatter", () => {
@@ -66,5 +78,12 @@ describe("design-md command asset", () => {
     const commandBody = readText(commandFile)
 
     expect(commandBody).toContain(".wunderkind/stitch/source-assets.md")
+  })
+
+  it("preserves the shipped docs-index command asset assertions", () => {
+    const docsIndexBody = readText(docsIndexFile)
+
+    expect(docsIndexBody).toContain("/docs-index")
+    expect(docsIndexBody).toContain("agent: product-wunderkind")
   })
 })

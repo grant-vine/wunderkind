@@ -301,6 +301,14 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
     return 1
   }
 
+  if (args.scope === "project" && detected.designMcpOwnership === "wunderkind-managed") {
+    type McpHelpersModule = typeof import("./mcp-helpers.js")
+    const mcpHelpersModuleUrl = new URL("./mcp-helpers.js", import.meta.url)
+    mcpHelpersModuleUrl.searchParams.set("cli-upgrade-stitch", "1")
+    const { mergeStitchMcpConfig } = (await import(mcpHelpersModuleUrl.href)) as McpHelpersModule
+    await mergeStitchMcpConfig(process.cwd())
+  }
+
   printSuccess(`Native agents refreshed ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
   printSuccess(`Global native commands refreshed ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
   printSuccess(`Native skills refreshed ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)

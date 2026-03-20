@@ -1,3 +1,7 @@
+import * as p from "@clack/prompts"
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { parse as parseJsonc } from "jsonc-parser"
 import color from "picocolors"
 import {
   detectCurrentConfig,
@@ -7,10 +11,20 @@ import {
   removeGlobalWunderkindConfig,
   removePluginFromOpenCodeConfig,
 } from "./config-manager/index.js"
-import type { InstallRegistrationScope, InstallScope } from "./types.js"
+import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
+import type { DesignMcpOwnership, InstallRegistrationScope, InstallScope } from "./types.js"
+
+type RemoveMcpMode = "ask" | "yes" | "no"
 
 export interface UninstallOptions {
   scope?: InstallScope
+  removeMcp?: RemoveMcpMode
+}
+
+interface OpenCodeConfig {
+  $schema?: string
+  mcp?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 function resolveScopes(scope: InstallScope | undefined, detectedScope: InstallRegistrationScope): InstallScope[] {
@@ -20,6 +34,114 @@ function resolveScopes(scope: InstallScope | undefined, detectedScope: InstallRe
   if (detectedScope === "project") return ["project"]
   if (detectedScope === "global") return ["global"]
   return []
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function readProjectOpenCodeConfig(projectRoot: string): { config: OpenCodeConfig; path: string } | null {
+  const configPath = join(projectRoot, "opencode.json")
+  if (!existsSync(configPath)) {
+    return null
+  }
+
+  const parsed = parseJsonc(readFileSync(configPath, "utf-8")) as unknown
+  if (!isRecord(parsed)) {
+    throw new Error(`Invalid OpenCode config format at ${configPath}`)
+  }
+
+  return {
+    config: parsed as OpenCodeConfig,
+    path: configPath,
+  }
+}
+
+function removeProjectStitchMcpEntry(projectRoot: string): boolean {
+  const loaded = readProjectOpenCodeConfig(projectRoot)
+  if (loaded === null) {
+    return false
+  }
+
+  const { config, path } = loaded
+  const mcpEntries = isRecord(config.mcp) ? { ...config.mcp } : {}
+
+  if (!Object.prototype.hasOwnProperty.call(mcpEntries, GOOGLE_STITCH_ADAPTER.serverName)) {
+    return false
+  }
+
+  delete mcpEntries[GOOGLE_STITCH_ADAPTER.serverName]
+  if (Object.keys(mcpEntries).length === 0) {
+    delete config.mcp
+  } else {
+    config.mcp = mcpEntries
+  }
+
+  writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`)
+  return true
+}
+
+function removeManagedStitchSecret(projectRoot: string): boolean {
+  const secretPath = join(projectRoot, GOOGLE_STITCH_ADAPTER.secretFilePath)
+  if (!existsSync(secretPath)) {
+    return false
+  }
+
+  rmSync(secretPath, { force: true })
+  return true
+}
+
+async function confirmStitchRemoval(
+  ownership: Exclude<DesignMcpOwnership, "none" | "reused-global">,
+  removeMcp: RemoveMcpMode | undefined,
+): Promise<boolean> {
+  const isInteractive = process.stdin.isTTY === true && process.stdout.isTTY === true
+
+  if (removeMcp === "yes") return true
+  if (removeMcp === "no") return false
+  if (!isInteractive) return false
+
+  const confirmed = await p.confirm({
+    message:
+      ownership === "wunderkind-managed"
+        ? "Also remove project-local Google Stitch MCP config and managed API key file?"
+        : "Also remove the project-local Google Stitch MCP config entry?",
+    initialValue: ownership === "wunderkind-managed",
+  })
+
+  if (p.isCancel(confirmed)) {
+    p.cancel("Uninstall cancelled.")
+    throw new Error("Uninstall cancelled")
+  }
+
+  return confirmed
+}
+
+async function handleProjectStitchCleanup(
+  ownership: DesignMcpOwnership,
+  removeMcp: RemoveMcpMode | undefined,
+  projectRoot: string,
+): Promise<void> {
+  if (ownership === "none" || ownership === "reused-global") {
+    return
+  }
+
+  const shouldRemove = await confirmStitchRemoval(ownership, removeMcp)
+  if (!shouldRemove) {
+    return
+  }
+
+  const mcpRemoved = removeProjectStitchMcpEntry(projectRoot)
+  if (mcpRemoved) {
+    console.log(`${color.green("✓")} Removed project-local Google Stitch MCP entry (${color.dim(join(projectRoot, "opencode.json"))})`)
+  }
+
+  if (ownership === "wunderkind-managed") {
+    const secretRemoved = removeManagedStitchSecret(projectRoot)
+    if (secretRemoved) {
+      console.log(`${color.green("✓")} Removed managed Google Stitch API key file (${color.dim(join(projectRoot, GOOGLE_STITCH_ADAPTER.secretFilePath))})`)
+    }
+  }
 }
 
 export async function runUninstall(options: UninstallOptions): Promise<number> {
@@ -89,6 +211,8 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
         } else {
           console.log(`${color.dim("- ")}Global Wunderkind config already absent (${color.dim(globalConfigResult.configPath)})`)
         }
+      } else {
+        await handleProjectStitchCleanup(detected.designMcpOwnership, options.removeMcp, process.cwd())
       }
     }
 

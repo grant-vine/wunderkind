@@ -109,7 +109,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 > EVERY task MUST have: Agent Profile + Parallelization + QA Scenarios.
 > Field placement is locked: `designTool`, `designPath`, and `designMcpOwnership` are persisted `ProjectConfig`/`DetectedConfig` fields; `stitchSetup`, `stitchApiKeyFile`, and uninstall-time cleanup choices are `InitOptions`/CLI-only inputs and are never written to Wunderkind config.
 
-- [ ] 1. Add design-workflow config contract and adapter registry
+- [x] 1. Add design-workflow config contract and adapter registry
 
   **What to do**: Extend project-level config types/defaults/schema to resolve `designTool`, `designPath`, and `designMcpOwnership` with defaults of `"none"`, `"./DESIGN.md"`, and `"none"`, while introducing a new adapter registry module at `src/cli/mcp-adapters.ts` that defines the first reusable MCP adapter entry for Google Stitch. `designTool`, `designPath`, and `designMcpOwnership` must be added to `ProjectConfig`, `InstallConfig`, and `DetectedConfig`; `stitchSetup` and `stitchApiKeyFile` remain ephemeral init-only inputs. `designMcpOwnership` must allow exactly `none | wunderkind-managed | reused-project | reused-global`. Export the adapter constant as `GOOGLE_STITCH_ADAPTER`, and store the canonical DESIGN headings on `GOOGLE_STITCH_ADAPTER.designSections`. The adapter entry must pin the exact server identifier `google-stitch`, remote URL `https://stitch.googleapis.com/mcp`, auth mode `api-key-file`, secret file path `.wunderkind/stitch/google-stitch-api-key`, fallback env var `GOOGLE_STITCH_API_KEY`, verification command `curl -s -o /dev/null -w "%{http_code}" https://stitch.googleapis.com/mcp`, canonical DESIGN section list as adapter-owned data, and OpenCode remote MCP JSON shape:
 
@@ -179,7 +179,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(cli): add design config and stitch adapter contract` | Files: `src/cli/types.ts`, `src/cli/config-manager/index.ts`, `schemas/wunderkind.config.schema.json`, new adapter helper module, `tests/unit/stitch-adapter.test.ts`, tests
 
-- [ ] 2. Add generic OpenCode MCP merge, detection, and secret-file helpers
+- [x] 2. Add generic OpenCode MCP merge, detection, and secret-file helpers
 
   **What to do**: Add helper(s) that read existing global and project OpenCode config, detect whether Stitch is already configured by server name or remote URL match, and idempotently merge a project-local MCP entry without disturbing unrelated config. Add secret-file helpers that create `.wunderkind/stitch/` and write the API key into `.wunderkind/stitch/google-stitch-api-key` with trimmed contents only when the user explicitly provides a key. Put the helper tests in a dedicated `tests/unit/mcp-helpers.test.ts` file rather than burying them inside `tests/unit/cli-installer.test.ts`. All merged OpenCode config must include `$schema: "https://opencode.ai/config.json"` when creating a new file from scratch, and must retroactively add that schema key when merging into an existing file that lacks it. Existing project/global config detection must produce one of four explicit statuses: `missing`, `project-local`, `global-only`, `both`. Adapter drift is defined exactly as: `url` after trimming one trailing slash differs from adapter `url`, or `oauth === true`; missing `oauth` is treated as equivalent to `false`. The MCP merge helper, not `addPluginToOpenCodeConfig()`, owns `$schema` injection for any file it creates or touches because Stitch MCP setup only mutates project `opencode.json` during `init`, while `addPluginToOpenCodeConfig()` belongs to the separate install-time plugin path.
   **Must NOT do**: Do not overwrite unrelated `mcp`, `plugin`, `agent`, or `tools` config; do not write secrets into shell-command arrays or raw headers; do not mutate global config in v1.
@@ -237,7 +237,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(cli): add generic mcp config merge helpers` | Files: `src/cli/config-manager/index.ts`, new MCP helper module, `tests/unit/mcp-helpers.test.ts`
 
-- [ ] 3. Extend init CLI flags and help text for design workflow activation
+- [x] 3. Extend init CLI flags and help text for design workflow activation
 
   **What to do**: Extend `wunderkind init` CLI parsing and help text to support design workflow activation without touching base install. Add explicit flags for `--design-tool <none|google-stitch>`, `--design-path <path>`, `--stitch-setup <reuse|project-local|skip>`, and `--stitch-api-key-file <path>` for non-TUI operation. Do not add a raw `--stitch-api-key` flag because it would leak to shell history. Keep defaults fixed as `design-tool=none`, `design-path=./DESIGN.md`, and no Stitch config mutation unless the user opts in.
   **Must NOT do**: Do not add Stitch options to `install`; do not accept insecure plaintext secret flags; do not make design workflow required during init.
@@ -283,7 +283,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(cli): add init flags for stitch design workflow` | Files: `src/cli/index.ts`, tests
 
-- [ ] 4. Implement init-time Stitch activation, reuse detection, and masked secret capture
+- [x] 4. Implement init-time Stitch activation, reuse detection, and masked secret capture
 
   **What to do**: Extend `runInit()` so interactive init can optionally enable design workflow, choose `google-stitch`, detect whether Stitch MCP already exists in project/global OpenCode config, and then offer exactly 3 actions in this order: `reuse existing`, `create project-local`, `skip`. Default to `reuse existing` when detection status is `project-local`, `global-only`, or `both`; default to `create project-local` only when status is `missing`. Use `p.password()` from `@clack/prompts` for masked API-key capture. If `reuse existing` is selected for `project-local`, set `designMcpOwnership` to `reused-project`; if selected for `global-only` or `both`, write only `designTool`, `designPath`, and `designMcpOwnership="reused-global"` to Wunderkind project config and do not write a project-local Stitch MCP entry. If `create project-local` is selected, set `designMcpOwnership` to `wunderkind-managed`; prompt for API key with masked input; if provided, write `.wunderkind/stitch/google-stitch-api-key`; if blank, still create the MCP config and leave doctor to warn that the secret file is missing. If Stitch is skipped or design workflow is disabled, persist `designMcpOwnership="none"`. Non-TUI init must support the same behavior via the new flags plus `--stitch-api-key-file`; when that flag is present, explicit intent means overwrite the existing secret file, otherwise preserve any existing secret file. In non-TUI mode, `--stitch-setup=project-local` without `--stitch-api-key-file` is a valid partial setup that creates the MCP config but no secret file, mirroring the blank interactive path. Non-TUI mode never falls back to stdin secret capture. Stitch interactive tests must be added to `tests/unit/init-interactive.test.ts`, not a new test file. Always create or preserve the root `DESIGN.md` path value in project config when design workflow is enabled.
   **Must NOT do**: Do not touch `wunderkind install`; do not overwrite an existing secret file unless the user explicitly re-enters a non-blank key or supplies `--stitch-api-key-file`; do not create duplicate Stitch MCP entries.
@@ -336,7 +336,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(init): add stitch activation and safe api key capture` | Files: `src/cli/init.ts`, `src/cli/index.ts`, config helpers, tests
 
-- [ ] 5. Add Stitch diagnostics to doctor output
+- [x] 5. Add Stitch diagnostics to doctor output
 
   **What to do**: Extend `doctor` so project-context output reports design workflow and Stitch readiness without leaking secrets. In verbose mode, print: `design tool`, `design path`, `design MCP ownership`, `DESIGN.md present`, `Stitch MCP detected`, `Stitch config source (project/global/both/missing)`, `Stitch in use`, `project-local secret file present`, and `auth mode: api-key-file`. In non-verbose mode, add one compact `Stitch readiness` line that summarizes enabled/disabled, configured/not configured, and whether the project is using a managed or reused Stitch setup. `Stitch in use` means `designTool === google-stitch` and either a project/global Stitch MCP entry exists or `designMcpOwnership === wunderkind-managed` with a pending partial setup. Warn on exactly these states: design enabled but `DESIGN.md` missing; design enabled and project-local Stitch selected but secret file missing; config contains Stitch MCP entry but URL or `oauth` settings deviate from adapter contract; ownership/config source mismatch.
   **Must NOT do**: Do not print secret contents; do not attempt network auth checks; do not claim OAuth readiness.
@@ -383,7 +383,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(doctor): report stitch readiness safely` | Files: `src/cli/doctor.ts`, config helpers, tests
 
-- [ ] 6. Add strict DESIGN.md path, scaffold, and validation helpers
+- [x] 6. Add strict DESIGN.md path, scaffold, and validation helpers
 
   **What to do**: Create a dedicated helper module for `DESIGN.md` analogous to `docs-output-helper`, but specific to design workflow. Validate `designPath` as project-local and relative, default to `./DESIGN.md`, and always normalize to a root-level-looking project-relative path. The canonical section names and order must come from the adapter registry constant, not hard-coded copies inside the validator, so any upstream naming correction is made in exactly one place. Section matching must use exact string equality against that adapter-owned list with no case-folding or punctuation normalization. Add a scaffold generator that always emits these exact `##` headings in order: `Overview`, `Colors`, `Typography`, `Elevation`, `Components`, `Do's and Don'ts`. The default scaffold must include deterministic placeholders so validators can detect incomplete files. Add a validator that checks exact heading order, forbids duplicate top-level sections, requires color entries for `Primary`, `Secondary`, `Tertiary`, and `Neutral`, and requires at least 2 `Do` bullets plus 2 `Don't` bullets.
   **Must NOT do**: Do not mirror Stitch’s optional omission behavior in v1; do not attempt to parse Stitch’s internal token model; do not place `DESIGN.md` under `.wunderkind/`.
@@ -431,7 +431,7 @@ Wave 3: command workflow, docs/help, and integration hardening (Tasks 7-8)
 
   **Commit**: YES | Message: `feat(design): add strict design md helpers` | Files: new design helper module, `src/cli/init.ts`, tests
 
-- [ ] 7. Ship `/design-md` command for greenfield and existing-app capture workflows
+- [x] 7. Ship `/design-md` command for greenfield and existing-app capture workflows
 
   **What to do**: Add a new native command asset `commands/design-md.md` owned by `creative-director`. The command must treat `DESIGN.md` as the source of truth and support exactly two modes: `new` and `capture-existing`. In `new`, the command asks a constrained Q&A set covering product type, audience, vibe, palette, typography, density, accessibility, and component priorities, then writes or updates `DESIGN.md` in the strict scaffold. In `capture-existing`, the command inspects the current project for existing design signals and writes both `DESIGN.md` and a gitignored companion file `.wunderkind/stitch/source-assets.md` that lists project-relative references for logos, icons, screenshots, CSS/theme sources, and token sources to make those assets available to Stitch-driven prompting. `.wunderkind/stitch/source-assets.md` is already covered by the existing `.wunderkind/` gitignore rule, so no new gitignore entry is needed. The command must instruct the agent to make one major design change at a time when iterating with Stitch.
   **Must NOT do**: Do not call the workflow `/sync`; do not promise canvas-state synchronization; do not write source-assets under the project root outside `.wunderkind/`.

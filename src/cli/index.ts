@@ -318,19 +318,29 @@ program
       "Safely remove Wunderkind plugin wiring from OpenCode config.",
       "",
       "Removes plugin registration and, on global uninstall, deletes Wunderkind's shared global capabilities and global config file.",
+      "Optionally removes project-local Google Stitch MCP wiring when Wunderkind owns or reused the project entry.",
       "Leaves project-local customizations and bootstrap artifacts untouched.",
     ].join("\n"),
   )
   .option("--scope <scope>", "Uninstall scope: global or project")
-  .action(async (opts: { scope?: string | undefined }) => {
+  .option("--remove-mcp <ask|yes|no>", "Project-scope Stitch MCP removal mode: ask, yes, or no")
+  .action(async (opts: { scope?: string | undefined; removeMcp?: string | undefined }) => {
     if (opts.scope !== undefined && opts.scope !== "global" && opts.scope !== "project") {
       console.error(`Error: --scope must be \"global\" or \"project\", got: \"${opts.scope}\"`)
       process.exit(1)
     }
 
-    const uninstallOptions: { scope?: InstallScope } = {}
+    if (opts.removeMcp !== undefined && opts.removeMcp !== "ask" && opts.removeMcp !== "yes" && opts.removeMcp !== "no") {
+      console.error(`Error: --remove-mcp must be "ask", "yes", or "no", got: "${opts.removeMcp}"`)
+      process.exit(1)
+    }
+
+    const uninstallOptions: { scope?: InstallScope; removeMcp?: "ask" | "yes" | "no" } = {}
     if (opts.scope !== undefined) {
       uninstallOptions.scope = opts.scope as InstallScope
+    }
+    if (opts.removeMcp !== undefined) {
+      uninstallOptions.removeMcp = opts.removeMcp
     }
     const exitCode = await runUninstall(uninstallOptions)
     process.exit(exitCode)

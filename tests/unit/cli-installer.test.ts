@@ -1,7 +1,8 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
+import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { InstallArgs } from "../../src/cli/types.js"
 import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
 
@@ -23,17 +24,17 @@ mock.module("picocolors", () => ({
 
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
-  isInstalled: false,
-  scope: "global" as const,
-  projectInstalled: false,
-  globalInstalled: false,
-  registrationScope: "none" as const,
-  projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
-  globalOpenCodeConfigPath: "/tmp/opencode.json",
-  region: "Global",
-  industry: "",
-  primaryRegulation: "",
-  secondaryRegulation: "",
+    isInstalled: false,
+    scope: "global" as const,
+    projectInstalled: false,
+    globalInstalled: false,
+    registrationScope: "none" as const,
+    projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+    globalOpenCodeConfigPath: "/tmp/opencode.json",
+    region: "Global",
+    industry: "",
+    primaryRegulation: "",
+    secondaryRegulation: "",
     teamCulture: "pragmatic-balanced" as const,
     orgStructure: "flat" as const,
     cisoPersonality: "pragmatic-risk-manager" as const,
@@ -45,7 +46,10 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     docsEnabled: false,
     docsPath: "./docs",
     docHistoryMode: "overwrite" as const,
-  prdPipelineMode: "filesystem" as const,
+    prdPipelineMode: "filesystem" as const,
+    designTool: "none" as const,
+    designPath: "./DESIGN.md",
+    designMcpOwnership: "none" as const,
     ...overrides,
   }
 }
@@ -65,6 +69,11 @@ const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "in
   secondaryRegulation: "",
 }))
 const mockReadWunderkindConfigForScope = mock<(scope: InstallScope) => Partial<InstallConfig> | null>(() => null)
+const mockResolveOpenCodeConfigPath = mock((scope: InstallScope) =>
+  scope === "project"
+    ? { path: join(process.cwd(), "opencode.json"), format: "json" as const, source: "opencode.json" as const }
+    : { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const },
+)
 
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
@@ -76,6 +85,7 @@ mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
   getDefaultGlobalConfig: mockGetDefaultGlobalConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
+  resolveOpenCodeConfigPath: mockResolveOpenCodeConfigPath,
 }))
 
 const mockAddAiTracesToGitignore = mock(() => ({
@@ -96,20 +106,7 @@ type CliInstallerModule = {
   runCliUpgrade: (...args: unknown[]) => Promise<number>
 }
 
-let printBox: CliInstallerModule["printBox"]
-let printWarning: CliInstallerModule["printWarning"]
-let validateNonTuiArgs: CliInstallerModule["validateNonTuiArgs"]
-let runCliInstaller: CliInstallerModule["runCliInstaller"]
-let runCliUpgrade: CliInstallerModule["runCliUpgrade"]
-
-beforeAll(async () => {
-  const mod = (await import(new URL("src/cli/cli-installer.ts", `file://${PROJECT_ROOT}`).href)) as CliInstallerModule
-  printBox = mod.printBox
-  printWarning = mod.printWarning
-  validateNonTuiArgs = mod.validateNonTuiArgs
-  runCliInstaller = mod.runCliInstaller
-  runCliUpgrade = mod.runCliUpgrade
-})
+const cliInstallerModulePromise = import(new URL("src/cli/cli-installer.ts", `file://${PROJECT_ROOT}`).href) as Promise<CliInstallerModule>
 
 function silenceConsole(): () => void {
   const origLog = console.log
@@ -120,6 +117,25 @@ function silenceConsole(): () => void {
     console.log = origLog
     console.error = origErr
   }
+}
+
+function readProjectMcpConfig(projectRoot: string): Record<string, unknown> | undefined {
+  const configPath = join(projectRoot, "opencode.json")
+  if (!existsSync(configPath)) {
+    return undefined
+  }
+
+  const parsed = JSON.parse(readFileSync(configPath, "utf-8")) as unknown
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return undefined
+  }
+
+  const mcp = (parsed as Record<string, unknown>).mcp
+  if (typeof mcp !== "object" || mcp === null || Array.isArray(mcp)) {
+    return undefined
+  }
+
+  return mcp as Record<string, unknown>
 }
 
 function baseArgs(overrides: Partial<InstallArgs> = {}): InstallArgs {
@@ -135,13 +151,15 @@ function baseArgs(overrides: Partial<InstallArgs> = {}): InstallArgs {
 }
 
 describe("validateNonTuiArgs", () => {
-  it("allows missing global baseline flags when defaults are acceptable", () => {
+  it("allows missing global baseline flags when defaults are acceptable", async () => {
+    const { validateNonTuiArgs } = await cliInstallerModulePromise
     const result = validateNonTuiArgs(baseArgs({ region: undefined }))
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
   })
 
-  it("allows project scope without baseline flags", () => {
+  it("allows project scope without baseline flags", async () => {
+    const { validateNonTuiArgs } = await cliInstallerModulePromise
     const result = validateNonTuiArgs(baseArgs({
       scope: "project",
       region: undefined,
@@ -155,7 +173,8 @@ describe("validateNonTuiArgs", () => {
 })
 
 describe("cli output helpers", () => {
-  it("prints warning and untitled boxes", () => {
+  it("prints warning and untitled boxes", async () => {
+    const { printBox, printWarning } = await cliInstallerModulePromise
     const messages: string[] = []
     const originalLog = console.log
     console.log = (...args: unknown[]) => {
@@ -199,6 +218,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when legacy config is detected", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockDetectLegacyConfig.mockImplementation(() => true)
     const restore = silenceConsole()
     try {
@@ -210,6 +230,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 0 for a successful install with scope=global", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       const code = await runCliInstaller(baseArgs({ scope: "global" }))
@@ -220,6 +241,7 @@ describe("runCliInstaller", () => {
   })
 
   it("allows successful project install without baseline flags", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() =>
       makeDetectedConfig({
         isInstalled: true,
@@ -251,6 +273,7 @@ describe("runCliInstaller", () => {
   })
 
   it("calls addPluginToOpenCodeConfig with 'project' when scope=project", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "project" }))
@@ -263,6 +286,7 @@ describe("runCliInstaller", () => {
   })
 
   it("calls writeNativeAgentFiles once for project scope install", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "project" }))
@@ -273,6 +297,7 @@ describe("runCliInstaller", () => {
   })
 
   it("calls native command writer for project scope install and refreshes the global command copy", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "project" }))
@@ -284,6 +309,7 @@ describe("runCliInstaller", () => {
   })
 
   it("calls writeNativeAgentFiles for global scope install", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "global" }))
@@ -294,6 +320,7 @@ describe("runCliInstaller", () => {
   })
 
   it("calls native command and skill writers for global scope install", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs({ scope: "global" }))
@@ -305,6 +332,7 @@ describe("runCliInstaller", () => {
   })
 
   it("writes only baseline fields into the selected install scope", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       await runCliInstaller(baseArgs())
@@ -320,6 +348,7 @@ describe("runCliInstaller", () => {
   })
 
   it("does not copy project-local soul/docs fields from scope config into install writes", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() =>
       makeDetectedConfig({
         isInstalled: true,
@@ -366,6 +395,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when plugin registration fails", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: false, configPath: "/fake/opencode.json", error: "boom" }))
     const restore = silenceConsole()
     try {
@@ -377,6 +407,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when config write fails", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/fake/.wunderkind/config", error: "boom" }))
     const restore = silenceConsole()
     try {
@@ -388,6 +419,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when native command write fails and warns on gitignore error", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "boom" }))
     mockAddAiTracesToGitignore.mockImplementation(() => ({ success: false, added: [], alreadyPresent: [], error: "nope" }))
     const restore = silenceConsole()
@@ -400,6 +432,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when native agent file write fails", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-agents", error: "agent-write-fail" }))
     const restore = silenceConsole()
     try {
@@ -411,6 +444,7 @@ describe("runCliInstaller", () => {
   })
 
   it("returns 1 when native skill file write fails", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-skills", error: "skill-write-fail" }))
     const restore = silenceConsole()
     try {
@@ -422,6 +456,7 @@ describe("runCliInstaller", () => {
   })
 
   it("warns on gitignore error but still returns 0", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
     const warnings: string[] = []
     const origLog = console.log
     console.log = (...args: unknown[]) => {
@@ -447,6 +482,7 @@ describe("runCliUpgrade", () => {
     mockWriteNativeCommandFiles.mockClear()
     mockWriteNativeSkillFiles.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
+    mockResolveOpenCodeConfigPath.mockClear()
 
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: true, globalInstalled: true, registrationScope: "global" }))
@@ -464,9 +500,15 @@ describe("runCliUpgrade", () => {
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
+    mockResolveOpenCodeConfigPath.mockImplementation((scope: InstallScope) =>
+      scope === "project"
+        ? { path: join(process.cwd(), "opencode.json"), format: "json" as const, source: "opencode.json" as const }
+        : { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const },
+    )
   })
 
   it("fails if Wunderkind is not installed in the requested scope", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: false, globalInstalled: false, registrationScope: "none" }))
     const restore = silenceConsole()
     try {
@@ -478,6 +520,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("refreshes native assets by default even when no baseline overrides are requested", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       const code = await runCliUpgrade({ scope: "global" })
@@ -492,6 +535,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("supports dry-run without writing config or native assets", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       const code = await runCliUpgrade({ scope: "global", dryRun: true })
@@ -506,6 +550,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("rewrites config when refresh-config is passed", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       const code = await runCliUpgrade({ scope: "global", refreshConfig: true })
@@ -520,6 +565,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("updates only global baseline fields when explicit overrides are provided", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     const restore = silenceConsole()
     try {
       const code = await runCliUpgrade({ scope: "global", region: "South Africa" })
@@ -537,6 +583,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("preserves project baseline fields on project refresh-config when no overrides are provided", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() =>
       makeDetectedConfig({
         isInstalled: true,
@@ -577,6 +624,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("uses detected effective baseline values for project refresh-config when sparse project overrides omit them", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() =>
       makeDetectedConfig({
         isInstalled: true,
@@ -614,6 +662,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("returns 1 when refresh config write fails", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/fake/.wunderkind/config", error: "boom" }))
     const restore = silenceConsole()
     try {
@@ -625,6 +674,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("returns 1 when native refresh fails", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-agents", error: "boom" }))
     const restore = silenceConsole()
     try {
@@ -636,6 +686,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("returns 1 when legacy config is detected during upgrade", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockDetectLegacyConfig.mockImplementation(() => true)
     const restore = silenceConsole()
     try {
@@ -647,6 +698,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("prints dry-run config line when dryRun=true and refreshConfig=true", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     const messages: string[] = []
     const origLog = console.log
     console.log = (...args: unknown[]) => {
@@ -662,6 +714,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("returns 1 when writeNativeCommandFiles fails during upgrade", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "cmd-fail" }))
     const restore = silenceConsole()
     try {
@@ -673,6 +726,7 @@ describe("runCliUpgrade", () => {
   })
 
   it("returns 1 when writeNativeSkillFiles fails during upgrade", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-skills", error: "skill-fail" }))
     const restore = silenceConsole()
     try {
@@ -681,6 +735,166 @@ describe("runCliUpgrade", () => {
     } finally {
       restore()
     }
+  })
+
+  describe("upgrade Stitch reconciliation", () => {
+    it("reconciles Stitch MCP config for wunderkind-managed project ownership", async () => {
+      const { runCliUpgrade } = await cliInstallerModulePromise
+      const projectRoot = mkdtempSync(join(tmpdir(), "wk-upgrade-managed-stitch-"))
+      const originalCwd = process.cwd()
+      mockDetectCurrentConfig.mockImplementation(() =>
+        makeDetectedConfig({
+          isInstalled: true,
+          scope: "project",
+          projectInstalled: true,
+          globalInstalled: true,
+          registrationScope: "both",
+          designTool: "google-stitch",
+          designMcpOwnership: "wunderkind-managed",
+        }),
+      )
+
+      try {
+        process.chdir(projectRoot)
+        writeFileSync(
+          join(projectRoot, "opencode.json"),
+          `${JSON.stringify({
+            $schema: "https://opencode.ai/config.json",
+            mcp: {
+              [GOOGLE_STITCH_ADAPTER.serverName]: {
+                type: "remote",
+                url: "https://stitch.googleapis.com/mcp",
+                enabled: true,
+                oauth: true,
+                headers: {},
+              },
+            },
+          }, null, 2)}\n`,
+        )
+
+        const restore = silenceConsole()
+        try {
+          const code = await runCliUpgrade({ scope: "project" })
+          expect(code).toBe(0)
+        } finally {
+          restore()
+        }
+
+        const mcp = readProjectMcpConfig(projectRoot)
+        expect(mcp?.[GOOGLE_STITCH_ADAPTER.serverName]).toEqual(GOOGLE_STITCH_ADAPTER.getOpenCodePayload(false))
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(projectRoot, { recursive: true, force: true })
+      }
+    })
+
+    it("preserves reused-project Stitch ownership during project upgrade", async () => {
+      const { runCliUpgrade } = await cliInstallerModulePromise
+      const projectRoot = mkdtempSync(join(tmpdir(), "wk-upgrade-reused-project-stitch-"))
+      const originalCwd = process.cwd()
+      mockDetectCurrentConfig.mockImplementation(() =>
+        makeDetectedConfig({
+          isInstalled: true,
+          scope: "project",
+          projectInstalled: true,
+          globalInstalled: true,
+          registrationScope: "both",
+          designTool: "google-stitch",
+          designMcpOwnership: "reused-project",
+        }),
+      )
+
+      try {
+        process.chdir(projectRoot)
+        writeFileSync(join(projectRoot, "opencode.json"), `${JSON.stringify({ mcp: {} }, null, 2)}\n`)
+
+        const restore = silenceConsole()
+        try {
+          const code = await runCliUpgrade({ scope: "project" })
+          expect(code).toBe(0)
+        } finally {
+          restore()
+        }
+
+        const mcp = readProjectMcpConfig(projectRoot)
+        expect(mcp?.[GOOGLE_STITCH_ADAPTER.serverName]).toBeUndefined()
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(projectRoot, { recursive: true, force: true })
+      }
+    })
+
+    it("preserves reused-global Stitch ownership during project upgrade", async () => {
+      const { runCliUpgrade } = await cliInstallerModulePromise
+      const projectRoot = mkdtempSync(join(tmpdir(), "wk-upgrade-reused-global-stitch-"))
+      const originalCwd = process.cwd()
+      mockDetectCurrentConfig.mockImplementation(() =>
+        makeDetectedConfig({
+          isInstalled: true,
+          scope: "project",
+          projectInstalled: true,
+          globalInstalled: true,
+          registrationScope: "both",
+          designTool: "google-stitch",
+          designMcpOwnership: "reused-global",
+        }),
+      )
+
+      try {
+        process.chdir(projectRoot)
+        writeFileSync(join(projectRoot, "opencode.json"), `${JSON.stringify({ mcp: {} }, null, 2)}\n`)
+
+        const restore = silenceConsole()
+        try {
+          const code = await runCliUpgrade({ scope: "project" })
+          expect(code).toBe(0)
+        } finally {
+          restore()
+        }
+
+        const mcp = readProjectMcpConfig(projectRoot)
+        expect(mcp?.[GOOGLE_STITCH_ADAPTER.serverName]).toBeUndefined()
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(projectRoot, { recursive: true, force: true })
+      }
+    })
+
+    it("skips Stitch reconciliation when design workflow is absent", async () => {
+      const { runCliUpgrade } = await cliInstallerModulePromise
+      const projectRoot = mkdtempSync(join(tmpdir(), "wk-upgrade-no-design-stitch-"))
+      const originalCwd = process.cwd()
+      mockDetectCurrentConfig.mockImplementation(() =>
+        makeDetectedConfig({
+          isInstalled: true,
+          scope: "project",
+          projectInstalled: true,
+          globalInstalled: true,
+          registrationScope: "both",
+          designTool: "none",
+          designMcpOwnership: "none",
+        }),
+      )
+
+      try {
+        process.chdir(projectRoot)
+        writeFileSync(join(projectRoot, "opencode.json"), `${JSON.stringify({ mcp: {} }, null, 2)}\n`)
+
+        const restore = silenceConsole()
+        try {
+          const code = await runCliUpgrade({ scope: "project" })
+          expect(code).toBe(0)
+        } finally {
+          restore()
+        }
+
+        const mcp = readProjectMcpConfig(projectRoot)
+        expect(mcp?.[GOOGLE_STITCH_ADAPTER.serverName]).toBeUndefined()
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(projectRoot, { recursive: true, force: true })
+      }
+    })
   })
 })
 

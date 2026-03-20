@@ -194,6 +194,25 @@ The schema is scope-aware:
 - global config validates shared baseline defaults (`region`, `industry`, `primaryRegulation`, `secondaryRegulation`) but allows them to be omitted when inherited defaults are acceptable
 - project config validates soul/personality/docs fields and also permits sparse project-local baseline overrides when needed
 
+### Design Workflow (Google Stitch)
+
+`wunderkind init` can optionally enable Google Stitch as the design tool for the current project.
+
+```bash
+# Enable Stitch with a project-local API key file
+wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=project-local --stitch-api-key-file=./my-stitch-key.txt
+
+# Enable Stitch reusing an existing MCP setup
+wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=reuse
+
+# Enable Stitch interactively (guided prompts)
+wunderkind init
+```
+
+- `/design-md` supports `new` for greenfield Q&A and `capture-existing` for existing-app capture.
+- `DESIGN.md` at the project root is the canonical design artifact for this workflow.
+- Use the Stitch workflow to keep `DESIGN.md` aligned with the current design direction and captured source assets.
+
 ---
 
 ## Doctor

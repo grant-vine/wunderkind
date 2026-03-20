@@ -1,0 +1,36 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/init-doctor.test.ts:
+1211 |       expect(code).toBe(0)
+1212 |       expect(messages.some((m) => m.includes("design tool:") && m.includes("google-stitch"))).toBe(true)
+1213 |       expect(messages.some((m) => m.includes("design path:") && m.includes("./DESIGN.md"))).toBe(true)
+1214 |       expect(messages.some((m) => m.includes("design MCP ownership:") && m.includes("wunderkind-managed"))).toBe(true)
+1215 |       expect(messages.some((m) => m.includes("DESIGN.md present:") && m.includes("✓ yes"))).toBe(true)
+1216 |       expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✓ yes"))).toBe(true)
+                                                                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1216:94)
+(fail) runDoctor > reports verbose Stitch workflow details without leaking the API key [2.29ms]
+1356 |     )
+1357 | 
+1358 |     try {
+1359 |       const { code, messages } = await captureDoctorOutput({ verbose: true })
+1360 |       expect(code).toBe(0)
+1361 |       expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✓ yes"))).toBe(true)
+                                                                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1361:94)
+(fail) runDoctor > warns when the Stitch MCP entry drifts from the adapter contract [1.80ms]
+
+ 191 pass
+ 2 fail
+ 646 expect() calls
+Ran 193 tests across 10 files. [515.00ms]
