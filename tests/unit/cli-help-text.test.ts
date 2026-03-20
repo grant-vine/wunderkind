@@ -95,4 +95,29 @@ describe("CLI help copy", () => {
     expect(result.output).toContain("unknown option")
     expect(result.output).toContain(legacyFlag)
   })
+
+  it("includes design workflow init flags in help", () => {
+    const output = runCliHelp("init", "--help")
+
+    expect(output).toContain("--design-tool")
+    expect(output).toContain("--design-path")
+    expect(output).toContain("--stitch-setup")
+    expect(output).toContain("--stitch-api-key-file")
+  })
+
+  it("rejects invalid --design-tool values", () => {
+    const result = runCliRaw("init", "--no-tui", "--design-tool", "invalid-tool")
+
+    expect(result.status).toBe(1)
+    expect(result.output).toContain("Error: --design-tool must be \"none\" or \"google-stitch\"")
+    expect(result.output).toContain("invalid-tool")
+  })
+
+  it("rejects invalid --stitch-setup values", () => {
+    const result = runCliRaw("init", "--no-tui", "--stitch-setup", "invalid-setup")
+
+    expect(result.status).toBe(1)
+    expect(result.output).toContain("Error: --stitch-setup must be \"reuse\", \"project-local\", or \"skip\"")
+    expect(result.output).toContain("invalid-setup")
+  })
 })

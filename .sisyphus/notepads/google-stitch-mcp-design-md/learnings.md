@@ -47,3 +47,8 @@
 - Treat Stitch presence as either the canonical `mcp.google-stitch` key or any remote MCP entry whose URL matches the adapter URL after trimming one trailing slash; this lets detection recognize reused shared configs
 - Keep merge drift rules intentionally narrow: overwrite only when the Stitch entry is missing, its URL differs after slash trimming, or `oauth` is explicitly `true`; missing `oauth` stays non-drifted and preserves existing headers
 - Separate secret persistence from config merge: `writeStitchSecretFile()` writes the trimmed key to `.wunderkind/stitch/google-stitch-api-key`, while `mergeStitchMcpConfig()` always writes the `{file:...}` authorization placeholder and never raw secret material
+
+## [2026-03-20] Task: task-3
+- `init` flag coverage in `tests/unit/cli-help-text.test.ts` can validate both surfacing and guardrail behavior quickly by pairing `runCliHelp("init", "--help")` assertions with `runCliRaw(...)` status/error checks for invalid enum values.
+- Because `bin/wunderkind.js` executes compiled `dist/cli/index.js`, evidence commands that invoke the bin entry must run after `bun run build` so the command output reflects newly added flags and validation.
+- For this phase, `src/cli/index.ts` can pass the new init-only design/stitch fields through `initOptions` without changing `src/cli/init.ts`; TypeScript remains clean due structural assignability and strict optional handling.

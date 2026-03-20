@@ -1,0 +1,50 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/cli-help-text.test.ts:
+ 97 |   })
+ 98 | 
+ 99 |   it("includes design workflow init flags in help", () => {
+100 |     const output = runCliHelp("init", "--help")
+101 | 
+102 |     expect(output).toContain("--design-tool")
+                         ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "--design-tool"
+Received: "Usage: wunderkind init [options]\n\nInitialize Wunderkind in the current project folder.\n\nBootstraps project-local config, optional retained-persona SOUL files, and soul\nfiles (.sisyphus, AGENTS.md, docs README).\nProject-local config stays sparse and only stores values that intentionally\noverride inherited defaults.\nInit also configures the PRD/planning workflow mode for this project.\nRequires Wunderkind to already be installed via `wunderkind install`.\n\nOptions:\n  --no-tui                   Run non-interactive project bootstrap\n  --docs-enabled <yes|no>    Enable docs output during init\n  --docs-path <path>         Docs output path (relative to current project)\n  --doc-history-mode <mode>  Doc history mode: overwrite | append-dated |\n                             new-dated-file | overwrite-archive\n  -h, --help                 display help for command\n\nExample:\n  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs\n\nPRD workflow modes:\n  - filesystem: writes PRDs/plans/issues into .sisyphus/\n  - github: expects gh plus a GitHub-backed repo; doctor reports readiness\n"
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/cli-help-text.test.ts:102:20)
+(fail) CLI help copy > includes design workflow init flags in help [31.47ms]
+107 | 
+108 |   it("rejects invalid --design-tool values", () => {
+109 |     const result = runCliRaw("init", "--no-tui", "--design-tool", "invalid-tool")
+110 | 
+111 |     expect(result.status).toBe(1)
+112 |     expect(result.output).toContain("Error: --design-tool must be \"none\" or \"google-stitch\"")
+                                ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "Error: --design-tool must be \"none\" or \"google-stitch\""
+Received: "error: unknown option '--design-tool'\n\nUsage: wunderkind init [options]\n\nInitialize Wunderkind in the current project folder.\n\nBootstraps project-local config, optional retained-persona SOUL files, and soul\nfiles (.sisyphus, AGENTS.md, docs README).\nProject-local config stays sparse and only stores values that intentionally\noverride inherited defaults.\nInit also configures the PRD/planning workflow mode for this project.\nRequires Wunderkind to already be installed via `wunderkind install`.\n\nOptions:\n  --no-tui                   Run non-interactive project bootstrap\n  --docs-enabled <yes|no>    Enable docs output during init\n  --docs-path <path>         Docs output path (relative to current project)\n  --doc-history-mode <mode>  Doc history mode: overwrite | append-dated |\n                             new-dated-file | overwrite-archive\n  -h, --help                 display help for command\n\nExample:\n  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs\n\nPRD workflow modes:\n  - filesystem: writes PRDs/plans/issues into .sisyphus/\n  - github: expects gh plus a GitHub-backed repo; doctor reports readiness\n"
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/cli-help-text.test.ts:112:27)
+(fail) CLI help copy > rejects invalid --design-tool values [32.39ms]
+115 | 
+116 |   it("rejects invalid --stitch-setup values", () => {
+117 |     const result = runCliRaw("init", "--no-tui", "--stitch-setup", "invalid-setup")
+118 | 
+119 |     expect(result.status).toBe(1)
+120 |     expect(result.output).toContain("Error: --stitch-setup must be \"reuse\", \"project-local\", or \"skip\"")
+                                ^
+error: expect(received).toContain(expected)
+
+Expected to contain: "Error: --stitch-setup must be \"reuse\", \"project-local\", or \"skip\""
+Received: "error: unknown option '--stitch-setup'\n\nUsage: wunderkind init [options]\n\nInitialize Wunderkind in the current project folder.\n\nBootstraps project-local config, optional retained-persona SOUL files, and soul\nfiles (.sisyphus, AGENTS.md, docs README).\nProject-local config stays sparse and only stores values that intentionally\noverride inherited defaults.\nInit also configures the PRD/planning workflow mode for this project.\nRequires Wunderkind to already be installed via `wunderkind install`.\n\nOptions:\n  --no-tui                   Run non-interactive project bootstrap\n  --docs-enabled <yes|no>    Enable docs output during init\n  --docs-path <path>         Docs output path (relative to current project)\n  --doc-history-mode <mode>  Doc history mode: overwrite | append-dated |\n                             new-dated-file | overwrite-archive\n  -h, --help                 display help for command\n\nExample:\n  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs\n\nPRD workflow modes:\n  - filesystem: writes PRDs/plans/issues into .sisyphus/\n  - github: expects gh plus a GitHub-backed repo; doctor reports readiness\n"
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/cli-help-text.test.ts:120:27)
+(fail) CLI help copy > rejects invalid --stitch-setup values [32.38ms]
+
+ 8 pass
+ 3 fail
+ 34 expect() calls
+Ran 11 tests across 1 file. [369.00ms]

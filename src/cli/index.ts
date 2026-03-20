@@ -206,6 +206,10 @@ program
   .option("--docs-enabled <yes|no>", "Enable docs output during init")
   .option("--docs-path <path>", "Docs output path (relative to current project)")
   .option("--doc-history-mode <mode>", "Doc history mode: overwrite | append-dated | new-dated-file | overwrite-archive")
+  .option("--design-tool <none|google-stitch>", "Design workflow tool (none, google-stitch)", "none")
+  .option("--design-path <path>", "Path for DESIGN.md file", "./DESIGN.md")
+  .option("--stitch-setup <reuse|project-local|skip>", "Stitch MCP setup mode (reuse, project-local, skip)")
+  .option("--stitch-api-key-file <path>", "Path to file containing Stitch API key")
   .addHelpText(
     "after",
     [
@@ -223,6 +227,10 @@ program
     docsEnabled?: string | undefined
     docsPath?: string | undefined
     docHistoryMode?: string | undefined
+    designTool?: string | undefined
+    designPath?: string | undefined
+    stitchSetup?: string | undefined
+    stitchApiKeyFile?: string | undefined
   }) => {
     let docsEnabled: boolean | undefined
     if (typeof opts.docsEnabled === "string") {
@@ -237,11 +245,32 @@ program
       }
     }
 
+    if (typeof opts.designTool === "string" && opts.designTool !== "none" && opts.designTool !== "google-stitch") {
+      console.error(`Error: --design-tool must be "none" or "google-stitch", got: "${opts.designTool}"`)
+      process.exit(1)
+    }
+
+    if (
+      typeof opts.stitchSetup === "string"
+      && opts.stitchSetup !== "reuse"
+      && opts.stitchSetup !== "project-local"
+      && opts.stitchSetup !== "skip"
+    ) {
+      console.error(
+        `Error: --stitch-setup must be "reuse", "project-local", or "skip", got: "${opts.stitchSetup}"`,
+      )
+      process.exit(1)
+    }
+
     const initOptions: {
       noTui: boolean
       docsEnabled?: boolean
       docsPath?: string
       docHistoryMode?: DocHistoryMode
+      designTool?: string
+      designPath?: string
+      stitchSetup?: string
+      stitchApiKeyFile?: string
     } = {
       noTui: !opts.tui,
     }
@@ -249,6 +278,10 @@ program
     if (docsEnabled !== undefined) initOptions.docsEnabled = docsEnabled
     if (opts.docsPath !== undefined) initOptions.docsPath = opts.docsPath
     if (opts.docHistoryMode !== undefined) initOptions.docHistoryMode = opts.docHistoryMode as DocHistoryMode
+    if (opts.designTool !== undefined) initOptions.designTool = opts.designTool
+    if (opts.designPath !== undefined) initOptions.designPath = opts.designPath
+    if (opts.stitchSetup !== undefined) initOptions.stitchSetup = opts.stitchSetup
+    if (opts.stitchApiKeyFile !== undefined) initOptions.stitchApiKeyFile = opts.stitchApiKeyFile
 
     const exitCode = await runInit(initOptions)
     process.exit(exitCode)

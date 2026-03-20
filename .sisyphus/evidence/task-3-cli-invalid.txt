@@ -1,0 +1,2 @@
+Error: --design-tool must be "none" or "google-stitch", got: "bad"
+exit:1
