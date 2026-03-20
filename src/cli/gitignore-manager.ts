@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
-const GITIGNORE_PATH = join(process.cwd(), ".gitignore")
+function getGitignorePath(cwd: string = process.cwd()): string {
+  return join(cwd, ".gitignore")
+}
 
 const AI_TRACE_ENTRIES = [
   ".wunderkind/",
@@ -28,8 +30,8 @@ function parseGitignore(content: string): Set<string> {
   )
 }
 
-export function addAiTracesToGitignore(): GitignoreResult {
-  const gitignorePath = GITIGNORE_PATH
+export function addAiTracesToGitignore(cwd?: string): GitignoreResult {
+  const gitignorePath = getGitignorePath(cwd)
   const added: string[] = []
   const alreadyPresent: string[] = []
 

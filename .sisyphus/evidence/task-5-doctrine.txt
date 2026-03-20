@@ -1,0 +1,39 @@
+COMMAND: grep -n 'red-green\|vertical.slice\|public.interface' skills/tdd/SKILL.md
+4:  USE FOR: test-driven development, red-green-refactor loops, bug fixes with new
+19:red-green-refactor loops, regression coverage, and technical defect diagnosis.
+68:- Test the public interface: assert inputs, outputs, errors, and observable side effects through exported contracts rather than private helpers.
+70:- Cover one complete vertical slice per scenario: for each meaningful user-facing slice, prove one end-to-end behavior from entry point to durable outcome.
+79:- Keep vertical slices thin: one scenario should cover the full behavior path without turning every test into a broad end-to-end suite.
+85:2. Tests must describe behavior through public interfaces, not private helpers.
+95:2. The workflow states red-green-refactor, public-interface testing, and vertical-slice doctrine plainly.
+EXIT_CODE:0
+
+COMMAND: bun run build 2>&1
+$ tsc && bun run dist/build-agents.js
+Generated agents/marketing-wunderkind.md
+Generated agents/creative-director.md
+Generated agents/product-wunderkind.md
+Generated agents/fullstack-wunderkind.md
+Generated agents/brand-builder.md
+Generated agents/qa-specialist.md
+Generated agents/operations-lead.md
+Generated agents/ciso.md
+Generated agents/devrel-wunderkind.md
+Generated agents/legal-counsel.md
+Generated agents/data-analyst.md
+Generated agents/support-engineer.md
+
+Generated 12 agent files in /Users/grantv/Code/wunderkind/agents
+EXIT_CODE:0
+
+COMMAND: npx tsc --noEmit
+EXIT_CODE:0
+
+COMMAND: bun test tests/unit/ 2>&1 | tail -5
+bun test v1.3.10 (30e609e0)
+
+ 198 pass
+ 0 fail
+ 619 expect() calls
+Ran 198 tests across 16 files. [311.00ms]
+EXIT_CODE:0

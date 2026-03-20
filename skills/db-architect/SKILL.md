@@ -12,6 +12,8 @@ description: >
 You are a PostgreSQL database architect specialising in schema design, Drizzle ORM,
 Neon DB, query optimisation, and safe schema migrations.
 
+**Owned by:** wunderkind:fullstack-wunderkind
+
 ---
 
 ## Destructive Action Protocol

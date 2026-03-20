@@ -1,8 +1,40 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { AGENT_DOCS_CONFIG } from "./agents/docs-config.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
+
+const SOUL_HEADING_MARKERS = [
+  { heading: "# Product Wunderkind", agentKey: "product-wunderkind" },
+  { heading: "# Fullstack Wunderkind", agentKey: "fullstack-wunderkind" },
+  { heading: "# Marketing Wunderkind", agentKey: "marketing-wunderkind" },
+  { heading: "# Creative Director", agentKey: "creative-director" },
+  { heading: "# CISO", agentKey: "ciso" },
+  { heading: "# Legal Counsel", agentKey: "legal-counsel" },
+] as const
+
+function detectActiveSoulAgent(systemSections: readonly string[]): (typeof SOUL_HEADING_MARKERS)[number]["agentKey"] | null {
+  const systemText = systemSections.join("\n")
+  for (const marker of SOUL_HEADING_MARKERS) {
+    if (systemText.includes(marker.heading)) {
+      return marker.agentKey
+    }
+  }
+  return null
+}
+
+function readSoulOverlay(agentKey: (typeof SOUL_HEADING_MARKERS)[number]["agentKey"]): string | null {
+  const soulPath = join(process.cwd(), ".wunderkind", "souls", `${agentKey}.md`)
+
+  try {
+    const content = readFileSync(soulPath, "utf-8").trim()
+    return content === "" ? null : content
+  } catch {
+    return null
+  }
+}
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
@@ -50,7 +82,7 @@ Use this resolved Wunderkind configuration as the authoritative runtime context 
 
 - region: ${wunderkindConfig.region ?? "Global"}
 - industry: ${(wunderkindConfig.industry ?? "").trim() !== "" ? wunderkindConfig.industry : "(not set)"}
-- primary regulation: ${wunderkindConfig.primaryRegulation ?? "GDPR"}
+- primary regulation: ${(wunderkindConfig.primaryRegulation ?? "").trim() !== "" ? wunderkindConfig.primaryRegulation : "(not set)"}
 - secondary regulation: ${(wunderkindConfig.secondaryRegulation ?? "").trim() !== "" ? wunderkindConfig.secondaryRegulation : "(not set)"}
 - team culture: ${wunderkindConfig.teamCulture ?? "pragmatic-balanced"}
 - org structure: ${wunderkindConfig.orgStructure ?? "flat"}
@@ -59,39 +91,53 @@ If a prompt references .wunderkind/wunderkind.config.jsonc for baseline or perso
 `.trim())
       }
 
+      const activeSoulAgent = detectActiveSoulAgent(output.system)
+      if (activeSoulAgent) {
+        const soulSentinel = `<!-- wunderkind:soul-runtime-start:${activeSoulAgent} -->`
+        const hasSoulSentinel = output.system.join("").includes(soulSentinel)
+
+        if (!hasSoulSentinel) {
+          const soulOverlay = readSoulOverlay(activeSoulAgent)
+          if (soulOverlay) {
+            output.system.push(`
+${soulSentinel}
+## Wunderkind SOUL Overlay
+
+Use this project-local SOUL overlay as additive guidance for the active persona. It refines the neutral base prompt with project-specific customization and durable learned context. If it conflicts with an explicit user instruction, follow the user.
+
+${soulOverlay}
+`.trim())
+          }
+        }
+      }
+
       output.system.push(`
 ## Wunderkind Native Agents
 
 The following specialist agents are available as native OpenCode agents. Delegate to them when their domain matches.
 
-### Primary Agents
+### Orchestrator
 
-- marketing-wunderkind — Brand strategy, go-to-market, content marketing, SEO/SEM, paid media, analytics, product marketing, PR, competitor analysis
+- product-wunderkind — **Default front door for all Wunderkind requests.** Start here for mixed-domain, ambiguous, or cross-functional work. product-wunderkind clarifies intent, routes to the right specialist, and synthesises the final answer. VP Product authority: roadmaps, OKRs, PRDs, issue intake, acceptance review, sprint planning, experiments, and decomposition.
+
+### Specialists
+
+- marketing-wunderkind — Brand strategy, go-to-market, content marketing, SEO/SEM, paid media, PR, community, developer advocacy, docs-led launches, tutorials, migration guidance, funnels, attribution, and channel ROI
 - creative-director — Brand identity, design systems, UI/UX, typography, colour palettes, accessibility, design tokens, visual language
-- product-wunderkind — Product strategy, roadmaps, OKRs, user research, PRDs, sprint planning, prioritisation, task decomposition
-- fullstack-wunderkind — Full-stack engineering, frontend, backend, database, infrastructure, Vercel, AI integration, code review, architecture
-- brand-builder — Community building, thought leadership, product forums, networking opportunities, PR narrative, cost gating, ROI assessment
-- qa-specialist — TDD, test writing, Playwright, Vitest, coverage analysis, user story review, test optimisation, security boundary testing
-- operations-lead — SRE/SLO, admin tooling (build-first), runbooks, incident response, observability, supportability assessment
-- ciso — Security architecture, OWASP, threat modelling, compliance (GDPR/CCPA/POPIA/LGPD), pen testing coordination, breach response
-- devrel-wunderkind — Developer relations, DX audits, API documentation, tutorials, migration guides, OSS community, getting started guides
+- fullstack-wunderkind — Full-stack engineering, frontend, backend, database, infrastructure, Vercel, AI integration, architecture, TDD, technical diagnosis, reliability, runbooks, incidents, and admin tooling
+- ciso — Security architecture, OWASP, threat modelling, compliance (GDPR/CCPA/POPIA/LGPD), pen testing coordination, security incidents, and breach response
 - legal-counsel — OSS licensing, TOS/Privacy Policy drafting, DPAs, CLAs, contract review, GDPR/CCPA legal obligations
-- support-engineer — Bug triage, issue classification, repro steps, severity rating (P0–P3), engineering handoff, support synthesis
-- data-analyst — Product analytics, event tracking, funnel analysis, cohort analysis, A/B experiment design, metric definitions
 
-### Delegation Rules
+### Routing
 
-- Use ciso for security and compliance work.
-- Use qa-specialist for test strategy, TDD, and boundary validation.
-- Use product-wunderkind for planning, PRDs, and decomposition.
-- Use fullstack-wunderkind for engineering implementation and architecture.
-- Use marketing-wunderkind and brand-builder for GTM, channels, and community strategy.
-- Use creative-director for visual, UX, and design-system work.
-- Use operations-lead for reliability, incidents, and runbooks.
-- Use devrel-wunderkind for docs, tutorials, and developer education.
-- Use legal-counsel for OSS licensing and legal/compliance review.
-- Use support-engineer for support triage and handoff.
-- Use data-analyst for analytics, funnels, experiments, and metrics.
+- Default: route all Wunderkind requests to product-wunderkind first unless the domain is clearly single-specialist.
+- Route directly to marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work.
+- Route directly to fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability.
+- Route directly to creative-director for visual, UX, and design-system work.
+- Route directly to ciso for security architecture, compliance controls, threat modeling, and security-incident posture.
+- Route directly to legal-counsel for OSS licensing and legal/compliance review.
+
+Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work. Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability. Use legal-counsel for OSS licensing and legal/compliance review.
 
 ### Project Configuration
 

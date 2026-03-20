@@ -1,0 +1,9 @@
+COMMAND: wc -l .sisyphus/plans/capability-matrix.md
+      77 .sisyphus/plans/capability-matrix.md
+EXIT_CODE:0
+COMMAND: grep 'triage-issue\|technical-writer\|experimentation-analyst\|oss-licensing-advisor' .sisyphus/plans/capability-matrix.md
+| `product-wunderkind` | `experimentation-analyst` | extract-as-skill | `product-wunderkind` | `skills/experimentation-analyst/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this revise and reassigns the former data-analyst skill to product for product experiments and readouts. |
+| `legal-counsel` | `oss-licensing-advisor` | extract-as-skill | `legal-counsel` | `skills/oss-licensing-advisor/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this keep and the retained legal owner stays unchanged. |
+| `marketing-wunderkind` | `technical-writer` | extract-as-skill | `marketing-wunderkind` | `skills/technical-writer/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this revise and reassigns the former devrel-owned skill to marketing. |
+| `product-wunderkind` | `triage-issue` | extract-as-skill | `product-wunderkind` | `skills/triage-issue/SKILL.md` | Explicitly classified with surviving owner `product-wunderkind`; `SKILL-STANDARD.md` marks this revise and keeps engineering as the downstream handoff, not the owner. |
+EXIT_CODE:0

@@ -1,0 +1,71 @@
+# F2 Code Quality Review - Wunderkind Agent Harness Optimization Audit
+
+Date: 2026-03-19
+Reviewer: OpenCode (fresh independent review)
+
+Scope reviewed:
+- `src/agents/manifest.ts`
+- `src/agents/docs-config.ts`
+- `src/index.ts`
+- `src/agents/product-wunderkind.ts`
+- `src/cli/personality-meta.ts`
+- `src/cli/config-manager/index.ts`
+- `src/cli/doctor.ts`
+- `src/cli/init.ts`
+- `src/cli/types.ts`
+- `schemas/wunderkind.config.schema.json`
+- `oh-my-opencode.jsonc`
+- repo-wide stale-key / stale-agent grep sweep
+
+What is clean:
+- `src/agents/manifest.ts` contains exactly 6 retained agents and no stale retired IDs.
+- `src/agents/docs-config.ts` contains exactly 6 retained doc-config entries and no stale retired IDs.
+- `src/cli/personality-meta.ts`, `src/cli/config-manager/index.ts`, `src/cli/types.ts`, `src/cli/doctor.ts`, and `schemas/wunderkind.config.schema.json` are aligned on the retained 6 personality surfaces.
+- Repo-wide grep found no stale retired personality keys (`opsPersonality`, `dataAnalystPersonality`, `qaPersonality`, `supportPersonality`, `brandPersonality`, `devrelPersonality`) in source.
+- `src/index.ts` SOUL overlay injection is correctly conditional on both active persona detection and an existing non-empty `.wunderkind/souls/<agent-key>.md` file.
+- `src/agents/product-wunderkind.ts:170` contains the explicit no-self-delegation / no orchestration-loop rule.
+- `src/cli/doctor.ts:256-268` prints exactly 6 personality rows: ciso, fullstack, marketing, product, creative, legal.
+- `oh-my-opencode.jsonc` contains exactly 6 retained agent blocks and no stale retired IDs.
+
+Blocking findings:
+1. Missing Desloppify runtime gate in `src/index.ts`.
+   - The plugin transform reads merged config and conditionally injects docs output, resolved runtime context, SOUL overlays, and the native-agent catalog.
+   - But `src/index.ts` never checks `wunderkindConfig.desloppifyEnabled` and contains no Desloppify-specific runtime injection or gate at all.
+   - This leaves `desloppifyEnabled` documented and persisted across `init`, config-manager, doctor, README, and schema, but absent from the runtime harness surface that should expose or suppress it.
+   - Regression risk: config says the feature exists, doctor reports it, but the runtime transform never reflects it.
+
+2. Shipped skill asset still routes to removed `wunderkind:operations-lead` in `skills/agile-pm/SKILL.md:112`.
+   - This is live user-facing guidance in a published skill, not a historical note.
+   - Dead-handoff risk: retrospective tooling issues are routed to a deleted agent.
+
+3. Shipped skill asset still routes to removed `wunderkind:operations-lead` in `skills/compliance-officer/SKILL.md:294` and `skills/compliance-officer/SKILL.md:299`.
+   - Breach containment is a high-severity path; routing to a removed agent is a blocking regression.
+
+4. Shipped skill asset still depends on removed `data-analyst` in `skills/experimentation-analyst/SKILL.md:17`, `skills/experimentation-analyst/SKILL.md:124`, and `skills/experimentation-analyst/SKILL.md:126`.
+   - The skill still says it is invoked by `data-analyst` and escalates via `data-analyst`.
+   - Orphan-skill risk: ownership and escalation path are inconsistent with the retained six-agent topology.
+
+5. Shipped skill asset still depends on removed `devrel-wunderkind` in `skills/technical-writer/SKILL.md:16` and `skills/technical-writer/SKILL.md:140`.
+   - The skill still models `devrel-wunderkind` as the parent/router even though marketing now owns this lane.
+
+6. Shipped skill asset still depends on removed `devrel-wunderkind` in `skills/oss-licensing-advisor/SKILL.md:131`.
+   - Engineering-side license-structure questions are routed through a deleted agent instead of directly to the surviving owner.
+
+Non-blocking notes:
+- `skills/SKILL-STANDARD.md` contains removed-agent names in explicit migration-history notes. Those reads as intentional audit history, not active delegation.
+- `tests/unit/plugin-transform.test.ts` contains negative assertions for removed agent IDs. Those are correct regression guards, not stale runtime references.
+- `wunderkind.config.jsonc` still contains `brand-builder` in comment examples (`wunderkind.config.jsonc:21`, `wunderkind.config.jsonc:22`, `wunderkind.config.jsonc:35`). This is stale user-facing commentary, but it is lower severity than the live shipped-skill routing issues above.
+
+Verdict rationale:
+- Core harness/config/doctor surfaces are mostly coherent after the 12 -> 6 reduction.
+- The review fails on two fronts: one missing runtime feature gate (`desloppifyEnabled` in `src/index.ts`) and multiple live shipped skill assets that still instruct users to route work into deleted agents.
+- Until those are fixed, the refactor is not internally trustworthy enough to approve from a maintainability / prompt-clarity / orphan-skill-risk standpoint.
+
+VERDICT: REJECT
+Issues:
+1. `src/index.ts` - missing conditional Desloppify runtime gate; `desloppifyEnabled` is never read or injected into the runtime harness.
+2. `skills/agile-pm/SKILL.md:112` - still routes tooling work to removed `wunderkind:operations-lead`.
+3. `skills/compliance-officer/SKILL.md:294` - `skills/compliance-officer/SKILL.md:299` still delegate breach containment to removed `wunderkind:operations-lead`.
+4. `skills/experimentation-analyst/SKILL.md:17` - `skills/experimentation-analyst/SKILL.md:124` - `skills/experimentation-analyst/SKILL.md:126` still depend on removed `data-analyst`.
+5. `skills/technical-writer/SKILL.md:16` - `skills/technical-writer/SKILL.md:140` still depend on removed `devrel-wunderkind`.
+6. `skills/oss-licensing-advisor/SKILL.md:131` - still routes engineering-license questions through removed `devrel-wunderkind`.

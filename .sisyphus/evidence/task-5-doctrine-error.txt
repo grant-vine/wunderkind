@@ -1,0 +1,7 @@
+COMMAND: grep -n 'Testing\|Quality\|TDD\|regression' src/agents/fullstack-wunderkind.ts | head -20
+23:    "Executing TDD loops, regression fixes, or technical defect diagnosis",
+78:- Testing: unit (Vitest), component (Testing Library), E2E (Playwright)
+139:## Testing & Quality
+143:**Test contracts, not internals.** Prefer tests that exercise exported interfaces, observable inputs and outputs, and user-visible error paths. A regression test should prove the public behavior that broke, not the private helper you happened to edit.
+145:**Regression coverage is targeted and risk-based.** Add the smallest regression that proves the fix, then expand only when the change crosses a real boundary: data transformation, auth, persistence, or a critical workflow. When auth or permissions are involved, cover both the success path and the rejection path.
+EXIT_CODE:0

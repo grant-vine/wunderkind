@@ -14,35 +14,11 @@ export {
   createFullstackWunderkindAgent,
   FULLSTACK_WUNDERKIND_METADATA,
 } from "./fullstack-wunderkind.js"
-export {
-  createBrandBuilderAgent,
-  BRAND_BUILDER_METADATA,
-} from "./brand-builder.js"
-export {
-  createQaSpecialistAgent,
-  QA_SPECIALIST_METADATA,
-} from "./qa-specialist.js"
-export {
-  createOperationsLeadAgent,
-  OPERATIONS_LEAD_METADATA,
-} from "./operations-lead.js"
 export { createCisoAgent, CISO_METADATA } from "./ciso.js"
-export {
-  createDevrelWunderkindAgent,
-  DEVREL_WUNDERKIND_METADATA,
-} from "./devrel-wunderkind.js"
 export {
   createLegalCounselAgent,
   LEGAL_COUNSEL_METADATA,
 } from "./legal-counsel.js"
-export {
-  createDataAnalystAgent,
-  DATA_ANALYST_METADATA,
-} from "./data-analyst.js"
-export {
-  createSupportEngineerAgent,
-  SUPPORT_ENGINEER_METADATA,
-} from "./support-engineer.js"
 export type {
   AgentMode,
   AgentFactory,

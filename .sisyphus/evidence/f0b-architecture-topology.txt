@@ -1,0 +1,49 @@
+Architecture/Topology Review: Wunderkind Agent Harness Optimization Audit
+
+Verdict: REJECT
+
+What I reviewed
+- `.sisyphus/plans/topology-decision.md`
+- `.sisyphus/plans/capability-matrix.md`
+- `.sisyphus/plans/agent-harness-optimization-audit.md`
+- `src/agents/manifest.ts`
+- `src/index.ts`
+- `src/agents/product-wunderkind.ts`
+- `oh-my-opencode.jsonc`
+- `skills/design-an-interface/SKILL.md`
+
+What is correct
+- The retained base-agent set is exactly 6 in `src/agents/manifest.ts`: `marketing-wunderkind`, `creative-director`, `product-wunderkind`, `fullstack-wunderkind`, `ciso`, `legal-counsel`.
+- The same 6 retained agents appear in `oh-my-opencode.jsonc` and in the runtime agent list injected by `src/index.ts`.
+- The 6 removed agents (`brand-builder`, `qa-specialist`, `operations-lead`, `devrel-wunderkind`, `data-analyst`, `support-engineer`) are absent from `src/agents/manifest.ts` and `oh-my-opencode.jsonc`.
+- `product-wunderkind` has a clear orchestrator boundary in `src/agents/product-wunderkind.ts`: it explicitly says it is the default front door, must route to retained specialists, and must not self-delegate or duplicate specialist authority.
+- `design-an-interface` is correctly preserved as an explicit `fullstack-wunderkind` skill in `skills/design-an-interface/SKILL.md`, with high-complexity-only trigger language rather than generic default behavior.
+- The capability matrix preserves the removed-agent capabilities and keeps governance authority explicit: security/compliance controls remain with `ciso`, and legal interpretation/policy sign-off remain with `legal-counsel`.
+
+Blocking structural issues
+1. The live registration surface still presents a peer-topology instead of a single orchestrator-first front door.
+   - `oh-my-opencode.jsonc:25`, `oh-my-opencode.jsonc:34`, `oh-my-opencode.jsonc:43`, `oh-my-opencode.jsonc:52`, `oh-my-opencode.jsonc:61`, and `oh-my-opencode.jsonc:70` register all six retained agents with `"mode": "primary"`.
+   - That contradicts the plan and topology decision, which require one explicit default orchestrator/front door: `product-wunderkind`.
+   - Result: the public OMO registration surface still exposes six co-equal primaries, so the orchestrator-first topology is not fully executed.
+
+2. The runtime injection does not actually state the orchestrator-first routing rule.
+   - `src/index.ts:108` introduces `## Wunderkind Native Agents` and `src/index.ts:112` labels them `### Primary Agents`.
+   - `src/index.ts:123` through `src/index.ts:128` only describe domain routing bullets; they do not say that default, mixed-domain, or ambiguous Wunderkind requests should land on `product-wunderkind` first for intake, clarification, routing, and synthesis.
+   - Result: the runtime surface preserves the six-agent set, but it does not inject the same single-front-door contract that exists in `.sisyphus/plans/topology-decision.md` and `src/agents/product-wunderkind.ts`.
+
+Why this is a rejection
+- The topology design itself is coherent and mostly safe.
+- The retained-agent registry, removed-agent cleanup, skill extraction, and governance ownership all look structurally sound.
+- But the execution is inconsistent across the plan, prompt, runtime injection, and OMO registration surfaces. The orchestrator-first contract exists in the decision doc and the product prompt, yet the user-facing/runtime surfaces still describe six peer primary agents.
+- That mismatch is enough to reject the architecture/topology review until the registration/runtime layer reflects the same single-front-door rule.
+
+Required fixes before approval
+1. Make `product-wunderkind` the only explicit front-door/orchestrator surface in the OMO registration contract, or otherwise encode an unambiguous non-peer default entrypoint there.
+2. Update `src/index.ts` so the injected runtime guidance says default or mixed Wunderkind work starts with `product-wunderkind`, which then clarifies, routes, and synthesizes rather than acting as a sixth peer specialist.
+3. Remove or rename peer-language like `Primary Agents` if the intended topology is one orchestrator plus five retained specialists.
+
+Final verdict
+VERDICT: REJECT
+Reasons:
+1. `oh-my-opencode.jsonc` still exposes six peer `primary` agents instead of one explicit orchestrator/front door.
+2. `src/index.ts` runtime injection preserves six-agent availability but does not inject the orchestrator-first routing rule required by the plan.

@@ -1,0 +1,18 @@
+Task 3 evidence - imported and adapted benchmark skills locally for Wunderkind
+
+Source benchmarks fetched from Matt Pocock's public skills repository:
+- write-a-skill/SKILL.md
+- design-an-interface/SKILL.md
+- tdd/SKILL.md
+
+Created local adapted skills:
+- skills/write-a-skill/SKILL.md
+- skills/design-an-interface/SKILL.md
+- skills/tdd/SKILL.md
+
+Adaptation notes:
+- `write-a-skill` now targets Wunderkind's `skills/*/SKILL.md` layout, `.sisyphus/` evidence/notepads workflow, and notes that `skills/SKILL-STANDARD.md` will become authoritative when added.
+- `design-an-interface` explicitly names `fullstack-wunderkind` as the primary owner, adds anti-triggers for trivial helpers, and points broader structural work to `improve-codebase-architecture`.
+- `tdd` is rewritten for Bun and strict TypeScript, including `bun test tests/unit/`, `tsc --noEmit`, `exactOptionalPropertyTypes`, and `noUncheckedIndexedAccess` guidance.
+
+These files are adapted repo skills, not verbatim copies of the upstream benchmark content.

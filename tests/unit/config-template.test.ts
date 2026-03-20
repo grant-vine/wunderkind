@@ -5,8 +5,8 @@ import { WUNDERKIND_AGENT_IDS } from "../../src/agents/manifest.js"
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
 
 describe("native wunderkind agent manifest", () => {
-  it("defines the expected 12 filename-safe agent ids", () => {
-    expect(WUNDERKIND_AGENT_IDS).toHaveLength(12)
+  it("defines the expected 6 filename-safe agent ids", () => {
+    expect(WUNDERKIND_AGENT_IDS).toHaveLength(6)
     expect(WUNDERKIND_AGENT_IDS).toContain("marketing-wunderkind")
     expect(WUNDERKIND_AGENT_IDS).toContain("ciso")
     expect(WUNDERKIND_AGENT_IDS.every((id) => !id.includes(":"))).toBe(true)
@@ -33,12 +33,49 @@ describe("wunderkind config schema asset", () => {
   it("uses the expected canonical schema URL as its id", () => {
     const schema = JSON.parse(readFileSync(new URL("../../schemas/wunderkind.config.schema.json", import.meta.url), "utf8")) as {
       $id?: string
-      oneOf?: unknown[]
+      oneOf?: Array<{ properties?: Record<string, unknown>; required?: string[] }>
     }
 
     expect(schema.$id).toBe(WUNDERKIND_SCHEMA_URL)
     expect(Array.isArray(schema.oneOf)).toBe(true)
     expect(schema.oneOf?.length).toBe(2)
+    const projectSchema = schema.oneOf?.[1]
+    expect(projectSchema?.properties?.prdPipelineMode).toBeDefined()
+    expect(projectSchema?.properties?.["de" + "sloppifyEnabled"]).toBeUndefined()
+    expect(projectSchema?.required).not.toContain("prdPipelineMode")
+  })
+
+  it("silently drops removed legacy project keys when parsing JSONC config", async () => {
+    const { mkdtempSync, mkdirSync, rmSync, writeFileSync } = await import("node:fs")
+    const { tmpdir } = await import("node:os")
+    const { join } = await import("node:path")
+
+    const tempRoot = mkdtempSync(join(tmpdir(), "wk-config-schema-"))
+    const originalCwd = process.cwd()
+    const legacyKey = ["de", "sloppifyEnabled"].join("")
+
+    try {
+      process.chdir(tempRoot)
+      mkdirSync(join(tempRoot, ".wunderkind"), { recursive: true })
+      writeFileSync(
+        join(tempRoot, ".wunderkind", "wunderkind.config.jsonc"),
+        `{
+  // stale legacy field should be ignored
+  "teamCulture": "pragmatic-balanced",
+  "${legacyKey}": true
+}`,
+      )
+
+      const { readProjectWunderkindConfig } = await import(`../../src/cli/config-manager/index.ts?stale-key=${Date.now()}`)
+      const parsed = readProjectWunderkindConfig()
+
+      expect(parsed).toBeDefined()
+      expect(parsed?.teamCulture).toBe("pragmatic-balanced")
+      expect(Object.prototype.hasOwnProperty.call(parsed ?? {}, legacyKey)).toBe(false)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempRoot, { recursive: true, force: true })
+    }
   })
 })
 

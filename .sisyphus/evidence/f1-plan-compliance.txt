@@ -1,0 +1,84 @@
+# F1 Plan Compliance Audit — Wunderkind Agent Harness Optimization Audit
+
+Audit date: 2026-03-19
+Auditor: oracle
+
+Files reviewed:
+- .sisyphus/plans/agent-harness-optimization-audit.md
+- src/agents/manifest.ts
+- oh-my-opencode.jsonc
+- src/agents/docs-config.ts
+- skills/SKILL-STANDARD.md
+- skills/write-a-skill/SKILL.md
+- skills/design-an-interface/SKILL.md
+- skills/tdd/SKILL.md
+- skills/code-health/SKILL.md
+- .sisyphus/plans/capability-matrix.md
+- .sisyphus/plans/topology-decision.md
+- .sisyphus/plans/overlay-decision.md
+- .sisyphus/plans/soul-architecture.md
+- .sisyphus/evidence/task-1-prompt-baseline.txt
+- .sisyphus/evidence/task-15-prompt-after.txt
+- src/cli/init.ts
+- src/cli/doctor.ts
+- schemas/wunderkind.config.schema.json
+- AGENTS.md
+- README.md
+- src/index.ts
+- src/cli/index.ts
+- src/cli/config-manager/index.ts
+- src/cli/personality-meta.ts
+- skills/triage-issue/SKILL.md
+- representative tests under tests/unit/
+
+Verification run:
+- npx tsc --noEmit -> PASS
+- bun test tests/unit/ -> PASS (192 tests, 0 failures)
+- node bin/wunderkind.js --help -> PASS
+- node bin/wunderkind.js init --help -> PASS
+
+Task-by-task assessment:
+1. PASS — Docs/CLI/version alignment and prompt baseline evidence are present.
+2. PASS — Critical harness tests exist for plugin transform, build pipeline, gitignore, and init/TUI surfaces; suite passes.
+3. PASS — Imported benchmark skills exist locally and are adapted to Wunderkind ownership/scope.
+4. FAIL — skills/write-a-skill/SKILL.md:30-31 still says `skills/SKILL-STANDARD.md` “does not exist yet” and “When it lands”, which contradicts the published standard and the requirement that future skill work reference the current standard.
+5. PASS — design-an-interface is explicitly fullstack-owned; tdd exists and doctrine is preserved in surviving product/fullstack authority surfaces.
+6. FAIL — The required first-trigger Desloppify fallback is only specified inside skills/code-health/SKILL.md. It is not documented in README.md or AGENTS.md, and there is no implementation evidence in src/ that the fallback is surfaced when the capability is disabled/uninstalled.
+7. FAIL — .sisyphus/plans/capability-matrix.md does not classify the shipped `skills/code-health/SKILL.md` skill, so the matrix is not complete for all current skills.
+8. PASS — topology-decision.md names product as orchestrator, preserves the fixed six-agent set, and forbids self-delegation loops.
+9. PASS — soul-architecture.md is implementation-ready: file paths, format, injection point, init flow, and docs-index update rules are explicit.
+10. PASS — Marketing/brand/devrel consolidation is reflected in surviving ownership and public docs.
+11. PASS — triage-issue survives as a first-class product-owned workflow; TDD/testing execution is owned by fullstack.
+12. PASS — legal-counsel remains retained; ops/data landings are explicit and governance authority is preserved.
+13. FAIL — The final public/runtime surfaces do not consistently describe the orchestrator-first model across the required files:
+   - src/agents/manifest.ts:31-34 describes product only as “VP Product-style partner...” with no orchestrator/front-door role.
+   - oh-my-opencode.jsonc:41-48 describes product as “VP Product: roadmaps, OKRs, PRDs...” with no orchestrator/front-door role.
+   - README.md:315-322 lists product-wunderkind simply as “VP Product”.
+   This misses the requirement that manifest, OMO config, README, and generated/runtime surfaces tell the same retained-topology/orchestrator story.
+14. PASS — overlay-decision.md ends with an explicit stay-overlay-now recommendation and concrete migration triggers.
+15. FAIL — Final docs do not fully meet acceptance criteria:
+   - README.md and AGENTS.md do not document the Desloppify first-trigger fallback, even though Task 15 requires public docs to explain it.
+   - README.md does not make routing ownership explicit from docs alone because it does not identify product-wunderkind as the orchestrator/front door.
+   - Token reduction is achieved overall (145,890 total before -> 87,015 total after), reviewer freshness guidance exists in AGENTS.md, and README skill ownership is otherwise aligned.
+
+Explicit required checks:
+- 6-agent topology: PASS
+  - src/agents/manifest.ts -> 6 retained agents
+  - oh-my-opencode.jsonc -> 6 agent entries
+  - src/agents/docs-config.ts -> 6 retained docs-config entries only
+- desloppifyEnabled config surface: PASS in schema/init/doctor/config/docs, but fallback/user-facing completion is FAIL as noted above
+- imported benchmark skills: PASS
+- skill standard exists: PASS, but write-a-skill still contains stale pre-standard wording
+- capability matrix completeness: FAIL (missing code-health)
+- overlay decision memo: PASS
+- SOUL architecture doc: PASS
+- reviewer freshness rule in AGENTS.md: PASS
+- triage-issue owned by product-wunderkind: PASS
+- token reduction: PASS overall total reduction; not all retained per-agent files are smaller individually
+
+VERDICT: REJECT
+Gaps:
+1. Task 4: skills/write-a-skill/SKILL.md:30-31 still says the repo-level skill standard does not exist yet.
+2. Task 6 / Task 15: first-trigger Desloppify fallback is not documented in README.md or AGENTS.md, and there is no implementation evidence in src/ that it is surfaced at runtime when disabled/uninstalled.
+3. Task 7: .sisyphus/plans/capability-matrix.md omits the shipped `code-health` skill, so the matrix is incomplete.
+4. Task 13 / Task 15: manifest/OMO config/README do not consistently describe product-wunderkind as the orchestrator/front door, so the orchestrator-first topology is not aligned across required surfaces.

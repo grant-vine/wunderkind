@@ -3,56 +3,60 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   createMarketingWunderkindAgent,
+  MARKETING_WUNDERKIND_METADATA,
   createCreativeDirectorAgent,
+  CREATIVE_DIRECTOR_METADATA,
   createProductWunderkindAgent,
+  PRODUCT_WUNDERKIND_METADATA,
   createFullstackWunderkindAgent,
-  createBrandBuilderAgent,
-  createQaSpecialistAgent,
-  createOperationsLeadAgent,
+  FULLSTACK_WUNDERKIND_METADATA,
   createCisoAgent,
-  createDevrelWunderkindAgent,
-  DEVREL_WUNDERKIND_METADATA,
+  CISO_METADATA,
   createLegalCounselAgent,
   LEGAL_COUNSEL_METADATA,
-  createDataAnalystAgent,
-  DATA_ANALYST_METADATA,
-  createSupportEngineerAgent,
-  SUPPORT_ENGINEER_METADATA,
 } from "../../src/agents/index.js"
 
-const NEW_AGENTS = [
+const RETAINED_SPECIALISTS = [
   {
-    name: "devrel-wunderkind",
-    factory: createDevrelWunderkindAgent,
-    metadata: DEVREL_WUNDERKIND_METADATA,
-    heading: "# DevRel Wunderkind",
-    hasSubSkillDelegation: true,
+    name: "marketing-wunderkind",
+    factory: createMarketingWunderkindAgent,
+    metadata: MARKETING_WUNDERKIND_METADATA,
+    heading: "# Marketing Wunderkind — Soul",
+  },
+  {
+    name: "creative-director",
+    factory: createCreativeDirectorAgent,
+    metadata: CREATIVE_DIRECTOR_METADATA,
+    heading: "# Creative Director — Soul",
+  },
+  {
+    name: "product-wunderkind",
+    factory: createProductWunderkindAgent,
+    metadata: PRODUCT_WUNDERKIND_METADATA,
+    heading: "# Product Wunderkind — Soul",
+  },
+  {
+    name: "fullstack-wunderkind",
+    factory: createFullstackWunderkindAgent,
+    metadata: FULLSTACK_WUNDERKIND_METADATA,
+    heading: "# Fullstack Wunderkind — Soul",
+  },
+  {
+    name: "ciso",
+    factory: createCisoAgent,
+    metadata: CISO_METADATA,
+    heading: "# CISO — Soul",
   },
   {
     name: "legal-counsel",
     factory: createLegalCounselAgent,
     metadata: LEGAL_COUNSEL_METADATA,
-    heading: "# Legal Counsel",
-    hasSubSkillDelegation: false,
-  },
-  {
-    name: "data-analyst",
-    factory: createDataAnalystAgent,
-    metadata: DATA_ANALYST_METADATA,
-    heading: "# Data Analyst",
-    hasSubSkillDelegation: true,
-  },
-  {
-    name: "support-engineer",
-    factory: createSupportEngineerAgent,
-    metadata: SUPPORT_ENGINEER_METADATA,
-    heading: "# Support Engineer",
-    hasSubSkillDelegation: false,
+    heading: "# Legal Counsel — Soul",
   },
 ] as const
 
-describe("New agent factory structure", () => {
-  for (const { name, factory, metadata, heading } of NEW_AGENTS) {
+describe("retained agent factory structure", () => {
+  for (const { name, factory, metadata, heading } of RETAINED_SPECIALISTS) {
     describe(name, () => {
       const config = factory("test-model")
 
@@ -88,26 +92,11 @@ describe("New agent factory structure", () => {
         expect(metadata.triggers[0]?.domain).toBeDefined()
       })
 
-      it("prompt contains personality key reference", () => {
-        expect(config.prompt).toMatch(/Personality/)
-      })
-
-      it("prompt references OpenCode orchestrated workflow context", () => {
-        expect(config.prompt).toContain("OpenCode orchestrated workflow")
-      })
-
       it("prompt contains .sisyphus/ persistent context section", () => {
         expect(config.prompt).toContain(".sisyphus/")
       })
     })
   }
-
-  describe("support-engineer has no sub-skill delegation section", () => {
-    it("support-engineer prompt does not contain 'Sub-Skill'", () => {
-      const config = createSupportEngineerAgent("test-model")
-      expect(config.prompt).not.toContain("Sub-Skill")
-    })
-  })
 
   describe("tool deny lists", () => {
     it("legal-counsel denies task", () => {
@@ -116,31 +105,22 @@ describe("New agent factory structure", () => {
       expect(permissions?.["task"]).toBe("deny")
     })
 
-    it("data-analyst denies task", () => {
-      const config = createDataAnalystAgent("test-model")
+    it("marketing-wunderkind denies task", () => {
+      const config = createMarketingWunderkindAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
       expect(permissions?.["task"]).toBe("deny")
     })
 
-    it("devrel-wunderkind denies task", () => {
-      const config = createDevrelWunderkindAgent("test-model")
+    it("creative-director denies task", () => {
+      const config = createCreativeDirectorAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
       expect(permissions?.["task"]).toBe("deny")
     })
 
-    it("support-engineer does NOT deny task", () => {
-      const config = createSupportEngineerAgent("test-model")
+    it("fullstack-wunderkind does NOT deny task", () => {
+      const config = createFullstackWunderkindAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
       expect(permissions?.["task"]).toBeUndefined()
-    })
-  })
-
-  describe("no personality keys in wrong agents (sanity)", () => {
-    it("all 4 new agents have a personality config key (full personality system)", () => {
-      for (const { factory } of NEW_AGENTS) {
-        const config = factory("m")
-        expect(config.prompt).toMatch(/Personality/)
-      }
     })
   })
 })
@@ -151,14 +131,8 @@ describe("all shipped wunderkind specialists are directly usable and delegatable
     ["creative-director", createCreativeDirectorAgent],
     ["product-wunderkind", createProductWunderkindAgent],
     ["fullstack-wunderkind", createFullstackWunderkindAgent],
-    ["brand-builder", createBrandBuilderAgent],
-    ["qa-specialist", createQaSpecialistAgent],
-    ["operations-lead", createOperationsLeadAgent],
     ["ciso", createCisoAgent],
-    ["devrel-wunderkind", createDevrelWunderkindAgent],
     ["legal-counsel", createLegalCounselAgent],
-    ["data-analyst", createDataAnalystAgent],
-    ["support-engineer", createSupportEngineerAgent],
   ] as const
 
   for (const [name, factory] of ALL_SPECIALISTS) {
@@ -180,11 +154,7 @@ describe("Documentation Output static sections", () => {
     { name: "creative-director", factory: createCreativeDirectorAgent },
     { name: "product-wunderkind", factory: createProductWunderkindAgent },
     { name: "fullstack-wunderkind", factory: createFullstackWunderkindAgent },
-    { name: "brand-builder", factory: createBrandBuilderAgent },
-    { name: "qa-specialist", factory: createQaSpecialistAgent },
-    { name: "operations-lead", factory: createOperationsLeadAgent },
     { name: "ciso", factory: createCisoAgent },
-    { name: "devrel-wunderkind", factory: createDevrelWunderkindAgent },
   ]
 
   for (const { name, factory } of ELIGIBLE_AGENT_FACTORIES) {
@@ -196,8 +166,6 @@ describe("Documentation Output static sections", () => {
 
   const EXCLUDED_AGENT_FACTORIES = [
     { name: "legal-counsel", factory: createLegalCounselAgent },
-    { name: "support-engineer", factory: createSupportEngineerAgent },
-    { name: "data-analyst", factory: createDataAnalystAgent },
   ]
 
   for (const { name, factory } of EXCLUDED_AGENT_FACTORIES) {

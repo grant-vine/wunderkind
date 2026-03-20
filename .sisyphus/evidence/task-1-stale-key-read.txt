@@ -1,0 +1,2 @@
+{"teamCulture":"pragmatic-balanced","orgStructure":"flat","cisoPersonality":"pragmatic-risk-manager","ctoPersonality":"code-archaeologist","cmoPersonality":"data-driven","productPersonality":"outcome-obsessed","creativePersonality":"pragmatic-problem-solver","legalPersonality":"pragmatic-advisor","docsEnabled":false,"docsPath":"./docs","docHistoryMode":"overwrite","prdPipelineMode":"filesystem"}
+exit_code=0

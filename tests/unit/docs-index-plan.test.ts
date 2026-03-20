@@ -10,7 +10,7 @@ describe("docs-index plan", () => {
     const plan = buildDocsIndexPlan("./docs")
 
     expect(plan.docsPath).toBe("docs")
-    expect(plan.entries.length).toBe(9)
+    expect(plan.entries.length).toBe(5)
     expect(plan.entries.every((entry) => entry.managedLanePath.startsWith("docs/"))).toBe(true)
   })
 
@@ -74,6 +74,25 @@ describe("docs-index plan", () => {
     expect(marketing.managedLanePath).toBe("docs/marketing-strategy.md")
     expect(marketing.outputStrategy).toBe("dated-file-family")
     expect(marketing.writePathPattern).toBe("docs/marketing-strategy--<UTC_TOKEN>.md")
+  })
+
+  it("reports duplicate target paths in the plan", () => {
+    const plan = buildDocsIndexPlan("./docs")
+    const first = plan.entries[0]
+    if (!first) throw new Error("Expected at least one docs plan entry")
+    const duplicate = {
+      agentKey: "product-wunderkind" as const,
+      canonicalFilename: "product-strategy.md",
+      managedLanePath: first.managedLanePath,
+      outputStrategy: first.outputStrategy,
+      writePathPattern: first.writePathPattern,
+    }
+    const planWithDuplicate = { ...plan, entries: [...plan.entries, duplicate] }
+    const errors = validateDocsIndexPlan(planWithDuplicate)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain(first.agentKey)
+    expect(errors[0]).toContain("product-wunderkind")
+    expect(errors[0]).toContain(first.managedLanePath)
   })
 
   it("summarizes created and refreshed outputs from pre-run existence", () => {

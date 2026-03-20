@@ -1,9 +1,25 @@
 {
-  "active_plan": "/Users/grantv/Code/wunderkind/.sisyphus/plans/docs-output-system.md",
-  "started_at": "2026-03-10T17:02:00.858Z",
+  "active_plan": "/Users/grantv/Code/wunderkind/.sisyphus/plans/remove-desloppify.md",
+  "started_at": "2026-03-19T18:43:04.132Z",
   "session_ids": [
-    "ses_3274d39a3ffeTP9xdgrD18mk06"
+    "ses_2f8b0ec1fffe6LhjLrETO6TTFT",
+    "ses_2f8955339ffedKTm78IE3JTdec",
+    "ses_2f8959e2bffeQoZnjPS3vKOSq4",
+    "ses_2f88cee14ffebztImikDvkTacU",
+    "ses_2f882353bfferUOWl3HEcJSAxp",
+    "ses_2f87b1a04ffeFuSRRk2XNUvznm",
+    "ses_2f87ae46cffekSwksOxQ4UZ8ay",
+    "ses_2f87ab6e0ffejuUJc3tIm44XfD",
+    "ses_2f8775bf2ffeNJIc2sQ1mGiza6",
+    "ses_2f877248cffeUgIHaS6Gkaxq52",
+    "ses_2f8773a9affehLVYvBGqis0vg4",
+    "ses_2f86ebeb2ffe4FvVuNKS1MLzWi",
+    "ses_2f86ebe05ffeazSYnWF5L1QuPR",
+    "ses_2f86c754bffeVU1bL5cUiqd0ip",
+    "ses_2f86216c9ffe41WAXxAdRTlccp",
+    "ses_2f862bb20ffe1GEUGCTxYmjdmN",
+    "ses_2f862bc4fffeNRycQWQSJDh2HK"
   ],
-  "plan_name": "docs-output-system",
+  "plan_name": "remove-desloppify",
   "agent": "atlas"
 }

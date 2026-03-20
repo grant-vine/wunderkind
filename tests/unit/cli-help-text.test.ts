@@ -36,8 +36,8 @@ describe("CLI help copy", () => {
   it("uses native OpenCode agent branding in top-level help text", () => {
     const output = runCliHelp("--help")
 
-    expect(output).toContain("Adds twelve specialist native OpenCode agents covering")
-    expect(output).toContain("security, devrel, legal, support, and data analysis")
+    expect(output).toContain("Adds six retained native OpenCode agents covering")
+    expect(output).toContain("marketing, design, product, engineering, security, and legal")
   })
 
   it("does not run install implicitly on bare invocation", () => {
@@ -53,6 +53,7 @@ describe("CLI help copy", () => {
 
     expect(output).toContain("Install Wunderkind into your OpenCode setup.")
     expect(output).toContain("non-interactive use in CI or scripted environments")
+    expect(output).toContain("optional baseline default flags")
   })
 
   it("includes uninstall command help text", () => {
@@ -76,5 +77,14 @@ describe("CLI help copy", () => {
     const output = runCliHelp("doctor", "--help")
 
     expect(output).toContain("Enable verbose diagnostic output")
+  })
+
+  it("rejects the removed legacy init flag as unknown", () => {
+    const legacyFlag = ["--de", "sloppify-enabled=yes"].join("")
+    const result = runCliRaw("init", legacyFlag)
+
+    expect(result.status).not.toBe(0)
+    expect(result.output).toContain("unknown option")
+    expect(result.output).toContain(legacyFlag)
   })
 })

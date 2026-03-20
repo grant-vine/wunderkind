@@ -1,0 +1,78 @@
+# Capability Preservation Matrix
+
+This matrix is the single authoritative inventory for the six-agent target topology.
+
+Sources used: `src/agents/manifest.ts`, `oh-my-opencode.jsonc`, `src/index.ts`, `src/agents/*.ts`, and `skills/SKILL-STANDARD.md`.
+
+Disposition rule: `retain` and `merge` apply to base-agent authority in `src/agents/*.ts`; `extract-as-skill` applies to surviving skills in `skills/*/SKILL.md`; `retire` means the standalone base-agent authority is intentionally removed.
+
+| Current Owner | Capability/Skill | Disposition | Surviving Owner | Artifact Path | Notes |
+|---|---|---|---|---|---|
+| `marketing-wunderkind` | CMO strategy, positioning, and go-to-market planning | retain | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Keeps base authority for brand strategy, messaging, launches, and product marketing. |
+| `marketing-wunderkind` | Growth acquisition, lifecycle marketing, and conversion optimization | retain | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Keeps paid, SEO/SEM, funnel, attribution, retention, and unit-economics scope. |
+| `marketing-wunderkind` | Content strategy, PR, competitor research, and audience insight | retain | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Keeps content, press, narrative, and market-intelligence authority. |
+| `marketing-wunderkind` | Campaign analytics and channel-performance interpretation | retain | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Remains with marketing and also becomes the landing zone for campaign analytics absorbed from `data-analyst`. |
+| `creative-director` | Brand identity, visual language, and art direction | retain | `creative-director` | `src/agents/creative-director.ts` | Core retained design authority in the target topology. |
+| `creative-director` | Design systems, token architecture, and component standards | retain | `creative-director` | `src/agents/creative-director.ts` | Keeps system-level UI and token governance intact. |
+| `creative-director` | UX flows, accessibility rigor, typography, and UI audit quality | retain | `creative-director` | `src/agents/creative-director.ts` | Fixed topology explicitly keeps UX, design systems, and visual-language ownership here. |
+| `product-wunderkind` | Product strategy, vision, market framing, and outcome setting | retain | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Keeps orchestrator authority for strategy and measurable outcomes. |
+| `product-wunderkind` | Discovery, research, persona work, and problem framing | retain | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Keeps user-insight and problem-definition authority. |
+| `product-wunderkind` | Roadmapping, prioritization, PRDs, and parallel-safe decomposition | retain | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Continues to own backlog shaping, prioritization, and planning artifacts. |
+| `product-wunderkind` | Product analytics, north-star metrics, and experiment readouts | retain | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Retained topology explicitly absorbs product analytics from `data-analyst`. |
+| `product-wunderkind` | Front-door intake triage, repro framing, and acceptance review | retain | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Retained topology explicitly absorbs issue intake from `support-engineer` and acceptance review from `qa-specialist`. |
+| `fullstack-wunderkind` | Full-stack implementation, architecture, and API design | retain | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Keeps core engineering execution and architecture authority. |
+| `fullstack-wunderkind` | Frontend, backend, database, and platform engineering | retain | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Keeps code, schema, deployment, and infrastructure execution under one owner. |
+| `fullstack-wunderkind` | Code review, performance, accessibility engineering, and technical debt remediation | retain | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Preserves engineering quality and review authority inside the retained CTO-calibre agent. |
+| `fullstack-wunderkind` | TDD execution, regression defense, runbooks, and reliability implementation | retain | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Retained topology absorbs QA execution plus operations-led reliability and runbook work. |
+| `brand-builder` | Community architecture, forum strategy, and ambassador programs | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Fixed topology folds community ownership into consolidated marketing. |
+| `brand-builder` | Thought leadership, PR narrative, public reputation, and outward-facing brand building | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Narrative and earned-attention work survive inside marketing. |
+| `brand-builder` | Brand-community spend gating and ROI discipline | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Cost-gating rules survive as part of broader marketing planning and channel selection. |
+| `brand-builder` | Standalone brand and community base-agent authority | retire | `-` | `-` | The separate base agent is intentionally removed after its capabilities merge into marketing. |
+| `qa-specialist` | TDD execution and test writing | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Execution-heavy testing moves to engineering in the six-agent topology. |
+| `qa-specialist` | Coverage analysis, flaky-test triage, and regression assurance | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Coverage and regression work stay close to implementation ownership. |
+| `qa-specialist` | User-story review, acceptance criteria review, and definition-of-done rigor | merge | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Acceptance review becomes part of product's orchestration role. |
+| `qa-specialist` | Defect analysis and security-boundary test-gap identification | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Technical defect analysis survives with engineering; security escalation still routes to `ciso`. |
+| `qa-specialist` | Standalone QA gatekeeper base-agent authority | retire | `-` | `-` | Separate QA persona is removed; responsibilities split between product and fullstack. |
+| `operations-lead` | SRE/SLO policy, observability, and production readiness | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Reliability ownership folds into engineering implementation. |
+| `operations-lead` | Runbooks, postmortems, on-call procedures, and supportability review | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Runbook and operational-readiness authority survive under fullstack. |
+| `operations-lead` | Admin tooling and internal operational surfaces | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Internal-tooling execution aligns better with the engineering owner. |
+| `operations-lead` | Security incident containment posture and breach-response coordination | merge | `ciso` | `src/agents/ciso.ts` | Fixed topology explicitly sends security-incident posture to `ciso`. |
+| `operations-lead` | Standalone operations base-agent authority | retire | `-` | `-` | Separate ops persona is removed after reliability work shifts to fullstack and security posture shifts to ciso. |
+| `data-analyst` | Product analytics, event taxonomy, funnel analysis, and metric definitions | merge | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Product absorbs product analytics authority. |
+| `data-analyst` | Experiment design, A/B testing method, and feature readouts | merge | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Product owns product experiments and readouts in the target topology. |
+| `data-analyst` | Campaign measurement, attribution support, and channel readouts | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Fixed topology sends campaign analytics to marketing. |
+| `data-analyst` | Standalone data-analyst base-agent authority | retire | `-` | `-` | The measurement specialist no longer survives as a separate base agent. |
+| `devrel-wunderkind` | Developer docs, API docs, and getting-started guides | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Developer education folds into the consolidated marketing remit. |
+| `devrel-wunderkind` | DX audits, onboarding friction reduction, and time-to-first-value improvement | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Retained topology merges developer-experience stewardship into marketing. |
+| `devrel-wunderkind` | Developer advocacy, tutorials, migration guides, and OSS community programs | merge | `marketing-wunderkind` | `src/agents/marketing-wunderkind.ts` | Survives as developer-facing content and adoption work under marketing. |
+| `devrel-wunderkind` | Standalone DevRel base-agent authority | retire | `-` | `-` | Separate devrel persona is removed after capability merge. |
+| `ciso` | Security architecture, threat modeling, and secure-by-design decisions | retain | `ciso` | `src/agents/ciso.ts` | Keeps core security authority in the retained topology. |
+| `ciso` | OWASP audits, vulnerability management, and pen-test orchestration | retain | `ciso` | `src/agents/ciso.ts` | Keeps offensive and defensive security review authority. |
+| `ciso` | Privacy-control posture, compliance controls, and breach response | retain | `ciso` | `src/agents/ciso.ts` | Also absorbs security-incident posture from `operations-lead`. |
+| `legal-counsel` | OSS licensing, license compatibility, and open-source compliance | retain | `legal-counsel` | `src/agents/legal-counsel.ts` | Licensing authority stays fully under retained legal counsel. |
+| `legal-counsel` | Contracts, terms, privacy policy, DPA, CLA, and commercial terms | retain | `legal-counsel` | `src/agents/legal-counsel.ts` | Commercial and policy drafting remain legal-only authority. |
+| `legal-counsel` | Legal interpretation, regulatory obligations, and policy sign-off | retain | `legal-counsel` | `src/agents/legal-counsel.ts` | Retains the explicit legal decision and sign-off role. |
+| `support-engineer` | Issue intake, severity classification, and front-door routing | merge | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Product becomes the explicit front door for issue intake. |
+| `support-engineer` | Repro framing, user feedback synthesis, and backlog-ready issue shaping | merge | `product-wunderkind` | `src/agents/product-wunderkind.ts` | Product absorbs intake and repro framing before engineering execution. |
+| `support-engineer` | Technical triage, likely-owner identification, and engineering handoff | merge | `fullstack-wunderkind` | `src/agents/fullstack-wunderkind.ts` | Technical debugging handoff lands with engineering. |
+| `support-engineer` | Standalone support base-agent authority | retire | `-` | `-` | Separate support persona is removed after product and fullstack absorb its split responsibilities. |
+| `product-wunderkind` | `agile-pm` | extract-as-skill | `product-wunderkind` | `skills/agile-pm/SKILL.md` | `SKILL-STANDARD.md` marks this revise; it survives as the product planning and decomposition skill. |
+| `ciso` | `compliance-officer` | extract-as-skill | `ciso` | `skills/compliance-officer/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains the retained compliance skill under security. |
+| `fullstack-wunderkind` | `db-architect` | extract-as-skill | `fullstack-wunderkind` | `skills/db-architect/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains a focused engineering specialization. |
+| `fullstack-wunderkind` | `design-an-interface` | extract-as-skill | `fullstack-wunderkind` | `skills/design-an-interface/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it survives as an interface and abstraction design skill. |
+| `product-wunderkind` | `experimentation-analyst` | extract-as-skill | `product-wunderkind` | `skills/experimentation-analyst/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this revise and reassigns the former data-analyst skill to product for product experiments and readouts. |
+| `product-wunderkind` | `grill-me` | extract-as-skill | `product-wunderkind` | `skills/grill-me/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains the ambiguity-collapsing product intake skill. |
+| `fullstack-wunderkind` | `improve-codebase-architecture` | extract-as-skill | `fullstack-wunderkind` | `skills/improve-codebase-architecture/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it survives as the long-form architecture skill. |
+| `legal-counsel` | `oss-licensing-advisor` | extract-as-skill | `legal-counsel` | `skills/oss-licensing-advisor/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this keep and the retained legal owner stays unchanged. |
+| `ciso` | `pen-tester` | extract-as-skill | `ciso` | `skills/pen-tester/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains the active-testing security skill. |
+| `product-wunderkind` | `prd-pipeline` | extract-as-skill | `product-wunderkind` | `skills/prd-pipeline/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains a core orchestrator workflow skill. |
+| `ciso` | `security-analyst` | extract-as-skill | `ciso` | `skills/security-analyst/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains the general security-analysis skill. |
+| `marketing-wunderkind` | `social-media-maven` | extract-as-skill | `marketing-wunderkind` | `skills/social-media-maven/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it fits the consolidated marketing remit after brand/devrel absorption. |
+| `fullstack-wunderkind` | `tdd` | extract-as-skill | `fullstack-wunderkind` | `skills/tdd/SKILL.md` | `SKILL-STANDARD.md` marks this revise; ownership moves from removed QA into engineering execution. |
+| `marketing-wunderkind` | `technical-writer` | extract-as-skill | `marketing-wunderkind` | `skills/technical-writer/SKILL.md` | Explicitly classified: `SKILL-STANDARD.md` marks this revise and reassigns the former devrel-owned skill to marketing. |
+| `product-wunderkind` | `triage-issue` | extract-as-skill | `product-wunderkind` | `skills/triage-issue/SKILL.md` | Explicitly classified with surviving owner `product-wunderkind`; `SKILL-STANDARD.md` marks this revise and keeps engineering as the downstream handoff, not the owner. |
+| `product-wunderkind` | `ubiquitous-language` | extract-as-skill | `product-wunderkind` | `skills/ubiquitous-language/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it stays product-owned for shared terminology. |
+| `fullstack-wunderkind` | `vercel-architect` | extract-as-skill | `fullstack-wunderkind` | `skills/vercel-architect/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it remains a platform-engineering specialization. |
+| `creative-director` | `visual-artist` | extract-as-skill | `creative-director` | `skills/visual-artist/SKILL.md` | `SKILL-STANDARD.md` marks this keep; it stays with the retained design owner. |
+| `product-wunderkind` | `write-a-skill` | extract-as-skill | `product-wunderkind` | `skills/write-a-skill/SKILL.md` | `SKILL-STANDARD.md` marks this revise; it survives as the practical authoring workflow anchored by the repo skill standard. |
+| `fullstack-wunderkind` | `code-health` | extract-as-skill | `fullstack-wunderkind` | `skills/code-health/SKILL.md` | Opt-in Desloppify code-health workflow. Shipped as a new skill in Task 6; missing from original matrix. |

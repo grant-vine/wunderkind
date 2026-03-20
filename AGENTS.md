@@ -1,9 +1,9 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.9.9  
+**Package:** `@grant-vine/wunderkind` v0.10.3  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
-oh-my-openagent addon that injects 12 specialist AI agents (marketing, design, product, engineering, brand, QA, ops, security, devrel, legal, support, data analysis) into any OpenCode project via a `bunx`/`npx` interactive installer.
+oh-my-openagent addon that injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal) into any OpenCode project via a `bunx`/`npx` interactive installer. Uses an orchestrator-first topology with `product-wunderkind` as the default front door.
 
 ---
 
@@ -14,12 +14,13 @@ wunderkind/
 ├── src/
 │   ├── index.ts               # Plugin entry — default-exports Plugin object
 │   ├── build-agents.ts        # Build-time generator — writes agents/*.md
-│   ├── agents/                # Agent factory functions + types (see src/agents/AGENTS.md)
-│   ├── cli/                   # Installer CLI (see src/cli/AGENTS.md)
+│   ├── agents/                # Agent factory functions + docs-output metadata
+│   ├── cli/                   # Install/upgrade/init/doctor/uninstall/gitignore commands
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
-├── skills/                    # Static SKILL.md files for 8 sub-skills
-├── tests/unit/                # Bun test suite (cli-installer.test.ts)
+├── commands/                  # Shipped native command assets (currently docs-index)
+├── skills/                    # Static SKILL.md files for 20 shipped skills + SKILL-STANDARD.md
+├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
 ├── .github/workflows/         # CI: publish on v* tag push
@@ -41,7 +42,7 @@ wunderkind/
 
 ```
 ~/.wunderkind/                   # Global config baseline
-└── wunderkind.config.jsonc      # Global config baseline (region, industry, regulations only)
+└── wunderkind.config.jsonc      # Global config defaults (region, industry, regulations — optional if built-in defaults are acceptable)
 ```
 
 ---
@@ -56,7 +57,8 @@ wunderkind/
 | Change non-interactive installer | `src/cli/cli-installer.ts` |
 | Change what config is written to user projects | `src/cli/config-manager/index.ts` |
 | Change CLI flags / help text | `src/cli/index.ts` |
-| Add / edit a sub-skill | `skills/<name>/SKILL.md` |
+| Add / edit a sub-skill | `skills/SKILL-STANDARD.md` + `skills/<name>/SKILL.md` |
+| Audit current skill ownership/disposition | `skills/SKILL-STANDARD.md` |
 | Plugin entry point | `src/index.ts` |
 | Build pipeline (two-step) | `src/build-agents.ts` + `package.json` scripts |
 | Change install scope | `src/cli/index.ts` (`--scope` flag) + `src/cli/tui-installer.ts` + `src/cli/cli-installer.ts` |
@@ -72,8 +74,11 @@ wunderkind/
 Wunderkind provides a tiered CLI for installation, project setup, and health checks.
 
 - **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
-- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`) and initializes the Documentation Output folder if enabled.
+- **`upgrade`** (`src/cli/cli-installer.ts`) — Refreshes Wunderkind-owned native agents and skills for the selected scope, plus global native commands.
+- **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to `.gitignore` idempotently.
+- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, and sets the PRD pipeline mode for the project.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
+- **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
 
 ---
 
@@ -83,11 +88,11 @@ Documentation Output (`docs-output`) allows agents to write persistent files to 
 
 ### Configuration (`src/agents/docs-config.ts`)
 
-`AGENT_DOCS_CONFIG` maps all 12 agent keys to their `canonicalFilename` and `eligible` status. When adding a new agent, add an entry to this record first.
+`AGENT_DOCS_CONFIG` maps all 6 retained agent keys to their `canonicalFilename` and `eligible` status. When adding a new agent, add an entry to this record first.
 
 - **`canonicalFilename`**: The filename agents are instructed to write to (e.g. `marketing-strategy.md`).
 - **`eligible`**: Boolean flag determining if an agent is authorized to write to disk.
-- **`DOCS_INDEX_RUNTIME_STATUS`**: Freezes the current W8A truth that `/docs-index` is prompt convention only and not executable in the current plugin surface.
+- **`DOCS_INDEX_RUNTIME_STATUS`**: Freezes the current contract that `/docs-index` is a shipped native command asset backed by `commands/docs-index.md`.
 
 `buildDocsInstruction(agentKey, docsPath, docHistoryMode)` generates the formatted instruction string used in agent prompt templates.
 
@@ -100,6 +105,19 @@ Maintaining the distinction between runtime and static headings is critical for 
 - **Sentinel**: `<!-- wunderkind:docs-output-start -->` — Injected by `src/index.ts` to mark the start of the documentation output section.
 
 These strings MUST NOT be identical. If the sentinel or runtime heading matches the static heading, the idempotency check will fail.
+
+### Init-Deep Workflow
+
+`init-deep` is an oh-my-openagent workflow concept, not a Wunderkind CLI command.
+
+Recommended bootstrap sequence:
+
+1. Run `wunderkind init` to create `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and optional docs scaffolding.
+2. Have an agent populate `AGENTS.md` with project knowledge, conventions, and architecture context.
+3. Systematically explore the repo and append durable findings to `.sisyphus/notepads/` and `.sisyphus/evidence/`.
+4. Use `/docs-index` to refresh or bootstrap the managed docs set when docs output is enabled.
+
+Treat this as the recommended audit/bootstrap workflow when bringing a project up to a high-context Wunderkind baseline.
 
 ---
 
@@ -148,6 +166,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 - **No `as any`, `@ts-ignore`, `@ts-expect-error`.** Fix types; never suppress.
 - **No empty `catch` blocks.**
 - **No auto-commits.** Agents must never commit without explicit user instruction.
+- **Skill authoring standard lives in `skills/SKILL-STANDARD.md`.** Update it when skill ownership or inventory changes.
 
 ---
 
@@ -155,20 +174,14 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 
 | Agent key | Role | Category |
 |---|---|---|
-| `wunderkind:marketing-wunderkind` | CMO-calibre strategist | writing |
+| `wunderkind:marketing-wunderkind` | CMO-calibre strategist (brand, community, devrel, GTM) | writing |
 | `wunderkind:creative-director` | Brand & UI/UX lead | visual-engineering |
-| `wunderkind:product-wunderkind` | VP Product | writing |
+| `wunderkind:product-wunderkind` | VP Product — default orchestrator/front door | writing |
 | `wunderkind:fullstack-wunderkind` | CTO-calibre engineer | unspecified-high |
-| `wunderkind:brand-builder` | Community, PR, thought leadership | writing |
-| `wunderkind:qa-specialist` | TDD, coverage, user story review | unspecified-high |
-| `wunderkind:operations-lead` | SRE/SLO, runbooks, incident response | unspecified-high |
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
-| `wunderkind:devrel-wunderkind` | Developer relations and advocacy | writing |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
-| `wunderkind:support-engineer` | Technical support and troubleshooting | writing |
-| `wunderkind:data-analyst` | Data analysis and insights | writing |
 
-Sub-skills: `social-media-maven` (marketing) · `visual-artist` (creative) · `agile-pm` (product) · `db-architect` + `vercel-architect` (fullstack) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso).
+Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
 
 ---
 
@@ -180,15 +193,24 @@ bun run build                        # compile + generate agents/*.md
 tsc --noEmit                         # type-check only
 node bin/wunderkind.js --help        # test CLI locally
 node bin/wunderkind.js install --help
+node bin/wunderkind.js upgrade --help
+node bin/wunderkind.js uninstall --help
+node bin/wunderkind.js doctor --verbose
 
 # Non-interactive install — global scope (default)
+node bin/wunderkind.js install --no-tui --scope=global
+
+# Non-interactive install — global scope with explicit shared defaults
 node bin/wunderkind.js install --no-tui \
   --scope=global \
   --region="South Africa" \
   --industry=SaaS \
   --primary-regulation=POPIA
 
-# Non-interactive install — project scope (writes opencode.json in cwd)
+# Non-interactive install — project scope using inherited defaults
+node bin/wunderkind.js install --no-tui --scope=project
+
+# Non-interactive install — project scope with explicit local overrides
 node bin/wunderkind.js install --no-tui \
   --scope=project \
   --region=EU \
@@ -212,6 +234,58 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
-- **oh-my-openagent must be installed before wunderkind** — the TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
-- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in v0.5.0. Agent categories are configured via `oh-my-opencode.jsonc` at build time; each agent inherits its model from the category definition in that file.
+- **oh-my-openagent must be installed before wunderkind** — canonical npm package is `oh-my-openagent`, while upstream technical identifiers remain `oh-my-opencode` (CLI command) and `oh-my-opencode.jsonc` (config filename). The TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via `oh-my-opencode.jsonc` at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO itself is detected by the TUI by looking for `oh-my-opencode.{json,jsonc}` in the OpenCode config dir.
+- **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
+- **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
+- **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke any automated cleanup tool, Python scripts, or external package manager workflows. There is no config key for enabling automated cleanup; any stale config keys from older versions are silently ignored on read.
+- **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
+- **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.sisyphus/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
+- **Audit-style reviewer freshness rule** — when using Metis, Momus, oracle, or any equivalent critic agent for a review pass, always spawn a **fresh agent/session** for each new round after fixes are made. Never reuse the previous reviewer session — reused sessions narrow their attention to previously reported findings instead of performing a fresh audit.
+
+---
+
+## TESTING
+
+### Test suite
+
+```bash
+bun test tests/unit/                          # full suite (282 tests, 0 fail)
+bun run test:coverage:config-manager          # accurate config-manager coverage (isolated)
+bun test --coverage tests/unit/               # full combined report (config-manager shows low — see Bun bug below)
+```
+
+### Bun coverage merge bug — `config-manager/index.ts` shows ~16% in combined run
+
+Any test file that calls `mock.module("../cli/config-manager/index.ts", ...)` at the top level causes its worker to emit zero coverage for that module. When Bun merges workers, the zero data overwrites the real data. The actual isolated coverage is **96.15%** — run `bun run test:coverage:config-manager` to verify. This is a Bun bug; do not attempt to restructure mocks to work around it.
+
+### Dynamic import query-string busting
+
+When a test needs a fresh module instance per test via dynamic import, use a **single file-level** `Date.now()` value, not a new one inside each test. Bun attributes coverage by URL — per-test URLs cause only the first import to count toward coverage. Pattern: `const CACHE_BUST = Date.now();` at file scope, then reuse it in each `import(...)`.
+
+### `process.chdir()` cleanup order
+
+Always restore `process.cwd()` **before** deleting the temp directory in the `finally` block. Deleting the directory while still chdir'd into it leaves the process in a non-existent path, corrupting all subsequent tests that use relative paths.
+
+```ts
+} finally {
+  process.chdir(ORIGINAL_CWD);               // FIRST — restore
+  if (tempDir) rmSync(tempDir, { recursive: true, force: true }); // THEN — delete
+}
+```
+
+### Portable path pattern
+
+All test files must use `new URL("../../", import.meta.url).pathname` to derive `PROJECT_ROOT`. Never hardcode a machine path.
+
+### Accepted coverage ceilings (do not try to cover these)
+
+| File | Lines | Reason |
+|---|---|---|
+| `src/cli/init.ts` | 456-457 | Dead branch — `normalizeDocHistoryMode()` at line 264 guarantees a valid value before the guard fires |
+| `src/cli/cli-installer.ts` | 102-112 | Dead code — `validateNonTuiArgs()` always returns `{valid: true}`; branch exists for future logic |
+| `src/agents/docs-index-plan.ts` | 33 | Invariant guard — keys are sourced from `AGENT_DOCS_CONFIG` so they can never be absent from it |
+| `src/cli/index.ts` | (absent) | Pure Commander.js wiring with `process.exit()` — subprocess-tested via `cli-help-text.test.ts` |
+
+Full details and coverage snapshot: `.sisyphus/notepads/unit-testing/learnings.md`.

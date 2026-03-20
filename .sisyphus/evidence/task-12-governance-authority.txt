@@ -1,0 +1,33 @@
+Task 12 - Reduce specialist count while preserving governance authority
+Date: 2026-03-19
+
+Domain-scoped agent changes applied:
+- src/agents/fullstack-wunderkind.ts
+  - absorbed operations-lead reliability engineering, SLO/SLA, runbooks, on-call discipline, supportability review, incident coordination, and admin tooling guidance
+- src/agents/ciso.ts
+  - absorbed operations-lead security-incident posture and compliance-impact assessment
+  - rerouted incident containment from operations-lead to fullstack-wunderkind while preserving legal-counsel authority for formal notice wording
+- src/agents/product-wunderkind.ts
+  - absorbed data-analyst product usage interpretation, feature adoption analysis, experiment synthesis, and prioritization framing
+- src/agents/marketing-wunderkind.ts
+  - absorbed data-analyst campaign performance analysis, funnel diagnosis, attribution interpretation, and channel ROI framing
+- src/agents/operations-lead.ts
+  - converted to deprecated stub that routes reliability/admin work to fullstack-wunderkind and security-incident posture to ciso
+- src/agents/data-analyst.ts
+  - converted to deprecated stub that routes product analytics interpretation to product-wunderkind and campaign analytics to marketing-wunderkind
+
+Shared-infrastructure follow-up recorded:
+- .sisyphus/plans/task-12-shared-infra-todo.md
+  - manifest removals: operations-lead, data-analyst
+  - OMO agent blocks to remove: wunderkind:operations-lead, wunderkind:data-analyst
+  - personality removals: opsPersonality, dataAnalystPersonality
+  - downstream shared-file cleanup captured for src/index.ts, src/agents/docs-config.ts, src/cli/config-manager/index.ts, src/cli/doctor.ts, README.md, and affected unit tests
+
+Verification:
+- lsp_diagnostics: no diagnostics on all six modified TypeScript agent files
+- npx tsc --noEmit: PASS
+- bun test tests/unit/: PASS (200 pass, 0 fail)
+- bun run build: PASS
+
+Suggested commit message:
+refactor(topology): preserve authorities while reducing peers

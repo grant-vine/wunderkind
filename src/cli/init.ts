@@ -1,25 +1,21 @@
 import * as p from "@clack/prompts"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { detectCurrentConfig, writeNativeAgentFiles, writeNativeCommandFiles, writeNativeSkillFiles, writeWunderkindConfig } from "./config-manager/index.js"
+import {
+  detectCurrentConfig,
+  detectGitHubWorkflowReadiness,
+  writeNativeAgentFiles,
+  writeNativeCommandFiles,
+  writeNativeSkillFiles,
+  writeWunderkindConfig,
+} from "./config-manager/index.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
-  BrandPersonality,
-  CisoPersonality,
-  CmoPersonality,
-  CreativePersonality,
-  CtoPersonality,
-  DataAnalystPersonality,
-  DevrelPersonality,
   DocHistoryMode,
   InstallConfig,
-  LegalPersonality,
-  OpsPersonality,
   OrgStructure,
-  ProductPersonality,
-  QaPersonality,
-  SupportPersonality,
+  PrdPipelineMode,
   TeamCulture,
 } from "./types.js"
 
@@ -28,6 +24,7 @@ export interface InitOptions {
   docsEnabled?: boolean
   docsPath?: string
   docHistoryMode?: string
+  prdPipelineMode?: PrdPipelineMode
 }
 
 const PROJECT_CONTEXT_MARKERS = ["package.json", "bun.lockb", "bun.lock", "tsconfig.json", "pyproject.toml", ".git"] as const
@@ -70,6 +67,134 @@ const ORG_STRUCTURE_OPTIONS: Array<{ value: OrgStructure; label: string; hint: s
   { value: "hierarchical", label: "hierarchical", hint: "Domain authority with explicit veto paths" },
 ]
 
+const PRD_PIPELINE_MODE_OPTIONS: Array<{ value: PrdPipelineMode; label: string; hint: string }> = [
+  { value: "filesystem", label: "filesystem", hint: "Write PRDs, plans, and issues into .sisyphus/ files" },
+  { value: "github", label: "github", hint: "Use gh/GitHub workflows for PRD and issue output when ready" },
+]
+
+const COMMON_REGULATIONS = [
+  { value: "GDPR", label: "GDPR", hint: "EU General Data Protection Regulation" },
+  { value: "POPIA", label: "POPIA", hint: "South Africa Protection of Personal Information Act" },
+  { value: "CCPA", label: "CCPA", hint: "California Consumer Privacy Act" },
+  { value: "LGPD", label: "LGPD", hint: "Brazil Lei Geral de Protecao de Dados" },
+  { value: "HIPAA", label: "HIPAA", hint: "US Health Insurance Portability and Accountability Act" },
+  { value: "PIPEDA", label: "PIPEDA", hint: "Canada Personal Information Protection and Electronic Documents Act" },
+  { value: "PDPA", label: "PDPA", hint: "Thailand/Singapore Personal Data Protection Act" },
+  { value: "APPI", label: "APPI", hint: "Japan Act on the Protection of Personal Information" },
+  { value: "SOC2", label: "SOC 2", hint: "AICPA Service Organization Control 2" },
+  { value: "ISO27001", label: "ISO 27001", hint: "Information security management standard" },
+  { value: "__other__", label: "Enter manually...", hint: "Type a custom regulation name" },
+] as const
+
+interface SoulPersonaDefinition {
+  agentKey:
+    | "product-wunderkind"
+    | "fullstack-wunderkind"
+    | "marketing-wunderkind"
+    | "creative-director"
+    | "ciso"
+    | "legal-counsel"
+  displayName: string
+  questions: readonly [string, string, string, string]
+}
+
+interface SoulCustomizationAnswers {
+  priorityLens: string
+  challengeStyle: string
+  projectMemory: string
+  antiGoals: string
+}
+
+const SOUL_PERSONAS: readonly SoulPersonaDefinition[] = [
+  {
+    agentKey: "product-wunderkind",
+    displayName: "Product Wunderkind",
+    questions: [
+      "What should Product Wunderkind optimize for first on this project?",
+      "How should Product Wunderkind challenge the team when scope, priorities, or evidence are weak?",
+      "What recurring product context must Product Wunderkind always remember?",
+      "What should Product Wunderkind avoid doing on this project, even when asked indirectly?",
+    ],
+  },
+  {
+    agentKey: "fullstack-wunderkind",
+    displayName: "Fullstack Wunderkind",
+    questions: [
+      "What should Fullstack Wunderkind optimize for first on this project: speed, maintainability, reliability, cost, or something else?",
+      "When Fullstack Wunderkind finds technical debt or weak architecture, how assertive should it be?",
+      "What recurring technical context must Fullstack Wunderkind always remember?",
+      "What engineering behaviors should Fullstack Wunderkind avoid on this project?",
+    ],
+  },
+  {
+    agentKey: "marketing-wunderkind",
+    displayName: "Marketing Wunderkind",
+    questions: [
+      "What should Marketing Wunderkind optimize for first on this project?",
+      "How should Marketing Wunderkind challenge positioning, channel, or launch assumptions that look weak?",
+      "What recurring market, audience, or brand context must Marketing Wunderkind always remember?",
+      "What marketing behaviors or tactics should Marketing Wunderkind avoid on this project?",
+    ],
+  },
+  {
+    agentKey: "creative-director",
+    displayName: "Creative Director",
+    questions: [
+      "What should Creative Director optimize for first on this project?",
+      "How should Creative Director challenge weak UX, visual, or brand decisions?",
+      "What recurring visual, accessibility, or brand context must Creative Director always remember?",
+      "What design behaviors should Creative Director avoid on this project?",
+    ],
+  },
+  {
+    agentKey: "ciso",
+    displayName: "CISO",
+    questions: [
+      "What security posture should CISO default to on this project?",
+      "How forcefully should CISO escalate or block work when security concerns appear?",
+      "What recurring security, privacy, or compliance context must CISO always remember?",
+      "What security shortcuts or assumptions must CISO never allow on this project?",
+    ],
+  },
+  {
+    agentKey: "legal-counsel",
+    displayName: "Legal Counsel",
+    questions: [
+      "What legal posture should Legal Counsel default to on this project?",
+      "How assertively should Legal Counsel escalate legal ambiguity or contractual risk?",
+      "What recurring jurisdiction, licensing, or regulatory context must Legal Counsel always remember?",
+      "What legal shortcuts, promises, or assumptions must Legal Counsel avoid on this project?",
+    ],
+  },
+] as const
+
+function renderSoulFile(persona: SoulPersonaDefinition, answers: SoulCustomizationAnswers): string {
+  return [
+    "<!-- wunderkind:soul-file:v1 -->",
+    `# ${persona.displayName} SOUL`,
+    "",
+    `- agentKey: ${persona.agentKey}`,
+    "",
+    "## Customization",
+    `- Priority lens: ${answers.priorityLens}`,
+    `- Challenge style: ${answers.challengeStyle}`,
+    `- Project memory: ${answers.projectMemory}`,
+    `- Anti-goals: ${answers.antiGoals}`,
+    "",
+    "## Durable Knowledge",
+    "",
+  ].join("\n")
+}
+
+async function promptRequiredText(message: string): Promise<string | null> {
+  const response = await p.text({
+    message,
+    validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
+  })
+  if (p.isCancel(response)) return null
+  return (response as string).trim()
+}
+
 async function promptSelect<T extends string>(
   message: string,
   options: NonNullable<Parameters<typeof p.select<T>>[0]["options"]>,
@@ -78,6 +203,31 @@ async function promptSelect<T extends string>(
   const selection = await p.select<T>({ message, options, initialValue })
   if (p.isCancel(selection)) return null
   return selection
+}
+
+async function promptRegulation(message: string, initialValue: string): Promise<string | null> {
+  const knownValues = COMMON_REGULATIONS.map((regulation) => regulation.value).filter((value) => value !== "__other__")
+  const initial = knownValues.includes(initialValue as typeof knownValues[number]) ? initialValue : "__other__"
+
+  const selection = await p.select({
+    message,
+    options: COMMON_REGULATIONS as unknown as Array<{ value: string; label: string; hint?: string }>,
+    initialValue: initial,
+  })
+  if (p.isCancel(selection)) return null
+
+  if (selection !== "__other__") {
+    return selection as string
+  }
+
+  const custom = await p.text({
+    message: "Enter regulation name:",
+    placeholder: "leave blank to skip",
+    initialValue: knownValues.includes(initialValue as typeof knownValues[number]) ? "" : initialValue,
+  })
+  if (p.isCancel(custom)) return null
+
+  return (custom as string).trim()
 }
 
 export async function runInit(options: InitOptions): Promise<number> {
@@ -94,6 +244,7 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
 
     const noTui = options.noTui === true || !process.stdin.isTTY || !process.stdout.isTTY
+    const soulAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
 
     const config: InstallConfig = {
       region: detected.region,
@@ -105,21 +256,42 @@ export async function runInit(options: InitOptions): Promise<number> {
       cisoPersonality: detected.cisoPersonality,
       ctoPersonality: detected.ctoPersonality,
       cmoPersonality: detected.cmoPersonality,
-      qaPersonality: detected.qaPersonality,
       productPersonality: detected.productPersonality,
-      opsPersonality: detected.opsPersonality,
       creativePersonality: detected.creativePersonality,
-      brandPersonality: detected.brandPersonality,
-      devrelPersonality: detected.devrelPersonality,
       legalPersonality: detected.legalPersonality,
-      supportPersonality: detected.supportPersonality,
-      dataAnalystPersonality: detected.dataAnalystPersonality,
       docsEnabled: options.docsEnabled ?? detected.docsEnabled,
       docsPath: options.docsPath ?? detected.docsPath,
       docHistoryMode: normalizeDocHistoryMode(options.docHistoryMode ?? detected.docHistoryMode),
+      prdPipelineMode: options.prdPipelineMode ?? detected.prdPipelineMode,
     }
 
     if (!noTui) {
+      const regionRaw = await p.text({
+        message: "Project region baseline:",
+        placeholder: "Global",
+        initialValue: config.region,
+      })
+      if (p.isCancel(regionRaw)) return 1
+
+      const industryRaw = await p.text({
+        message: "Project industry or vertical:",
+        placeholder: "SaaS",
+        initialValue: config.industry,
+      })
+      if (p.isCancel(industryRaw)) return 1
+
+      const primaryRegulation = await promptRegulation(
+        "Primary data-protection regulation for this project?",
+        config.primaryRegulation,
+      )
+      if (primaryRegulation === null) return 1
+
+      const secondaryRegulation = await promptRegulation(
+        "Secondary regulation for this project? (optional)",
+        config.secondaryRegulation,
+      )
+      if (secondaryRegulation === null) return 1
+
       const teamCulture = await promptSelect(
         "Team culture baseline:",
         TEAM_CULTURE_OPTIONS,
@@ -134,157 +306,72 @@ export async function runInit(options: InitOptions): Promise<number> {
       )
       if (orgStructure === null) return 1
 
-      const customizeSpecialistPersonalities = await p.confirm({
-        message: "Customize specialist personalities for this project?",
+      const createSoulCustomizations = await p.confirm({
+        message: "Do you want to create project-local SOUL customizations for any retained Wunderkind personas?",
         initialValue: false,
       })
-      if (p.isCancel(customizeSpecialistPersonalities)) return 1
+      if (p.isCancel(createSoulCustomizations)) return 1
 
-      if (customizeSpecialistPersonalities) {
-        const cisoPersonality = await promptSelect<CisoPersonality>(
-          "CISO personality:",
-          [
-            { value: "paranoid-enforcer", label: "paranoid-enforcer", hint: PERSONALITY_META.ciso["paranoid-enforcer"]!.hint },
-            { value: "pragmatic-risk-manager", label: "pragmatic-risk-manager", hint: PERSONALITY_META.ciso["pragmatic-risk-manager"]!.hint },
-            { value: "educator-collaborator", label: "educator-collaborator", hint: PERSONALITY_META.ciso["educator-collaborator"]!.hint },
-          ],
-          config.cisoPersonality,
-        )
-        if (cisoPersonality === null) return 1
+      if (createSoulCustomizations) {
+        const selectedSoulPersonas = await p.multiselect<string>({
+          message: "Select retained personas for project-local SOUL customization:",
+          options: SOUL_PERSONAS.map((persona) => ({
+            value: persona.agentKey,
+            label: `${persona.displayName} (${persona.agentKey})`,
+            hint: PERSONALITY_META[
+              persona.agentKey === "product-wunderkind"
+                ? "product"
+                : persona.agentKey === "fullstack-wunderkind"
+                  ? "cto"
+                  : persona.agentKey === "marketing-wunderkind"
+                    ? "cmo"
+                    : persona.agentKey === "creative-director"
+                      ? "creative"
+                      : persona.agentKey === "ciso"
+                        ? "ciso"
+                        : "legal"
+            ][
+              persona.agentKey === "product-wunderkind"
+                ? config.productPersonality
+                : persona.agentKey === "fullstack-wunderkind"
+                  ? config.ctoPersonality
+                  : persona.agentKey === "marketing-wunderkind"
+                    ? config.cmoPersonality
+                    : persona.agentKey === "creative-director"
+                      ? config.creativePersonality
+                    : persona.agentKey === "ciso"
+                      ? config.cisoPersonality
+                      : config.legalPersonality
+            ]?.hint ?? "",
+          })),
+          required: true,
+        })
+        if (p.isCancel(selectedSoulPersonas)) return 1
+        if (selectedSoulPersonas.length === 0) {
+          console.error("Error: at least one retained persona must be selected to create SOUL files")
+          return 1
+        }
+        const selectedSoulPersonaKeys = new Set(selectedSoulPersonas as SoulPersonaDefinition["agentKey"][])
 
-        const ctoPersonality = await promptSelect<CtoPersonality>(
-          "CTO/Fullstack personality:",
-          [
-            { value: "grizzled-sysadmin", label: "grizzled-sysadmin", hint: PERSONALITY_META.cto["grizzled-sysadmin"]!.hint },
-            { value: "startup-bro", label: "startup-bro", hint: PERSONALITY_META.cto["startup-bro"]!.hint },
-            { value: "code-archaeologist", label: "code-archaeologist", hint: PERSONALITY_META.cto["code-archaeologist"]!.hint },
-          ],
-          config.ctoPersonality,
-        )
-        if (ctoPersonality === null) return 1
+        for (const persona of SOUL_PERSONAS) {
+          if (!selectedSoulPersonaKeys.has(persona.agentKey)) continue
 
-        const cmoPersonality = await promptSelect<CmoPersonality>(
-          "CMO/Marketing personality:",
-          [
-            { value: "data-driven", label: "data-driven", hint: PERSONALITY_META.cmo["data-driven"]!.hint },
-            { value: "brand-storyteller", label: "brand-storyteller", hint: PERSONALITY_META.cmo["brand-storyteller"]!.hint },
-            { value: "growth-hacker", label: "growth-hacker", hint: PERSONALITY_META.cmo["growth-hacker"]!.hint },
-          ],
-          config.cmoPersonality,
-        )
-        if (cmoPersonality === null) return 1
+          const priorityLens = await promptRequiredText(persona.questions[0])
+          if (priorityLens === null) return 1
+          const challengeStyle = await promptRequiredText(persona.questions[1])
+          if (challengeStyle === null) return 1
+          const projectMemory = await promptRequiredText(persona.questions[2])
+          if (projectMemory === null) return 1
+          const antiGoals = await promptRequiredText(persona.questions[3])
+          if (antiGoals === null) return 1
 
-        const qaPersonality = await promptSelect<QaPersonality>(
-          "QA personality:",
-          [
-            { value: "rule-enforcer", label: "rule-enforcer", hint: PERSONALITY_META.qa["rule-enforcer"]!.hint },
-            { value: "risk-based-pragmatist", label: "risk-based-pragmatist", hint: PERSONALITY_META.qa["risk-based-pragmatist"]!.hint },
-            { value: "rubber-duck", label: "rubber-duck", hint: PERSONALITY_META.qa["rubber-duck"]!.hint },
-          ],
-          config.qaPersonality,
-        )
-        if (qaPersonality === null) return 1
-
-        const productPersonality = await promptSelect<ProductPersonality>(
-          "Product personality:",
-          [
-            { value: "user-advocate", label: "user-advocate", hint: PERSONALITY_META.product["user-advocate"]!.hint },
-            { value: "velocity-optimizer", label: "velocity-optimizer", hint: PERSONALITY_META.product["velocity-optimizer"]!.hint },
-            { value: "outcome-obsessed", label: "outcome-obsessed", hint: PERSONALITY_META.product["outcome-obsessed"]!.hint },
-          ],
-          config.productPersonality,
-        )
-        if (productPersonality === null) return 1
-
-        const opsPersonality = await promptSelect<OpsPersonality>(
-          "Operations personality:",
-          [
-            { value: "on-call-veteran", label: "on-call-veteran", hint: PERSONALITY_META.ops["on-call-veteran"]!.hint },
-            { value: "efficiency-maximiser", label: "efficiency-maximiser", hint: PERSONALITY_META.ops["efficiency-maximiser"]!.hint },
-            { value: "process-purist", label: "process-purist", hint: PERSONALITY_META.ops["process-purist"]!.hint },
-          ],
-          config.opsPersonality,
-        )
-        if (opsPersonality === null) return 1
-
-        const creativePersonality = await promptSelect<CreativePersonality>(
-          "Creative Director personality:",
-          [
-            { value: "perfectionist-craftsperson", label: "perfectionist-craftsperson", hint: PERSONALITY_META.creative["perfectionist-craftsperson"]!.hint },
-            { value: "bold-provocateur", label: "bold-provocateur", hint: PERSONALITY_META.creative["bold-provocateur"]!.hint },
-            { value: "pragmatic-problem-solver", label: "pragmatic-problem-solver", hint: PERSONALITY_META.creative["pragmatic-problem-solver"]!.hint },
-          ],
-          config.creativePersonality,
-        )
-        if (creativePersonality === null) return 1
-
-        const brandPersonality = await promptSelect<BrandPersonality>(
-          "Brand Builder personality:",
-          [
-            { value: "community-evangelist", label: "community-evangelist", hint: PERSONALITY_META.brand["community-evangelist"]!.hint },
-            { value: "pr-spinner", label: "pr-spinner", hint: PERSONALITY_META.brand["pr-spinner"]!.hint },
-            { value: "authentic-builder", label: "authentic-builder", hint: PERSONALITY_META.brand["authentic-builder"]!.hint },
-          ],
-          config.brandPersonality,
-        )
-        if (brandPersonality === null) return 1
-
-        const devrelPersonality = await promptSelect<DevrelPersonality>(
-          "DevRel personality:",
-          [
-            { value: "community-champion", label: "community-champion", hint: PERSONALITY_META.devrel["community-champion"]!.hint },
-            { value: "docs-perfectionist", label: "docs-perfectionist", hint: PERSONALITY_META.devrel["docs-perfectionist"]!.hint },
-            { value: "dx-engineer", label: "dx-engineer", hint: PERSONALITY_META.devrel["dx-engineer"]!.hint },
-          ],
-          config.devrelPersonality,
-        )
-        if (devrelPersonality === null) return 1
-
-        const legalPersonality = await promptSelect<LegalPersonality>(
-          "Legal Counsel personality:",
-          [
-            { value: "cautious-gatekeeper", label: "cautious-gatekeeper", hint: PERSONALITY_META.legal["cautious-gatekeeper"]!.hint },
-            { value: "pragmatic-advisor", label: "pragmatic-advisor", hint: PERSONALITY_META.legal["pragmatic-advisor"]!.hint },
-            { value: "plain-english-counselor", label: "plain-english-counselor", hint: PERSONALITY_META.legal["plain-english-counselor"]!.hint },
-          ],
-          config.legalPersonality,
-        )
-        if (legalPersonality === null) return 1
-
-        const supportPersonality = await promptSelect<SupportPersonality>(
-          "Support Engineer personality:",
-          [
-            { value: "empathetic-resolver", label: "empathetic-resolver", hint: PERSONALITY_META.support["empathetic-resolver"]!.hint },
-            { value: "systematic-triage", label: "systematic-triage", hint: PERSONALITY_META.support["systematic-triage"]!.hint },
-            { value: "knowledge-builder", label: "knowledge-builder", hint: PERSONALITY_META.support["knowledge-builder"]!.hint },
-          ],
-          config.supportPersonality,
-        )
-        if (supportPersonality === null) return 1
-
-        const dataAnalystPersonality = await promptSelect<DataAnalystPersonality>(
-          "Data Analyst personality:",
-          [
-            { value: "rigorous-statistician", label: "rigorous-statistician", hint: PERSONALITY_META.dataAnalyst["rigorous-statistician"]!.hint },
-            { value: "insight-storyteller", label: "insight-storyteller", hint: PERSONALITY_META.dataAnalyst["insight-storyteller"]!.hint },
-            { value: "pragmatic-quant", label: "pragmatic-quant", hint: PERSONALITY_META.dataAnalyst["pragmatic-quant"]!.hint },
-          ],
-          config.dataAnalystPersonality,
-        )
-        if (dataAnalystPersonality === null) return 1
-
-        config.cisoPersonality = cisoPersonality
-        config.ctoPersonality = ctoPersonality
-        config.cmoPersonality = cmoPersonality
-        config.qaPersonality = qaPersonality
-        config.productPersonality = productPersonality
-        config.opsPersonality = opsPersonality
-        config.creativePersonality = creativePersonality
-        config.brandPersonality = brandPersonality
-        config.devrelPersonality = devrelPersonality
-        config.legalPersonality = legalPersonality
-        config.supportPersonality = supportPersonality
-        config.dataAnalystPersonality = dataAnalystPersonality
+          soulAnswers.set(persona.agentKey, {
+            priorityLens,
+            challengeStyle,
+            projectMemory,
+            antiGoals,
+          })
+        }
       }
 
       const docsEnabledRaw = await p.confirm({
@@ -296,6 +383,13 @@ export async function runInit(options: InitOptions): Promise<number> {
 
       let docsPath = config.docsPath
       let docHistoryMode: DocHistoryMode = config.docHistoryMode
+      const prdPipelineMode = await promptSelect<PrdPipelineMode>(
+        "PRD / planning workflow mode:",
+        PRD_PIPELINE_MODE_OPTIONS,
+        config.prdPipelineMode,
+      )
+      if (prdPipelineMode === null) return 1
+
       if (docsEnabled) {
         const docsPathRaw = await p.text({
           message: "Docs output directory path (relative):",
@@ -323,11 +417,31 @@ export async function runInit(options: InitOptions): Promise<number> {
         docHistoryMode = docHistoryModeRaw
       }
 
+      config.region = (regionRaw as string).trim() || "Global"
+      config.industry = (industryRaw as string).trim()
+      config.primaryRegulation = primaryRegulation
+      config.secondaryRegulation = secondaryRegulation
       config.teamCulture = teamCulture
       config.orgStructure = orgStructure
       config.docsEnabled = docsEnabled
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
+      config.prdPipelineMode = prdPipelineMode
+    }
+
+    if (config.prdPipelineMode === "github") {
+      const githubReadiness = detectGitHubWorkflowReadiness(cwd)
+      if (!githubReadiness.isGitRepo) {
+        console.log("Warning: GitHub PRD mode selected, but this folder is not a git repository yet.")
+      } else if (!githubReadiness.hasGitHubRemote) {
+        console.log("Warning: GitHub PRD mode selected, but no GitHub remote was detected. Filesystem mode may be safer until remotes are configured.")
+      }
+
+      if (!githubReadiness.ghInstalled) {
+        console.log("Warning: GitHub PRD mode selected, but `gh` is not installed. GitHub-backed PRD workflows will not be ready until GitHub CLI is available.")
+      } else if (githubReadiness.authCheckAttempted && !githubReadiness.authVerified) {
+        console.log("Warning: GitHub PRD mode selected, but `gh auth status` could not verify GitHub readiness. You may need to authenticate before using GitHub-backed workflows.")
+      }
     }
 
     if (config.docsEnabled) {
@@ -372,6 +486,16 @@ export async function runInit(options: InitOptions): Promise<number> {
     ensureDir(join(cwd, ".sisyphus", "notepads"))
     ensureDir(join(cwd, ".sisyphus", "evidence"))
 
+    if (soulAnswers.size > 0) {
+      const soulsDir = join(cwd, ".wunderkind", "souls")
+      ensureDir(soulsDir)
+      for (const persona of SOUL_PERSONAS) {
+        const answers = soulAnswers.get(persona.agentKey)
+        if (!answers) continue
+        writeFileSync(join(soulsDir, `${persona.agentKey}.md`), renderSoulFile(persona, answers))
+      }
+    }
+
     if (config.docsEnabled) {
       bootstrapDocsReadme(config.docsPath, cwd)
     }
@@ -379,7 +503,7 @@ export async function runInit(options: InitOptions): Promise<number> {
     console.log(`Initialized project in ${cwd}`)
     console.log(`Project config: ${writeResult.configPath}`)
     if (!noTui) {
-      console.log("Tip: Run 'wunderkind doctor --verbose' or edit .wunderkind/wunderkind.config.jsonc to review specialist personalities later.")
+      console.log("Tip: Run 'wunderkind doctor --verbose' to review the retained personas and docs/runtime settings later.")
     }
     return 0
   } catch (error) {

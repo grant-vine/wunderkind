@@ -1,0 +1,68 @@
+Usage: wunderkind [options] [command]
+
+Wunderkind — specialist AI agents for any software product team.
+
+Adds twelve specialist native OpenCode agents covering
+marketing, design, product, engineering, brand, QA, operations,
+security, devrel, legal, support, and data analysis — each
+guided by your region, industry, and data-protection defaults when configured.
+
+Examples:
+  bunx @grant-vine/wunderkind install
+  bunx @grant-vine/wunderkind install --no-tui
+  bunx @grant-vine/wunderkind install --no-tui \
+    --region='South Africa' --industry=SaaS --primary-regulation=POPIA
+  bunx @grant-vine/wunderkind upgrade --scope=global
+  bunx @grant-vine/wunderkind gitignore
+
+Options:
+  -V, --version        output the version number
+  -h, --help           display help for command
+
+Commands:
+  install [options]    Install Wunderkind into your OpenCode setup.
+                       
+                       Runs the interactive TUI by default. Pass --no-tui for
+                       non-interactive use in CI or scripted environments.
+  upgrade [options]    Refresh Wunderkind-owned native assets without resetting
+                       project-local customizations.
+                       
+                       Refreshes native agents and skills for the selected
+                       scope, plus the global native commands.
+  gitignore            Add AI tooling traces to .gitignore in the current
+                       directory.
+                       
+                       Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/,
+                       .opencode/
+                       Skips entries that are already present. Safe to run
+                       multiple times.
+  init [options]       Initialize Wunderkind in the current project folder.
+                       
+                       Bootstraps project-local soul/personality config and soul
+                       files (.sisyphus, AGENTS.md, docs README).
+                       Project-local config stays sparse and only stores values
+                       that intentionally override inherited defaults.
+                       Init also configures the PRD/planning workflow mode for
+                       this project.
+                       Requires Wunderkind to already be installed via
+                       `wunderkind install`.
+  doctor [options]     Run read-only diagnostics for Wunderkind install and
+                       current project context.
+  uninstall [options]  Safely remove Wunderkind plugin wiring from OpenCode
+                       config.
+                       
+                       Removes plugin registration and, on global uninstall,
+                       deletes Wunderkind's shared global capabilities and
+                       global config file.
+                       Leaves project-local customizations and bootstrap
+                       artifacts untouched.
+  help [command]       display help for command
+
+
+---
+Audit summary
+- Updated README.md to match the current CLI surface, native asset behavior, shipped agent categories, shipped skills, and init-deep workflow framing.
+- Updated AGENTS.md to remove nonexistent sub-KB references, fix the package version to 0.9.13, add missing commands and shipped skills, and align /docs-index with the executable native command asset contract.
+- Verified node bin/wunderkind.js --help lists: install, upgrade, gitignore, init, doctor, uninstall.
+- Verified grep -En "0\.[0-9]+\.[0-9]+" README.md AGENTS.md returns only the AGENTS.md 0.9.13 package reference.
+- Attempted LSP diagnostics on README.md and AGENTS.md; this workspace has no Markdown LSP configured, so no .md diagnostics are available.

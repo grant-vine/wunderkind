@@ -2,21 +2,16 @@ export type BooleanArg = "no" | "yes"
 export type InstallScope = "global" | "project"
 export type InstallRegistrationScope = InstallScope | "both" | "none"
 export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
+export type PrdPipelineMode = "filesystem" | "github"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
 export type CisoPersonality = "paranoid-enforcer" | "pragmatic-risk-manager" | "educator-collaborator"
 export type CtoPersonality = "grizzled-sysadmin" | "startup-bro" | "code-archaeologist"
 export type CmoPersonality = "data-driven" | "brand-storyteller" | "growth-hacker"
-export type QaPersonality = "rule-enforcer" | "risk-based-pragmatist" | "rubber-duck"
 export type ProductPersonality = "user-advocate" | "velocity-optimizer" | "outcome-obsessed"
-export type OpsPersonality = "on-call-veteran" | "efficiency-maximiser" | "process-purist"
 export type CreativePersonality = "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"
-export type BrandPersonality = "community-evangelist" | "pr-spinner" | "authentic-builder"
-export type DevrelPersonality = "community-champion" | "docs-perfectionist" | "dx-engineer"
 export type LegalPersonality = "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"
-export type SupportPersonality = "empathetic-resolver" | "systematic-triage" | "knowledge-builder"
-export type DataAnalystPersonality = "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"
 
 export interface GlobalConfig {
   region: string
@@ -31,18 +26,13 @@ export interface ProjectConfig {
   cisoPersonality: CisoPersonality
   ctoPersonality: CtoPersonality
   cmoPersonality: CmoPersonality
-  qaPersonality: QaPersonality
   productPersonality: ProductPersonality
-  opsPersonality: OpsPersonality
   creativePersonality: CreativePersonality
-  brandPersonality: BrandPersonality
-  devrelPersonality: DevrelPersonality
   legalPersonality: LegalPersonality
-  supportPersonality: SupportPersonality
-  dataAnalystPersonality: DataAnalystPersonality
   docsEnabled: boolean
   docsPath: string
   docHistoryMode: DocHistoryMode
+  prdPipelineMode: PrdPipelineMode
 }
 
 export interface InstallArgs {
@@ -57,15 +47,9 @@ export interface InstallArgs {
   cisoPersonality?: string | undefined
   ctoPersonality?: string | undefined
   cmoPersonality?: string | undefined
-  qaPersonality?: string | undefined
   productPersonality?: string | undefined
-  opsPersonality?: string | undefined
   creativePersonality?: string | undefined
-  brandPersonality?: string | undefined
-  devrelPersonality?: string | undefined
   legalPersonality?: string | undefined
-  supportPersonality?: string | undefined
-  dataAnalystPersonality?: string | undefined
   docsEnabled?: boolean | undefined
   docsPath?: string | undefined
   docHistoryMode?: string | undefined
@@ -98,18 +82,13 @@ export interface DetectedConfig {
   cisoPersonality: CisoPersonality
   ctoPersonality: CtoPersonality
   cmoPersonality: CmoPersonality
-  qaPersonality: QaPersonality
   productPersonality: ProductPersonality
-  opsPersonality: OpsPersonality
   creativePersonality: CreativePersonality
-  brandPersonality: BrandPersonality
-  devrelPersonality: DevrelPersonality
   legalPersonality: LegalPersonality
-  supportPersonality: SupportPersonality
-  dataAnalystPersonality: DataAnalystPersonality
   docsEnabled: boolean
   docsPath: string
   docHistoryMode: DocHistoryMode
+  prdPipelineMode: PrdPipelineMode
 }
 
 export interface PluginVersionInfo {
@@ -121,4 +100,11 @@ export interface PluginVersionInfo {
   configPath: string | null
   loadedPackagePath: string | null
   registered: boolean
+  loadedSources?: {
+    global: { version: string | null; packagePath: string | null }
+    cache: { version: string | null; packagePath: string | null }
+  }
+  staleOverrideWarning?: string | null
 }
+
+export type BaselineConfigKey = keyof GlobalConfig

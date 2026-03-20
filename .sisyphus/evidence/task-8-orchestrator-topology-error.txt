@@ -1,0 +1,9 @@
+COMMAND: grep -n 'Orchestrator\|orchestrator\|self.delegation' src/agents/product-wunderkind.ts | head -20
+149:## Orchestrator Role
+EXIT_CODE:0
+COMMAND: bun test tests/unit/ 2>&1 | tail -4
+ 200 pass
+ 0 fail
+ 635 expect() calls
+Ran 200 tests across 16 files. [362.00ms]
+EXIT_CODE:0

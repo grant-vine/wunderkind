@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.9.9",
+  "version": "0.10.3",
   "description": "Wunderkind \u2014 specialist AI agent addon for OpenCode with 12 professional agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -29,14 +29,16 @@
     "dev": "tsc --watch",
     "prepublishOnly": "bun run build",
     "test": "bun test tests/unit/",
-    "test:contract": "bun test tests/unit/"
+    "test:contract": "bun test tests/unit/",
+    "test:coverage": "bun test --coverage tests/unit/",
+    "test:coverage:config-manager": "bun test --coverage tests/unit/config-manager-coverage.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
     "@opencode-ai/plugin": "^1.2.18",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
-    "oh-my-opencode": "^3.11.0",
+    "oh-my-openagent": "3.12.3",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

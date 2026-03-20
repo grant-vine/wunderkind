@@ -1,0 +1,32 @@
+Task 11 evidence — quality/support consolidation
+Date: 2026-03-19
+
+Changed agent source files:
+- src/agents/product-wunderkind.ts
+- src/agents/fullstack-wunderkind.ts
+- src/agents/qa-specialist.ts
+- src/agents/support-engineer.ts
+
+Compatibility-only fixes required to restore green verification while shared infrastructure still points at retired aliases:
+- src/agents/devrel-wunderkind.ts
+- src/agents/data-analyst.ts
+
+Shared-file cleanup record created:
+- .sisyphus/plans/task-11-shared-infra-todo.md
+
+Verification results:
+- LSP diagnostics: no diagnostics in src/agents/product-wunderkind.ts
+- LSP diagnostics: no diagnostics in src/agents/fullstack-wunderkind.ts
+- LSP diagnostics: no diagnostics in src/agents/qa-specialist.ts
+- LSP diagnostics: no diagnostics in src/agents/support-engineer.ts
+- LSP diagnostics: no diagnostics in src/agents/devrel-wunderkind.ts
+- LSP diagnostics: no diagnostics in src/agents/data-analyst.ts
+- npx tsc --noEmit: PASS
+- bun test tests/unit/: PASS (200 pass, 0 fail)
+- bun run build: PASS (generated 12 agent markdown files)
+
+Task 13 handoff summary:
+- Remove manifest entries and imports for qa-specialist and support-engineer.
+- Remove oh-my-opencode.jsonc agent blocks for wunderkind:qa-specialist and wunderkind:support-engineer.
+- Retire qa/support personality surfaces and fold behavior into productPersonality and ctoPersonality as recorded in the shared-infra todo.
+- Keep triage-issue owned by product-wunderkind while updating README wording to reflect issue intake and backlog-ready handoff.

@@ -1,21 +1,45 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
 import type { ProjectConfig } from "../../src/cli/types.js"
 
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
-  readWunderkindConfig: mockReadWunderkindConfig,
-}))
-
-import WunderkindPlugin from "../../src/index.js"
-
-type PluginInput = Parameters<typeof WunderkindPlugin>[0]
-type PluginResult = Awaited<ReturnType<typeof WunderkindPlugin>>
-type SystemTransform = NonNullable<PluginResult["experimental.chat.system.transform"]>
-type TransformInput = Parameters<SystemTransform>[0]
-type TransformOutput = Parameters<SystemTransform>[1]
+function registerConfigManagerMock(): void {
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
+    readWunderkindConfig: mockReadWunderkindConfig,
+    detectCurrentConfig: () => ({ isInstalled: false }),
+    detectGitHubWorkflowReadiness: () => ({
+      isGitRepo: false,
+      hasGitHubRemote: false,
+      ghInstalled: false,
+      authVerified: false,
+      authCheckAttempted: false,
+    }),
+    writeWunderkindConfig: () => ({ success: true, configPath: "/tmp/mock-config" }),
+    writeNativeAgentFiles: () => ({ success: true, configPath: "/tmp/mock-agents" }),
+    writeNativeCommandFiles: () => ({ success: true, configPath: "/tmp/mock-commands" }),
+    writeNativeSkillFiles: () => ({ success: true, configPath: "/tmp/mock-skills" }),
+    removePluginFromOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json", changed: true }),
+    removeNativeAgentFiles: () => ({ success: true, configPath: "/tmp/mock-agents", changed: true }),
+    removeNativeCommandFiles: () => ({ success: true, configPath: "/tmp/mock-commands", changed: true }),
+    removeNativeSkillFiles: () => ({ success: true, configPath: "/tmp/mock-skills", changed: true }),
+    removeGlobalWunderkindConfig: () => ({ success: true, configPath: "/tmp/mock-global-config", changed: true }),
+    detectLegacyConfig: () => false,
+    addPluginToOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json" }),
+    getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+    readWunderkindConfigForScope: () => null,
+    detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectOmoVersionInfo: () => ({ registered: false, loadedVersion: null, staleOverrideWarning: null }),
+    detectWunderkindVersionInfo: () => ({ currentVersion: null }),
+    getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
+    readProjectWunderkindConfig: () => null,
+    resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
+  }))
+}
 
 type TestOutput = {
   system: string[]
@@ -29,16 +53,22 @@ function countSentinel(system: string[]): number {
   return system.reduce((count, entry) => count + (entry.includes(DOCS_OUTPUT_SENTINEL) ? 1 : 0), 0)
 }
 
-async function runSystemTransform(output: TestOutput): Promise<void> {
-  const pluginResult = await WunderkindPlugin({} as PluginInput)
-  const transform = pluginResult["experimental.chat.system.transform"]
-  if (!transform) {
-    throw new Error("Expected experimental.chat.system.transform to exist")
-  }
-  await transform({} as TransformInput, output as TransformOutput)
-}
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void> }> }
+
+let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 
 describe("runtime docs-output system injection", () => {
+  beforeAll(async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const transform = pluginResult["experimental.chat.system.transform"]
+    if (!transform) {
+      throw new Error("Expected experimental.chat.system.transform to exist")
+    }
+    cachedTransform = transform
+  })
+
   beforeEach(() => {
     mockReadWunderkindConfig.mockClear()
     mockReadWunderkindConfig.mockImplementation(() => null)
@@ -48,7 +78,7 @@ describe("runtime docs-output system injection", () => {
     mockReadWunderkindConfig.mockImplementation(() => ({ docsEnabled: false }))
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(hasDocsSection(output.system)).toBe(false)
     expect(countSentinel(output.system)).toBe(0)
@@ -62,7 +92,7 @@ describe("runtime docs-output system injection", () => {
     }))
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(hasDocsSection(output.system)).toBe(true)
     expect(output.system.some((entry) => entry.includes(DOCS_OUTPUT_SENTINEL))).toBe(true)
@@ -96,8 +126,8 @@ describe("runtime docs-output system injection", () => {
     }))
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
+    await cachedTransform!({}, output)
 
     expect(countSentinel(output.system)).toBe(1)
     expect(output.system.filter((entry) => entry.includes("## Documentation Output")).length).toBe(1)
@@ -107,7 +137,7 @@ describe("runtime docs-output system injection", () => {
     mockReadWunderkindConfig.mockImplementation(() => null)
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(hasDocsSection(output.system)).toBe(false)
     expect(countSentinel(output.system)).toBe(0)
@@ -117,7 +147,7 @@ describe("runtime docs-output system injection", () => {
     mockReadWunderkindConfig.mockImplementation(() => null)
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(hasDocsSection(output.system)).toBe(false)
     expect(countSentinel(output.system)).toBe(0)

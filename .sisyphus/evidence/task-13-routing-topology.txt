@@ -1,0 +1,37 @@
+Task 13 evidence — routing topology and SOUL rewiring
+Date: 2026-03-19
+
+Retained agent topology:
+- marketing-wunderkind
+- creative-director
+- product-wunderkind
+- fullstack-wunderkind
+- ciso
+- legal-counsel
+
+Shared infrastructure rewired:
+- Removed retired-agent registrations from `src/agents/manifest.ts`, `src/agents/index.ts`, `src/agents/docs-config.ts`, `oh-my-opencode.jsonc`, and `src/index.ts`.
+- Removed retired personality keys from schema, config-manager, doctor output, installers, init flow, and test fixtures.
+- Deleted retired source stubs in `src/agents/` and stale generated markdown in `agents/`.
+- Added runtime SOUL overlay injection in `src/index.ts` using synchronous `.wunderkind/souls/<agent-key>.md` lookup, heading detection, and per-agent idempotency sentinels.
+- Replaced the old interactive personality picker in `src/cli/init.ts` with the retained-persona SOUL opt-in flow and exact persona-specific framing questions.
+- Neutralized retained base prompts so long archetype prose is no longer statically baked into generated markdown.
+
+Verification:
+- `npx tsc --noEmit` -> exit 0
+- `bun test tests/unit/` -> 192 pass, 0 fail
+- `bun run build` -> exit 0, generated 6 agent files
+- `node bin/wunderkind.js --help` -> exit 0; top-level help now describes 6 retained agents
+- `node bin/wunderkind.js doctor --verbose` -> exit 0; verbose doctor shows only ciso/fullstack/marketing/product/creative/legal personalities
+- `node bin/wunderkind.js init --help` -> exit 0
+- `node bin/wunderkind.js upgrade --help` -> exit 0
+- `node bin/wunderkind.js uninstall --help` -> exit 0
+- `node bin/wunderkind.js gitignore --help` -> exit 0
+
+Generated agents directory after rebuild:
+- `agents/ciso.md`
+- `agents/creative-director.md`
+- `agents/fullstack-wunderkind.md`
+- `agents/legal-counsel.md`
+- `agents/marketing-wunderkind.md`
+- `agents/product-wunderkind.md`

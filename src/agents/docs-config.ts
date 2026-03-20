@@ -34,36 +34,12 @@ export const AGENT_DOCS_CONFIG: Record<string, AgentDocsConfig> = {
     canonicalFilename: "engineering-decisions.md",
     eligible: true,
   },
-  "brand-builder": {
-    canonicalFilename: "brand-guidelines.md",
-    eligible: true,
-  },
-  "qa-specialist": {
-    canonicalFilename: "qa-decisions.md",
-    eligible: true,
-  },
-  "operations-lead": {
-    canonicalFilename: "ops-runbooks.md",
-    eligible: true,
-  },
   ciso: {
     canonicalFilename: "security-decisions.md",
     eligible: true,
   },
-  "devrel-wunderkind": {
-    canonicalFilename: "devrel-decisions.md",
-    eligible: true,
-  },
   "legal-counsel": {
     canonicalFilename: "legal-notes.md",
-    eligible: false,
-  },
-  "support-engineer": {
-    canonicalFilename: "support-notes.md",
-    eligible: false,
-  },
-  "data-analyst": {
-    canonicalFilename: "data-analysis.md",
     eligible: false,
   },
 }
@@ -92,12 +68,15 @@ History mode: ${docHistoryMode}
 - overwrite-archive: Overwrite the current file and archive the old one.
 
 UTC Timestamp Contract:
+- Always use the exact ISO 8601 UTC format: YYYY-MM-DDTHH-mm-ssZ
+- Example: 2026-03-12T18-37-52Z
 - Use one shared base UTC token per \`/docs-index\` run.
-- Timestamp format: \`YYYY-MM-DDTHH-mm-ssZ\`.
+- Within a single \`/docs-index\` run, all participating agents reuse the same shared base timestamp token provided in the prompt context.
 - Append collisions use headings like \`## Update 2026-03-12T18-37-52Z (2)\`.
 - New dated-file collisions use filenames like \`marketing-strategy--2026-03-12T18-37-52Z--2.md\`.
 - Timestamped files derived from canonical basenames are managed family files, not legacy artifacts.
 - Existing date-only sections and files should remain untouched.
+- Existing date-only files or sections (e.g. YYYY-MM-DD) remain untouched; do not migrate them.
 
 Use the configured docs path exactly as provided: ${docsPath}
 The docs path is always relative to the current project root. Do not inspect or write outside that root.

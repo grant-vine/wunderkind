@@ -1,0 +1,13 @@
+   12240 agents/brand-builder.md
+   14849 agents/ciso.md
+   10903 agents/creative-director.md
+   11910 agents/data-analyst.md
+    9740 agents/devrel-wunderkind.md
+   13863 agents/fullstack-wunderkind.md
+   12052 agents/legal-counsel.md
+   11193 agents/marketing-wunderkind.md
+   13387 agents/operations-lead.md
+   12020 agents/product-wunderkind.md
+   13069 agents/qa-specialist.md
+   10664 agents/support-engineer.md
+  145890 total

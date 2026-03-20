@@ -12,14 +12,8 @@ const EXPECTED_AGENT_KEYS = [
   "creative-director",
   "product-wunderkind",
   "fullstack-wunderkind",
-  "brand-builder",
-  "qa-specialist",
-  "operations-lead",
   "ciso",
-  "devrel-wunderkind",
   "legal-counsel",
-  "support-engineer",
-  "data-analyst",
 ] as const
 
 describe("docs-config", () => {
@@ -28,7 +22,7 @@ describe("docs-config", () => {
     expect(AGENT_DOCS_CONFIG === null).toBe(false)
   })
 
-  it("contains all 12 expected agent keys", () => {
+  it("contains all 6 expected agent keys", () => {
     for (const key of EXPECTED_AGENT_KEYS) {
       expect(AGENT_DOCS_CONFIG[key]).toBeDefined()
     }
@@ -58,10 +52,23 @@ describe("docs-config", () => {
     expect(instruction).toContain("./custom-docs")
   })
 
-  it("buildDocsInstruction includes history mode information", () => {
+  it("buildDocsInstruction includes history mode information with UTC timestamp examples", () => {
     const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
     expect(instruction).toContain("History mode")
     expect(instruction).toContain("overwrite")
+    expect(instruction).toContain("## Update 2026-03-12T18-37-52Z")
+    expect(instruction).toContain("marketing-strategy--2026-03-12T18-37-52Z.md")
+  })
+
+  it("buildDocsInstruction includes exact UTC timestamp contract", () => {
+    const instruction = buildDocsInstruction("marketing-wunderkind", "./docs", "overwrite")
+    expect(instruction).toContain("UTC Timestamp Contract:")
+    expect(instruction).toContain("YYYY-MM-DDTHH-mm-ssZ")
+    expect(instruction).toContain("reuse the same shared base timestamp token")
+    expect(instruction).toContain("managed family files")
+    expect(instruction).toContain("Existing date-only files or sections (e.g. YYYY-MM-DD) remain untouched; do not migrate them")
+    expect(instruction).not.toContain("- append-dated: Append a dated section to the file.\n")
+    expect(instruction).not.toContain("- new-dated-file: Create a new file with a date suffix.\n")
   })
 
   it("buildDocsInstruction references the docs-index workflow", () => {
@@ -104,11 +111,7 @@ describe("docs-config", () => {
       "creative-director",
       "product-wunderkind",
       "fullstack-wunderkind",
-      "brand-builder",
-      "qa-specialist",
-      "operations-lead",
       "ciso",
-      "devrel-wunderkind",
     ])
   })
 

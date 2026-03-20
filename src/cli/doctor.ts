@@ -3,12 +3,14 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import color from "picocolors"
 import {
+  detectGitHubWorkflowReadiness,
   detectOmoVersionInfo,
   detectNativeAgentFiles,
   detectNativeCommandFiles,
   detectNativeSkillFiles,
   detectCurrentConfig,
   detectWunderkindVersionInfo,
+  getProjectOverrideMarker,
   readProjectWunderkindConfig,
   resolveOpenCodeConfigPath,
 } from "./config-manager/index.js"
@@ -29,6 +31,14 @@ function section(title: string): void {
 
 function line(label: string, value: string): void {
   console.log(`${color.dim("- ")}${color.bold(label)} ${value}`)
+}
+
+function configValue(value: string): string {
+  return value.trim() !== "" ? value : "(not set)"
+}
+
+function renderBaselineLine(label: string, value: string, marker: "●" | "○", sourceLabel: string): void {
+  line(label, `${color.cyan(configValue(value))} ${color.dim(`${marker} ${sourceLabel}`)}`)
 }
 
 export async function runDoctor(): Promise<number> {
@@ -82,18 +92,25 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     section("Version Status")
     line("wunderkind cli version:", color.cyan(wunderkindVersion.currentVersion ?? "unknown"))
     line(
-      "oh-my-opencode registration:",
+      "oh-my-openagent registration:",
       omoVersion.registered
         ? `${color.green("✓ yes")} ${color.dim(`(${omoVersion.registeredEntry})`)}`
         : color.dim("✗ not detected"),
     )
-    line("oh-my-opencode loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+    line("oh-my-openagent loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+
+    if (omoVersion.staleOverrideWarning) {
+      warnings.push(omoVersion.staleOverrideWarning)
+      line("oh-my-openagent warning:", color.yellow(omoVersion.staleOverrideWarning))
+    }
 
     const versionAdvice = !omoVersion.registered
-      ? "OMO not detected — upgrade Wunderkind independently unless you intentionally use OMO separately."
+      ? "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately."
       : omoVersion.loadedVersion === null
-        ? "OMO is registered but its loaded version could not be determined locally — verify before upgrading both together."
-        : "Versions are advisory only — upgrade Wunderkind and OMO independently unless your test case requires both."
+        ? "oh-my-openagent is registered but its loaded version could not be determined locally — verify before upgrading both together."
+        : omoVersion.staleOverrideWarning
+          ? "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode."
+        : "Versions are advisory only — upgrade Wunderkind and oh-my-openagent independently unless your test case requires both."
     line("upgrade guidance:", color.dim(versionAdvice))
 
     if (options.verbose) {
@@ -115,18 +132,58 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
       if (omoVersion.configPath) {
-        line("oh-my-opencode config source:", color.dim(omoVersion.configPath))
+        line("oh-my-openagent config source:", color.dim(omoVersion.configPath))
       }
       if (omoVersion.loadedPackagePath) {
-        line("oh-my-opencode loaded package:", color.dim(omoVersion.loadedPackagePath))
+        line("oh-my-openagent loaded package:", color.dim(omoVersion.loadedPackagePath))
+      }
+      if (omoVersion.loadedSources?.global.packagePath) {
+        const globalVersionLabel = omoVersion.loadedSources.global.version ?? "unknown"
+        line(
+          "oh-my-openagent global package:",
+          `${color.dim(omoVersion.loadedSources.global.packagePath)} ${color.dim(`(${globalVersionLabel})`)}`,
+        )
+      }
+      if (omoVersion.loadedSources?.cache.packagePath) {
+        const cacheVersionLabel = omoVersion.loadedSources.cache.version ?? "unknown"
+        line(
+          "oh-my-openagent cache package:",
+          `${color.dim(omoVersion.loadedSources.cache.packagePath)} ${color.dim(`(${cacheVersionLabel})`)}`,
+        )
       }
 
       section("Active Configuration")
-      line("region:", color.cyan(detected.region))
-      line("industry:", color.cyan(detected.industry || color.dim("(not set)")))
-      line("primary regulation:", color.cyan(detected.primaryRegulation))
-      if (detected.secondaryRegulation.trim() !== "") {
-        line("secondary regulation:", color.cyan(detected.secondaryRegulation))
+      const regionMarker = getProjectOverrideMarker("region", projectConfig ?? null)
+      const industryMarker = getProjectOverrideMarker("industry", projectConfig ?? null)
+      const primaryRegulationMarker = getProjectOverrideMarker("primaryRegulation", projectConfig ?? null)
+      const secondaryRegulationMarker = getProjectOverrideMarker("secondaryRegulation", projectConfig ?? null)
+      renderBaselineLine("region:", detected.region, regionMarker.marker, regionMarker.sourceLabel)
+      renderBaselineLine("industry:", detected.industry, industryMarker.marker, industryMarker.sourceLabel)
+      renderBaselineLine(
+        "primary regulation:",
+        detected.primaryRegulation,
+        primaryRegulationMarker.marker,
+        primaryRegulationMarker.sourceLabel,
+      )
+      renderBaselineLine(
+        "secondary regulation:",
+        detected.secondaryRegulation,
+        secondaryRegulationMarker.marker,
+        secondaryRegulationMarker.sourceLabel,
+      )
+      line("legend:", color.dim("● = project override, ○ = inherited default"))
+
+      section("Workflow Configuration")
+      line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
+
+      const githubReadiness = detectGitHubWorkflowReadiness(cwd)
+      line("git repository:", status(githubReadiness.isGitRepo))
+      line("GitHub remote detected:", status(githubReadiness.hasGitHubRemote))
+      line("gh installed:", status(githubReadiness.ghInstalled))
+      if (githubReadiness.authCheckAttempted) {
+        line("gh auth verified:", status(githubReadiness.authVerified))
+      } else {
+        line("gh auth verified:", color.dim("not checked"))
       }
     }
 
@@ -180,6 +237,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         line("docs-output enabled:", status((projectConfig?.docsEnabled ?? detected.docsEnabled) === true))
         line("docs-output path:", color.cyan(projectConfig?.docsPath ?? detected.docsPath))
         line("docs-output history mode:", color.cyan(projectConfig?.docHistoryMode ?? detected.docHistoryMode))
+        line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
 
         section("Agent Personalities")
         const cisoVal = projectConfig?.cisoPersonality ?? detected.cisoPersonality
@@ -188,24 +246,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         line("fullstack:", `${color.cyan(ctoVal)}  ${color.dim(`(${PERSONALITY_META.cto[ctoVal]?.hint ?? ctoVal})`)}`)
         const cmoVal = projectConfig?.cmoPersonality ?? detected.cmoPersonality
         line("marketing:", `${color.cyan(cmoVal)}  ${color.dim(`(${PERSONALITY_META.cmo[cmoVal]?.hint ?? cmoVal})`)}`)
-        const qaVal = projectConfig?.qaPersonality ?? detected.qaPersonality
-        line("qa:", `${color.cyan(qaVal)}  ${color.dim(`(${PERSONALITY_META.qa[qaVal]?.hint ?? qaVal})`)}`)
         const productVal = projectConfig?.productPersonality ?? detected.productPersonality
         line("product:", `${color.cyan(productVal)}  ${color.dim(`(${PERSONALITY_META.product[productVal]?.hint ?? productVal})`)}`)
-        const opsVal = projectConfig?.opsPersonality ?? detected.opsPersonality
-        line("ops:", `${color.cyan(opsVal)}  ${color.dim(`(${PERSONALITY_META.ops[opsVal]?.hint ?? opsVal})`)}`)
         const creativeVal = projectConfig?.creativePersonality ?? detected.creativePersonality
         line("creative:", `${color.cyan(creativeVal)}  ${color.dim(`(${PERSONALITY_META.creative[creativeVal]?.hint ?? creativeVal})`)}`)
-        const brandVal = projectConfig?.brandPersonality ?? detected.brandPersonality
-        line("brand:", `${color.cyan(brandVal)}  ${color.dim(`(${PERSONALITY_META.brand[brandVal]?.hint ?? brandVal})`)}`)
-        const devrelVal = projectConfig?.devrelPersonality ?? detected.devrelPersonality
-        line("devrel:", `${color.cyan(devrelVal)}  ${color.dim(`(${PERSONALITY_META.devrel[devrelVal]?.hint ?? devrelVal})`)}`)
         const legalVal = projectConfig?.legalPersonality ?? detected.legalPersonality
         line("legal:", `${color.cyan(legalVal)}  ${color.dim(`(${PERSONALITY_META.legal[legalVal]?.hint ?? legalVal})`)}`)
-        const supportVal = projectConfig?.supportPersonality ?? detected.supportPersonality
-        line("support:", `${color.cyan(supportVal)}  ${color.dim(`(${PERSONALITY_META.support[supportVal]?.hint ?? supportVal})`)}`)
-        const dataAnalystVal = projectConfig?.dataAnalystPersonality ?? detected.dataAnalystPersonality
-        line("data analyst:", `${color.cyan(dataAnalystVal)}  ${color.dim(`(${PERSONALITY_META.dataAnalyst[dataAnalystVal]?.hint ?? dataAnalystVal})`)}`)
       } else {
         line("docs-output enabled:", status((projectConfig?.docsEnabled ?? detected.docsEnabled) === true))
       }

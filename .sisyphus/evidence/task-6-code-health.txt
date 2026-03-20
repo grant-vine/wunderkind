@@ -1,0 +1,34 @@
+COMMAND: grep -n 'desloppifyEnabled' src/cli/types.ts schemas/wunderkind.config.schema.json src/cli/init.ts src/cli/config-manager/index.ts src/cli/doctor.ts src/cli/gitignore-manager.ts
+src/cli/types.ts:48:  desloppifyEnabled?: boolean
+src/cli/types.ts:117:  desloppifyEnabled: boolean
+schemas/wunderkind.config.schema.json:48:        "desloppifyEnabled": { "type": "boolean", "description": "Enable opt-in Desloppify code-health workflow support" }
+src/cli/init.ts:40:  desloppifyEnabled?: boolean
+src/cli/init.ts:138:    if (detected.desloppifyEnabled) {
+src/cli/init.ts:139:      config.desloppifyEnabled = true
+src/cli/init.ts:141:    if (options.desloppifyEnabled !== undefined) {
+src/cli/init.ts:142:      config.desloppifyEnabled = options.desloppifyEnabled
+src/cli/init.ts:329:      const desloppifyEnabledRaw = await p.confirm({
+src/cli/init.ts:331:        initialValue: config.desloppifyEnabled === true,
+src/cli/init.ts:333:      if (p.isCancel(desloppifyEnabledRaw)) return 1
+src/cli/init.ts:334:      const desloppifyEnabled = desloppifyEnabledRaw
+src/cli/init.ts:369:      config.desloppifyEnabled = desloppifyEnabled
+src/cli/config-manager/index.ts:81:  "desloppifyEnabled",
+src/cli/config-manager/index.ts:458:  if (typeof source["desloppifyEnabled"] === "boolean") result.desloppifyEnabled = source["desloppifyEnabled"]
+src/cli/config-manager/index.ts:642:  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode)}${config.desloppifyEnabled !== undefined ? "," : ""}`)
+src/cli/config-manager/index.ts:644:  if (config.desloppifyEnabled !== undefined) {
+src/cli/config-manager/index.ts:647:      `  "desloppifyEnabled": ${JSON.stringify(config.desloppifyEnabled)}`,
+src/cli/config-manager/index.ts:711:    desloppifyEnabled: false,
+src/cli/config-manager/index.ts:761:    desloppifyEnabled: projectLocal?.desloppifyEnabled ?? legacyGlobalProject.desloppifyEnabled ?? false,
+src/cli/doctor.ts:240:          projectConfig !== null && "desloppifyEnabled" in projectConfig && typeof projectConfig.desloppifyEnabled === "boolean"
+src/cli/doctor.ts:250:          "desloppifyEnabled:",
+src/cli/doctor.ts:251:          projectConfig?.desloppifyEnabled ?? detected.desloppifyEnabled,
+EXIT_CODE:0
+COMMAND: npx tsc --noEmit 2>&1
+EXIT_CODE:0
+COMMAND: bun test tests/unit/ 2>&1 | tail -5
+
+ 200 pass
+ 0 fail
+ 635 expect() calls
+Ran 200 tests across 16 files. [346.00ms]
+EXIT_CODE:0

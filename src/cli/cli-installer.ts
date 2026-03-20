@@ -82,16 +82,8 @@ export function printBox(content: string, title?: string): void {
   console.log()
 }
 
-export function validateNonTuiArgs(args: InstallArgs): { valid: boolean; errors: string[] } {
-  if (args.scope === "project") {
-    return { valid: true, errors: [] }
-  }
-
-  const errors: string[] = []
-  if (!args.region) errors.push("--region is required (e.g. --region='South Africa')")
-  if (!args.industry) errors.push("--industry is required (e.g. --industry=SaaS)")
-  if (!args.primaryRegulation) errors.push("--primary-regulation is required (e.g. --primary-regulation=GDPR)")
-  return { valid: errors.length === 0, errors }
+export function validateNonTuiArgs(_args: InstallArgs): { valid: boolean; errors: string[] } {
+  return { valid: true, errors: [] }
 }
 
 export interface UpgradeArgs {
@@ -114,7 +106,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     }
     console.log()
     printInfo(
-      "Usage: bunx wunderkind install --no-tui --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
+      "Usage: bunx wunderkind install --no-tui [--region='South Africa'] [--industry=SaaS] [--primary-regulation=POPIA]",
     )
     console.log()
     return 1
@@ -135,25 +127,20 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   const config: InstallConfig = {
     region: args.region ?? detected.region ?? "Global",
     industry: args.industry ?? detected.industry ?? "",
-    primaryRegulation: args.primaryRegulation ?? detected.primaryRegulation ?? "GDPR",
+    primaryRegulation: args.primaryRegulation ?? detected.primaryRegulation ?? "",
     secondaryRegulation: args.secondaryRegulation ?? detected.secondaryRegulation ?? "",
     teamCulture: detected.teamCulture,
     orgStructure: detected.orgStructure,
     cisoPersonality: detected.cisoPersonality,
     ctoPersonality: detected.ctoPersonality,
     cmoPersonality: detected.cmoPersonality,
-    qaPersonality: detected.qaPersonality,
     productPersonality: detected.productPersonality,
-    opsPersonality: detected.opsPersonality,
     creativePersonality: detected.creativePersonality,
-    brandPersonality: detected.brandPersonality,
-    devrelPersonality: detected.devrelPersonality,
     legalPersonality: detected.legalPersonality,
-    supportPersonality: detected.supportPersonality,
-    dataAnalystPersonality: detected.dataAnalystPersonality,
     docsEnabled: detected.docsEnabled,
     docsPath: detected.docsPath,
     docHistoryMode: detected.docHistoryMode,
+    prdPipelineMode: detected.prdPipelineMode,
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")
@@ -206,7 +193,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     [
       `  ${color.bold("Region:")}              ${color.cyan(config.region)}`,
       `  ${color.bold("Industry:")}            ${color.cyan(config.industry || color.dim("(not set)"))}`,
-      `  ${color.bold("Primary regulation:")} ${color.cyan(config.primaryRegulation)}`,
+      `  ${color.bold("Primary regulation:")} ${color.cyan(config.primaryRegulation || color.dim("(not set)"))}`,
       config.secondaryRegulation ? `  ${color.bold("Secondary:")}           ${color.cyan(config.secondaryRegulation)}` : "",
     ]
       .filter(Boolean)
@@ -280,14 +267,13 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   }
 
   if (args.refreshConfig === true || !isNoop) {
-    const configResult = writeWunderkindConfig(
-      {
-        ...persisted,
-        ...detected,
-        ...nextConfig,
-      },
-      args.scope,
-    )
+    const configForWrite: InstallConfig = {
+      ...persisted,
+      ...detected,
+      ...nextConfig,
+    }
+
+    const configResult = writeWunderkindConfig(configForWrite, args.scope)
 
     if (!configResult.success) {
       printError(`Failed: ${configResult.error}`)
@@ -323,7 +309,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
       `  ${color.bold("Scope:")}               ${color.cyan(args.scope)}`,
       `  ${color.bold("Region:")}              ${color.cyan(nextConfig.region)}`,
       `  ${color.bold("Industry:")}            ${color.cyan(nextConfig.industry || color.dim("(not set)"))}`,
-      `  ${color.bold("Primary regulation:")} ${color.cyan(nextConfig.primaryRegulation)}`,
+      `  ${color.bold("Primary regulation:")} ${color.cyan(nextConfig.primaryRegulation || color.dim("(not set)"))}`,
       nextConfig.secondaryRegulation
         ? `  ${color.bold("Secondary:")}           ${color.cyan(nextConfig.secondaryRegulation)}`
         : "",

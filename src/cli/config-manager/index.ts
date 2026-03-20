@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { basename, dirname, join, relative } from "node:path"
@@ -6,49 +7,121 @@ import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
 import type {
-  BrandPersonality,
   CisoPersonality,
   CmoPersonality,
   ConfigMergeResult,
   CreativePersonality,
   CtoPersonality,
-  DataAnalystPersonality,
   DetectedConfig,
   DocHistoryMode,
-  DevrelPersonality,
   GlobalConfig,
   InstallConfig,
   InstallRegistrationScope,
   InstallScope,
   LegalPersonality,
-  OpsPersonality,
   OrgStructure,
+  BaselineConfigKey,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
-  QaPersonality,
-  SupportPersonality,
+  PrdPipelineMode,
   TeamCulture,
 } from "../types.js"
 
 const PACKAGE_NAME = "@grant-vine/wunderkind"
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
-const CONFIG_DIR = join(homedir(), ".config", "opencode")
-const CONFIG_JSON = join(CONFIG_DIR, "opencode.json")
-const CONFIG_JSONC = join(CONFIG_DIR, "opencode.jsonc")
-const LEGACY_CONFIG_JSON = join(CONFIG_DIR, "config.json")
-const LEGACY_CONFIG_JSONC = join(CONFIG_DIR, "config.jsonc")
-const GLOBAL_WUNDERKIND_DIR = join(homedir(), ".wunderkind")
-const GLOBAL_WUNDERKIND_CONFIG = join(GLOBAL_WUNDERKIND_DIR, "wunderkind.config.jsonc")
-const GLOBAL_OPENCODE_AGENTS_DIR = join(CONFIG_DIR, "agents")
-const GLOBAL_OPENCODE_COMMANDS_DIR = join(CONFIG_DIR, "commands")
-const GLOBAL_OPENCODE_SKILLS_DIR = join(CONFIG_DIR, "skills")
-const GLOBAL_OPENCODE_NODE_MODULES = join(CONFIG_DIR, "node_modules")
-const GLOBAL_CACHE_DIR = join(homedir(), ".cache", "opencode")
-const WUNDERKIND_DIR = join(process.cwd(), ".wunderkind")
-const WUNDERKIND_CONFIG = join(WUNDERKIND_DIR, "wunderkind.config.jsonc")
-const LEGACY_WUNDERKIND_CONFIG = join(process.cwd(), "wunderkind.config.jsonc")
-const OMO_PACKAGE_NAME = "oh-my-opencode"
+const OMO_CANONICAL_PACKAGE_NAME = "oh-my-openagent"
+const OMO_LEGACY_PACKAGE_NAME = "oh-my-opencode"
+
+interface ConfigManagerPaths {
+  configDir: string
+  configJson: string
+  configJsonc: string
+  legacyConfigJson: string
+  legacyConfigJsonc: string
+  globalWunderkindDir: string
+  globalWunderkindConfig: string
+  globalOpenCodeAgentsDir: string
+  globalOpenCodeCommandsDir: string
+  globalOpenCodeSkillsDir: string
+  globalOpenCodeNodeModules: string
+  globalCacheDir: string
+  wunderkindDir: string
+  wunderkindConfig: string
+  legacyWunderkindConfig: string
+}
+
+interface ConfigManagerPathOverride {
+  cwd?: string
+  home?: string
+}
+
+const CONFIG_MANAGER_PATH_OVERRIDE_KEY = Symbol.for("wunderkind.configManagerPathOverride")
+
+type ConfigManagerGlobalState = typeof globalThis & {
+  [CONFIG_MANAGER_PATH_OVERRIDE_KEY]?: ConfigManagerPathOverride
+}
+
+function getConfigManagerPathOverride(): ConfigManagerPathOverride | null {
+  return (globalThis as ConfigManagerGlobalState)[CONFIG_MANAGER_PATH_OVERRIDE_KEY] ?? null
+}
+
+function resolveConfigManagerRuntimeContext(): { cwd: string; home: string } {
+  const override = getConfigManagerPathOverride()
+
+  return {
+    cwd: override?.cwd ?? process.cwd(),
+    home: override?.home ?? homedir(),
+  }
+}
+
+function resolveConfigManagerPaths(cwd?: string, home?: string): ConfigManagerPaths {
+  const runtimeContext = resolveConfigManagerRuntimeContext()
+  const resolvedCwd = cwd ?? runtimeContext.cwd
+  const resolvedHome = home ?? runtimeContext.home
+
+  const configDir = join(resolvedHome, ".config", "opencode")
+  const globalWunderkindDir = join(resolvedHome, ".wunderkind")
+  const wunderkindDir = join(resolvedCwd, ".wunderkind")
+
+  return {
+    configDir,
+    configJson: join(configDir, "opencode.json"),
+    configJsonc: join(configDir, "opencode.jsonc"),
+    legacyConfigJson: join(configDir, "config.json"),
+    legacyConfigJsonc: join(configDir, "config.jsonc"),
+    globalWunderkindDir,
+    globalWunderkindConfig: join(globalWunderkindDir, "wunderkind.config.jsonc"),
+    globalOpenCodeAgentsDir: join(configDir, "agents"),
+    globalOpenCodeCommandsDir: join(configDir, "commands"),
+    globalOpenCodeSkillsDir: join(configDir, "skills"),
+    globalOpenCodeNodeModules: join(configDir, "node_modules"),
+    globalCacheDir: join(resolvedHome, ".cache", "opencode"),
+    wunderkindDir,
+    wunderkindConfig: join(wunderkindDir, "wunderkind.config.jsonc"),
+    legacyWunderkindConfig: join(resolvedCwd, "wunderkind.config.jsonc"),
+  }
+}
+
+export function __setConfigManagerPathOverrideForTests(override: ConfigManagerPathOverride): void {
+  const nextOverride: ConfigManagerPathOverride = {}
+
+  if (override.cwd !== undefined) nextOverride.cwd = override.cwd
+  if (override.home !== undefined) nextOverride.home = override.home
+
+  const globalState = globalThis as ConfigManagerGlobalState
+
+  if (Object.keys(nextOverride).length === 0) {
+    delete globalState[CONFIG_MANAGER_PATH_OVERRIDE_KEY]
+    return
+  }
+
+  globalState[CONFIG_MANAGER_PATH_OVERRIDE_KEY] = nextOverride
+}
+
+export function __resetConfigManagerPathOverrideForTests(): void {
+  delete (globalThis as ConfigManagerGlobalState)[CONFIG_MANAGER_PATH_OVERRIDE_KEY]
+}
 
 interface OpenCodeConfig {
   plugin?: string[]
@@ -61,18 +134,13 @@ const PROJECT_CONFIG_KEYS = [
   "cisoPersonality",
   "ctoPersonality",
   "cmoPersonality",
-  "qaPersonality",
   "productPersonality",
-  "opsPersonality",
   "creativePersonality",
-  "brandPersonality",
-  "devrelPersonality",
   "legalPersonality",
-  "supportPersonality",
-  "dataAnalystPersonality",
   "docsEnabled",
   "docsPath",
   "docHistoryMode",
+  "prdPipelineMode",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -80,25 +148,20 @@ type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
 const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   region: "Global",
   industry: "",
-  primaryRegulation: "GDPR",
+  primaryRegulation: "",
   secondaryRegulation: "",
   teamCulture: "pragmatic-balanced",
   orgStructure: "flat",
   cisoPersonality: "pragmatic-risk-manager",
   ctoPersonality: "code-archaeologist",
   cmoPersonality: "data-driven",
-  qaPersonality: "risk-based-pragmatist",
   productPersonality: "outcome-obsessed",
-  opsPersonality: "on-call-veteran",
   creativePersonality: "pragmatic-problem-solver",
-  brandPersonality: "authentic-builder",
-  devrelPersonality: "dx-engineer",
   legalPersonality: "pragmatic-advisor",
-  supportPersonality: "systematic-triage",
-  dataAnalystPersonality: "insight-storyteller",
   docsEnabled: false,
   docsPath: "./docs",
   docHistoryMode: "overwrite",
+  prdPipelineMode: "filesystem",
 }
 
 const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
@@ -114,18 +177,13 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   cisoPersonality: DEFAULT_INSTALL_CONFIG.cisoPersonality,
   ctoPersonality: DEFAULT_INSTALL_CONFIG.ctoPersonality,
   cmoPersonality: DEFAULT_INSTALL_CONFIG.cmoPersonality,
-  qaPersonality: DEFAULT_INSTALL_CONFIG.qaPersonality,
   productPersonality: DEFAULT_INSTALL_CONFIG.productPersonality,
-  opsPersonality: DEFAULT_INSTALL_CONFIG.opsPersonality,
   creativePersonality: DEFAULT_INSTALL_CONFIG.creativePersonality,
-  brandPersonality: DEFAULT_INSTALL_CONFIG.brandPersonality,
-  devrelPersonality: DEFAULT_INSTALL_CONFIG.devrelPersonality,
   legalPersonality: DEFAULT_INSTALL_CONFIG.legalPersonality,
-  supportPersonality: DEFAULT_INSTALL_CONFIG.supportPersonality,
-  dataAnalystPersonality: DEFAULT_INSTALL_CONFIG.dataAnalystPersonality,
   docsEnabled: DEFAULT_INSTALL_CONFIG.docsEnabled,
   docsPath: DEFAULT_INSTALL_CONFIG.docsPath,
   docHistoryMode: DEFAULT_INSTALL_CONFIG.docHistoryMode,
+  prdPipelineMode: DEFAULT_INSTALL_CONFIG.prdPipelineMode,
 }
 
 export function getDefaultInstallConfig(): InstallConfig {
@@ -145,11 +203,14 @@ export function resolveOpenCodeConfigPath(scope: InstallScope): {
   format: "json" | "jsonc" | "none"
   source: "opencode.json" | "opencode.jsonc" | "config.json" | "config.jsonc" | "default"
 } {
+  const runtimeContext = resolveConfigManagerRuntimeContext()
+  const paths = resolveConfigManagerPaths()
+
   if (scope === "project") {
-    const projectJson = join(process.cwd(), "opencode.json")
-    const projectJsonc = join(process.cwd(), "opencode.jsonc")
-    const projectLegacyJson = join(process.cwd(), "config.json")
-    const projectLegacyJsonc = join(process.cwd(), "config.jsonc")
+    const projectJson = join(runtimeContext.cwd, "opencode.json")
+    const projectJsonc = join(runtimeContext.cwd, "opencode.jsonc")
+    const projectLegacyJson = join(runtimeContext.cwd, "config.json")
+    const projectLegacyJsonc = join(runtimeContext.cwd, "config.jsonc")
 
     if (existsSync(projectJson)) return { path: projectJson, format: "json", source: "opencode.json" }
     if (existsSync(projectJsonc)) return { path: projectJsonc, format: "jsonc", source: "opencode.jsonc" }
@@ -158,11 +219,11 @@ export function resolveOpenCodeConfigPath(scope: InstallScope): {
     return { path: projectJson, format: "none", source: "default" }
   }
 
-  if (existsSync(CONFIG_JSON)) return { path: CONFIG_JSON, format: "json", source: "opencode.json" }
-  if (existsSync(CONFIG_JSONC)) return { path: CONFIG_JSONC, format: "jsonc", source: "opencode.jsonc" }
-  if (existsSync(LEGACY_CONFIG_JSON)) return { path: LEGACY_CONFIG_JSON, format: "json", source: "config.json" }
-  if (existsSync(LEGACY_CONFIG_JSONC)) return { path: LEGACY_CONFIG_JSONC, format: "jsonc", source: "config.jsonc" }
-  return { path: CONFIG_JSON, format: "none", source: "default" }
+  if (existsSync(paths.configJson)) return { path: paths.configJson, format: "json", source: "opencode.json" }
+  if (existsSync(paths.configJsonc)) return { path: paths.configJsonc, format: "jsonc", source: "opencode.jsonc" }
+  if (existsSync(paths.legacyConfigJson)) return { path: paths.legacyConfigJson, format: "json", source: "config.json" }
+  if (existsSync(paths.legacyConfigJsonc)) return { path: paths.legacyConfigJsonc, format: "jsonc", source: "config.jsonc" }
+  return { path: paths.configJson, format: "none", source: "default" }
 }
 
 function parseConfig(path: string): OpenCodeConfig | null {
@@ -199,9 +260,10 @@ function findPluginEntry(entries: readonly string[], packageName: string): strin
 }
 
 function detectLoadedPackageVersion(packageName: string): { version: string | null; packagePath: string | null } {
+  const paths = resolveConfigManagerPaths()
   const candidates = [
-    join(GLOBAL_OPENCODE_NODE_MODULES, packageName, "package.json"),
-    join(GLOBAL_CACHE_DIR, "node_modules", packageName, "package.json"),
+    join(paths.globalOpenCodeNodeModules, packageName, "package.json"),
+    join(paths.globalCacheDir, "node_modules", packageName, "package.json"),
   ]
 
   for (const candidate of candidates) {
@@ -213,6 +275,64 @@ function detectLoadedPackageVersion(packageName: string): { version: string | nu
   }
 
   return { version: null, packagePath: null }
+}
+
+function detectLoadedPackageSources(packageName: string): {
+  global: { version: string | null; packagePath: string | null }
+  cache: { version: string | null; packagePath: string | null }
+} {
+  const paths = resolveConfigManagerPaths()
+  const globalPath = join(paths.globalOpenCodeNodeModules, packageName, "package.json")
+  const cachePath = join(paths.globalCacheDir, "node_modules", packageName, "package.json")
+
+  return {
+    global: {
+      version: existsSync(globalPath) ? readJsonVersion(globalPath) : null,
+      packagePath: existsSync(globalPath) ? globalPath : null,
+    },
+    cache: {
+      version: existsSync(cachePath) ? readJsonVersion(cachePath) : null,
+      packagePath: existsSync(cachePath) ? cachePath : null,
+    },
+  }
+}
+
+function compareVersions(left: string, right: string): number | null {
+  const normalize = (value: string): [number, number, number] | null => {
+    const match = value.match(/^(\d+)\.(\d+)\.(\d+)/)
+    if (!match) return null
+    const [, major, minor, patch] = match
+    return [Number(major), Number(minor), Number(patch)]
+  }
+
+  const leftParts = normalize(left)
+  const rightParts = normalize(right)
+  if (!leftParts || !rightParts) return null
+
+  const majorDelta = leftParts[0] - rightParts[0]
+  if (majorDelta !== 0) return majorDelta
+
+  const minorDelta = leftParts[1] - rightParts[1]
+  if (minorDelta !== 0) return minorDelta
+
+  const patchDelta = leftParts[2] - rightParts[2]
+  if (patchDelta !== 0) return patchDelta
+
+  return 0
+}
+
+function buildStaleOverrideWarning(options: {
+  packageName: string
+  globalVersion: string | null
+  cacheVersion: string | null
+}): string | null {
+  const { packageName, globalVersion, cacheVersion } = options
+  if (!globalVersion || !cacheVersion) return null
+
+  const comparison = compareVersions(globalVersion, cacheVersion)
+  if (comparison === null || comparison >= 0) return null
+
+  return `global ${packageName} ${globalVersion} likely overrides newer cache ${cacheVersion}`
 }
 
 function getOwnPackageVersion(): string | null {
@@ -235,6 +355,7 @@ export function detectPluginVersionInfo(packageName: string): PluginVersionInfo 
     configPath,
     loadedPackagePath: loaded.packagePath,
     registered: registeredEntry !== null,
+    staleOverrideWarning: null,
   }
 }
 
@@ -243,7 +364,42 @@ export function detectWunderkindVersionInfo(): PluginVersionInfo {
 }
 
 export function detectOmoVersionInfo(): PluginVersionInfo {
-  return detectPluginVersionInfo(OMO_PACKAGE_NAME)
+  const configResolution = resolveOpenCodeConfigPath("global")
+  const configPath = existsSync(configResolution.path) ? configResolution.path : null
+  const config = configPath ? parseConfig(configPath) : null
+  const plugins = (config?.plugin ?? []) as string[]
+
+  const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
+  const registeredLegacyEntry = findPluginEntry(plugins, OMO_LEGACY_PACKAGE_NAME)
+  const registeredEntry = registeredCanonicalEntry ?? registeredLegacyEntry
+
+  const loadedCanonical = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
+  const loadedLegacy = detectLoadedPackageVersion(OMO_LEGACY_PACKAGE_NAME)
+  const loadedCanonicalSources = detectLoadedPackageSources(OMO_CANONICAL_PACKAGE_NAME)
+  const loadedLegacySources = detectLoadedPackageSources(OMO_LEGACY_PACKAGE_NAME)
+  const loaded = loadedCanonical.version !== null || loadedCanonical.packagePath !== null ? loadedCanonical : loadedLegacy
+  const loadedSources =
+    loadedCanonicalSources.global.packagePath !== null || loadedCanonicalSources.cache.packagePath !== null
+      ? loadedCanonicalSources
+      : loadedLegacySources
+  const staleOverrideWarning = buildStaleOverrideWarning({
+    packageName: OMO_CANONICAL_PACKAGE_NAME,
+    globalVersion: loadedSources.global.version,
+    cacheVersion: loadedSources.cache.version,
+  })
+
+  return {
+    packageName: OMO_CANONICAL_PACKAGE_NAME,
+    currentVersion: null,
+    registeredEntry,
+    registeredVersion: normalizeDependencyVersion(registeredEntry),
+    loadedVersion: loaded.version,
+    configPath,
+    loadedPackagePath: loaded.packagePath,
+    registered: registeredEntry !== null,
+    loadedSources,
+    staleOverrideWarning,
+  }
 }
 
 function parseWunderkindConfig(path: string): Record<string, unknown> | null {
@@ -268,6 +424,63 @@ function coerceGlobalConfig(source: Record<string, unknown>): Partial<GlobalConf
   return result
 }
 
+export interface ConfigSourceMarker {
+  marker: "●" | "○"
+  sourceLabel: "project override" | "inherited default"
+}
+
+export interface GitHubWorkflowReadiness {
+  isGitRepo: boolean
+  hasGitHubRemote: boolean
+  ghInstalled: boolean
+  authVerified: boolean
+  authCheckAttempted: boolean
+}
+
+function commandSucceeds(command: string, args: string[]): boolean {
+  const result = spawnSync(command, args, { stdio: "ignore" })
+  return result.status === 0
+}
+
+function stdout(command: string, args: string[]): string {
+  const result = spawnSync(command, args, { encoding: "utf8" })
+  return result.status === 0 ? result.stdout.trim() : ""
+}
+
+export function detectGitHubWorkflowReadiness(cwd: string): GitHubWorkflowReadiness {
+  const isGitRepo = commandSucceeds("git", ["-C", cwd, "rev-parse", "--is-inside-work-tree"])
+  if (!isGitRepo) {
+    return {
+      isGitRepo,
+      hasGitHubRemote: false,
+      ghInstalled: false,
+      authVerified: false,
+      authCheckAttempted: false,
+    }
+  }
+
+  const remoteList = stdout("git", ["-C", cwd, "remote", "-v"])
+  const hasGitHubRemote = /github\./i.test(remoteList)
+  const ghInstalled = commandSucceeds("gh", ["--version"])
+  const authCheckAttempted = ghInstalled && hasGitHubRemote
+  const authVerified = authCheckAttempted ? commandSucceeds("gh", ["auth", "status", "-h", "github.com"]) : false
+
+  return {
+    isGitRepo,
+    hasGitHubRemote,
+    ghInstalled,
+    authVerified,
+    authCheckAttempted,
+  }
+}
+
+export function getProjectOverrideMarker(key: BaselineConfigKey, projectConfig: Record<string, unknown> | null): ConfigSourceMarker {
+  const hasOverride = projectConfig !== null && key in projectConfig && typeof projectConfig[key] === "string"
+  return hasOverride
+    ? { marker: "●", sourceLabel: "project override" }
+    : { marker: "○", sourceLabel: "inherited default" }
+}
+
 function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectConfig> {
   const result: Partial<ProjectConfig> = {}
 
@@ -276,26 +489,17 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["cisoPersonality"] === "string") result.cisoPersonality = source["cisoPersonality"] as CisoPersonality
   if (typeof source["ctoPersonality"] === "string") result.ctoPersonality = source["ctoPersonality"] as CtoPersonality
   if (typeof source["cmoPersonality"] === "string") result.cmoPersonality = source["cmoPersonality"] as CmoPersonality
-  if (typeof source["qaPersonality"] === "string") result.qaPersonality = source["qaPersonality"] as QaPersonality
   if (typeof source["productPersonality"] === "string") {
     result.productPersonality = source["productPersonality"] as ProductPersonality
   }
-  if (typeof source["opsPersonality"] === "string") result.opsPersonality = source["opsPersonality"] as OpsPersonality
   if (typeof source["creativePersonality"] === "string") {
     result.creativePersonality = source["creativePersonality"] as CreativePersonality
   }
-  if (typeof source["brandPersonality"] === "string") result.brandPersonality = source["brandPersonality"] as BrandPersonality
-  if (typeof source["devrelPersonality"] === "string") result.devrelPersonality = source["devrelPersonality"] as DevrelPersonality
   if (typeof source["legalPersonality"] === "string") result.legalPersonality = source["legalPersonality"] as LegalPersonality
-  if (typeof source["supportPersonality"] === "string") {
-    result.supportPersonality = source["supportPersonality"] as SupportPersonality
-  }
-  if (typeof source["dataAnalystPersonality"] === "string") {
-    result.dataAnalystPersonality = source["dataAnalystPersonality"] as DataAnalystPersonality
-  }
   if (typeof source["docsEnabled"] === "boolean") result.docsEnabled = source["docsEnabled"]
   if (typeof source["docsPath"] === "string") result.docsPath = source["docsPath"]
   if (typeof source["docHistoryMode"] === "string") result.docHistoryMode = source["docHistoryMode"] as DocHistoryMode
+  if (typeof source["prdPipelineMode"] === "string") result.prdPipelineMode = source["prdPipelineMode"] as PrdPipelineMode
 
   return result
 }
@@ -347,8 +551,9 @@ function detectRegistration(): {
 }
 
 export function readWunderkindConfig(): Partial<InstallConfig> | null {
-  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
-  const globalConfig = existsSync(GLOBAL_WUNDERKIND_CONFIG) ? parseWunderkindConfig(GLOBAL_WUNDERKIND_CONFIG) : null
+  const paths = resolveConfigManagerPaths()
+  const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
+  const globalConfig = existsSync(paths.globalWunderkindConfig) ? parseWunderkindConfig(paths.globalWunderkindConfig) : null
 
   if (!projectConfig && !globalConfig) {
     return null
@@ -366,12 +571,14 @@ export function readWunderkindConfig(): Partial<InstallConfig> | null {
 }
 
 export function readGlobalWunderkindConfig(): Partial<GlobalConfig> | null {
-  const globalConfig = existsSync(GLOBAL_WUNDERKIND_CONFIG) ? parseWunderkindConfig(GLOBAL_WUNDERKIND_CONFIG) : null
+  const paths = resolveConfigManagerPaths()
+  const globalConfig = existsSync(paths.globalWunderkindConfig) ? parseWunderkindConfig(paths.globalWunderkindConfig) : null
   return globalConfig ? coerceGlobalConfig(globalConfig) : null
 }
 
 export function readProjectWunderkindConfig(): Partial<ProjectConfig> | null {
-  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  const paths = resolveConfigManagerPaths()
+  const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   return projectConfig ? coerceProjectConfig(projectConfig) : null
 }
 
@@ -443,29 +650,21 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     ``,
     `  // Agent personalities — controls each agent's default character archetype`,
     `  // CISO: "paranoid-enforcer" | "pragmatic-risk-manager" | "educator-collaborator"`,
+    `  // Also carries security-incident posture and compliance-impact escalation style`,
     `  "cisoPersonality": ${JSON.stringify(config.cisoPersonality)},`,
     `  // CTO/Fullstack: "grizzled-sysadmin" | "startup-bro" | "code-archaeologist"`,
+    `  // Also carries TDD, regression, technical triage, reliability, runbook, and supportability posture`,
     `  "ctoPersonality": ${JSON.stringify(config.ctoPersonality)},`,
     `  // CMO/Marketing: "data-driven" | "brand-storyteller" | "growth-hacker"`,
+    `  // Also carries brand, community, developer advocacy, docs adoption, funnel, and campaign-analysis posture`,
     `  "cmoPersonality": ${JSON.stringify(config.cmoPersonality)},`,
-    `  // QA: "rule-enforcer" | "risk-based-pragmatist" | "rubber-duck"`,
-    `  "qaPersonality": ${JSON.stringify(config.qaPersonality)},`,
     `  // Product: "user-advocate" | "velocity-optimizer" | "outcome-obsessed"`,
+    `  // Also carries issue intake, repro shaping, acceptance review, experiment readouts, and backlog-ready triage posture`,
     `  "productPersonality": ${JSON.stringify(config.productPersonality)},`,
-    `  // Operations: "on-call-veteran" | "efficiency-maximiser" | "process-purist"`,
-    `  "opsPersonality": ${JSON.stringify(config.opsPersonality)},`,
     `  // Creative Director: "perfectionist-craftsperson" | "bold-provocateur" | "pragmatic-problem-solver"`,
     `  "creativePersonality": ${JSON.stringify(config.creativePersonality)},`,
-    `  // Brand Builder: "community-evangelist" | "pr-spinner" | "authentic-builder"`,
-    `  "brandPersonality": ${JSON.stringify(config.brandPersonality)},`,
-    `  // DevRel Wunderkind: "community-champion" | "docs-perfectionist" | "dx-engineer"`,
-    `  "devrelPersonality": ${JSON.stringify(config.devrelPersonality)},`,
     `  // Legal Counsel: "cautious-gatekeeper" | "pragmatic-advisor" | "plain-english-counselor"`,
     `  "legalPersonality": ${JSON.stringify(config.legalPersonality)},`,
-    `  // Support Engineer: "empathetic-resolver" | "systematic-triage" | "knowledge-builder"`,
-    `  "supportPersonality": ${JSON.stringify(config.supportPersonality)},`,
-    `  // Data Analyst: "rigorous-statistician" | "insight-storyteller" | "pragmatic-quant"`,
-    `  "dataAnalystPersonality": ${JSON.stringify(config.dataAnalystPersonality)},`,
     ``,
     `  // Docs output settings`,
     `  // Enable or disable writing docs outputs to disk`,
@@ -473,28 +672,35 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // Directory path where docs outputs are written`,
     `  "docsPath": ${JSON.stringify(config.docsPath)},`,
     `  // History mode: "overwrite" | "append-dated" (UTC-timestamped sections) | "new-dated-file" (UTC-timestamped files) | "overwrite-archive"`,
-    `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)}`,
-    `}`,
-    ``,
+    `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)},`,
+    `  // PRD / planning workflow mode`,
+    `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
+    `  // PRD pipeline mode: "filesystem" | "github"`,
   )
+
+  lines.push(`  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")}`)
+
+  lines.push(`}`, ``)
 
   return lines.join("\n")
 }
 
 export function writeGlobalWunderkindConfig(config: GlobalConfig): ConfigMergeResult {
-  const setupError = ensureConfigDir(GLOBAL_WUNDERKIND_DIR, GLOBAL_WUNDERKIND_CONFIG)
+  const paths = resolveConfigManagerPaths()
+  const setupError = ensureConfigDir(paths.globalWunderkindDir, paths.globalWunderkindConfig)
   if (setupError) return setupError
 
   try {
-    writeFileSync(GLOBAL_WUNDERKIND_CONFIG, renderGlobalWunderkindConfig(config))
-    return { success: true, configPath: GLOBAL_WUNDERKIND_CONFIG }
+    writeFileSync(paths.globalWunderkindConfig, renderGlobalWunderkindConfig(config))
+    return { success: true, configPath: paths.globalWunderkindConfig }
   } catch (err) {
-    return { success: false, configPath: GLOBAL_WUNDERKIND_CONFIG, error: String(err) }
+    return { success: false, configPath: paths.globalWunderkindConfig, error: String(err) }
   }
 }
 
 export function writeProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalConfig>): ConfigMergeResult {
-  const setupError = ensureConfigDir(WUNDERKIND_DIR, WUNDERKIND_CONFIG)
+  const paths = resolveConfigManagerPaths()
+  const setupError = ensureConfigDir(paths.wunderkindDir, paths.wunderkindConfig)
   if (setupError) return setupError
 
   try {
@@ -502,10 +708,10 @@ export function writeProjectWunderkindConfig(config: ProjectConfig & Partial<Glo
       ...DEFAULT_GLOBAL_CONFIG,
       ...(readGlobalWunderkindConfig() ?? {}),
     }
-    writeFileSync(WUNDERKIND_CONFIG, renderProjectWunderkindConfig(config, baseline))
-    return { success: true, configPath: WUNDERKIND_CONFIG }
+    writeFileSync(paths.wunderkindConfig, renderProjectWunderkindConfig(config, baseline))
+    return { success: true, configPath: paths.wunderkindConfig }
   } catch (err) {
-    return { success: false, configPath: WUNDERKIND_CONFIG, error: String(err) }
+    return { success: false, configPath: paths.wunderkindConfig, error: String(err) }
   }
 }
 
@@ -514,7 +720,8 @@ export function readWunderkindConfigForScope(scope: InstallScope): Partial<Insta
     return readGlobalWunderkindConfig()
   }
 
-  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  const paths = resolveConfigManagerPaths()
+  const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   if (!projectConfig) return null
 
   return {
@@ -524,6 +731,7 @@ export function readWunderkindConfigForScope(scope: InstallScope): Partial<Insta
 }
 
 export function detectCurrentConfig(): DetectedConfig {
+  const paths = resolveConfigManagerPaths()
   const projectResolution = resolveOpenCodeConfigPath("project")
   const globalResolution = resolveOpenCodeConfigPath("global")
   const defaults = getDefaultInstallConfig()
@@ -546,10 +754,10 @@ export function detectCurrentConfig(): DetectedConfig {
     }
   }
 
-  const globalConfig = existsSync(GLOBAL_WUNDERKIND_CONFIG) ? parseWunderkindConfig(GLOBAL_WUNDERKIND_CONFIG) : null
+  const globalConfig = existsSync(paths.globalWunderkindConfig) ? parseWunderkindConfig(paths.globalWunderkindConfig) : null
   const legacyGlobalProjectFields = globalConfig ? listLegacyGlobalProjectFields(globalConfig) : []
   const globalSafe = readGlobalWunderkindConfig()
-  const projectConfig = existsSync(WUNDERKIND_CONFIG) ? parseWunderkindConfig(WUNDERKIND_CONFIG) : null
+  const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
   const legacyGlobalProject = coerceProjectConfig(globalConfig ?? {})
@@ -572,24 +780,21 @@ export function detectCurrentConfig(): DetectedConfig {
     cisoPersonality: projectLocal?.cisoPersonality ?? legacyGlobalProject.cisoPersonality ?? defaults.cisoPersonality,
     ctoPersonality: projectLocal?.ctoPersonality ?? legacyGlobalProject.ctoPersonality ?? defaults.ctoPersonality,
     cmoPersonality: projectLocal?.cmoPersonality ?? legacyGlobalProject.cmoPersonality ?? defaults.cmoPersonality,
-    qaPersonality: projectLocal?.qaPersonality ?? legacyGlobalProject.qaPersonality ?? defaults.qaPersonality,
     productPersonality: projectLocal?.productPersonality ?? legacyGlobalProject.productPersonality ?? defaults.productPersonality,
-    opsPersonality: projectLocal?.opsPersonality ?? legacyGlobalProject.opsPersonality ?? defaults.opsPersonality,
     creativePersonality: projectLocal?.creativePersonality ?? legacyGlobalProject.creativePersonality ?? defaults.creativePersonality,
-    brandPersonality: projectLocal?.brandPersonality ?? legacyGlobalProject.brandPersonality ?? defaults.brandPersonality,
-    devrelPersonality: projectLocal?.devrelPersonality ?? legacyGlobalProject.devrelPersonality ?? defaults.devrelPersonality,
     legalPersonality: projectLocal?.legalPersonality ?? legacyGlobalProject.legalPersonality ?? defaults.legalPersonality,
-    supportPersonality: projectLocal?.supportPersonality ?? legacyGlobalProject.supportPersonality ?? defaults.supportPersonality,
-    dataAnalystPersonality: projectLocal?.dataAnalystPersonality ?? legacyGlobalProject.dataAnalystPersonality ?? defaults.dataAnalystPersonality,
     docsEnabled: projectLocal?.docsEnabled ?? legacyGlobalProject.docsEnabled ?? defaults.docsEnabled,
     docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
     docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
+    prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
   }
 }
 
 export function addPluginToOpenCodeConfig(scope: InstallScope): ConfigMergeResult {
+  const runtimeContext = resolveConfigManagerRuntimeContext()
+  const paths = resolveConfigManagerPaths()
   const targetPath = resolveOpenCodeConfigPath(scope).path
-  const targetDir = scope === "project" ? process.cwd() : CONFIG_DIR
+  const targetDir = scope === "project" ? runtimeContext.cwd : paths.configDir
 
   try {
     if (!existsSync(targetDir)) {
@@ -638,7 +843,7 @@ export function writeWunderkindConfig(installConfig: InstallConfig, scope: Insta
 }
 
 export function detectLegacyConfig(): boolean {
-  return existsSync(LEGACY_WUNDERKIND_CONFIG)
+  return existsSync(resolveConfigManagerPaths().legacyWunderkindConfig)
 }
 
 export function removePluginFromOpenCodeConfig(scope: InstallScope): ConfigMergeResult {
@@ -680,15 +885,15 @@ export function removePluginFromOpenCodeConfig(scope: InstallScope): ConfigMerge
   }
 
 export function getNativeAgentDir(): string {
-  return GLOBAL_OPENCODE_AGENTS_DIR
+  return resolveConfigManagerPaths().globalOpenCodeAgentsDir
 }
 
 export function getNativeCommandsDir(): string {
-  return GLOBAL_OPENCODE_COMMANDS_DIR
+  return resolveConfigManagerPaths().globalOpenCodeCommandsDir
 }
 
 export function getNativeSkillsDir(): string {
-  return GLOBAL_OPENCODE_SKILLS_DIR
+  return resolveConfigManagerPaths().globalOpenCodeSkillsDir
 }
 
 export function getNativeAgentFilePaths(scope: InstallScope): string[] {
@@ -896,19 +1101,20 @@ export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   }
 }
  
- export function removeGlobalWunderkindConfig(): ConfigMergeResult {
+export function removeGlobalWunderkindConfig(): ConfigMergeResult {
+  const paths = resolveConfigManagerPaths()
   try {
-    if (!existsSync(GLOBAL_WUNDERKIND_CONFIG)) {
-      return { success: true, configPath: GLOBAL_WUNDERKIND_CONFIG, changed: false }
+    if (!existsSync(paths.globalWunderkindConfig)) {
+      return { success: true, configPath: paths.globalWunderkindConfig, changed: false }
     }
-    rmSync(GLOBAL_WUNDERKIND_CONFIG, { force: true })
+    rmSync(paths.globalWunderkindConfig, { force: true })
 
-    if (existsSync(GLOBAL_WUNDERKIND_DIR) && readdirSync(GLOBAL_WUNDERKIND_DIR).length === 0) {
-      rmSync(GLOBAL_WUNDERKIND_DIR, { recursive: false, force: true })
+    if (existsSync(paths.globalWunderkindDir) && readdirSync(paths.globalWunderkindDir).length === 0) {
+      rmSync(paths.globalWunderkindDir, { recursive: true, force: true })
     }
 
-    return { success: true, configPath: GLOBAL_WUNDERKIND_CONFIG, changed: true }
+    return { success: true, configPath: paths.globalWunderkindConfig, changed: true }
   } catch (err) {
-    return { success: false, configPath: GLOBAL_WUNDERKIND_CONFIG, error: String(err) }
+    return { success: false, configPath: paths.globalWunderkindConfig, error: String(err) }
   }
 }
