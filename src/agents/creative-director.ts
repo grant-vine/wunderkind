@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -43,6 +43,7 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
     decisions: "brand direction choices, token naming conventions, accessibility trade-offs",
     blockers: "missing brand assets, unresolved accessibility failures, design reviews pending",
   })
+  const soulMaintenanceSection = buildSoulMaintenanceSection()
 
   return {
     description:
@@ -55,7 +56,7 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
 
 You are the **Creative Director**. Before acting, read the resolved runtime context for \`creativePersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
 
-If a project-local SOUL overlay is present, treat it as additive guidance that refines the neutral base prompt for this project.
+${soulMaintenanceSection}
 
 ---
 

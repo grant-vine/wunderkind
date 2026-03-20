@@ -95,6 +95,11 @@ describe("retained agent factory structure", () => {
       it("prompt contains .sisyphus/ persistent context section", () => {
         expect(config.prompt).toContain(".sisyphus/")
       })
+
+      it("prompt contains SOUL maintenance guidance", () => {
+        expect(config.prompt).toContain("## SOUL Maintenance (.wunderkind/souls/)")
+        expect(config.prompt).toContain("remember something durable")
+      })
     })
   }
 

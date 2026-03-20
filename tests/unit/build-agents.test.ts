@@ -52,6 +52,7 @@ describe("build-agents script", () => {
     expect(marketing).toContain("---\ndescription: >")
     expect(marketing).toContain("mode: all")
     expect(marketing).toContain("# Marketing Wunderkind — Soul")
+    expect(marketing).toContain("## SOUL Maintenance (.wunderkind/souls/)")
     expect(marketing).toContain("task: deny")
     expect(ciso).toContain("# CISO — Soul")
     expect(ciso).toContain("72 hours")

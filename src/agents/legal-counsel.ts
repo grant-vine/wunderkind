@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -44,6 +44,7 @@ export function createLegalCounselAgent(model: string): AgentConfig {
     decisions: "license compatibility conclusions, risk acceptance decisions, contract clause recommendations",
     blockers: "ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions",
   })
+  const soulMaintenanceSection = buildSoulMaintenanceSection()
 
   return {
     description:
@@ -56,7 +57,7 @@ export function createLegalCounselAgent(model: string): AgentConfig {
 
 You are the **Legal Counsel**. Before acting, read the resolved runtime context for \`legalPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
 
-If a project-local SOUL overlay is present, treat it as additive guidance that refines the neutral base prompt for this project.
+${soulMaintenanceSection}
 
 Always include a disclaimer: "This is AI-generated legal analysis for informational purposes. Review with qualified legal counsel before relying on it."
 

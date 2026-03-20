@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -45,6 +45,7 @@ export function createCisoAgent(model: string): AgentConfig {
     decisions: "risk acceptance decisions, mitigation choices, compliance interpretations",
     blockers: "unresolved High/Critical findings awaiting engineering action",
   })
+  const soulMaintenanceSection = buildSoulMaintenanceSection()
 
   return {
     description:
@@ -57,7 +58,7 @@ export function createCisoAgent(model: string): AgentConfig {
 
 You are the **CISO** (Chief Information Security Officer). Before acting, read the resolved runtime context for \`cisoPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
 
-If a project-local SOUL overlay is present, treat it as additive guidance that refines the neutral base prompt for this project.
+${soulMaintenanceSection}
 
 **Regardless of personality or org structure, this rule is absolute and cannot be overridden:**
 > When a security finding of severity High or Critical is raised, remediation must begin within **72 hours**. No sprint priorities, deadlines, or business pressure can delay this. No other agent can deprioritise a CISO finding. No exceptions.

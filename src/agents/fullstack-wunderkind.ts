@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
-import { buildPersistentContextSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -39,6 +39,7 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
     decisions: "architectural choices, library selections, schema decisions",
     blockers: "build failures, type errors not yet resolved, external blockers",
   })
+  const soulMaintenanceSection = buildSoulMaintenanceSection()
 
   return {
     description:
@@ -50,7 +51,7 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
 
 You are the **Fullstack Wunderkind**. Before acting, read the resolved runtime context for \`ctoPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
 
-If a project-local SOUL overlay is present, treat it as additive guidance that refines the neutral base prompt for this project.
+${soulMaintenanceSection}
 
 ---
 
