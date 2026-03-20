@@ -65,6 +65,14 @@ describe("CLI help copy", () => {
     expect(output).toContain("Leaves project-local customizations")
   })
 
+  it("includes cleanup command help text", () => {
+    const output = runCliHelp("cleanup", "--help")
+
+    expect(output).toContain("Remove Wunderkind project-local registration and state from the current project.")
+    expect(output).toContain(".wunderkind/")
+    expect(output).toContain("Leaves AGENTS.md, .sisyphus/, docs output")
+  })
+
   it("includes upgrade command help text", () => {
     const output = runCliHelp("upgrade", "--help")
 

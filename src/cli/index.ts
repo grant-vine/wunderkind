@@ -4,6 +4,7 @@ import { createRequire } from "node:module"
 import { runCliInstaller, runCliUpgrade } from "./cli-installer.js"
 import { runDoctorWithOptions } from "./doctor.js"
 import { runInit } from "./init.js"
+import { runProjectCleanup } from "./cleanup.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -250,6 +251,21 @@ program
     if (opts.docHistoryMode !== undefined) initOptions.docHistoryMode = opts.docHistoryMode as DocHistoryMode
 
     const exitCode = await runInit(initOptions)
+    process.exit(exitCode)
+  })
+
+program
+  .command("cleanup")
+  .description(
+    [
+      "Remove Wunderkind project-local registration and state from the current project.",
+      "",
+      "Removes project-local OpenCode plugin wiring and the .wunderkind/ directory.",
+      "Leaves AGENTS.md, .sisyphus/, docs output, and shared global capabilities untouched.",
+    ].join("\n"),
+  )
+  .action(async () => {
+    const exitCode = await runProjectCleanup()
     process.exit(exitCode)
   })
 
