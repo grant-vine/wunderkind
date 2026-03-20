@@ -1,5 +1,5 @@
 import color from "picocolors"
-import { existsSync, readdirSync, rmSync } from "node:fs"
+import { existsSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { detectCurrentConfig, removePluginFromOpenCodeConfig } from "./config-manager/index.js"
 
@@ -33,8 +33,8 @@ export async function runProjectCleanup(): Promise<number> {
       console.log(`${color.dim("- ")}Project Wunderkind state already absent (${color.dim(wunderkindDir)})`)
     }
 
-    const projectOpenCodeConfig = join(cwd, "opencode.json")
-    if (existsSync(projectOpenCodeConfig) && readdirSync(cwd).includes("opencode.json") && !changed) {
+    const projectConfigCandidates = ["opencode.json", "opencode.jsonc", "config.json", "config.jsonc"]
+    if (projectConfigCandidates.some((candidate) => existsSync(join(cwd, candidate))) && !changed) {
       console.log(`${color.dim("- ")}No project-local Wunderkind cleanup was needed in ${color.dim(cwd)}`)
     }
 
