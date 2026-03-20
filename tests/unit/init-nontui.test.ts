@@ -74,6 +74,10 @@ describe("runInit non-interactive branching", () => {
       authVerified: true,
       authCheckAttempted: true,
     }))
+    mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
   })
 
   it("bootstraps soul files and docs README while normalizing invalid doc history mode", async () => {
@@ -191,6 +195,208 @@ describe("runInit non-interactive branching", () => {
       console.log = originalLog
       console.error = originalError
       rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns when github PRD mode is selected but folder is not a git repo yet", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+    const messages: string[] = []
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
+      isGitRepo: false,
+      hasGitHubRemote: false,
+      ghInstalled: true,
+      authVerified: false,
+      authCheckAttempted: false,
+    }))
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true, prdPipelineMode: "github" })
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("not a git repository yet"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns when github PRD auth could not be verified", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+    const messages: string[] = []
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
+      isGitRepo: true,
+      hasGitHubRemote: true,
+      ghInstalled: true,
+      authVerified: false,
+      authCheckAttempted: true,
+    }))
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true, prdPipelineMode: "github" })
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("could not verify GitHub readiness"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns when bootstrapping in a folder that does not look like a project", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+    const messages: string[] = []
+
+    process.chdir(tempProject)
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("does not look like a project"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("returns 1 when project config write fails", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", error: "boom" }))
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(1)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("returns 1 when native command write fails", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "boom" }))
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(1)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("returns 1 when native agent write fails", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-agents", error: "boom" }))
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(1)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("returns 1 when native skill write fails", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-skills", error: "boom" }))
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(1)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("returns 1 on unexpected init errors", async () => {
+    const errors: string[] = []
+    const originalError = console.error
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+    mockDetectCurrentConfig.mockImplementation(() => {
+      throw new Error("init boom")
+    })
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(1)
+      expect(errors.some((message) => message.includes("init boom"))).toBe(true)
+    } finally {
+      console.error = originalError
     }
   })
 })

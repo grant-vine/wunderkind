@@ -103,6 +103,8 @@ describe("runInit interactive SOUL prompts", () => {
     Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
 
     const textAnswers = [
+      "EU",
+      "SaaS",
       "Optimize for activation and retention first.",
       "Push back early when scope expands without evidence.",
       "This team prefers thin vertical slices and filesystem-first planning.",
@@ -114,7 +116,7 @@ describe("runInit interactive SOUL prompts", () => {
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
     mockMultiselect.mockImplementation(async () => ["product-wunderkind"])
 
-    const selectAnswers = ["formal-strict", "hierarchical", "filesystem"]
+    const selectAnswers = ["GDPR", "POPIA", "formal-strict", "hierarchical", "filesystem"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -127,7 +129,7 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(3)
+      expect(mockSelect).toHaveBeenCalledTimes(5)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockMultiselect).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
@@ -135,6 +137,10 @@ describe("runInit interactive SOUL prompts", () => {
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(installConfig.region).toBe("EU")
+      expect(installConfig.industry).toBe("SaaS")
+      expect(installConfig.primaryRegulation).toBe("GDPR")
+      expect(installConfig.secondaryRegulation).toBe("POPIA")
       expect(installConfig.teamCulture).toBe("formal-strict")
       expect(installConfig.orgStructure).toBe("hierarchical")
       expect(installConfig.docsEnabled).toBe(false)
@@ -169,6 +175,10 @@ describe("runInit interactive SOUL prompts", () => {
 
     mockDetectCurrentConfig.mockImplementation(() => ({
       ...DEFAULT_DETECTED_CONFIG,
+      region: "North America",
+      industry: "Marketplace",
+      primaryRegulation: "CCPA",
+      secondaryRegulation: "SOC2",
       cisoPersonality: "educator-collaborator" as const,
       ctoPersonality: "startup-bro" as const,
       cmoPersonality: "growth-hacker" as const,
@@ -180,7 +190,10 @@ describe("runInit interactive SOUL prompts", () => {
     const confirmAnswers = [false, false, false]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
-    const selectAnswers = ["formal-strict", "hierarchical", "filesystem"]
+    const textAnswers = ["North America", "Marketplace"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const selectAnswers = ["CCPA", "SOC2", "formal-strict", "hierarchical", "filesystem"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -194,12 +207,16 @@ describe("runInit interactive SOUL prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
-      expect(mockSelect).toHaveBeenCalledTimes(3)
+      expect(mockSelect).toHaveBeenCalledTimes(5)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(installConfig.region).toBe("North America")
+      expect(installConfig.industry).toBe("Marketplace")
+      expect(installConfig.primaryRegulation).toBe("CCPA")
+      expect(installConfig.secondaryRegulation).toBe("SOC2")
       expect(installConfig.teamCulture).toBe("formal-strict")
       expect(installConfig.orgStructure).toBe("hierarchical")
       expect(installConfig.cisoPersonality).toBe("educator-collaborator")
@@ -223,11 +240,12 @@ describe("runInit interactive SOUL prompts", () => {
     Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
     Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
 
-    mockText.mockImplementation(async () => "./my-docs")
+    const textAnswers = ["United Kingdom", "HealthTech", "./my-docs"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
     const confirmAnswers = [false, true, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
-    const selectAnswers = ["formal-strict", "hierarchical", "github", "append-dated"]
+    const selectAnswers = ["GDPR", "ISO27001", "formal-strict", "hierarchical", "github", "append-dated"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -240,18 +258,157 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(4)
+      expect(mockSelect).toHaveBeenCalledTimes(6)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(installConfig.region).toBe("United Kingdom")
+      expect(installConfig.industry).toBe("HealthTech")
+      expect(installConfig.primaryRegulation).toBe("GDPR")
+      expect(installConfig.secondaryRegulation).toBe("ISO27001")
       expect(installConfig.docsEnabled).toBe(true)
       expect(installConfig.docHistoryMode).toBe("append-dated")
       expect(installConfig.prdPipelineMode).toBe("github")
     } finally {
       console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("docs path validate callback rejects invalid paths and accepts valid ones", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["Australia", "eCommerce"]
+    const docsPathValidateResults: (string | undefined)[] = []
+    mockText.mockImplementation(async (opts?: { validate?: (v: string) => string | undefined }) => {
+      if (opts?.validate) {
+        docsPathValidateResults.push(opts.validate("../outside"))
+        docsPathValidateResults.push(opts.validate("./valid-docs"))
+        return "./valid-docs"
+      }
+      return textAnswers.shift() ?? ""
+    })
+
+    const confirmAnswers = [false, true, true]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
+
+    const selectAnswers = ["GDPR", "", "pragmatic-balanced", "flat", "filesystem", "overwrite"]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      expect(docsPathValidateResults[0]).toBeDefined()
+      expect(typeof docsPathValidateResults[0]).toBe("string")
+      expect(docsPathValidateResults[1]).toBeUndefined()
+
+      const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(installConfig.docsEnabled).toBe(true)
+      expect(installConfig.docsPath).toBe("./valid-docs")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("supports manual regulation entry for project-local baseline overrides", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["LATAM", "FinTech", "PCI DSS", "SOX"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [false, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+
+    const selectAnswers = ["__other__", "__other__", "pragmatic-balanced", "flat", "filesystem"]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(installConfig.region).toBe("LATAM")
+      expect(installConfig.industry).toBe("FinTech")
+      expect(installConfig.primaryRegulation).toBe("PCI DSS")
+      expect(installConfig.secondaryRegulation).toBe("SOX")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("returns 1 when SOUL customization is enabled but no persona is selected", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [true, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockMultiselect.mockImplementation(async () => [])
+
+    const selectAnswers = ["GDPR", "POPIA", "formal-strict", "hierarchical"]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const restoreError = console.error
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    const errors: string[] = []
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(1)
+      expect(errors.some((message) => message.includes("at least one retained persona"))).toBe(true)
+    } finally {
+      console.log = restoreLog
+      console.error = restoreError
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
       Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })

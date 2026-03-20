@@ -72,6 +72,20 @@ const PRD_PIPELINE_MODE_OPTIONS: Array<{ value: PrdPipelineMode; label: string; 
   { value: "github", label: "github", hint: "Use gh/GitHub workflows for PRD and issue output when ready" },
 ]
 
+const COMMON_REGULATIONS = [
+  { value: "GDPR", label: "GDPR", hint: "EU General Data Protection Regulation" },
+  { value: "POPIA", label: "POPIA", hint: "South Africa Protection of Personal Information Act" },
+  { value: "CCPA", label: "CCPA", hint: "California Consumer Privacy Act" },
+  { value: "LGPD", label: "LGPD", hint: "Brazil Lei Geral de Protecao de Dados" },
+  { value: "HIPAA", label: "HIPAA", hint: "US Health Insurance Portability and Accountability Act" },
+  { value: "PIPEDA", label: "PIPEDA", hint: "Canada Personal Information Protection and Electronic Documents Act" },
+  { value: "PDPA", label: "PDPA", hint: "Thailand/Singapore Personal Data Protection Act" },
+  { value: "APPI", label: "APPI", hint: "Japan Act on the Protection of Personal Information" },
+  { value: "SOC2", label: "SOC 2", hint: "AICPA Service Organization Control 2" },
+  { value: "ISO27001", label: "ISO 27001", hint: "Information security management standard" },
+  { value: "__other__", label: "Enter manually...", hint: "Type a custom regulation name" },
+] as const
+
 interface SoulPersonaDefinition {
   agentKey:
     | "product-wunderkind"
@@ -191,6 +205,31 @@ async function promptSelect<T extends string>(
   return selection
 }
 
+async function promptRegulation(message: string, initialValue: string): Promise<string | null> {
+  const knownValues = COMMON_REGULATIONS.map((regulation) => regulation.value).filter((value) => value !== "__other__")
+  const initial = knownValues.includes(initialValue as typeof knownValues[number]) ? initialValue : "__other__"
+
+  const selection = await p.select({
+    message,
+    options: COMMON_REGULATIONS as unknown as Array<{ value: string; label: string; hint?: string }>,
+    initialValue: initial,
+  })
+  if (p.isCancel(selection)) return null
+
+  if (selection !== "__other__") {
+    return selection as string
+  }
+
+  const custom = await p.text({
+    message: "Enter regulation name:",
+    placeholder: "leave blank to skip",
+    initialValue: knownValues.includes(initialValue as typeof knownValues[number]) ? "" : initialValue,
+  })
+  if (p.isCancel(custom)) return null
+
+  return (custom as string).trim()
+}
+
 export async function runInit(options: InitOptions): Promise<number> {
   try {
     const detected = detectCurrentConfig()
@@ -227,6 +266,32 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
 
     if (!noTui) {
+      const regionRaw = await p.text({
+        message: "Project region baseline:",
+        placeholder: "Global",
+        initialValue: config.region,
+      })
+      if (p.isCancel(regionRaw)) return 1
+
+      const industryRaw = await p.text({
+        message: "Project industry or vertical:",
+        placeholder: "SaaS",
+        initialValue: config.industry,
+      })
+      if (p.isCancel(industryRaw)) return 1
+
+      const primaryRegulation = await promptRegulation(
+        "Primary data-protection regulation for this project?",
+        config.primaryRegulation,
+      )
+      if (primaryRegulation === null) return 1
+
+      const secondaryRegulation = await promptRegulation(
+        "Secondary regulation for this project? (optional)",
+        config.secondaryRegulation,
+      )
+      if (secondaryRegulation === null) return 1
+
       const teamCulture = await promptSelect(
         "Team culture baseline:",
         TEAM_CULTURE_OPTIONS,
@@ -352,6 +417,10 @@ export async function runInit(options: InitOptions): Promise<number> {
         docHistoryMode = docHistoryModeRaw
       }
 
+      config.region = (regionRaw as string).trim() || "Global"
+      config.industry = (industryRaw as string).trim()
+      config.primaryRegulation = primaryRegulation
+      config.secondaryRegulation = secondaryRegulation
       config.teamCulture = teamCulture
       config.orgStructure = orgStructure
       config.docsEnabled = docsEnabled
