@@ -9,15 +9,20 @@ import {
   writeNativeSkillFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
+import { bootstrapDesignMd, validateDesignPath } from "./design-md-helper.js"
 import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
+import { detectStitchMcpPresence, mergeStitchMcpConfig, writeStitchSecretFile } from "./mcp-helpers.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
+  DesignMcpOwnership,
+  DesignTool,
   DocHistoryMode,
   InstallConfig,
   OrgStructure,
   PrdPipelineMode,
   TeamCulture,
 } from "./types.js"
+import type { StitchPresence } from "./mcp-helpers.js"
 
 export interface InitOptions {
   noTui?: boolean
@@ -25,7 +30,15 @@ export interface InitOptions {
   docsPath?: string
   docHistoryMode?: string
   prdPipelineMode?: PrdPipelineMode
+  designTool?: string
+  designPath?: string
+  stitchSetup?: string
+  stitchApiKeyFile?: string
 }
+
+type DesignWorkflowToggle = "no" | "yes"
+
+type StitchSetupChoice = "reuse" | "project-local" | "skip"
 
 const PROJECT_CONTEXT_MARKERS = ["package.json", "bun.lockb", "bun.lock", "tsconfig.json", "pyproject.toml", ".git"] as const
 
@@ -54,6 +67,39 @@ function normalizeDocHistoryMode(mode: string): DocHistoryMode {
     return mode
   }
   return "append-dated"
+}
+
+function normalizeDesignPath(designPath: string): string {
+  const trimmed = designPath.trim()
+  return trimmed === "" ? "./DESIGN.md" : trimmed
+}
+
+function normalizeDesignTool(designTool: string | undefined): DesignTool {
+  return designTool === "google-stitch" ? "google-stitch" : "none"
+}
+
+function normalizeStitchSetup(stitchSetup: string | undefined): StitchSetupChoice | null {
+  if (stitchSetup === "reuse" || stitchSetup === "project-local" || stitchSetup === "skip") {
+    return stitchSetup
+  }
+
+  return null
+}
+
+function getReusedStitchOwnership(presence: StitchPresence): Extract<DesignMcpOwnership, "reused-project" | "reused-global"> | null {
+  if (presence === "project-local" || presence === "both") {
+    return "reused-project"
+  }
+
+  if (presence === "global-only") {
+    return "reused-global"
+  }
+
+  return null
+}
+
+function getDefaultStitchSetup(presence: StitchPresence): StitchSetupChoice {
+  return presence === "missing" ? "project-local" : "reuse"
 }
 
 const SOUL_PERSONA_BANNERS: Record<SoulPersonaDefinition["agentKey"], readonly [string, string, string]> = {
@@ -530,6 +576,12 @@ export async function runInit(options: InitOptions): Promise<number> {
     const noTui = options.noTui === true || !process.stdin.isTTY || !process.stdout.isTTY
     const soulAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
     const existingSoulAnswers = readExistingSoulAnswers(cwd)
+    let designTool: DesignTool = "none"
+    let designPath = normalizeDesignPath(options.designPath ?? detected.designPath)
+    let designMcpOwnership: DesignMcpOwnership = "none"
+    let shouldMergeStitchProjectConfig = false
+    let stitchSecretValue: string | null = null
+    let shouldBootstrapDesignFile = false
 
     const config: InstallConfig = {
       region: detected.region,
@@ -548,6 +600,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       docsPath: options.docsPath ?? detected.docsPath,
       docHistoryMode: normalizeDocHistoryMode(options.docHistoryMode ?? detected.docHistoryMode),
       prdPipelineMode: options.prdPipelineMode ?? detected.prdPipelineMode,
+      designTool: detected.designTool,
+      designPath: detected.designPath,
+      designMcpOwnership: detected.designMcpOwnership,
     }
 
     if (!noTui) {
@@ -717,7 +772,109 @@ export async function runInit(options: InitOptions): Promise<number> {
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
       config.prdPipelineMode = prdPipelineMode
+
+      const enableDesignWorkflow = await promptSelect<DesignWorkflowToggle>(
+        "Enable design workflow?",
+        [
+          { value: "no", label: "No", hint: "Skip design workflow bootstrap" },
+          { value: "yes", label: "Yes", hint: "Configure DESIGN.md and optional Stitch MCP setup" },
+        ],
+        "no",
+      )
+      if (enableDesignWorkflow === null) return 1
+
+      if (enableDesignWorkflow === "yes") {
+        shouldBootstrapDesignFile = true
+
+        const selectedDesignTool = await promptSelect<DesignTool>(
+          "Design tool:",
+          [
+            { value: "none", label: "none", hint: "Use only DESIGN.md without MCP setup" },
+            { value: "google-stitch", label: "google-stitch", hint: "Connect Google Stitch via MCP" },
+          ],
+          "none",
+        )
+        if (selectedDesignTool === null) return 1
+        designTool = selectedDesignTool
+
+        if (designTool === "google-stitch") {
+          const stitchPresence = await detectStitchMcpPresence(cwd)
+          const defaultStitchSetup = getDefaultStitchSetup(stitchPresence)
+          const stitchSetup = await promptSelect<StitchSetupChoice>(
+            "Stitch MCP setup:",
+            [
+              { value: "reuse", label: "reuse existing", hint: "Use an existing Stitch MCP configuration" },
+              { value: "project-local", label: "create project-local", hint: "Create a project-local Stitch MCP config" },
+              { value: "skip", label: "skip", hint: "Leave Stitch MCP unset for now" },
+            ],
+            defaultStitchSetup,
+          )
+          if (stitchSetup === null) return 1
+
+          if (stitchSetup === "reuse") {
+            const reusedOwnership = getReusedStitchOwnership(stitchPresence)
+            if (reusedOwnership !== null) {
+              designMcpOwnership = reusedOwnership
+            }
+          } else if (stitchSetup === "project-local") {
+            designMcpOwnership = "wunderkind-managed"
+            shouldMergeStitchProjectConfig = true
+
+            const stitchApiKey = await p.password({
+              message: "Stitch API key (leave blank to set up later):",
+            })
+            if (p.isCancel(stitchApiKey)) return 1
+
+            const normalizedStitchApiKey = String(stitchApiKey).trim()
+            if (normalizedStitchApiKey !== "") {
+              stitchSecretValue = normalizedStitchApiKey
+            }
+          }
+        }
+
+        const designPathRaw = await p.text({
+          message: "DESIGN.md path:",
+          initialValue: designPath,
+          validate: (value) => {
+            const validation = validateDesignPath(value)
+            return validation.valid ? undefined : validation.error
+          },
+        })
+        if (p.isCancel(designPathRaw)) return 1
+
+        designPath = normalizeDesignPath(String(designPathRaw))
+      }
+    } else {
+      designTool = normalizeDesignTool(options.designTool)
+      designPath = normalizeDesignPath(options.designPath ?? detected.designPath)
+
+      if (designTool === "google-stitch") {
+        shouldBootstrapDesignFile = true
+
+        const stitchPresence = await detectStitchMcpPresence(cwd)
+        const stitchSetup = normalizeStitchSetup(options.stitchSetup) ?? getDefaultStitchSetup(stitchPresence)
+
+        if (stitchSetup === "reuse") {
+          const reusedOwnership = getReusedStitchOwnership(stitchPresence)
+          if (reusedOwnership !== null) {
+            designMcpOwnership = reusedOwnership
+          } else {
+            console.log("Warning: Stitch reuse requested, but no existing Stitch MCP config was detected. Skipping Stitch MCP setup.")
+          }
+        } else if (stitchSetup === "project-local") {
+          designMcpOwnership = "wunderkind-managed"
+          shouldMergeStitchProjectConfig = true
+
+          if (options.stitchApiKeyFile) {
+            stitchSecretValue = readFileSync(options.stitchApiKeyFile, "utf-8")
+          }
+        }
+      }
     }
+
+    config.designTool = designTool
+    config.designPath = designPath
+    config.designMcpOwnership = designMcpOwnership
 
     if (config.prdPipelineMode === "github") {
       const githubReadiness = detectGitHubWorkflowReadiness(cwd)
@@ -747,10 +904,28 @@ export async function runInit(options: InitOptions): Promise<number> {
       return 1
     }
 
+    const designPathValidation = validateDesignPath(config.designPath ?? designPath)
+    if (!designPathValidation.valid) {
+      console.error(`Error: ${designPathValidation.error}`)
+      return 1
+    }
+
     const writeResult = writeWunderkindConfig(config, "project")
     if (!writeResult.success) {
       console.error(`Error: Failed to write project config: ${writeResult.error}`)
       return 1
+    }
+
+    if (shouldMergeStitchProjectConfig) {
+      await mergeStitchMcpConfig(cwd)
+    }
+
+    if (stitchSecretValue !== null) {
+      await writeStitchSecretFile(stitchSecretValue, cwd)
+    }
+
+    if (shouldBootstrapDesignFile) {
+      bootstrapDesignMd(designPath, cwd)
     }
 
     const nativeAgentsResult = writeNativeAgentFiles("project")

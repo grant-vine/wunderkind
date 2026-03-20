@@ -1,0 +1,179 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/init-interactive.test.ts:
+172 |     }
+173 | 
+174 |     try {
+175 |       const code = await runInit({})
+176 |       expect(code).toBe(0)
+177 |       expect(mockSelect).toHaveBeenCalledTimes(10)
+                               ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 10
+Received number of calls: 9
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:177:26)
+(fail) runInit interactive SOUL prompts > creates a retained persona SOUL file when customization is enabled [3.31ms]
+381 | 
+382 |     try {
+383 |       const code = await runInit({})
+384 |       expect(code).toBe(0)
+385 |       expect(mockConfirm).toHaveBeenCalledTimes(2)
+386 |       expect(mockSelect).toHaveBeenCalledTimes(6)
+                               ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 6
+Received number of calls: 5
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:386:26)
+(fail) runInit interactive SOUL prompts > skips SOUL creation when customization is declined and keeps retained personalities [1.18ms]
+432 |     console.log = () => {}
+433 | 
+434 |     try {
+435 |       const code = await runInit({})
+436 |       expect(code).toBe(0)
+437 |       expect(mockSelect).toHaveBeenCalledTimes(7)
+                               ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 7
+Received number of calls: 6
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:437:26)
+(fail) runInit interactive SOUL prompts > selects docs history mode via select when docs are enabled [1.48ms]
+626 |     console.log = () => {}
+627 | 
+628 |     try {
+629 |       const code = await runInit({})
+630 |       expect(code).toBe(0)
+631 |       expect(mockPassword).toHaveBeenCalledTimes(1)
+                                 ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 1
+Received number of calls: 0
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:631:28)
+(fail) runInit interactive SOUL prompts > creates project-local Stitch config with blank masked password input [1.05ms]
+684 |       expect(code).toBe(0)
+685 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+686 |       expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+687 | 
+688 |       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+689 |       expect(writtenConfig.designMcpOwnership).toBe("reused-global")
+                                                     ^
+error: expect(received).toBe(expected)
+
+Expected: "reused-global"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:689:48)
+(fail) runInit interactive SOUL prompts > reuses global Stitch config without creating a project-local MCP entry [1.05ms]
+733 |       expect(code).toBe(0)
+734 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+735 |       expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+736 | 
+737 |       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+738 |       expect(writtenConfig.designMcpOwnership).toBe("none")
+                                                     ^
+error: expect(received).toBe(expected)
+
+Expected: "none"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-interactive.test.ts:738:48)
+(fail) runInit interactive SOUL prompts > supports skipping interactive Stitch setup without MCP changes [0.94ms]
+
+tests/unit/init-nontui.test.ts:
+131 |         designTool: "google-stitch",
+132 |         stitchSetup: "project-local",
+133 |       })
+134 | 
+135 |       expect(code).toBe(0)
+136 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(1)
+                                             ^
+error: expect(received).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 1
+Received number of calls: 0
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:136:40)
+(fail) runInit non-interactive branching > creates a project-local Stitch MCP config for google-stitch init [1.75ms]
+174 |         stitchSetup: "project-local",
+175 |         stitchApiKeyFile: apiKeyFile,
+176 |       })
+177 | 
+178 |       expect(code).toBe(0)
+179 |       expect(readFileSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath), "utf-8")).toBe("stitched-secret")
+                   ^
+ENOENT: no such file or directory, open '/var/folders/mf/19775c315d1f9_qq62_530100000gn/T/wk-init-nontui-rEx0mf/.wunderkind/stitch/google-stitch-api-key'
+    path: "/var/folders/mf/19775c315d1f9_qq62_530100000gn/T/wk-init-nontui-rEx0mf/.wunderkind/stitch/google-stitch-api-key",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:179:14)
+(fail) runInit non-interactive branching > writes a trimmed Stitch API key file when a key file is provided [1.14ms]
+230 |         designTool: "google-stitch",
+231 |         stitchSetup: "project-local",
+232 |       })
+233 | 
+234 |       expect(code).toBe(0)
+235 |       expect(existsSync(join(tempProject, "DESIGN.md"))).toBe(true)
+                                                               ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:235:58)
+(fail) runInit non-interactive branching > bootstraps DESIGN.md at the default path for google-stitch init [0.79ms]
+264 |       expect(code).toBe(0)
+265 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+266 |       expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+267 | 
+268 |       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+269 |       expect(writtenConfig.designMcpOwnership).toBe("reused-global")
+                                                     ^
+error: expect(received).toBe(expected)
+
+Expected: "reused-global"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:269:48)
+(fail) runInit non-interactive branching > reuses global Stitch config without writing a project-local MCP entry [0.90ms]
+296 |       expect(code).toBe(0)
+297 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+298 |       expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+299 | 
+300 |       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+301 |       expect(writtenConfig.designMcpOwnership).toBe("none")
+                                                     ^
+error: expect(received).toBe(expected)
+
+Expected: "none"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:301:48)
+(fail) runInit non-interactive branching > supports skipping Stitch setup while persisting no ownership [1.16ms]
+327 |       expect(code).toBe(0)
+328 |       expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+329 |       expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+330 | 
+331 |       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+332 |       expect(writtenConfig.designTool).toBe("none")
+                                             ^
+error: expect(received).toBe(expected)
+
+Expected: "none"
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-nontui.test.ts:332:40)
+(fail) runInit non-interactive branching > persists none ownership when design workflow is disabled [0.94ms]
+
+ 17 pass
+ 12 fail
+ 91 expect() calls
+Ran 29 tests across 2 files. [64.00ms]

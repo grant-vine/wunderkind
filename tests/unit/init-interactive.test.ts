@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
 import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
+import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
+import type { StitchPresence } from "../../src/cli/mcp-helpers.js"
 
 const mockText = mock(async () => "")
 const mockSelect = mock(async () => "")
 const mockConfirm = mock(async () => false)
 const mockMultiselect = mock(async () => [] as string[])
+const mockPassword = mock(async () => "")
 const mockIsCancel = mock(() => false)
 
 const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
@@ -35,6 +38,9 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   docsPath: "./docs",
   docHistoryMode: "append-dated" as const,
   prdPipelineMode: "filesystem" as const,
+  designTool: "none" as const,
+  designPath: "./DESIGN.md",
+  designMcpOwnership: "none" as const,
 }
 
 mock.module("@clack/prompts", () => ({
@@ -42,6 +48,7 @@ mock.module("@clack/prompts", () => ({
   select: mockSelect,
   confirm: mockConfirm,
   multiselect: mockMultiselect,
+  password: mockPassword,
   isCancel: mockIsCancel,
 }))
 
@@ -58,6 +65,25 @@ const mockDetectGitHubWorkflowReadiness = mock<(cwd: string) => GitHubWorkflowRe
   authVerified: true,
   authCheckAttempted: true,
 }))
+const mockDetectStitchMcpPresence = mock<(_projectPath?: string) => Promise<StitchPresence>>(async () => "missing")
+const mockMergeStitchMcpConfig = mock<(projectPath: string) => Promise<void>>(async (projectPath) => {
+  const configPath = join(projectPath, "opencode.json")
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(
+    configPath,
+    `${JSON.stringify({
+      $schema: "https://opencode.ai/config.json",
+      mcp: {
+        [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(false),
+      },
+    }, null, 2)}\n`,
+  )
+})
+const mockWriteStitchSecretFile = mock<(apiKey: string, cwd: string) => Promise<void>>(async (apiKey, cwd) => {
+  const secretPath = join(cwd, GOOGLE_STITCH_ADAPTER.secretFilePath)
+  mkdirSync(dirname(secretPath), { recursive: true })
+  writeFileSync(secretPath, apiKey.trim())
+})
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
@@ -68,6 +94,12 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
 }))
 
+mock.module("../../src/cli/mcp-helpers.js", () => ({
+  detectStitchMcpPresence: mockDetectStitchMcpPresence,
+  mergeStitchMcpConfig: mockMergeStitchMcpConfig,
+  writeStitchSecretFile: mockWriteStitchSecretFile,
+}))
+
 import { runInit } from "../../src/cli/init.js"
 
 describe("runInit interactive SOUL prompts", () => {
@@ -76,6 +108,7 @@ describe("runInit interactive SOUL prompts", () => {
     mockSelect.mockClear()
     mockConfirm.mockClear()
     mockMultiselect.mockClear()
+    mockPassword.mockClear()
     mockIsCancel.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
@@ -83,6 +116,9 @@ describe("runInit interactive SOUL prompts", () => {
     mockWriteNativeSkillFiles.mockClear()
     mockDetectGitHubWorkflowReadiness.mockClear()
     mockDetectCurrentConfig.mockClear()
+    mockDetectStitchMcpPresence.mockClear()
+    mockMergeStitchMcpConfig.mockClear()
+    mockWriteStitchSecretFile.mockClear()
     mockDetectCurrentConfig.mockImplementation(() => DEFAULT_DETECTED_CONFIG)
     mockDetectGitHubWorkflowReadiness.mockImplementation(() => ({
       isGitRepo: true,
@@ -93,6 +129,8 @@ describe("runInit interactive SOUL prompts", () => {
     }))
     mockConfirm.mockImplementation(async () => false)
     mockMultiselect.mockImplementation(async () => [])
+    mockPassword.mockImplementation(async () => "")
+    mockDetectStitchMcpPresence.mockImplementation(async () => "missing")
   })
 
   it("creates a retained persona SOUL file when customization is enabled", async () => {
@@ -116,10 +154,11 @@ describe("runInit interactive SOUL prompts", () => {
       "hierarchical",
       "Optimize for measurable business outcomes and adoption first.",
       "Push back clearly when scope or priorities are not justified.",
-      "Remember that thin vertical slices and fast validation matter here.",
-      "Avoid roadmap theater, speculative scope, and big-bang planning.",
-      "filesystem",
-    ]
+        "Remember that thin vertical slices and fast validation matter here.",
+        "Avoid roadmap theater, speculative scope, and big-bang planning.",
+        "filesystem",
+        "no",
+      ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -135,7 +174,7 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(9)
+      expect(mockSelect).toHaveBeenCalledTimes(10)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockMultiselect).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
@@ -197,6 +236,7 @@ describe("runInit interactive SOUL prompts", () => {
       "Remember that prioritization should stay tied to measurable outcomes and evidence.",
       "Avoid treating stakeholder requests as automatic priorities.",
       "filesystem",
+      "no",
     ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
@@ -249,6 +289,7 @@ describe("runInit interactive SOUL prompts", () => {
       "Remember that user pain, onboarding friction, and support signals matter here.",
       "Avoid treating stakeholder requests as automatic priorities.",
       "filesystem",
+      "no",
     ]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
@@ -328,7 +369,7 @@ describe("runInit interactive SOUL prompts", () => {
     const textAnswers = ["North America", "Marketplace"]
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
 
-    const selectAnswers = ["CCPA", "SOC2", "formal-strict", "hierarchical", "filesystem"]
+    const selectAnswers = ["CCPA", "SOC2", "formal-strict", "hierarchical", "filesystem", "no"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -342,7 +383,7 @@ describe("runInit interactive SOUL prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
-      expect(mockSelect).toHaveBeenCalledTimes(5)
+      expect(mockSelect).toHaveBeenCalledTimes(6)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -380,7 +421,7 @@ describe("runInit interactive SOUL prompts", () => {
     const confirmAnswers = [false, true, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
-    const selectAnswers = ["GDPR", "ISO27001", "formal-strict", "hierarchical", "github", "append-dated"]
+    const selectAnswers = ["GDPR", "ISO27001", "formal-strict", "hierarchical", "github", "append-dated", "no"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -393,7 +434,7 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockSelect).toHaveBeenCalledTimes(6)
+      expect(mockSelect).toHaveBeenCalledTimes(7)
       expect(mockConfirm).toHaveBeenCalledTimes(2)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
@@ -437,7 +478,7 @@ describe("runInit interactive SOUL prompts", () => {
     const confirmAnswers = [false, true, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
-    const selectAnswers = ["GDPR", "", "pragmatic-balanced", "flat", "filesystem", "append-dated"]
+    const selectAnswers = ["GDPR", "", "pragmatic-balanced", "flat", "filesystem", "append-dated", "no"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -480,7 +521,7 @@ describe("runInit interactive SOUL prompts", () => {
     const confirmAnswers = [false, false]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
 
-    const selectAnswers = ["__other__", "__other__", "pragmatic-balanced", "flat", "filesystem"]
+    const selectAnswers = ["__other__", "__other__", "pragmatic-balanced", "flat", "filesystem", "no"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log
@@ -544,6 +585,159 @@ describe("runInit interactive SOUL prompts", () => {
     } finally {
       console.log = restoreLog
       console.error = restoreError
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("creates project-local Stitch config with blank masked password input", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS", "./DESIGN.md"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [false, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockPassword.mockImplementation(async () => "")
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "filesystem",
+      "yes",
+      "google-stitch",
+      "project-local",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+      expect(mockPassword).toHaveBeenCalledTimes(1)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(true)
+      expect(existsSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath))).toBe(false)
+      expect(existsSync(join(tempProject, "DESIGN.md"))).toBe(true)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designTool).toBe("google-stitch")
+      expect(writtenConfig.designPath).toBe("./DESIGN.md")
+      expect(writtenConfig.designMcpOwnership).toBe("wunderkind-managed")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("reuses global Stitch config without creating a project-local MCP entry", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS", "./DESIGN.md"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [false, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockDetectStitchMcpPresence.mockImplementation(async () => "global-only")
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "filesystem",
+      "yes",
+      "google-stitch",
+      "reuse",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designMcpOwnership).toBe("reused-global")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("supports skipping interactive Stitch setup without MCP changes", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS", "./DESIGN.md"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [false, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "filesystem",
+      "yes",
+      "google-stitch",
+      "skip",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      const code = await runInit({})
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designMcpOwnership).toBe("none")
+    } finally {
+      console.log = restoreLog
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
       Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })

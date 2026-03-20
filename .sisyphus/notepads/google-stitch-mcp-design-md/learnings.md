@@ -57,3 +57,9 @@
 - Keep the canonical DESIGN.md contract single-sourced by iterating `GOOGLE_STITCH_ADAPTER.designSections`; section-specific scaffold text can live in a typed record keyed by those adapter-owned names without duplicating the ordered list.
 - Strict validation stays deterministic by parsing only top-level `##` headings, then reporting missing sections, duplicate sections, canonical-order drift, missing `Primary`/`Secondary`/`Tertiary`/`Neutral` lines, and insufficient `- Do:` or `- Don't:` bullets separately.
 - The red-phase evidence for a brand-new helper can safely fail on module resolution first, then the green-phase run can prove both scaffold generation and invalid-structure rejection in one targeted `config-template` test file.
+
+## [2026-03-20] Task: task-4
+- `runInit()` needs to normalize raw CLI strings for `designTool` and `stitchSetup` internally because `src/cli/index.ts` forwards Commander option values as plain strings under `exactOptionalPropertyTypes`.
+- The safest init flow is compute design ownership first, write `.wunderkind/wunderkind.config.jsonc`, then apply Stitch side effects (`mergeStitchMcpConfig()`, optional `writeStitchSecretFile()`, `bootstrapDesignMd()`) so config state and filesystem state stay aligned.
+- Interactive Stitch setup should always use `p.password()` for API key capture, treat blank input as a valid partial setup, and keep `designMcpOwnership` separate from whether a secret file was actually written.
+- Unit tests for Stitch init are more reliable when `mcp-helpers` is mocked at the file level to write a canonical `opencode.json` payload into the temp project; that avoids touching real global OpenCode config while still proving init-side branching and persistence.

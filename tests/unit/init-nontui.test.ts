@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
+import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
+import type { StitchPresence } from "../../src/cli/mcp-helpers.js"
 import type { DetectedConfig } from "../../src/cli/types.js"
 
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
@@ -30,6 +32,9 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     docsPath: "./docs",
     docHistoryMode: "append-dated" as const,
     prdPipelineMode: "filesystem" as const,
+    designTool: "none" as const,
+    designPath: "./DESIGN.md",
+    designMcpOwnership: "none" as const,
     ...overrides,
   }
 }
@@ -46,6 +51,25 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockDetectStitchMcpPresence = mock<(_projectPath?: string) => Promise<StitchPresence>>(async () => "missing")
+const mockMergeStitchMcpConfig = mock<(projectPath: string) => Promise<void>>(async (projectPath) => {
+  const configPath = join(projectPath, "opencode.json")
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(
+    configPath,
+    `${JSON.stringify({
+      $schema: "https://opencode.ai/config.json",
+      mcp: {
+        [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(false),
+      },
+    }, null, 2)}\n`,
+  )
+})
+const mockWriteStitchSecretFile = mock<(apiKey: string, cwd: string) => Promise<void>>(async (apiKey, cwd) => {
+  const secretPath = join(cwd, GOOGLE_STITCH_ADAPTER.secretFilePath)
+  mkdirSync(dirname(secretPath), { recursive: true })
+  writeFileSync(secretPath, apiKey.trim())
+})
 
 mock.module("../../src/cli/config-manager/index.js", () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
@@ -54,6 +78,12 @@ mock.module("../../src/cli/config-manager/index.js", () => ({
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
+}))
+
+mock.module("../../src/cli/mcp-helpers.js", () => ({
+  detectStitchMcpPresence: mockDetectStitchMcpPresence,
+  mergeStitchMcpConfig: mockMergeStitchMcpConfig,
+  writeStitchSecretFile: mockWriteStitchSecretFile,
 }))
 
 import { runInit } from "../../src/cli/init.js"
@@ -78,6 +108,236 @@ describe("runInit non-interactive branching", () => {
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
+    mockDetectStitchMcpPresence.mockClear()
+    mockMergeStitchMcpConfig.mockClear()
+    mockWriteStitchSecretFile.mockClear()
+    mockDetectStitchMcpPresence.mockImplementation(async () => "missing")
+  })
+
+  it("creates a project-local Stitch MCP config for google-stitch init", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "project-local",
+      })
+
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(1)
+
+      const projectOpenCode = JSON.parse(readFileSync(join(tempProject, "opencode.json"), "utf-8")) as {
+        mcp?: Record<string, unknown>
+      }
+      expect(projectOpenCode.mcp?.[GOOGLE_STITCH_ADAPTER.serverName]).toEqual(
+        GOOGLE_STITCH_ADAPTER.getOpenCodePayload(false),
+      )
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designTool).toBe("google-stitch")
+      expect(writtenConfig.designPath).toBe("./DESIGN.md")
+      expect(writtenConfig.designMcpOwnership).toBe("wunderkind-managed")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("writes a trimmed Stitch API key file when a key file is provided", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+    const apiKeyFile = join(tempProject, "stitch-key.txt")
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    writeFileSync(apiKeyFile, "  stitched-secret  \n")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "project-local",
+        stitchApiKeyFile: apiKeyFile,
+      })
+
+      expect(code).toBe(0)
+      expect(readFileSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath), "utf-8")).toBe("stitched-secret")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("allows project-local Stitch setup without writing a secret file", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "project-local",
+      })
+
+      expect(code).toBe(0)
+      expect(existsSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath))).toBe(false)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("bootstraps DESIGN.md at the default path for google-stitch init", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "project-local",
+      })
+
+      expect(code).toBe(0)
+      expect(existsSync(join(tempProject, "DESIGN.md"))).toBe(true)
+      expect(readFileSync(join(tempProject, "DESIGN.md"), "utf-8")).toContain("## Overview")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("reuses global Stitch config without writing a project-local MCP entry", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectStitchMcpPresence.mockImplementation(async () => "global-only")
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "reuse",
+      })
+
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designMcpOwnership).toBe("reused-global")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("supports skipping Stitch setup while persisting no ownership", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "google-stitch",
+        stitchSetup: "skip",
+      })
+
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designMcpOwnership).toBe("none")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("persists none ownership when design workflow is disabled", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({
+        noTui: true,
+        designTool: "none",
+      })
+
+      expect(code).toBe(0)
+      expect(mockMergeStitchMcpConfig).toHaveBeenCalledTimes(0)
+      expect(existsSync(join(tempProject, "opencode.json"))).toBe(false)
+
+      const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(writtenConfig.designTool).toBe("none")
+      expect(writtenConfig.designPath).toBe("./DESIGN.md")
+      expect(writtenConfig.designMcpOwnership).toBe("none")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
   })
 
   it("bootstraps soul files and docs README while normalizing invalid doc history mode", async () => {
