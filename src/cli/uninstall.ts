@@ -41,8 +41,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function readProjectOpenCodeConfig(projectRoot: string): { config: OpenCodeConfig; path: string } | null {
-  const configPath = join(projectRoot, "opencode.json")
-  if (!existsSync(configPath)) {
+  const projectJson = join(projectRoot, "opencode.json")
+  const projectJsonc = join(projectRoot, "opencode.jsonc")
+  const projectLegacyJson = join(projectRoot, "config.json")
+  const projectLegacyJsonc = join(projectRoot, "config.jsonc")
+
+  const configPath = existsSync(projectJson)
+    ? projectJson
+    : existsSync(projectJsonc)
+      ? projectJsonc
+      : existsSync(projectLegacyJson)
+        ? projectLegacyJson
+        : existsSync(projectLegacyJsonc)
+          ? projectLegacyJsonc
+          : null
+
+  if (configPath === null) {
     return null
   }
 
