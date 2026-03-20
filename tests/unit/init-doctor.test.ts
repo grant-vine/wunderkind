@@ -107,6 +107,16 @@ const mockDetectGitHubWorkflowReadiness = mock(() => ({
   authCheckAttempted: true,
 }))
 
+const mockDetectStitchMcpPresence = mock<(_projectPath?: string) => Promise<"missing" | "project-local" | "global-only" | "both">>(
+  async () => "missing",
+)
+
+mock.module(`${PROJECT_ROOT}src/cli/mcp-helpers.js`, () => ({
+  detectStitchMcpPresence: mockDetectStitchMcpPresence,
+  mergeStitchMcpConfig: mock(async () => {}),
+  writeStitchSecretFile: mock(async () => {}),
+}))
+
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
@@ -325,6 +335,8 @@ describe("runDoctor", () => {
     mockWriteNativeAgentFiles.mockClear()
     mockResolveOpenCodeConfigPath.mockClear()
     mockDetectGitHubWorkflowReadiness.mockClear()
+    mockDetectStitchMcpPresence.mockClear()
+    mockDetectStitchMcpPresence.mockImplementation(async () => "missing")
     mockDetectCurrentConfig.mockImplementation(() => ({
       isInstalled: true,
       scope: "global" as const,
@@ -1190,6 +1202,8 @@ describe("runDoctor", () => {
       },
     )
 
+    mockDetectStitchMcpPresence.mockImplementation(async () => "project-local")
+
     writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
     mkdirSync(join(tempProject, ".wunderkind", "stitch"), { recursive: true })
     writeFileSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath), `${secretValue}\n`)
@@ -1336,6 +1350,8 @@ describe("runDoctor", () => {
         designMcpOwnership: "reused-project",
       },
     )
+
+    mockDetectStitchMcpPresence.mockImplementation(async () => "project-local")
 
     writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
     writeFileSync(

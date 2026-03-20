@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { InstallArgs } from "../../src/cli/types.js"
 import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
@@ -96,6 +96,28 @@ const mockAddAiTracesToGitignore = mock(() => ({
 
 mock.module(`${PROJECT_ROOT}src/cli/gitignore-manager.js`, () => ({
   addAiTracesToGitignore: mockAddAiTracesToGitignore,
+}))
+
+const mockMergeStitchMcpConfig = mock(async (projectPath: string) => {
+  const configPath = join(projectPath, "opencode.json")
+  const existing = existsSync(configPath) ? JSON.parse(readFileSync(configPath, "utf-8")) : {}
+  const updated = {
+    ...existing,
+    mcp: {
+      ...(existing.mcp ?? {}),
+      [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(false),
+    },
+  }
+  mkdirSync(dirname(configPath), { recursive: true })
+  writeFileSync(configPath, `${JSON.stringify(updated, null, 2)}\n`)
+})
+const mockDetectStitchMcpPresence = mock(async (_projectPath?: string) => "missing" as const)
+const mockWriteStitchSecretFile = mock(async (_apiKey: string, _cwd: string) => {})
+
+mock.module(`${PROJECT_ROOT}src/cli/mcp-helpers.js`, () => ({
+  detectStitchMcpPresence: mockDetectStitchMcpPresence,
+  mergeStitchMcpConfig: mockMergeStitchMcpConfig,
+  writeStitchSecretFile: mockWriteStitchSecretFile,
 }))
 
 type CliInstallerModule = {
@@ -205,6 +227,9 @@ describe("runCliInstaller", () => {
     mockGetDefaultGlobalConfig.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
     mockAddAiTracesToGitignore.mockClear()
+    mockMergeStitchMcpConfig.mockClear()
+    mockDetectStitchMcpPresence.mockClear()
+    mockWriteStitchSecretFile.mockClear()
 
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
@@ -483,6 +508,9 @@ describe("runCliUpgrade", () => {
     mockWriteNativeSkillFiles.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
     mockResolveOpenCodeConfigPath.mockClear()
+    mockMergeStitchMcpConfig.mockClear()
+    mockDetectStitchMcpPresence.mockClear()
+    mockWriteStitchSecretFile.mockClear()
 
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: true, globalInstalled: true, registrationScope: "global" }))
