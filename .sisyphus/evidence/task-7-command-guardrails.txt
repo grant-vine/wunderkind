@@ -1,0 +1,7 @@
+Task 7 guardrail evidence
+
+Checked file: commands/design-md.md
+Forbidden pattern set: /sync, bi-directional, two-way, round-trip, synchronization, synchronize
+Result: No matches found
+
+This confirms the command avoids slash-sync language and does not promise full two-way or round-trip behavior.

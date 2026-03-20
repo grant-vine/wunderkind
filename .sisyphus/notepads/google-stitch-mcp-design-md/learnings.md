@@ -69,3 +69,9 @@
 - Compact non-verbose readiness is easiest to keep stable when it summarizes exactly three dimensions: enabled/disabled from `designTool`, configured/not configured from detected-or-managed Stitch state, and managed/reused/none from `designMcpOwnership`.
 - Adapter drift warnings should inspect only the canonical `mcp.google-stitch` entry and flag either a URL mismatch after trimming one trailing slash or `oauth === true`; missing `oauth` remains accepted.
 - A targeted doctor test harness is simpler and more durable when it writes real temp-project `opencode.json`, `DESIGN.md`, and `.wunderkind/stitch/google-stitch-api-key` fixtures, while mocking only config-manager path resolution and effective Wunderkind config values.
+
+## [2026-03-20] Task: task-7
+- `commands/docs-index.md` is a strong native-command template: minimal frontmatter, a short role sentence, then `## Command`, `## Responsibilities`, `## Constraints`, `## Notes`, and the `<user-request>` wrapper.
+- For this Stitch-facing command, the safest wording is to avoid the word `sync` entirely in the asset body; targeted manifest assertions can then guard against slash-command leakage and overclaiming with simple string checks.
+- `tests/unit/manifest-sync.test.ts` can absorb command-asset coverage cleanly with one small `readText()` helper and direct file-content assertions, without creating a new test harness.
+- The `capture-existing` companion path should be repeated in both action and constraint bullets so the source-assets location and existing `.wunderkind/` gitignore coverage stay explicit.

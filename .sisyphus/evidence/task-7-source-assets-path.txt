@@ -1,0 +1,9 @@
+Task 7 source-assets path evidence
+
+Checked file: commands/design-md.md
+Matched lines proving the capture-existing companion path is under .wunderkind/stitch/
+
+20: 6. For `capture-existing`, write or update `.wunderkind/stitch/source-assets.md` with project-relative paths to the discovered source assets.
+31: - Keep `.wunderkind/stitch/source-assets.md` inside `.wunderkind/stitch/` only.
+32: - `.wunderkind/stitch/source-assets.md` is already covered by the existing `.wunderkind/` gitignore rule, so no new gitignore entry is needed.
+39: - `capture-existing` is for turning existing design signals into a maintained `DESIGN.md` and the companion asset inventory at `.wunderkind/stitch/source-assets.md`.

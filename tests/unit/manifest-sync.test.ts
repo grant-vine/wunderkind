@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test"
-import { readFileSync } from "node:fs"
+import { readFileSync, statSync } from "node:fs"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -15,6 +15,10 @@ function readVersion(fileUrl: URL): string {
   return parsed.version
 }
 
+function readText(fileUrl: URL): string {
+  return readFileSync(fileUrl, "utf8")
+}
+
 describe("manifest version sync", () => {
   it("keeps package and Claude plugin manifests in sync", () => {
     const packageVersion = readVersion(new URL("../../package.json", import.meta.url))
@@ -23,5 +27,44 @@ describe("manifest version sync", () => {
     expect(packageVersion.length).toBeGreaterThan(0)
     expect(pluginVersion.length).toBeGreaterThan(0)
     expect(pluginVersion).toBe(packageVersion)
+  })
+})
+
+describe("design-md command asset", () => {
+  const commandFile = new URL("../../commands/design-md.md", import.meta.url)
+
+  it("exists as a file", () => {
+    expect(statSync(commandFile).isFile()).toBe(true)
+  })
+
+  it("declares the creative-director owner in frontmatter", () => {
+    const commandBody = readText(commandFile)
+
+    expect(commandBody).toContain("agent: creative-director")
+    expect(commandBody).toContain("name: design-md")
+  })
+
+  it("references only the supported modes", () => {
+    const commandBody = readText(commandFile)
+
+    expect(commandBody).toContain("`new`")
+    expect(commandBody).toContain("`capture-existing`")
+    expect(commandBody).not.toContain("`refresh`")
+    expect(commandBody).not.toContain("`update`")
+  })
+
+  it("avoids slash-sync language and two-way round-trip promises", () => {
+    const commandBody = readText(commandFile)
+
+    expect(commandBody).not.toContain("/sync")
+    expect(commandBody).not.toContain("bi-directional")
+    expect(commandBody).not.toContain("two-way")
+    expect(commandBody).not.toContain("round-trip")
+  })
+
+  it("writes the capture-existing companion inside .wunderkind/stitch", () => {
+    const commandBody = readText(commandFile)
+
+    expect(commandBody).toContain(".wunderkind/stitch/source-assets.md")
   })
 })
