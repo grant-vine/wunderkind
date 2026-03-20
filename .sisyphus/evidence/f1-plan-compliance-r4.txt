@@ -1,0 +1,67 @@
+F1 Plan Compliance Review Round 4
+
+Plan: `/Users/grantv/Code/wunderkind/.sisyphus/plans/agent-harness-optimization-audit.md`
+Repo: `/Users/grantv/Code/wunderkind`
+
+Result: REJECT
+
+Scope audited:
+- Plan requirements A-F from the Round 4 brief
+- Direct reads of all 20 required `skills/*/SKILL.md` files
+- Direct read of `src/index.ts`
+- Verification commands: `bun test tests/unit/` and `npx tsc --noEmit`
+
+Findings:
+
+A. Ownership metadata across all 20 skill files: FAIL
+The plan requires every skill file to contain an ownership line using the exact format:
+`**Owned by:** wunderkind:<agent-key>`
+
+The following files still violate that exact-format requirement because the ownership line includes trailing descriptive prose on the same line instead of ending immediately after the agent key:
+
+1. `skills/agile-pm/SKILL.md:16`
+   - Current line appends: `— Sprint planning, task decomposition, and agile workflow for AI agents`
+   - Required fix: ownership line must be exactly `**Owned by:** wunderkind:product-wunderkind`
+
+2. `skills/grill-me/SKILL.md:14`
+   - Current line appends: `— Discovery interrogation and requirement stress-testing`
+   - Required fix: ownership line must be exactly `**Owned by:** wunderkind:product-wunderkind`
+
+3. `skills/ubiquitous-language/SKILL.md:14`
+   - Current line appends: `— Shared domain glossary and canonical terminology`
+   - Required fix: ownership line must be exactly `**Owned by:** wunderkind:product-wunderkind`
+
+4. `skills/vercel-architect/SKILL.md:14`
+   - Current line appends: `— Vercel, Next.js App Router, Edge Runtime, and deployment architecture`
+   - Required fix: ownership line must be exactly `**Owned by:** wunderkind:fullstack-wunderkind`
+
+5. `skills/visual-artist/SKILL.md:14`
+   - Current line appends: `— Brand identity, design systems, colour palettes, and WCAG compliance`
+   - Required fix: ownership line must be exactly `**Owned by:** wunderkind:creative-director`
+
+All other 15 required skill files do contain an ownership line that matches the required format.
+
+B. Desloppify gate in `src/index.ts`: PASS
+- `src/index.ts:107` has the `desloppifyEnabled === true` branch
+- `src/index.ts:113` has the `else` branch
+- `src/index.ts:117` includes the exact required fallback message text inside the one-time response instruction
+
+C. `skills/code-health/SKILL.md` fallback message: PASS
+- `skills/code-health/SKILL.md:64` starts the fallback section
+- `skills/code-health/SKILL.md:69` contains the exact required fallback message text
+
+D. Config path normalization: PASS
+- Direct skill-file reads plus grep confirmed skill references use `.wunderkind/wunderkind.config.jsonc`
+- No bare `wunderkind.config.jsonc` references were found in skill files
+
+E. Uppercase config keys: PASS
+- No skill file uses backtick-quoted `PRIMARY_REGULATION`, `SECONDARY_REGULATION`, `REGION`, or `INDUSTRY` as config keys
+
+F. Build and test verification: PASS
+- `bun test tests/unit/` => `192 pass`, `0 fail`
+- `npx tsc --noEmit` => completed successfully with `0` errors
+
+Approval condition:
+- Replace the five non-exact ownership lines listed above so each line is only `**Owned by:** wunderkind:<agent-key>` with no trailing explanatory text on that same line.
+
+VERDICT: REJECT

@@ -1,0 +1,49 @@
+Scope Fidelity Review — Wunderkind Agent Harness Optimization Audit
+
+Date: 2026-03-19
+Reviewer: fresh independent scope-fidelity pass
+
+Verdict: REJECT
+
+Overall assessment:
+- The major topology/platform decisions are present and explicit: six retained agents, `product-wunderkind` as orchestrator/front door, and an overlay-first platform strategy with concrete migration gates.
+- Test-coverage expansion is materially present: `tests/unit/plugin-transform.test.ts`, `tests/unit/build-agents.test.ts`, `tests/unit/gitignore-manager.test.ts`, `tests/unit/init-nontui.test.ts`, `tests/unit/init-interactive.test.ts`, and `tests/unit/tui-installer-handoff.test.ts` exist, and `.sisyphus/evidence/task-2-harness-tests.txt` records `198 pass`.
+- Imported benchmark skills exist locally: `skills/write-a-skill/SKILL.md`, `skills/design-an-interface/SKILL.md`, and `skills/tdd/SKILL.md`.
+- Token-reduction evidence exists: `.sisyphus/evidence/task-1-prompt-baseline.txt` shows `145890 total`; `.sisyphus/evidence/task-15-prompt-after.txt` shows `87015 total`.
+
+Why this review rejects:
+
+1. Documentation/skill freshness audit is not complete.
+   - `skills/write-a-skill/SKILL.md:30` still says: `skills/SKILL-STANDARD.md does not exist yet. When it lands, it becomes the authoritative skill-writing standard...`
+   - That is stale against the shipped repo state because `skills/SKILL-STANDARD.md` now exists and is explicitly presented as authoritative in `skills/SKILL-STANDARD.md:3` and `AGENTS.md:169`.
+   - This means the benchmark-skill import/doctrine work shipped with unresolved drift inside one of the imported benchmark skills themselves.
+
+2. Skill ownership/routing reconciliation is incomplete after the 12 -> 6 topology reduction.
+   - `skills/experimentation-analyst/SKILL.md:17` says it is invoked by `data-analyst`, and `skills/experimentation-analyst/SKILL.md:124` / `:126` still route through `data-analyst`.
+   - `skills/technical-writer/SKILL.md:16` says it is invoked by `devrel-wunderkind`.
+   - `skills/oss-licensing-advisor/SKILL.md:131` says engineering escalation goes to `devrel-wunderkind`.
+   - `skills/compliance-officer/SKILL.md:294` / `:299` delegates to `wunderkind:operations-lead`.
+   - `skills/agile-pm/SKILL.md:112` still routes tooling work to `wunderkind:operations-lead`.
+   - These references conflict with the shipped retained-topology decision in `.sisyphus/plans/topology-decision.md:15-20` and the surviving-owner inventory in `.sisyphus/plans/capability-matrix.md:63,72,73` plus `skills/SKILL-STANDARD.md:154-168`.
+   - Result: the claimed skill-fitting/ownership audit is not fully carried through to shipped skill artifacts, leaving unresolved ambiguity about who actually owns or invokes several skills.
+
+3. User-facing topology docs are not fully aligned to the orchestrator-first decision.
+   - `README.md` does not describe `product-wunderkind` as the orchestrator/front door.
+   - The shipped decision/code do: `.sisyphus/plans/topology-decision.md:7,26`, `AGENTS.md:6,179`, and `src/agents/product-wunderkind.ts:162-172` all make the orchestrator role explicit.
+   - Because the plan required docs freshness plus presentation of the orchestrator-first model, this is scope drift in the final user-facing docs surface.
+
+Lost capability check:
+- No clear capability loss was found in the decision artifacts. The retained-topology, capability matrix, overlay memo, imported benchmark skills, and test-coverage expansion are all materially present.
+
+Unrequested expansion check:
+- No material unrequested expansion found that warrants rejection. SOUL architecture and Desloppify/code-health appear in the audit plan's work objectives/deliverables, so they are traceable scope rather than random add-ons.
+
+Unresolved ambiguity check:
+- The main unresolved ambiguity is in shipped skill ownership/routing after consolidation. The decision docs say one thing; several skill files still instruct users/agents to go through removed owners.
+
+Final verdict:
+VERDICT: REJECT
+Drift:
+1. `skills/write-a-skill/SKILL.md` is stale against the shipped skill standard.
+2. Multiple shipped skills still reference removed agents (`data-analyst`, `devrel-wunderkind`, `operations-lead`), so skill ownership/routing was not fully reconciled to the six-agent topology.
+3. `README.md` does not present the shipped orchestrator-first model, even though the topology decision and source prompt do.

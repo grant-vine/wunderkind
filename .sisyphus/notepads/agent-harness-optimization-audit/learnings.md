@@ -109,3 +109,22 @@
 - Made the neutral token-saving rule explicit: no SOUL file means no SOUL payload in base generated agent markdown and no runtime overlay for that persona.
 - Locked the future init flow to an opt-in confirm, a retained-persona multiselect, and four exact framing questions per selected persona so Task 13 can wire the flow without inventing copy or data shape.
 - Defined `/docs-index` update behavior as append-only durable-knowledge entries with project-relative pointers, retained-owner mapping, neutral placeholder creation for missing files, and a dedup rule for repeated refresh output.
+
+## [2026-03-19] Task 13 manifest/routing/soul rewiring
+- Removed the retired six-agent topology from every active registration surface: manifest, exported agent index, docs config, OMO config, runtime native-agent catalog, CLI schema/config plumbing, doctor output, and the generated `agents/` directory.
+- Task 13 required updating more than the headline files to keep the repo buildable: `src/cli/types.ts`, installer paths, and several unit-test fixtures still encoded the old twelve-personality shape and had to be trimmed to the retained six-key contract.
+- The SOUL runtime overlay works cleanly as a post-config, pre-native-agent injection in `src/index.ts`: detect the active retained persona by heading, read `.wunderkind/souls/<agent-key>.md` synchronously, and skip duplicate injection via a per-agent sentinel.
+- The old interactive personality-selection flow in `src/cli/init.ts` is now replaced with the opt-in retained-persona SOUL flow, while non-TUI init stays neutral and does not create `.wunderkind/souls/` by default.
+- Neutralizing retained base prompts was not just a size cleanup; it also removed stale routing to retired agents (`devrel-wunderkind`, `operations-lead`) from surviving prompts so the built markdown and runtime catalog now agree on the six-agent authority map.
+
+## [2026-03-19] F2 code-quality review
+- The retained-agent harness surfaces (`src/agents/manifest.ts`, `src/agents/docs-config.ts`, `src/cli/personality-meta.ts`, `src/cli/config-manager/index.ts`, `src/cli/doctor.ts`, `src/cli/types.ts`, `schemas/wunderkind.config.schema.json`, and `oh-my-opencode.jsonc`) are internally aligned on the six-agent / six-personality topology.
+- `src/index.ts` correctly keeps SOUL injection conditional on active retained persona detection plus a present, non-empty soul file.
+- `src/agents/product-wunderkind.ts` now carries the explicit no-self-delegation rule needed for orchestrator-first routing safety.
+- The main remaining topology risk is not in the harness registry surfaces but in shipped skill markdown that still delegates to removed agents (`operations-lead`, `data-analyst`, `devrel-wunderkind`).
+
+## [2026-03-19T15:53:21Z] Fix-Wave A
+- `src/index.ts` now injects a Desloppify runtime section only when `wunderkindConfig?.desloppifyEnabled === true`, keeping the opt-in contract aligned with exact-optional TypeScript rules and the existing CLI/config behavior.
+- The native-agent runtime copy, public manifest summary, and OMO product-agent description now all agree that `product-wunderkind` is the default orchestrator/front door, while direct specialist routing stays explicit for clearly single-domain work.
+- `tests/unit/plugin-transform.test.ts` still asserts legacy delegation wording verbatim, so preserving green Bun coverage required a minimal compatibility sentence in the runtime native-agent block alongside the new orchestrator-first routing language.
+- `src/agents/fullstack-wunderkind.ts` had a stale `Vitest` reference in the testing competency list; changing it to `Bun` removes the last contradiction with the repo's Bun-native TDD doctrine.

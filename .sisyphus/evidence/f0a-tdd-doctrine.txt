@@ -1,0 +1,53 @@
+F0a - TDD Doctrine Review for the Wunderkind Agent Harness Optimization Audit
+
+Reviewed inputs:
+- `skills/tdd/SKILL.md`
+- `src/agents/fullstack-wunderkind.ts`
+- `src/agents/product-wunderkind.ts`
+- `skills/design-an-interface/SKILL.md`
+- `.sisyphus/plans/agent-harness-optimization-audit.md`
+- Supporting ownership check: `skills/triage-issue/SKILL.md`, `skills/SKILL-STANDARD.md`
+
+Assessment:
+
+The shipped doctrine is materially stronger than the old implicit QA posture in several important ways:
+
+1. `skills/tdd/SKILL.md` makes the engineering test loop explicit instead of leaving it as persona lore. It names red-green-refactor, public-interface testing, thin vertical slices, Bun-native commands, and strict TypeScript constraints directly.
+2. `src/agents/fullstack-wunderkind.ts` clearly absorbs the engineering half of the removed `qa-specialist` remit: TDD execution, regression coverage, technical defect diagnosis, risk-based regression depth, flaky-test diagnosis, and product-intake-to-failing-test conversion.
+3. `src/agents/product-wunderkind.ts` clearly absorbs the acceptance/intake half of the removed QA/support surfaces: structured issue intake, reproduction confidence, severity framing, acceptance review, Given/When/Then-style observable behavior, and vertical-slice readiness checks.
+4. `skills/design-an-interface/SKILL.md` is correctly fullstack-owned and remains an explicit high-complexity engineering skill rather than leaking heavy design-comparison ceremony into every coding task.
+5. `triage-issue` ownership is now clearly intended to live under `product-wunderkind`, and that surviving ownership is reinforced in both `src/agents/product-wunderkind.ts` and `skills/SKILL-STANDARD.md`.
+
+Required doctrine check:
+
+- Red-green-refactor: present in `skills/tdd/SKILL.md` and `src/agents/fullstack-wunderkind.ts`
+- Public-interface / contract-first testing: present in `skills/tdd/SKILL.md` and `src/agents/fullstack-wunderkind.ts`
+- Vertical-slice doctrine: present in `skills/tdd/SKILL.md` and `src/agents/product-wunderkind.ts`
+
+Conclusion on migration quality:
+
+The split is directionally correct and substantially better than before, but it is not yet internally consistent enough for approval. Two doctrine gaps remain.
+
+Reasons for rejection:
+
+1. Contradictory test-runner guidance still exists in a surviving authority surface.
+   - `skills/tdd/SKILL.md` standardizes the repo on `bun test tests/unit/`.
+   - `src/agents/fullstack-wunderkind.ts` correctly repeats that Bun-native loop in its Testing & Quality doctrine.
+   - But `src/agents/fullstack-wunderkind.ts:74` still advertises `Testing: unit (Vitest), component (Testing Library), E2E (Playwright)`.
+   - That leaves the shipped doctrine internally inconsistent on a core operational question: which unit-test runner the engineering owner should use in this repo.
+   - Because the plan requirement says the doctrine must be explicit and review-approved, this surviving mismatch is an approval blocker, not a cosmetic wording nit.
+
+2. The surviving `triage-issue` workflow still blurs product triage with engineering diagnosis more than the new split allows.
+   - The consolidation target in `.sisyphus/plans/agent-harness-optimization-audit.md` assigns issue intake, repro framing, severity, prioritization, acceptance review, and `triage-issue` ownership to `product-wunderkind`, while TDD execution and technical defect diagnosis move to `fullstack-wunderkind`.
+   - `skills/triage-issue/SKILL.md` names the intended ownership split correctly, but its description and required sections still frame the workflow as `root cause analysis`, ask for `Likely root cause`, and instruct the operator to `Reproduce or narrow the issue using repo evidence` before handoff.
+   - That language is close enough to technical defect diagnosis that the workflow remains operationally ambiguous: a caller could still treat product-owned `triage-issue` as the place where engineering-style root-cause work happens.
+   - Approval requires tightening the workflow so product clearly owns intake quality, repro shaping, severity, acceptance clarity, and handoff framing, while fullstack clearly owns the deeper technical diagnosis and failing-test execution.
+
+Verdict rationale:
+
+This doctrine is stronger than before and close to acceptable, but it is not yet fully coherent across the surviving shipped surfaces. Fix the test-runner contradiction and tighten the `triage-issue` boundary language, then this review should be able to approve.
+
+VERDICT: REJECT
+Reasons:
+1. `src/agents/fullstack-wunderkind.ts` still contains a `Vitest` unit-testing competency line that contradicts the Bun-native TDD doctrine in `skills/tdd/SKILL.md` and the agent's own TDD section.
+2. `skills/triage-issue/SKILL.md` still mixes product-owned triage with engineering-style root-cause analysis, so the post-`qa-specialist` ownership boundary is not yet clean enough to be operationally unambiguous.

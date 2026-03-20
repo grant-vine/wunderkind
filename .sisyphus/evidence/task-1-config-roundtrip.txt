@@ -1,0 +1,22 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/config-template.test.ts:
+39 |     expect(schema.$id).toBe(WUNDERKIND_SCHEMA_URL)
+40 |     expect(Array.isArray(schema.oneOf)).toBe(true)
+41 |     expect(schema.oneOf?.length).toBe(2)
+42 |     const projectSchema = schema.oneOf?.[1]
+43 |     expect(projectSchema?.properties?.prdPipelineMode).toBeDefined()
+44 |     expect(projectSchema?.properties?.desloppifyEnabled).toBeDefined()
+                                                              ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts:44:58)
+(fail) wunderkind config schema asset > uses the expected canonical schema URL as its id [0.12ms]
+
+ 4 pass
+ 1 fail
+ 23 expect() calls
+Ran 5 tests across 1 file. [14.00ms]
+exit_code=1

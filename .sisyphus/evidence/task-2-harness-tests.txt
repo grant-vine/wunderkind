@@ -1,0 +1,22 @@
+Task: Task 2 of agent-harness-optimization-audit plan
+Timestamp (UTC): 2026-03-19T13:30:58Z
+
+Added test coverage:
+- `tests/unit/plugin-transform.test.ts`
+- `tests/unit/build-agents.test.ts`
+- `tests/unit/gitignore-manager.test.ts`
+- `tests/unit/init-nontui.test.ts`
+
+Covered surfaces:
+- `src/index.ts` plugin transform: native agent catalog, resolved runtime context, docs sentinel idempotency
+- `src/build-agents.ts` build pipeline: regenerated `agents/*.md` output and baseline prompt surface checks
+- `src/cli/gitignore-manager.ts`: new-file behavior, managed-section insertion, idempotency
+- `src/cli/init.ts`: non-interactive docs bootstrap, invalid docs path rejection, GitHub PRD warnings, doc history normalization
+
+Verification:
+- `bun test tests/unit/` -> PASS
+  - 198 pass
+  - 0 fail
+  - Ran 198 tests across 16 files
+- `npx tsc --noEmit` -> PASS
+- `lsp_diagnostics` on modified test files -> no diagnostics found

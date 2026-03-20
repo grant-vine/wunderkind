@@ -1,0 +1,53 @@
+F1 Round 3 Plan Compliance Audit
+
+Plan reviewed: `.sisyphus/plans/agent-harness-optimization-audit.md`
+Scope reviewed: plan-task implementation state, Round 1 gap closure, Fix-Wave C presence, unit tests, type safety, and retained-topology alignment.
+
+Overall result: REJECT
+
+What passed
+- `src/index.ts:107`-`src/index.ts:118` implements the required Desloppify first-trigger `if/else` gate. The enabled branch injects the code-health instruction, and the disabled branch contains the exact fallback message in the `else` branch.
+- Config-path normalization in skill files is closed: current skill references use `.wunderkind/wunderkind.config.jsonc`, including the previously called-out normalization set.
+- Uppercase config-key normalization in skill files is closed: no `PRIMARY_REGULATION`, `SECONDARY_REGULATION`, `REGION`, or `INDUSTRY` backtick references remain in `skills/*/SKILL.md`.
+- Fix-Wave C is partially present: the five previously missing ownership lines now exist in `skills/agile-pm/SKILL.md:16`, `skills/grill-me/SKILL.md:14`, `skills/ubiquitous-language/SKILL.md:14`, `skills/vercel-architect/SKILL.md:14`, and `skills/visual-artist/SKILL.md:14`.
+- Retained-topology artifacts are present and aligned at a high level: `src/agents/manifest.ts`, `src/agents/docs-config.ts`, `oh-my-opencode.jsonc`, `agents/*.md`, `.sisyphus/plans/capability-matrix.md`, `.sisyphus/plans/topology-decision.md`, `.sisyphus/plans/soul-architecture.md`, and `.sisyphus/plans/overlay-decision.md` all reflect the six-agent target.
+- Verification commands passed:
+  - `bun test tests/unit/` -> `192 pass`, `0 fail`
+  - `npx tsc --noEmit` -> exit 0
+  - `bun run build` -> exit 0 and regenerated 6 retained agent files
+
+Blocking findings
+
+1. Round 1 gap 2 is still OPEN: not every skill file has an explicit `**Owned by:**` line.
+
+The task requirement was explicit: every `skills/*/SKILL.md` file must contain an explicit `**Owned by:**` line. Only 5 of 20 skill files currently do. The following files still fail that requirement:
+
+- `skills/code-health/SKILL.md:14` - uses a `## Primary owner` section instead of the required explicit `**Owned by:**` line.
+- `skills/compliance-officer/SKILL.md:23` - describes itself as a sub-skill of CISO, but still lacks the required explicit `**Owned by:**` line.
+- `skills/db-architect/SKILL.md:10` - no explicit ownership metadata line appears in the file.
+- `skills/design-an-interface/SKILL.md:14` - uses a `## Primary owner` section instead of the required explicit `**Owned by:**` line.
+- `skills/experimentation-analyst/SKILL.md:17` - describes invocation by `product-wunderkind`, but still lacks the required explicit `**Owned by:**` line.
+- `skills/improve-codebase-architecture/SKILL.md:14` - uses a `## Primary owner` section instead of the required explicit `**Owned by:**` line.
+- `skills/oss-licensing-advisor/SKILL.md:16` - describes invocation by `legal-counsel`, but still lacks the required explicit `**Owned by:**` line.
+- `skills/pen-tester/SKILL.md:19` - describes itself as a sub-skill of the CISO agent, but still lacks the required explicit `**Owned by:**` line.
+- `skills/prd-pipeline/SKILL.md:51` - uses a `## Wunderkind ownership` section instead of the required explicit `**Owned by:**` line.
+- `skills/security-analyst/SKILL.md:19` - describes itself as a sub-skill of the CISO agent, but still lacks the required explicit `**Owned by:**` line.
+- `skills/social-media-maven/SKILL.md:13` - no explicit ownership metadata line appears in the file.
+- `skills/tdd/SKILL.md:14` - uses a `## Primary owner` section instead of the required explicit `**Owned by:**` line.
+- `skills/technical-writer/SKILL.md:16` - describes invocation by `marketing-wunderkind`, but still lacks the required explicit `**Owned by:**` line.
+- `skills/triage-issue/SKILL.md:35` - uses a `## Wunderkind ownership` section instead of the required explicit `**Owned by:**` line.
+- `skills/write-a-skill/SKILL.md:15` - uses a `## Primary owner` section instead of the required explicit `**Owned by:**` line.
+
+2. Task 6 / Task 15 documentation alignment is incomplete for the Desloppify fallback contract.
+
+- `skills/code-health/SKILL.md:64` - says the fallback message should be shown "exactly", but the quoted message differs from the runtime/docs contract in `src/index.ts:117`, `README.md:285`, and `AGENTS.md:243`. The skill says `To enable Desloppify code-health support, run wunderkind init and opt in...`, while the runtime/docs contract says `Desloppify code-health support is not enabled for this project. Run wunderkind init --no-tui --desloppify-enabled=yes ...`. This leaves the skill-layer contract out of sync with the shipped runtime behavior.
+
+Verdict rationale
+- The repo is healthy from a test, typecheck, build, topology, and major artifact perspective.
+- However, the requested F1 scope explicitly required independent confirmation that all four Round 1 gaps were closed.
+- Round 1 gap 2 is not closed because 15 skill files still do not contain the required explicit `**Owned by:**` line.
+- A secondary documentation inconsistency remains in `skills/code-health/SKILL.md`, so the docs/runtime fallback contract is not fully reconciled.
+
+Because at least one required gap remains open, approval is not justified.
+
+VERDICT: REJECT
