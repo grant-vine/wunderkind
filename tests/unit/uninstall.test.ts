@@ -189,6 +189,238 @@ describe("runUninstall", () => {
     }
   })
 
+  it("returns 0 when nothing is installed", async () => {
+    mockDetectCurrentConfig.mockImplementation(() => ({
+      ...makeDetectedConfig(),
+      isInstalled: false,
+      projectInstalled: false,
+      globalInstalled: false,
+      registrationScope: "none",
+    }))
+
+    const messages: string[] = []
+    const originalLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({})
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("not currently registered"))).toBe(true)
+      expect(mockRemovePluginFromOpenCodeConfig).toHaveBeenCalledTimes(0)
+    } finally {
+      console.log = originalLog
+    }
+  })
+
+  it("returns 1 when native command removal fails", async () => {
+    mockRemoveNativeCommandFiles.mockImplementation(() => ({
+      success: false,
+      configPath: "/tmp/global-commands",
+      changed: false,
+      error: "EPERM",
+    }))
+
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when native skill removal fails", async () => {
+    mockRemoveNativeSkillFiles.mockImplementation(() => ({
+      success: false,
+      configPath: "/tmp/skills",
+      changed: false,
+      error: "EPERM",
+    }))
+
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when global config removal fails", async () => {
+    mockRemoveGlobalWunderkindConfig.mockImplementation(() => ({
+      success: false,
+      configPath: "/tmp/.wunderkind/wunderkind.config.jsonc",
+      changed: false,
+      error: "EPERM",
+    }))
+
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when plugin registration removal fails", async () => {
+    mockRemovePluginFromOpenCodeConfig.mockImplementation(() => ({
+      success: false,
+      configPath: "/tmp/opencode.json",
+      changed: false,
+      error: "EPERM",
+    }))
+
+    const errors: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+      expect(errors.some((m) => m.includes("Failed to remove plugin"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("logs 'already absent' when native assets are not present during global uninstall", async () => {
+    mockRemovePluginFromOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/opencode.json", changed: false }))
+    mockRemoveNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/agents", changed: false }))
+    mockRemoveNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands", changed: false }))
+    mockRemoveNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/skills", changed: false }))
+    mockRemoveGlobalWunderkindConfig.mockImplementation(() => ({
+      success: true,
+      configPath: "/tmp/.wunderkind/wunderkind.config.jsonc",
+      changed: false,
+    }))
+
+    const messages: string[] = []
+    const originalLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("already absent"))).toBe(true)
+    } finally {
+      console.log = originalLog
+    }
+  })
+
+  it("returns 1 when native command file removal fails during global uninstall", async () => {
+    mockRemoveNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
+    mockRemoveNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", changed: false, error: "EACCES" }))
+
+    const errors: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+      expect(errors.some((m) => m.includes("Failed to remove native command files"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when native skill file removal fails during global uninstall", async () => {
+    mockRemoveNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
+    mockRemoveNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands", changed: true }))
+    mockRemoveNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/skills", changed: false, error: "EACCES" }))
+
+    const errors: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+      expect(errors.some((m) => m.includes("Failed to remove native skill files"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 when global Wunderkind config removal fails during global uninstall", async () => {
+    mockRemoveNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
+    mockRemoveNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands", changed: true }))
+    mockRemoveNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/skills", changed: true }))
+    mockRemoveGlobalWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: false, error: "ENOENT" }))
+
+    const errors: string[] = []
+    const originalLog = console.log
+    const originalError = console.error
+    console.log = () => {}
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(1)
+      expect(errors.some((m) => m.includes("Failed to remove global Wunderkind config"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  })
+
+  it("returns 1 on unexpected exceptions", async () => {
+    mockDetectCurrentConfig.mockImplementation(() => {
+      throw new Error("boom")
+    })
+
+    const errors: string[] = []
+    const originalError = console.error
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      const code = await runUninstall({})
+      expect(code).toBe(1)
+      expect(errors.some((message) => message.includes("Error: Error: boom"))).toBe(true)
+    } finally {
+      console.error = originalError
+    }
+  })
+
   it("removes an empty global Wunderkind directory after deleting the global config file", async () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-uninstall-empty-global-dir-"))
     const fakeHome = join(testRoot, "fake-home")
