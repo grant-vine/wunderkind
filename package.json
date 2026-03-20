@@ -29,7 +29,9 @@
     "dev": "tsc --watch",
     "prepublishOnly": "bun run build",
     "test": "bun test tests/unit/",
-    "test:contract": "bun test tests/unit/"
+    "test:contract": "bun test tests/unit/",
+    "test:coverage": "bun test --coverage tests/unit/",
+    "test:coverage:config-manager": "bun test --coverage tests/unit/config-manager-coverage.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",

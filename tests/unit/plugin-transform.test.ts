@@ -1,42 +1,70 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { ProjectConfig } from "../../src/cli/types.js"
 
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 const ORIGINAL_CWD = process.cwd()
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
-  readWunderkindConfig: mockReadWunderkindConfig,
-}))
-
-import WunderkindPlugin from "../../src/index.js"
-
-type PluginInput = Parameters<typeof WunderkindPlugin>[0]
-type PluginResult = Awaited<ReturnType<typeof WunderkindPlugin>>
-type SystemTransform = NonNullable<PluginResult["experimental.chat.system.transform"]>
-type TransformInput = Parameters<SystemTransform>[0]
-type TransformOutput = Parameters<SystemTransform>[1]
+function registerConfigManagerMock(): void {
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
+    readWunderkindConfig: mockReadWunderkindConfig,
+    detectCurrentConfig: () => ({ isInstalled: false }),
+    detectGitHubWorkflowReadiness: () => ({
+      isGitRepo: false,
+      hasGitHubRemote: false,
+      ghInstalled: false,
+      authVerified: false,
+      authCheckAttempted: false,
+    }),
+    writeWunderkindConfig: () => ({ success: true, configPath: "/tmp/mock-config" }),
+    writeNativeAgentFiles: () => ({ success: true, configPath: "/tmp/mock-agents" }),
+    writeNativeCommandFiles: () => ({ success: true, configPath: "/tmp/mock-commands" }),
+    writeNativeSkillFiles: () => ({ success: true, configPath: "/tmp/mock-skills" }),
+    removePluginFromOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json", changed: true }),
+    removeNativeAgentFiles: () => ({ success: true, configPath: "/tmp/mock-agents", changed: true }),
+    removeNativeCommandFiles: () => ({ success: true, configPath: "/tmp/mock-commands", changed: true }),
+    removeNativeSkillFiles: () => ({ success: true, configPath: "/tmp/mock-skills", changed: true }),
+    removeGlobalWunderkindConfig: () => ({ success: true, configPath: "/tmp/mock-global-config", changed: true }),
+    detectLegacyConfig: () => false,
+    addPluginToOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json" }),
+    getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+    readWunderkindConfigForScope: () => null,
+    detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectOmoVersionInfo: () => ({ registered: false, loadedVersion: null, staleOverrideWarning: null }),
+    detectWunderkindVersionInfo: () => ({ currentVersion: null }),
+    getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
+    readProjectWunderkindConfig: () => null,
+    resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
+  }))
+}
 
 type TestOutput = {
   system: string[]
 }
 
-async function runSystemTransform(output: TestOutput): Promise<void> {
-  const pluginResult = await WunderkindPlugin({} as PluginInput)
-  const transform = pluginResult["experimental.chat.system.transform"]
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void> }> }
 
-  if (!transform) {
-    throw new Error("Expected experimental.chat.system.transform to exist")
-  }
-
-  await transform({} as TransformInput, output as TransformOutput)
-}
+let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 
 describe("Wunderkind plugin transform", () => {
+  beforeAll(async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const transform = pluginResult["experimental.chat.system.transform"]
+    if (!transform) {
+      throw new Error("Expected experimental.chat.system.transform to exist")
+    }
+    cachedTransform = transform
+  })
+
   beforeEach(() => {
     mockReadWunderkindConfig.mockClear()
     mockReadWunderkindConfig.mockImplementation(() => null)
@@ -46,7 +74,7 @@ describe("Wunderkind plugin transform", () => {
   it("always injects the native agent catalog and delegation rules", async () => {
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     const nativeAgentsSection = output.system.find((entry) => entry.includes("## Wunderkind Native Agents"))
     if (!nativeAgentsSection) {
@@ -85,7 +113,7 @@ describe("Wunderkind plugin transform", () => {
     }))
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     const runtimeContextSection = output.system.find((entry) => entry.includes("## Wunderkind Resolved Runtime Context"))
     if (!runtimeContextSection) {
@@ -103,7 +131,7 @@ describe("Wunderkind plugin transform", () => {
   it("does not inject runtime context when no Wunderkind config is available", async () => {
     const output: TestOutput = { system: [] }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(output.system.some((entry) => entry.includes("## Wunderkind Resolved Runtime Context"))).toBe(false)
   })
@@ -134,7 +162,7 @@ describe("Wunderkind plugin transform", () => {
     const output: TestOutput = { system: ["# Product Wunderkind\nBase retained prompt"] }
 
     try {
-      await runSystemTransform(output)
+      await cachedTransform!({}, output)
       const soulSection = output.system.find((entry) => entry.includes("## Wunderkind SOUL Overlay"))
       expect(soulSection).toBeDefined()
       expect(soulSection).toContain("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")
@@ -160,8 +188,23 @@ describe("Wunderkind plugin transform", () => {
     }
 
     try {
-      await runSystemTransform(output)
+      await cachedTransform!({}, output)
       expect(output.system.filter((entry) => entry.includes("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")).length).toBe(1)
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("skips SOUL overlay when the soul file exists but is empty or whitespace-only", async () => {
+    const tempDir = join(tmpdir(), `wunderkind-soul-empty-${Date.now()}`)
+    const soulsDir = join(tempDir, ".wunderkind", "souls")
+    mkdirSync(soulsDir, { recursive: true })
+    writeFileSync(join(soulsDir, "product-wunderkind.md"), "   \n  \n", "utf-8")
+    process.chdir(tempDir)
+    const output: TestOutput = { system: ["# Product Wunderkind\nBase retained prompt"] }
+    try {
+      await cachedTransform!({}, output)
+      expect(output.system.some((s) => s.includes("## Wunderkind SOUL Overlay"))).toBe(false)
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }
@@ -179,10 +222,26 @@ describe("Wunderkind plugin transform", () => {
       ],
     }
 
-    await runSystemTransform(output)
+    await cachedTransform!({}, output)
 
     expect(output.system.filter((entry) => entry.includes(DOCS_OUTPUT_SENTINEL)).length).toBe(1)
     expect(output.system.filter((entry) => entry.includes("## Documentation Output")).length).toBe(1)
     expect(output.system.some((entry) => entry.includes("./docs/output") && entry.includes("append-dated"))).toBe(false)
+  })
+
+  it("skips SOUL overlay when the soul file does not exist on disk", async () => {
+    const tempDir = join(tmpdir(), `wunderkind-soul-missing-${Date.now()}`)
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    const output: TestOutput = { system: ["# Product Wunderkind\nBase retained prompt"] }
+
+    try {
+      await cachedTransform!({}, output)
+      expect(output.system.some((s) => s.includes("## Wunderkind SOUL Overlay"))).toBe(false)
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
   })
 })

@@ -56,6 +56,19 @@ describe("docs-index plan", () => {
     expect(validateDocsIndexPlan(plan)).toEqual([])
   })
 
+  it("reports duplicate target paths in the plan", () => {
+    const plan = buildDocsIndexPlan("./docs")
+    const first = plan.entries[0]
+    if (!first) throw new Error("Expected at least one docs plan entry")
+    const duplicate = { agentKey: "product-wunderkind" as const, canonicalFilename: "product-strategy.md", targetPath: first.targetPath }
+    const planWithDuplicate = { ...plan, entries: [...plan.entries, duplicate] }
+    const errors = validateDocsIndexPlan(planWithDuplicate)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain(first.agentKey)
+    expect(errors[0]).toContain("product-wunderkind")
+    expect(errors[0]).toContain(first.targetPath)
+  })
+
   it("summarizes created and refreshed outputs from pre-run existence", () => {
     const plan = buildDocsIndexPlan("./docs")
     const marketing = plan.entries.find((entry) => entry.agentKey === "marketing-wunderkind")

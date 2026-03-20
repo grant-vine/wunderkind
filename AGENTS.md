@@ -243,3 +243,49 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
 - **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.sisyphus/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
 - **Audit-style reviewer freshness rule** — when using Metis, Momus, oracle, or any equivalent critic agent for a review pass, always spawn a **fresh agent/session** for each new round after fixes are made. Never reuse the previous reviewer session — reused sessions narrow their attention to previously reported findings instead of performing a fresh audit.
+
+---
+
+## TESTING
+
+### Test suite
+
+```bash
+bun test tests/unit/                          # full suite (282 tests, 0 fail)
+bun run test:coverage:config-manager          # accurate config-manager coverage (isolated)
+bun test --coverage tests/unit/               # full combined report (config-manager shows low — see Bun bug below)
+```
+
+### Bun coverage merge bug — `config-manager/index.ts` shows ~16% in combined run
+
+Any test file that calls `mock.module("../cli/config-manager/index.ts", ...)` at the top level causes its worker to emit zero coverage for that module. When Bun merges workers, the zero data overwrites the real data. The actual isolated coverage is **96.15%** — run `bun run test:coverage:config-manager` to verify. This is a Bun bug; do not attempt to restructure mocks to work around it.
+
+### Dynamic import query-string busting
+
+When a test needs a fresh module instance per test via dynamic import, use a **single file-level** `Date.now()` value, not a new one inside each test. Bun attributes coverage by URL — per-test URLs cause only the first import to count toward coverage. Pattern: `const CACHE_BUST = Date.now();` at file scope, then reuse it in each `import(...)`.
+
+### `process.chdir()` cleanup order
+
+Always restore `process.cwd()` **before** deleting the temp directory in the `finally` block. Deleting the directory while still chdir'd into it leaves the process in a non-existent path, corrupting all subsequent tests that use relative paths.
+
+```ts
+} finally {
+  process.chdir(ORIGINAL_CWD);               // FIRST — restore
+  if (tempDir) rmSync(tempDir, { recursive: true, force: true }); // THEN — delete
+}
+```
+
+### Portable path pattern
+
+All test files must use `new URL("../../", import.meta.url).pathname` to derive `PROJECT_ROOT`. Never hardcode a machine path.
+
+### Accepted coverage ceilings (do not try to cover these)
+
+| File | Lines | Reason |
+|---|---|---|
+| `src/cli/init.ts` | 456-457 | Dead branch — `normalizeDocHistoryMode()` at line 264 guarantees a valid value before the guard fires |
+| `src/cli/cli-installer.ts` | 102-112 | Dead code — `validateNonTuiArgs()` always returns `{valid: true}`; branch exists for future logic |
+| `src/agents/docs-index-plan.ts` | 33 | Invariant guard — keys are sourced from `AGENT_DOCS_CONFIG` so they can never be absent from it |
+| `src/cli/index.ts` | (absent) | Pure Commander.js wiring with `process.exit()` — subprocess-tested via `cli-help-text.test.ts` |
+
+Full details and coverage snapshot: `.sisyphus/notepads/unit-testing/learnings.md`.
