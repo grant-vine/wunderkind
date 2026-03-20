@@ -63,3 +63,9 @@
 - The safest init flow is compute design ownership first, write `.wunderkind/wunderkind.config.jsonc`, then apply Stitch side effects (`mergeStitchMcpConfig()`, optional `writeStitchSecretFile()`, `bootstrapDesignMd()`) so config state and filesystem state stay aligned.
 - Interactive Stitch setup should always use `p.password()` for API key capture, treat blank input as a valid partial setup, and keep `designMcpOwnership` separate from whether a secret file was actually written.
 - Unit tests for Stitch init are more reliable when `mcp-helpers` is mocked at the file level to write a canonical `opencode.json` payload into the temp project; that avoids touching real global OpenCode config while still proving init-side branching and persistence.
+
+## [2026-03-20] Task: task-5
+- `doctor` can stay read-only and still report Stitch readiness by combining resolved project config (`designTool`, `designPath`, `designMcpOwnership`), a filesystem presence check for the design brief and secret file, and `detectStitchMcpPresence(cwd)` for project/global MCP source detection.
+- Compact non-verbose readiness is easiest to keep stable when it summarizes exactly three dimensions: enabled/disabled from `designTool`, configured/not configured from detected-or-managed Stitch state, and managed/reused/none from `designMcpOwnership`.
+- Adapter drift warnings should inspect only the canonical `mcp.google-stitch` entry and flag either a URL mismatch after trimming one trailing slash or `oauth === true`; missing `oauth` remains accepted.
+- A targeted doctor test harness is simpler and more durable when it writes real temp-project `opencode.json`, `DESIGN.md`, and `.wunderkind/stitch/google-stitch-api-key` fixtures, while mocking only config-manager path resolution and effective Wunderkind config values.

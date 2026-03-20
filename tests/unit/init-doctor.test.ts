@@ -1,30 +1,42 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { DetectedConfig, PluginVersionInfo } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
-const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
-  isInstalled: false,
-  scope: "global" as const,
-  region: "Global",
-  industry: "",
-  primaryRegulation: "",
-  secondaryRegulation: "",
-  teamCulture: "pragmatic-balanced" as const,
-  orgStructure: "flat" as const,
-  cisoPersonality: "pragmatic-risk-manager" as const,
-  ctoPersonality: "code-archaeologist" as const,
-  cmoPersonality: "data-driven" as const,
-  productPersonality: "outcome-obsessed" as const,
-  creativePersonality: "pragmatic-problem-solver" as const,
-  legalPersonality: "pragmatic-advisor" as const,
-  docsEnabled: false,
-  docsPath: "./docs",
-  docHistoryMode: "overwrite" as const,
-  prdPipelineMode: "filesystem" as const,
-}))
+function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
+  return {
+    isInstalled: false,
+    scope: "global",
+    projectInstalled: false,
+    globalInstalled: false,
+    registrationScope: "none",
+    region: "Global",
+    industry: "",
+    primaryRegulation: "",
+    secondaryRegulation: "",
+    teamCulture: "pragmatic-balanced",
+    orgStructure: "flat",
+    cisoPersonality: "pragmatic-risk-manager",
+    ctoPersonality: "code-archaeologist",
+    cmoPersonality: "data-driven",
+    productPersonality: "outcome-obsessed",
+    creativePersonality: "pragmatic-problem-solver",
+    legalPersonality: "pragmatic-advisor",
+    docsEnabled: false,
+    docsPath: "./docs",
+    docHistoryMode: "overwrite",
+    prdPipelineMode: "filesystem",
+    designTool: "none",
+    designPath: "./DESIGN.md",
+    designMcpOwnership: "none",
+    ...overrides,
+  }
+}
+
+const mockDetectCurrentConfig = mock<() => unknown>(() => createDetectedConfig())
 
 const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock<() => Record<string, unknown> | null>(() => null)
@@ -132,7 +144,11 @@ let runDoctorWithOptions: (options: { verbose?: boolean }) => Promise<number>
 let isProjectContext: (cwd: string) => boolean
 let runInit: (options: { noTui: boolean }) => Promise<number>
 
-beforeAll(async () => {
+beforeEach(async () => {
+  if (runDoctor !== undefined) {
+    return
+  }
+
   const doctorMod = await import(new URL("src/cli/doctor.ts", `file://${PROJECT_ROOT}`).href)
   runDoctor = doctorMod.runDoctor
   runDoctorWithOptions = doctorMod.runDoctorWithOptions
@@ -150,6 +166,72 @@ function silenceConsole(): () => void {
     console.log = originalLog
     console.error = originalError
   }
+}
+
+async function captureDoctorOutput(options: { verbose?: boolean } = {}): Promise<{ code: number; messages: string[] }> {
+  const messages: string[] = []
+  const originalLog = console.log
+  const originalError = console.error
+  console.log = (...args: unknown[]) => {
+    messages.push(args.map((arg) => String(arg)).join(" "))
+  }
+  console.error = (...args: unknown[]) => {
+    messages.push(args.map((arg) => String(arg)).join(" "))
+  }
+
+  try {
+    const code = await runDoctorWithOptions(options)
+    return { code, messages }
+  } finally {
+    console.log = originalLog
+    console.error = originalError
+  }
+}
+
+function writeProjectHealthFixture(projectPath: string): void {
+  writeFileSync(join(projectPath, "package.json"), "{}")
+  writeFileSync(join(projectPath, "AGENTS.md"), "# AGENTS\n")
+  mkdirSync(join(projectPath, ".sisyphus", "plans"), { recursive: true })
+  mkdirSync(join(projectPath, ".sisyphus", "notepads"), { recursive: true })
+  mkdirSync(join(projectPath, ".sisyphus", "evidence"), { recursive: true })
+  mkdirSync(join(projectPath, ".wunderkind"), { recursive: true })
+  writeFileSync(join(projectPath, ".wunderkind", "wunderkind.config.jsonc"), "{}\n")
+}
+
+function mockProjectDoctorContext(
+  projectPath: string,
+  overrides: Partial<DetectedConfig> = {},
+  projectConfig: Record<string, unknown> | null = null,
+): { projectOpenCodePath: string; globalOpenCodePath: string } {
+  const projectOpenCodePath = join(projectPath, "opencode.json")
+  const globalOpenCodePath = join(projectPath, "global-opencode.json")
+
+  mockResolveOpenCodeConfigPath.mockImplementation((scope: "global" | "project") =>
+    scope === "global"
+      ? { path: globalOpenCodePath, format: "json" as const, source: "opencode.json" as const }
+      : { path: projectOpenCodePath, format: "json" as const, source: "opencode.json" as const },
+  )
+
+  mockDetectCurrentConfig.mockImplementation((): DetectedConfig =>
+    createDetectedConfig({
+      isInstalled: true,
+      scope: "project",
+      projectInstalled: true,
+      globalInstalled: true,
+      registrationScope: "both",
+      projectOpenCodeConfigPath: projectOpenCodePath,
+      globalOpenCodeConfigPath: globalOpenCodePath,
+      region: "Project Region",
+      industry: "SaaS",
+      primaryRegulation: "POPIA",
+      secondaryRegulation: "",
+      ...overrides,
+    }),
+  )
+
+  mockReadProjectWunderkindConfig.mockImplementation(() => projectConfig)
+
+  return { projectOpenCodePath, globalOpenCodePath }
 }
 
 describe("isProjectContext", () => {
@@ -185,26 +267,12 @@ describe("runInit", () => {
     mockDetectNativeSkillFiles.mockClear()
     mockDetectWunderkindVersionInfo.mockClear()
     mockDetectOmoVersionInfo.mockClear()
-    mockDetectCurrentConfig.mockImplementation(() => ({
-      isInstalled: false,
-      scope: "global" as const,
-      region: "Global",
-      industry: "",
-      primaryRegulation: "",
-      secondaryRegulation: "",
-      teamCulture: "pragmatic-balanced" as const,
-      orgStructure: "flat" as const,
-      cisoPersonality: "pragmatic-risk-manager" as const,
-      ctoPersonality: "code-archaeologist" as const,
-      cmoPersonality: "data-driven" as const,
-      productPersonality: "outcome-obsessed" as const,
-      creativePersonality: "pragmatic-problem-solver" as const,
-      legalPersonality: "pragmatic-advisor" as const,
-      docsEnabled: false,
-      docsPath: "./docs",
-      docHistoryMode: "overwrite" as const,
-      prdPipelineMode: "filesystem" as const,
-    }))
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: false,
+        scope: "global",
+      }),
+    )
   })
 
   it("returns 1 when Wunderkind is not installed", async () => {
@@ -223,31 +291,17 @@ describe("runInit", () => {
     const tempProject = mkdtempSync(join(tmpdir(), "wk-init-doctor-"))
     writeFileSync(join(tempProject, "package.json"), "{}")
     process.chdir(tempProject)
-    mockDetectCurrentConfig.mockImplementation(() => ({
-      isInstalled: true,
-      scope: "global" as const,
-      projectInstalled: false,
-      globalInstalled: true,
-      registrationScope: "global" as const,
-      projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
-      globalOpenCodeConfigPath: "/tmp/opencode.json",
-      region: "Global",
-      industry: "",
-      primaryRegulation: "",
-      secondaryRegulation: "",
-      teamCulture: "pragmatic-balanced" as const,
-      orgStructure: "flat" as const,
-      cisoPersonality: "pragmatic-risk-manager" as const,
-      ctoPersonality: "code-archaeologist" as const,
-      cmoPersonality: "data-driven" as const,
-      productPersonality: "outcome-obsessed" as const,
-      creativePersonality: "pragmatic-problem-solver" as const,
-      legalPersonality: "pragmatic-advisor" as const,
-      docsEnabled: false,
-      docsPath: "./docs",
-      docHistoryMode: "overwrite" as const,
-      prdPipelineMode: "filesystem" as const,
-    }))
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "global",
+        projectInstalled: false,
+        globalInstalled: true,
+        registrationScope: "global",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+      }),
+    )
 
     try {
       const code = await runInit({ noTui: true })
@@ -694,31 +748,21 @@ describe("runDoctor", () => {
     }
     console.error = () => {}
 
-    mockDetectCurrentConfig.mockImplementation((): DetectedConfig => ({
-      isInstalled: true,
-      scope: "project",
-      projectInstalled: true,
-      globalInstalled: true,
-      registrationScope: "both",
-      projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
-      globalOpenCodeConfigPath: "/tmp/opencode.json",
-      region: "Project Region",
-      industry: "Project Industry",
-      primaryRegulation: "POPIA",
-      secondaryRegulation: "GDPR",
-      teamCulture: "pragmatic-balanced" as const,
-      orgStructure: "flat" as const,
-      cisoPersonality: "pragmatic-risk-manager" as const,
-      ctoPersonality: "code-archaeologist" as const,
-      cmoPersonality: "data-driven" as const,
-      productPersonality: "outcome-obsessed" as const,
-      creativePersonality: "pragmatic-problem-solver" as const,
-      legalPersonality: "pragmatic-advisor" as const,
-      docsEnabled: false,
-      docsPath: "./docs",
-      docHistoryMode: "overwrite" as const,
-      prdPipelineMode: "filesystem" as const,
-    }))
+    mockDetectCurrentConfig.mockImplementation((): DetectedConfig =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+        region: "Project Region",
+        industry: "Project Industry",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }),
+    )
 
     try {
       const code = await runDoctorWithOptions({ verbose: true })
@@ -1120,6 +1164,238 @@ describe("runDoctor", () => {
     } finally {
       console.log = originalLog
       console.error = originalError
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("reports verbose Stitch workflow details without leaking the API key", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-stitch-ready-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    const secretValue = "super-secret-stitch-key"
+    const { projectOpenCodePath } = mockProjectDoctorContext(
+      tempProject,
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+    )
+
+    writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
+    mkdirSync(join(tempProject, ".wunderkind", "stitch"), { recursive: true })
+    writeFileSync(join(tempProject, GOOGLE_STITCH_ADAPTER.secretFilePath), `${secretValue}\n`)
+    writeFileSync(
+      projectOpenCodePath,
+      `${JSON.stringify(
+        {
+          mcp: {
+            [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(),
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("design tool:") && m.includes("google-stitch"))).toBe(true)
+      expect(messages.some((m) => m.includes("design path:") && m.includes("./DESIGN.md"))).toBe(true)
+      expect(messages.some((m) => m.includes("design MCP ownership:") && m.includes("wunderkind-managed"))).toBe(true)
+      expect(messages.some((m) => m.includes("DESIGN.md present:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch config source:") && m.includes("project"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch in use:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("project-local secret file present:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("auth mode:") && m.includes("api-key-file"))).toBe(true)
+      expect(messages.some((m) => m.includes(secretValue))).toBe(false)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("adds a compact non-verbose Stitch readiness line", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-stitch-compact-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    const { projectOpenCodePath } = mockProjectDoctorContext(
+      tempProject,
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "reused-project",
+      },
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "reused-project",
+      },
+    )
+
+    writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
+    writeFileSync(
+      projectOpenCodePath,
+      `${JSON.stringify(
+        {
+          mcp: {
+            [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(),
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput()
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("Stitch readiness:") && m.includes("enabled") && m.includes("configured") && m.includes("reused"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns on partial managed Stitch setup when DESIGN.md and secret file are missing", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-stitch-partial-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    const { projectOpenCodePath } = mockProjectDoctorContext(
+      tempProject,
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+    )
+
+    writeFileSync(
+      projectOpenCodePath,
+      `${JSON.stringify(
+        {
+          mcp: {
+            [GOOGLE_STITCH_ADAPTER.serverName]: GOOGLE_STITCH_ADAPTER.getOpenCodePayload(),
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("DESIGN.md present:") && m.includes("✗ no"))).toBe(true)
+      expect(messages.some((m) => m.includes("project-local secret file present:") && m.includes("✗ no"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch in use:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("Warnings"))).toBe(true)
+      expect(messages.some((m) => m.includes("design workflow is enabled but the design brief is missing"))).toBe(true)
+      expect(messages.some((m) => m.includes("project-local Stitch secret file is missing"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns when the Stitch MCP entry drifts from the adapter contract", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-stitch-drift-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    const { projectOpenCodePath } = mockProjectDoctorContext(
+      tempProject,
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "reused-project",
+      },
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "reused-project",
+      },
+    )
+
+    writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
+    writeFileSync(
+      projectOpenCodePath,
+      `${JSON.stringify(
+        {
+          mcp: {
+            [GOOGLE_STITCH_ADAPTER.serverName]: {
+              ...GOOGLE_STITCH_ADAPTER.getOpenCodePayload(),
+              url: `${GOOGLE_STITCH_ADAPTER.remoteUrl}/v2`,
+              oauth: true,
+            },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("Warnings"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch MCP entry deviates from the adapter contract"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("warns when managed Stitch ownership is set but no Stitch MCP is detected", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-stitch-mismatch-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    mockProjectDoctorContext(
+      tempProject,
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+      {
+        designTool: "google-stitch",
+        designPath: "./DESIGN.md",
+        designMcpOwnership: "wunderkind-managed",
+      },
+    )
+
+    writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✗ no"))).toBe(true)
+      expect(messages.some((m) => m.includes("Stitch config source:") && m.includes("missing"))).toBe(true)
+      expect(messages.some((m) => m.includes("design MCP ownership expects a managed Stitch config but none was detected"))).toBe(true)
+    } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
     }

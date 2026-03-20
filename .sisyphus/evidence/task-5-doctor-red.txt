@@ -1,0 +1,92 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/init-doctor.test.ts:
+327 |       prdPipelineMode: "filesystem" as const,
+328 |     }))
+329 | 
+330 |     try {
+331 |       const code = await runInit({ noTui: true })
+332 |       expect(code).toBe(0)
+                         ^
+error: expect(received).toBe(expected)
+
+Expected: 0
+Received: 1
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:332:20)
+(fail) runInit > calls writeNativeAgentFiles when in project context [0.79ms]
+1231 |     )
+1232 | 
+1233 |     try {
+1234 |       const { code, messages } = await captureDoctorOutput({ verbose: true })
+1235 |       expect(code).toBe(0)
+1236 |       expect(messages.some((m) => m.includes("design tool:") && m.includes("google-stitch"))).toBe(true)
+                                                                                                     ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1236:95)
+(fail) runDoctor > reports verbose Stitch workflow details without leaking the API key [2.02ms]
+1284 |     )
+1285 | 
+1286 |     try {
+1287 |       const { code, messages } = await captureDoctorOutput()
+1288 |       expect(code).toBe(0)
+1289 |       expect(messages.some((m) => m.includes("Stitch readiness:") && m.includes("enabled") && m.includes("configured") && m.includes("reused"))).toBe(true)
+                                                                                                                                                        ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1289:146)
+(fail) runDoctor > adds a compact non-verbose Stitch readiness line [1.44ms]
+1327 |     )
+1328 | 
+1329 |     try {
+1330 |       const { code, messages } = await captureDoctorOutput({ verbose: true })
+1331 |       expect(code).toBe(0)
+1332 |       expect(messages.some((m) => m.includes("DESIGN.md present:") && m.includes("✗ no"))).toBe(true)
+                                                                                                 ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1332:91)
+(fail) runDoctor > warns on partial managed Stitch setup when DESIGN.md and secret file are missing [1.31ms]
+1380 |     )
+1381 | 
+1382 |     try {
+1383 |       const { code, messages } = await captureDoctorOutput({ verbose: true })
+1384 |       expect(code).toBe(0)
+1385 |       expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✓ yes"))).toBe(true)
+                                                                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1385:94)
+(fail) runDoctor > warns when the Stitch MCP entry drifts from the adapter contract [1.42ms]
+1414 |     writeFileSync(join(tempProject, "DESIGN.md"), "# Design\n")
+1415 | 
+1416 |     try {
+1417 |       const { code, messages } = await captureDoctorOutput({ verbose: true })
+1418 |       expect(code).toBe(0)
+1419 |       expect(messages.some((m) => m.includes("Stitch MCP detected:") && m.includes("✗ no"))).toBe(true)
+                                                                                                   ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1419:93)
+(fail) runDoctor > warns when managed Stitch ownership is set but no Stitch MCP is detected [1.31ms]
+
+ 23 pass
+ 6 fail
+ 95 expect() calls
+Ran 29 tests across 1 file. [49.00ms]
