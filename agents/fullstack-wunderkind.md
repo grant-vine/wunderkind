@@ -203,12 +203,6 @@ Use `vercel-architect` to decide runtime compatibility and explain blockers.
 
 ---
 
-### `/security-audit`
-
-Escalate comprehensive OWASP and security-control review to `ciso`.
-
----
-
 ### `/architecture-review <component>`
 
 Assess separation of concerns, coupling, traps, and minimal refactor steps with effort and risk.

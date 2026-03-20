@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { collectGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
 
 type ConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
@@ -430,6 +431,40 @@ describe("config-manager coverage", () => {
       expect(removedEmptyAgentDir.success).toBe(true)
       expect(removedEmptyAgentDir.changed).toBe(true)
       expect(existsSync(mod.getNativeAgentDir())).toBe(false)
+    })
+  })
+
+  it("writeNativeCommandFiles includes generated retained commands and rejects duplicate command names", async () => {
+    await withSandbox("native-command-generated", async (_sandbox, mod) => {
+      const writeResult = mod.writeNativeCommandFiles()
+      expect(writeResult.success).toBe(true)
+
+      const nativeCommandPaths = mod.getNativeCommandFilePaths()
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("docs-index.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("design-md.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("threat-model.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("prd.md"))).toBe(true)
+
+      const threatModelContent = readFileSync(join(mod.getNativeCommandsDir(), "threat-model.md"), "utf-8")
+      expect(threatModelContent).toContain("agent: ciso")
+      expect(threatModelContent).toContain("name: threat-model")
+
+      let duplicateError: string | null = null
+      try {
+        collectGeneratedRetainedNativeCommands({
+          alpha: {
+            commands: [{ command: "/shared", summary: "first" }],
+          },
+          beta: {
+            commands: [{ command: "/shared <scope>", summary: "second" }],
+          },
+        })
+      } catch (error) {
+        duplicateError = error instanceof Error ? error.message : String(error)
+      }
+
+      expect(duplicateError).toBe('Duplicate retained slash command name "shared" declared by "alpha" and "beta"')
+
     })
   })
 

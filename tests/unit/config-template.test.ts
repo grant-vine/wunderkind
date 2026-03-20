@@ -305,6 +305,19 @@ describe("design-md helpers", () => {
     }
   })
 
+  it("bootstrapDesignMd supports nested dot-relative design paths", () => {
+    const sandbox = createSandbox("design-bootstrap-dot-relative")
+
+    try {
+      bootstrapDesignMd("./design/system/DESIGN.md", sandbox.projectDir)
+
+      const created = readFileSync(join(sandbox.projectDir, "design", "system", "DESIGN.md"), "utf8")
+      expect(created).toBe(scaffoldDesignMd())
+    } finally {
+      cleanupSandbox(sandbox)
+    }
+  })
+
   it("validateDesignMd passes for the valid scaffold", () => {
     expect(validateDesignMd(scaffoldDesignMd())).toEqual({ valid: true, errors: [] })
   })

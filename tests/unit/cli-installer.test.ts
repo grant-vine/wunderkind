@@ -1308,7 +1308,7 @@ describe("writeNativeAgentFiles", () => {
 })
 
 describe("writeNativeCommandFiles", () => {
-  it("writes native command markdown files to the global OpenCode commands dir", async () => {
+  it("writes shipped static commands plus generated retained command assets to the global OpenCode commands dir", async () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-native-command-writer-"))
     const originalCwd = process.cwd()
     const fakeHome = join(testRoot, "fake-home")
@@ -1325,12 +1325,28 @@ describe("writeNativeCommandFiles", () => {
 
       const commandsDir = join(fakeHome, ".config", "opencode", "commands")
       const docsIndexPath = join(commandsDir, "docs-index.md")
+      const designMdPath = join(commandsDir, "design-md.md")
+      const threatModelPath = join(commandsDir, "threat-model.md")
+      const prdPath = join(commandsDir, "prd.md")
       expect(existsSync(commandsDir)).toBe(true)
       expect(existsSync(docsIndexPath)).toBe(true)
+      expect(existsSync(designMdPath)).toBe(true)
+      expect(existsSync(threatModelPath)).toBe(true)
+      expect(existsSync(prdPath)).toBe(true)
 
       const written = readFileSync(docsIndexPath, "utf-8")
       expect(written).toContain("/docs-index")
       expect(written).toContain("agent: product-wunderkind")
+
+      const generatedThreatModel = readFileSync(threatModelPath, "utf-8")
+      expect(generatedThreatModel).toContain("agent: ciso")
+      expect(generatedThreatModel).toContain("name: threat-model")
+      expect(generatedThreatModel).toContain("You are executing the retained Wunderkind command `/threat-model <system or feature>`.")
+
+      const generatedPrd = readFileSync(prdPath, "utf-8")
+      expect(generatedPrd).toContain("agent: product-wunderkind")
+      expect(generatedPrd).toContain("name: prd")
+      expect(generatedPrd).toContain("After drafting, request a technical acceptance follow-up from `fullstack-wunderkind`.")
     } finally {
       process.chdir(originalCwd)
       mock.module("node:os", () => ({

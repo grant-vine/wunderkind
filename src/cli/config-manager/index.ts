@@ -6,6 +6,10 @@ import { parse as parseJsonc } from "jsonc-parser"
 import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
+import {
+  getGeneratedRetainedNativeCommands,
+  renderGeneratedRetainedNativeCommandMarkdown,
+} from "../../agents/slash-commands.js"
 import type {
   CisoPersonality,
   CmoPersonality,
@@ -958,6 +962,36 @@ function getPackagedCommandFilePaths(): string[] {
     .map((entry) => join(commandsDir, entry))
 }
 
+function getPackagedCommandNames(): string[] {
+  return getPackagedCommandFilePaths().map((source) => basename(source, ".md"))
+}
+
+function getGeneratedRetainedNativeCommandNames(): string[] {
+  return getGeneratedRetainedNativeCommands().map((command) => command.name)
+}
+
+function assertNoNativeCommandNameCollisions(packagedNames: readonly string[], generatedNames: readonly string[]): void {
+  const packaged = new Set(packagedNames)
+
+  for (const name of generatedNames) {
+    if (packaged.has(name)) {
+      throw new Error(`Generated retained command name "${name}" collides with shipped static command asset`)
+    }
+  }
+}
+
+function removeStaleCommandFiles(targetDir: string, activeFileNames: readonly string[]): void {
+  if (!existsSync(targetDir)) return
+
+  const active = new Set(activeFileNames)
+
+  for (const entry of readdirSync(targetDir)) {
+    if (!entry.endsWith(".md")) continue
+    if (active.has(entry)) continue
+    rmSync(join(targetDir, entry), { force: true })
+  }
+}
+
 function collectFilesRecursively(rootDir: string): string[] {
   if (!existsSync(rootDir)) return []
 
@@ -984,7 +1018,10 @@ function getPackagedSkillDirectories(): string[] {
 
 export function getNativeCommandFilePaths(): string[] {
   const dir = getNativeCommandsDir()
-  return getPackagedCommandFilePaths().map((source) => join(dir, basename(source)))
+  const packagedPaths = getPackagedCommandFilePaths().map((source) => join(dir, basename(source)))
+  const generatedPaths = getGeneratedRetainedNativeCommandNames().map((name) => join(dir, `${name}.md`))
+
+  return [...packagedPaths, ...generatedPaths]
 }
 
 export function getNativeSkillDirectories(scope: InstallScope): string[] {
@@ -1022,9 +1059,28 @@ export function writeNativeCommandFiles(): ConfigMergeResult {
   const targetDir = getNativeCommandsDir()
   const sourceFiles = getPackagedCommandFilePaths()
   const sourceRoot = fileURLToPath(new URL("../../../commands", import.meta.url))
+  const generatedCommands = getGeneratedRetainedNativeCommands()
+  const packagedCommandNames = getPackagedCommandNames()
+  const generatedCommandNames = generatedCommands.map((command) => command.name)
+  const activeFileNames = [
+    ...packagedCommandNames.map((name) => `${name}.md`),
+    ...generatedCommandNames.map((name) => `${name}.md`),
+  ]
 
   try {
+    assertNoNativeCommandNameCollisions(packagedCommandNames, generatedCommandNames)
+    mkdirSync(targetDir, { recursive: true })
+    removeStaleCommandFiles(targetDir, activeFileNames)
     copyFileSet(sourceFiles, sourceRoot, targetDir)
+
+    for (const command of generatedCommands) {
+      writeFileSync(
+        join(targetDir, `${command.name}.md`),
+        renderGeneratedRetainedNativeCommandMarkdown(command),
+        "utf-8",
+      )
+    }
+
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -1063,7 +1119,7 @@ export function detectNativeAgentFiles(scope: InstallScope): { dir: string; pres
 export function detectNativeCommandFiles(): { dir: string; presentCount: number; totalCount: number; allPresent: boolean } {
   const dir = getNativeCommandsDir()
   const presentCount = getNativeCommandFilePaths().filter((filePath) => existsSync(filePath)).length
-  const totalCount = getPackagedCommandFilePaths().length
+  const totalCount = getNativeCommandFilePaths().length
 
   return { dir, presentCount, totalCount, allPresent: presentCount === totalCount }
 }

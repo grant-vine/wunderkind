@@ -79,7 +79,8 @@ export function bootstrapDesignMd(designPath: string, cwd: string): void {
     throw new Error(validation.error ?? "Invalid designPath")
   }
 
-  const absolutePath = join(cwd, designPath)
+  const normalizedDesignPath = designPath.startsWith("./") ? designPath.slice(2) : designPath
+  const absolutePath = join(cwd, normalizedDesignPath)
   const parentDir = dirname(absolutePath)
 
   mkdirSync(parentDir, { recursive: true })
