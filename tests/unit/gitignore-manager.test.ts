@@ -1,17 +1,22 @@
 import { describe, expect, it } from "bun:test"
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+
+// Query-string bust ensures Bun's coverage maps this import back to the source file
+// while preventing mock contamination from other test workers that mock gitignore-manager.js
+const { addAiTracesToGitignore } = await import(
+  `${PROJECT_ROOT}src/cli/gitignore-manager.ts?gitignore-coverage=1`
+)
+
 describe("addAiTracesToGitignore", () => {
-  it("creates a managed section with all AI trace entries when .gitignore is missing", async () => {
+  it("creates a managed section with all AI trace entries when .gitignore is missing", () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-gitignore-manager-"))
-    const originalCwd = process.cwd()
 
     try {
-      process.chdir(testRoot)
-      const { addAiTracesToGitignore } = await import(`../../src/cli/gitignore-manager.ts?create=${Date.now()}`)
-      const result = addAiTracesToGitignore()
+      const result = addAiTracesToGitignore(testRoot)
       const gitignorePath = join(testRoot, ".gitignore")
 
       expect(result.success).toBe(true)
@@ -26,21 +31,16 @@ describe("addAiTracesToGitignore", () => {
       expect(written).toContain(".sisyphus/")
       expect(written).toContain(".opencode/")
     } finally {
-      process.chdir(originalCwd)
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
 
-  it("is idempotent on repeated runs", async () => {
+  it("is idempotent on repeated runs", () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-gitignore-manager-"))
-    const originalCwd = process.cwd()
 
     try {
-      process.chdir(testRoot)
-      const { addAiTracesToGitignore } = await import(`../../src/cli/gitignore-manager.ts?idempotent=${Date.now()}`)
-
-      const firstResult = addAiTracesToGitignore()
-      const secondResult = addAiTracesToGitignore()
+      const firstResult = addAiTracesToGitignore(testRoot)
+      const secondResult = addAiTracesToGitignore(testRoot)
       const written = readFileSync(join(testRoot, ".gitignore"), "utf-8")
 
       expect(firstResult.success).toBe(true)
@@ -53,18 +53,15 @@ describe("addAiTracesToGitignore", () => {
       expect(written.match(/\.sisyphus\//g)?.length).toBe(1)
       expect(written.match(/\.opencode\//g)?.length).toBe(1)
     } finally {
-      process.chdir(originalCwd)
       rmSync(testRoot, { recursive: true, force: true })
     }
   })
 
-  it("inserts only missing entries into an existing managed section without disturbing other ignores", async () => {
+  it("inserts only missing entries into an existing managed section without disturbing other ignores", () => {
     const testRoot = mkdtempSync(join(tmpdir(), "wk-gitignore-manager-"))
-    const originalCwd = process.cwd()
     const gitignorePath = join(testRoot, ".gitignore")
 
     try {
-      process.chdir(testRoot)
       writeFileSync(
         gitignorePath,
         [
@@ -80,8 +77,7 @@ describe("addAiTracesToGitignore", () => {
         "utf-8",
       )
 
-      const { addAiTracesToGitignore } = await import(`../../src/cli/gitignore-manager.ts?section=${Date.now()}`)
-      const result = addAiTracesToGitignore()
+      const result = addAiTracesToGitignore(testRoot)
       const written = readFileSync(gitignorePath, "utf-8")
 
       expect(result.success).toBe(true)
@@ -93,7 +89,40 @@ describe("addAiTracesToGitignore", () => {
       expect(written.match(/# AI tooling traces — managed by wunderkind/g)?.length).toBe(1)
       expect(written).toContain("# AI tooling traces — managed by wunderkind\n.sisyphus/\n.opencode/\n.wunderkind/\nAGENTS.md")
     } finally {
-      process.chdir(originalCwd)
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("appends a new managed section cleanly when existing content has no trailing newline", () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-gitignore-manager-"))
+    const gitignorePath = join(testRoot, ".gitignore")
+
+    try {
+      writeFileSync(gitignorePath, "node_modules/", "utf-8")
+
+      const result = addAiTracesToGitignore(testRoot)
+      const written = readFileSync(gitignorePath, "utf-8")
+
+      expect(result.success).toBe(true)
+      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".opencode/"])
+      expect(written).toContain("node_modules/\n\n# AI tooling traces — managed by wunderkind")
+    } finally {
+      rmSync(testRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("returns an error when .gitignore is a directory", () => {
+    const testRoot = mkdtempSync(join(tmpdir(), "wk-gitignore-manager-"))
+
+    try {
+      mkdirSync(join(testRoot, ".gitignore"), { recursive: true })
+
+      const result = addAiTracesToGitignore(testRoot)
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBeDefined()
+      expect(result.added).toEqual([])
+    } finally {
       rmSync(testRoot, { recursive: true, force: true })
     }
   })

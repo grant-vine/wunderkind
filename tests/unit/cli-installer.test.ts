@@ -1,9 +1,25 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { join } from "node:path"
 import type { InstallArgs } from "../../src/cli/types.js"
 import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
+
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+
+mock.module("picocolors", () => ({
+  default: {
+    bgMagenta: (s: string) => s,
+    white: (s: string) => s,
+    dim: (s: string) => s,
+    cyan: (s: string) => s,
+    green: (s: string) => s,
+    red: (s: string) => s,
+    yellow: (s: string) => s,
+    bold: (s: string) => s,
+    blue: (s: string) => s,
+  },
+}))
 
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
@@ -50,7 +66,7 @@ const mockGetDefaultGlobalConfig = mock<() => Pick<InstallConfig, "region" | "in
 }))
 const mockReadWunderkindConfigForScope = mock<(scope: InstallScope) => Partial<InstallConfig> | null>(() => null)
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
@@ -68,11 +84,32 @@ const mockAddAiTracesToGitignore = mock(() => ({
   alreadyPresent: [],
 }))
 
-mock.module("../../src/cli/gitignore-manager.js", () => ({
+mock.module(`${PROJECT_ROOT}src/cli/gitignore-manager.js`, () => ({
   addAiTracesToGitignore: mockAddAiTracesToGitignore,
 }))
 
-import { validateNonTuiArgs, runCliInstaller, runCliUpgrade } from "../../src/cli/cli-installer.js"
+type CliInstallerModule = {
+  printBox: (content: string, title?: string) => void
+  printWarning: (message: string) => void
+  validateNonTuiArgs: (args: InstallArgs) => { valid: boolean; errors: string[] }
+  runCliInstaller: (...args: unknown[]) => Promise<number>
+  runCliUpgrade: (...args: unknown[]) => Promise<number>
+}
+
+let printBox: CliInstallerModule["printBox"]
+let printWarning: CliInstallerModule["printWarning"]
+let validateNonTuiArgs: CliInstallerModule["validateNonTuiArgs"]
+let runCliInstaller: CliInstallerModule["runCliInstaller"]
+let runCliUpgrade: CliInstallerModule["runCliUpgrade"]
+
+beforeAll(async () => {
+  const mod = (await import(new URL("src/cli/cli-installer.ts", `file://${PROJECT_ROOT}`).href)) as CliInstallerModule
+  printBox = mod.printBox
+  printWarning = mod.printWarning
+  validateNonTuiArgs = mod.validateNonTuiArgs
+  runCliInstaller = mod.runCliInstaller
+  runCliUpgrade = mod.runCliUpgrade
+})
 
 function silenceConsole(): () => void {
   const origLog = console.log
@@ -114,6 +151,26 @@ describe("validateNonTuiArgs", () => {
     }))
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
+  })
+})
+
+describe("cli output helpers", () => {
+  it("prints warning and untitled boxes", () => {
+    const messages: string[] = []
+    const originalLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
+
+    try {
+      printWarning("warn")
+      printBox("line one\nline two")
+      expect(messages.some((message) => message.includes("warn"))).toBe(true)
+      expect(messages.some((message) => message.includes("┌"))).toBe(true)
+      expect(messages.some((message) => message.includes("└"))).toBe(true)
+    } finally {
+      console.log = originalLog
+    }
   })
 })
 
@@ -307,6 +364,78 @@ describe("runCliInstaller", () => {
       restore()
     }
   })
+
+  it("returns 1 when plugin registration fails", async () => {
+    mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: false, configPath: "/fake/opencode.json", error: "boom" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when config write fails", async () => {
+    mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/fake/.wunderkind/config", error: "boom" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when native command write fails and warns on gitignore error", async () => {
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "boom" }))
+    mockAddAiTracesToGitignore.mockImplementation(() => ({ success: false, added: [], alreadyPresent: [], error: "nope" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when native agent file write fails", async () => {
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-agents", error: "agent-write-fail" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when native skill file write fails", async () => {
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-skills", error: "skill-write-fail" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("warns on gitignore error but still returns 0", async () => {
+    const warnings: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      warnings.push(args.map(String).join(" "))
+    }
+    mockAddAiTracesToGitignore.mockImplementation(() => ({ success: false, added: [], alreadyPresent: [], error: "readonly filesystem" }))
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(0)
+      expect(warnings.some((w) => w.includes("readonly filesystem"))).toBe(true)
+    } finally {
+      console.log = origLog
+    }
+  })
 })
 
 describe("runCliUpgrade", () => {
@@ -332,6 +461,9 @@ describe("runCliUpgrade", () => {
         : null,
     )
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
   })
 
   it("fails if Wunderkind is not installed in the requested scope", async () => {
@@ -476,6 +608,76 @@ describe("runCliUpgrade", () => {
       expect(configArg.industry).toBe("SaaS")
       expect(configArg.primaryRegulation).toBe("POPIA")
       expect(configArg.secondaryRegulation).toBe("GDPR")
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when refresh config write fails", async () => {
+    mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/fake/.wunderkind/config", error: "boom" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global", refreshConfig: true })
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when native refresh fails", async () => {
+    mockWriteNativeAgentFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-agents", error: "boom" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when legacy config is detected during upgrade", async () => {
+    mockDetectLegacyConfig.mockImplementation(() => true)
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("prints dry-run config line when dryRun=true and refreshConfig=true", async () => {
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    try {
+      const code = await runCliUpgrade({ scope: "global", dryRun: true, refreshConfig: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("would rewrite Wunderkind config"))).toBe(true)
+    } finally {
+      console.log = origLog
+    }
+  })
+
+  it("returns 1 when writeNativeCommandFiles fails during upgrade", async () => {
+    mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "cmd-fail" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
+    } finally {
+      restore()
+    }
+  })
+
+  it("returns 1 when writeNativeSkillFiles fails during upgrade", async () => {
+    mockWriteNativeSkillFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-skills", error: "skill-fail" }))
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
     } finally {
       restore()
     }
