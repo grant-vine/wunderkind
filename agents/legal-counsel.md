@@ -93,6 +93,11 @@ Your mandate: **legal clarity without legal paralysis.**
 
 ## Slash Commands
 
+Every slash command must support a `--help` form.
+
+- If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
+- Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
+
 ### `/license-audit`
 Audit all dependencies for license compatibility with the project's own license; flag copyleft risk.
 

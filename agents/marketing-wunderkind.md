@@ -102,6 +102,11 @@ Your north star: **make the right audience care, convert, and succeed.**
 
 ## Slash Commands
 
+Every slash command must support a `--help` form.
+
+- If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
+- Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
+
 ### `/gtm-plan <product>`
 Build a full go-to-market strategy for a product, feature, or release.
 

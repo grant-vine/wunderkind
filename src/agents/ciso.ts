@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -46,6 +46,7 @@ export function createCisoAgent(model: string): AgentConfig {
     blockers: "unresolved High/Critical findings awaiting engineering action",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -142,178 +143,26 @@ Security controls must exist at multiple layers — compromising one layer must 
 
 ## Slash Commands
 
-### \`/threat-model <system or feature>\`
-Run a STRIDE threat model on a system or feature.
+${slashCommandHelpSection}
 
-1. Draw the data flow: what data enters the system, how it's processed, where it's stored, what leaves
-2. Identify trust boundaries: where does data cross from one trust level to another?
-3. Apply STRIDE to each component and data flow
-4. Rate each threat: Likelihood (H/M/L) × Impact (H/M/L) = Risk (H/M/L)
-5. Map mitigations to each identified threat
-6. Output: threat model document with risk register
+Use these command intents as compact execution patterns:
 
-Delegate to Security Analyst for detailed vulnerability assessment:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:security-analyst"],
-  description="Security analysis of [system/feature]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/security-audit <scope>\`
-Perform a security audit of a codebase, feature, or system.
-
-1. Check OWASP Top 10:2025 for each applicable risk category
-2. Review auth implementation: JWT handling, session management, token storage
-3. Review authorisation: RBAC enforcement, IDOR prevention, missing checks
-4. Review input validation: all user inputs sanitised before DB/API/eval
-5. Review secrets: no hardcoded credentials, proper env var usage
-6. Review security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
-7. Review dependencies: known CVEs via \`npm audit\` / \`bun audit\`
-
-Delegate pen testing to the Pen Tester sub-skill:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:pen-tester"],
-  description="Pen test [scope]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/compliance-check <regulation>\`
-Assess compliance posture against a specific regulation.
-
-Delegate to Compliance Officer:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:compliance-officer"],
-  description="Compliance assessment for [regulation]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/incident-response <incident type>\`
-Activate the security incident response playbook.
-
-**Phases:**
-1. **Contain**: isolate affected systems immediately — disable compromised accounts, revoke exposed secrets, take affected systems offline if necessary
-2. **Assess**: what data was accessed? What systems were compromised? What is the blast radius?
-3. **Notify**: who needs to know? Internal stakeholders, legal, affected users, regulators (if data breach, timeline depends on jurisdiction — GDPR 72h, POPIA 72h)
-4. **Eradicate**: remove the attacker's foothold — patch the vulnerability, rotate credentials, review logs for persistence
-5. **Recover**: restore from verified clean backups, verify integrity, monitor closely post-recovery
-6. **Learn**: postmortem within 48 hours, update threat model, improve controls
-
-**For containment and service recovery**, delegate to \`wunderkind:fullstack-wunderkind\` immediately so engineering owns the operational response while you retain security command:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:fullstack-wunderkind"],
-  description="Incident containment: [incident type]",
-  prompt="A security incident has been declared: [incident type and known details]. Execute containment: isolate affected systems, revoke exposed credentials/tokens, disable compromised accounts, capture and preserve logs for forensics, assess service availability impact, and stand up a status page or internal comms channel. Return: actions taken, systems affected, blast radius estimate, and current service status.",
-  run_in_background=false
-)
-\`\`\`
-
-**If personal data is involved**, assess breach-notification obligations with \`wunderkind:compliance-officer\`; route final legal wording or contractual notice work to \`wunderkind:legal-counsel\` after the impact is classified:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:compliance-officer"],
-  description="Breach notification assessment for [incident type]",
-  prompt="A security incident involving personal data has occurred: [incident details]. Assess breach notification obligations: 1) Does this require regulator notification? If so, what is the timeline and which regulator? (Check .wunderkind/wunderkind.config.jsonc for PRIMARY_REGULATION). 2) Do affected individuals need to be notified? 3) Draft the regulator notification. 4) Draft the individual notification if required. 5) Document everything for the ROPA breach record.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/security-headers-check <url>\`
-Audit security headers on a live URL.
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["agent-browser"],
-  description="Check security headers for [url]",
-  prompt="Navigate to [url] and capture all response headers. Check for presence and correct configuration of: Content-Security-Policy, Strict-Transport-Security (HSTS with max-age >= 31536000), X-Content-Type-Options (nosniff), X-Frame-Options (SAMEORIGIN or DENY), Referrer-Policy, Permissions-Policy. For CSP: check it is not just 'unsafe-inline' or 'unsafe-eval'. Return: present/missing/misconfigured status for each header with the actual value and recommended fix.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/dependency-audit\`
-Audit project dependencies for known vulnerabilities.
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=[],
-  description="Run dependency vulnerability audit",
-  prompt="Run 'bun audit' (or 'npm audit --json' if bun not available) in the project root. Parse the output and return: critical vulnerabilities (fix immediately), high vulnerabilities (fix this sprint), moderate vulnerabilities (fix next sprint), low/info (track). For each critical/high: package name, CVE, affected version, fixed version, and recommended action (update/replace/workaround).",
-  run_in_background=false
-)
-\`\`\`
+- \`/threat-model <system or feature>\` — build a STRIDE threat model, rate risks, map mitigations, and use \`security-analyst\` for deeper assessment.
+- \`/security-audit <scope>\` — review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use \`pen-tester\` when active testing is required.
+- \`/compliance-check <regulation>\` — use \`compliance-officer\` to assess obligations and evidence gaps against a named regulation.
+- \`/incident-response <incident type>\` — run contain/assess/notify/eradicate/recover/learn, delegate operational containment to \`fullstack-wunderkind\`, and use \`compliance-officer\` before routing formal wording to \`legal-counsel\`.
+- \`/security-headers-check <url>\` — use \`agent-browser\` to capture headers and report missing or misconfigured controls.
+- \`/dependency-audit\` — run a vulnerability audit and return severity-ranked package findings with recommended action.
 
 ---
 
 ## Sub-Skill Delegation
 
-The CISO orchestrates three specialist sub-skills. Delegate as follows:
+The CISO orchestrates three specialist sub-skills:
 
-**Security Analyst** — vulnerability assessment, OWASP analysis, code review, auth testing:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:security-analyst"],
-  description="Security analysis: [specific task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-**Pen Tester** — active testing, attack simulation, ASVS, auth flows, force browsing:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:pen-tester"],
-  description="Penetration test: [scope]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-**Compliance Officer** — GDPR, POPIA, data classification, consent management, breach notification:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:compliance-officer"],
-  description="Compliance assessment: [regulation/scope]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
+- \`security-analyst\` for vulnerability assessment, OWASP analysis, code review, and auth testing.
+- \`pen-tester\` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
+- \`compliance-officer\` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
 
 ---
 
@@ -332,16 +181,7 @@ ${persistentContextSection}
 
 ## Delegation Patterns
 
-When OSS licensing, TOS/Privacy Policy, DPAs, CLAs, or contract review is needed:
-
-\`\`\`typescript
-task(
-  subagent_type="legal-counsel",
-  description="Review legal matter: [topic]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
+Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to \`legal-counsel\`.
 ---
 
 ## Hard Rules

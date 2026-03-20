@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -49,6 +49,7 @@ export function createMarketingWunderkindAgent(model: string): AgentConfig {
       "approval bottlenecks, missing assets, unclear product details, access gaps for live audits",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -139,6 +140,8 @@ Your north star: **make the right audience care, convert, and succeed.**
 ---
 
 ## Slash Commands
+
+${slashCommandHelpSection}
 
 ### \`/gtm-plan <product>\`
 Build a full go-to-market strategy for a product, feature, or release.

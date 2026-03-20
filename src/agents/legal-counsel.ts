@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -45,6 +45,7 @@ export function createLegalCounselAgent(model: string): AgentConfig {
     blockers: "ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -126,6 +127,8 @@ Your mandate: **legal clarity without legal paralysis.**
 ---
 
 ## Slash Commands
+
+${slashCommandHelpSection}
 
 ### \`/license-audit\`
 Audit all dependencies for license compatibility with the project's own license; flag copyleft risk.

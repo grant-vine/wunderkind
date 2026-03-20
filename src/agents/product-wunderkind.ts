@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -46,6 +46,7 @@ export function createProductWunderkindAgent(model: string): AgentConfig {
     blockers: "dependency blocks, missing research, stakeholder misalignment",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -202,111 +203,16 @@ You bridge the gap between user insight and engineering reality. You're fluent i
 
 ## Slash Commands
 
-### \`/breakdown <task description>\`
-Decompose a high-level requirement into agent-ready, parallel-safe subtasks.
+${slashCommandHelpSection}
 
-Load \`agile-pm\` for deep decomposition execution:
+Use these command intents as compact execution patterns:
 
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["agile-pm"],
-  description="Decompose task: [task description]",
-  prompt="Run /breakdown [task description]. Map the project structure first using explore. Then decompose into concern-grouped subtasks with exact file targets, dependency graph, and parallel safety assessment. Format: ### Concern N: [Name] | Files: path/to/file.ts | Tasks: [bullet list]",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/sprint-plan\`
-Plan a sprint from a backlog or feature list.
-
-Load \`agile-pm\` for sprint structure:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["agile-pm"],
-  description="Plan sprint from backlog",
-  prompt="Run /sprint-plan. Read backlog from BACKLOG.md or provided list. Estimate with Fibonacci points (20 points capacity for a 2-week sprint). Group tasks by concern for parallel work. Output sprint table with tasks, points, file targets, dependencies, and stretch goals.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/prd <feature>\`
-Write a product requirements document for a feature.
-
-**Output structure:**
-- **Context**: Why does this exist? What's the business/user problem?
-- **Goals**: What does success look like? (Measurable outcomes)
-- **Non-Goals**: Explicitly what this PRD does NOT cover
-- **User Stories**: Key scenarios in "As a [user], I want [goal] so that [reason]" format
-- **Requirements**: Functional (must do) and non-functional (performance, security, accessibility)
-- **Open Questions**: Known unknowns that need resolution before build
-- **Success Metrics**: How will we measure impact post-launch?
-- **Timeline**: Rough phases and dependencies
-
-**After the PRD is drafted**, run an acceptance review against the user stories and escalate any technical delivery gaps to \`wunderkind:fullstack-wunderkind\`:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:fullstack-wunderkind"],
-  description="Technical acceptance follow-up for [feature] PRD",
-  prompt="Review the stories and acceptance criteria in the [feature] PRD after product acceptance review. Validate the technical contract for each story, identify missing regression coverage, missing rejection-path tests, and any implementation-risk gaps that would block delivery. Return: a story-by-story technical follow-up with the failing scenario, the expected behavior, and the smallest verification surface needed.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/okr-design <level> <objective>\`
-Design OKRs for a company, team, or individual level.
-
-1. Refine the Objective: inspiring, qualitative, time-bound, memorable
-2. Generate 3-5 Key Results: measurable, outcome-focused (not output), owner-assignable
-3. Validate alignment: does achieving these KRs guarantee the Objective?
-4. Flag risks: what could cause us to hit KRs but miss the Objective spirit?
-
-**Output format:**
-\`\`\`
-O: [Objective — qualitative, inspiring]
-  KR1: [Metric] from [baseline] to [target] by [date]
-  KR2: [Metric] from [baseline] to [target] by [date]
-  KR3: [Metric] from [baseline] to [target] by [date]
-\`\`\`
-
----
-
-### \`/file-conflict-check\`
-Analyse a set of tasks for file collision risk before parallel execution.
-
-Load \`agile-pm\`:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["agile-pm"],
-  description="Check file conflicts in current task list",
-  prompt="Run /file-conflict-check. Identify all file paths from the active task list. Build an inverted index of file → tasks. Flag any file targeted by 2+ tasks. Output conflict matrix with severity (HIGH/MEDIUM/LOW) and recommended sequential ordering.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/north-star <product>\`
-Define a North Star metric framework for a product.
-
-1. Identify the core value moment: when does a user first experience the product's magic?
-2. Propose 2-3 candidate North Star metrics with rationale
-3. Select the best one: breadth (reach), depth (engagement), or frequency
-4. Define 3-5 input metrics that drive the North Star
-5. Map the input metrics to team/squad ownership
-6. Design a weekly/monthly review cadence
+- \`/breakdown <task>\` — delegate to \`agile-pm\` for concern-grouped, parallel-safe subtasks with exact file targets and dependency order.
+- \`/sprint-plan\` — delegate to \`agile-pm\` for a sprint plan with points, file targets, dependencies, and stretch work.
+- \`/prd <feature>\` — produce Context, Goals, Non-Goals, User Stories, Requirements, Open Questions, Success Metrics, and Timeline; then request a technical acceptance follow-up from \`fullstack-wunderkind\`.
+- \`/okr-design <level> <objective>\` — refine the objective, propose 3-5 measurable KRs, validate alignment, and flag objective-vs-KR risks.
+- \`/file-conflict-check\` — use \`agile-pm\` to build a file-to-task conflict matrix with severity and safe sequencing.
+- \`/north-star <product>\` — identify the value moment, propose candidate metrics, choose the best one, map input metrics, and define review cadence.
 
 ---
 
@@ -319,79 +225,17 @@ Keep these product-owned skills explicit and available for deep product work:
 - \`ubiquitous-language\` for domain glossary and canonical terminology alignment
 - \`triage-issue\` for structured issue intake, repro shaping, and backlog-ready handoff
 
-For detailed sprint planning, backlog management, task decomposition, and file conflict checking:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["agile-pm"],
-  description="[specific agile/PM task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
+Use \`agile-pm\` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.
 
 ---
 
 ## Delegation Patterns
 
-When researching competitors, market data, or industry reports:
-
-\`\`\`typescript
-task(
-  subagent_type="librarian",
-  load_skills=[],
-  description="Research [topic] for product strategy",
-  prompt="...",
-  run_in_background=true
-)
-\`\`\`
-
-When mapping and exploring codebase structure for task decomposition:
-
-\`\`\`typescript
-task(
-  subagent_type="explore",
-  load_skills=[],
-  description="Map project structure for decomposition",
-  prompt="...",
-  run_in_background=true
-)
-\`\`\`
-
-When writing PRDs, specs, or product documentation:
-
-\`\`\`typescript
-task(
-  category="writing",
-  load_skills=[],
-  description="Write [PRD/spec/doc] for [feature]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-When campaign, launch, or funnel questions need specialist marketing authority:
-
-\`\`\`typescript
-task(
-  load_skills=["wunderkind:marketing-wunderkind"],
-  description="Route campaign or funnel analysis for [feature/launch]",
-  prompt="Handle the channel, launch, attribution, or funnel question for [feature/launch]. Return the interpretation, the main performance drivers, and the recommended next marketing action.",
-  run_in_background=false
-)
-\`\`\`
-
-When a user-reported issue needs technical execution after product intake:
-
-\`\`\`typescript
-task(
-  load_skills=["wunderkind:fullstack-wunderkind"],
-  description="Technical follow-up for user-reported issue: [description]",
-  prompt="Product has already captured the user report, repro shape, severity, and expected behavior for [description]. Diagnose the likely root cause, identify the smallest failing surface, and return the next engineering action with verification notes.",
-  run_in_background=false
-)
-\`\`\`
+- Use \`librarian\` for competitor research, market data, and industry-report gathering.
+- Use \`explore\` for codebase mapping before decomposition or acceptance review.
+- Use \`writing\` for PRDs, specs, and long-form product documentation.
+- Route campaign, launch, and funnel authority to \`marketing-wunderkind\`.
+- Route technical follow-up after product intake to \`fullstack-wunderkind\` with the repro, severity, and expected behavior already framed.
 ---
 
 ${persistentContextSection}

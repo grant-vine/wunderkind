@@ -32,3 +32,10 @@ When the user gives you durable guidance about how to behave on this project, up
 - Preserve the existing SOUL file structure and append/update the durable knowledge cleanly instead of rewriting unrelated content.
 - If no SOUL file exists yet and the user asks you to remember something durable, create or update the appropriate SOUL file in the established format.`
 }
+
+export function buildSlashCommandHelpSection(): string {
+  return `Every slash command must support a \`--help\` form.
+
+- If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run \`/<command> --help\`.
+- Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.`
+}

@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -40,6 +40,7 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
     blockers: "build failures, type errors not yet resolved, external blockers",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -201,243 +202,40 @@ const db = drizzle(neon(process.env.DATABASE_URL!));
 
 ## Slash Commands
 
-### \`/validate-page <url>\`
-Full page audit: accessibility, Core Web Vitals, broken links, console errors.
+${slashCommandHelpSection}
 
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["agent-browser"],
-  description="Full page audit of [url]",
-  prompt="Navigate to [url], waitUntil: networkidle. 1) Inject axe-core (https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.0/axe.min.js) and run axe.run({ runOnly: ['color-contrast', 'heading-order'] }). 2) Capture console errors. 3) Measure CWV via PerformanceObserver (LCP, CLS, FCP, TTFB) with 4s timeout. 4) Check 30 links via fetch HEAD for 4xx/5xx. 5) Screenshot to /tmp/page-validate.png. Return: CWV metrics, console errors, broken links, axe violations.",
-  run_in_background=false
-)
-\`\`\`
+Use these command intents as compact execution patterns:
 
-Output a CWV table vs targets:
-| Metric | Measured | Target | Status |
-|--------|----------|--------|--------|
-| LCP    | ?        | <2.5s  | ✅/❌  |
-| CLS    | ?        | <0.1   | ✅/❌  |
-| FCP    | ?        | <1.8s  | ✅/❌  |
-| TTFB   | ?        | <800ms | ✅/❌  |
-
----
-
-### \`/bundle-analyze\`
-Analyse Next.js bundle sizes and flag heavy dependencies.
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["vercel-architect"],
-  description="Bundle analysis for current Next.js project",
-  prompt="Run /bundle-analyze. Install @next/bundle-analyzer, build with ANALYZE=true, report largest chunks. Flag: lodash (replace with lodash-es), moment.js (replace with dayjs), components >50KB (wrap with dynamic import). Return treemap summary and replacement recommendations.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/db-audit\`
-Full database health check: schema, indexes, slow queries.
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["db-architect"],
-  description="Full database audit",
-  prompt="Run /index-audit and /migration-diff. Report: missing FK indexes, unused indexes, sequential scan hotspots, and drift between Drizzle schema and live database. Flag all destructive operations — do not execute them, only report with recommended SQL.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/edge-vs-node <filepath>\`
-Determine whether a route/middleware file can run on Edge Runtime.
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["vercel-architect"],
-  description="Edge compatibility check for [filepath]",
-  prompt="Run /edge-vs-node [filepath]. Check for Node-only imports (fs, path, os, child_process, node:*), Node globals (Buffer, __dirname), and incompatible ORMs (prisma, pg, mysql2). Return VERDICT: EDGE COMPATIBLE or NODE REQUIRED with reasons and fix instructions.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/security-audit\`
-Quick OWASP Top 10 check on the codebase. Delegates to \`wunderkind:ciso\` for comprehensive coverage.
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["wunderkind:ciso"],
-  description="OWASP security audit of current codebase",
-  prompt="Perform a security audit covering OWASP Top 10:2025. Check: 1) Hardcoded secrets or API keys in source files. 2) All user inputs validated/sanitised before DB queries. 3) SQL injection vectors (raw query strings with interpolation). 4) Auth middleware coverage — which routes are protected? 5) CORS configuration, CSP headers, HSTS. 6) Missing rate limiting on auth and sensitive endpoints. 7) Dependency vulnerabilities via bun audit. 8) Data minimisation and consent tracking for compliance. Return: prioritised findings by severity (Critical/High/Medium/Low) with exact file paths and recommended fixes.",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-### \`/architecture-review <component>\`
-Review a system component for architectural correctness.
-
-1. Read the component, its dependencies, and callers
-2. Assess: separation of concerns, coupling, cohesion, single responsibility
-3. Flag: circular dependencies, god objects, leaky abstractions, performance traps
-4. Propose: minimal refactoring steps with before/after code examples
-5. Estimate: effort (hours), risk (low/med/high), impact (low/med/high)
-
----
-
-### \`/supportability-review <service>\`
-Run a production-readiness and supportability review before launch.
-
-1. Check observability coverage across logs, metrics, traces, dashboards, and alerting
-2. Verify rollback, backup, recovery, and on-call ownership are explicit and tested
-3. Confirm the service has an executable runbook, dependency map, and escalation path
-4. Return a launch scorecard with blockers, near-term fixes, and evidence gaps
-
----
-
-### \`/runbook <service> <alert>\`
-Write or refine a production runbook for a service and alert.
-
-1. Translate the alert into plain-English impact and likely blast radius
-2. List numbered triage and rollback steps with exact commands or dashboards
-3. Document the most likely root-cause branches and how to verify each one
-4. Define success checks, escalation conditions, and post-incident follow-up
+- \`/validate-page <url>\` — run a browser-backed audit for accessibility, CWV, console errors, broken links, and a screenshot; return a CWV table with measured vs target values (\`LCP < 2.5s\`, \`CLS < 0.1\`, \`FCP < 1.8s\`, \`TTFB < 800ms\`) plus the raw violations and errors.
+- \`/bundle-analyze\` — use \`vercel-architect\` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
+- \`/db-audit\` — use \`db-architect\` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
+- \`/edge-vs-node <filepath>\` — use \`vercel-architect\` to decide runtime compatibility and explain blockers.
+- \`/security-audit\` — escalate comprehensive OWASP/security-control review to \`ciso\`.
+- \`/architecture-review <component>\` — assess separation of concerns, coupling, traps, and minimal refactor steps with effort/risk.
+- \`/supportability-review <service>\` — review observability, rollback readiness, on-call ownership, and launch blockers.
+- \`/runbook <service> <alert>\` — translate the alert into blast radius, triage steps, root-cause branches, success checks, and escalation conditions.
 
 ---
 
 ## Sub-Skill Delegation
 
-For red-green-refactor implementation, regression hardening, and defect-driven delivery:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["tdd"],
-  description="[specific bugfix or behavior]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
-
-For Vercel deployment, Next.js App Router, Edge Runtime, Neon branching, and performance:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["vercel-architect"],
-  description="[specific Vercel/Next.js task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-For database schema design, Drizzle ORM, query analysis, migrations, and index auditing:
-
-\`\`\`typescript
-task(
-  category="unspecified-high",
-  load_skills=["db-architect"],
-  description="[specific database task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
+- Use \`tdd\` for red-green-refactor loops, regression hardening, and defect-driven delivery.
+- Use \`vercel-architect\` for Vercel, App Router, Edge runtime, Neon branching, and performance work.
+- Use \`db-architect\` for schema design, query analysis, migrations, and index auditing.
 
 ---
 
 ## Delegation Patterns
 
-For UI implementation and visual engineering:
-
-\`\`\`typescript
-task(
-  category="visual-engineering",
-  load_skills=["frontend-ui-ux"],
-  description="Implement [component/page]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-For browser automation, E2E testing, and page validation:
-
-\`\`\`typescript
-task(
-  category="unspecified-low",
-  load_skills=["agent-browser"],
-  description="[browser task]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
-For exploring codebase structure and patterns:
-
-\`\`\`typescript
-task(
-  subagent_type="explore",
-  load_skills=[],
-  description="Map [module/pattern] in codebase",
-  prompt="...",
-  run_in_background=true
-)
-\`\`\`
-
-For researching library APIs, best practices, and external documentation:
-
-\`\`\`typescript
-task(
-  subagent_type="librarian",
-  load_skills=[],
-  description="Research [library/pattern]",
-  prompt="...",
-  run_in_background=true
-)
-\`\`\`
-
-For git operations (commits, branches, history):
-
-\`\`\`typescript
-task(
-  category="quick",
-  load_skills=["git-master"],
-  description="[git operation]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
-
----
+- Use \`visual-engineering\` for UI implementation and coded visual work.
+- Use \`agent-browser\` for browser automation, E2E capture, and page validation.
+- Use \`explore\` for codebase mapping and \`librarian\` for external library/documentation research.
+- Use \`git-master\` for git operations and \`technical-writer\` for external developer docs or tutorials.
 
 ---
 
 ${persistentContextSection}
 
-## Delegation Patterns
-
-When external developer documentation, tutorials, migration guides, or getting-started content are needed:
-
-\`\`\`typescript
-task(
-  category="writing",
-  load_skills=["technical-writer"],
-  description="Write developer documentation or tutorial for [topic]",
-  prompt="...",
-  run_in_background=false
-)
-\`\`\`
 ---
 
 ## Hard Rules (Non-Negotiable)

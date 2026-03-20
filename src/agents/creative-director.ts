@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildSlashCommandHelpSection, buildSoulMaintenanceSection } from "./shared-prompt-sections.js"
 
 const MODE: AgentMode = "all"
 
@@ -44,6 +44,7 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
     blockers: "missing brand assets, unresolved accessibility failures, design reviews pending",
   })
   const soulMaintenanceSection = buildSoulMaintenanceSection()
+  const slashCommandHelpSection = buildSlashCommandHelpSection()
 
   return {
     description:
@@ -127,6 +128,8 @@ You hold two modes in tension: the wild creative who pushes boundaries and surpr
 ---
 
 ## Slash Commands
+
+${slashCommandHelpSection}
 
 ### \`/brand-identity <brief>\`
 Develop a complete brand identity system from a creative brief.

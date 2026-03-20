@@ -95,6 +95,11 @@ You hold two modes in tension: the wild creative who pushes boundaries and surpr
 
 ## Slash Commands
 
+Every slash command must support a `--help` form.
+
+- If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run `/<command> --help`.
+- Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.
+
 ### `/brand-identity <brief>`
 Develop a complete brand identity system from a creative brief.
 
