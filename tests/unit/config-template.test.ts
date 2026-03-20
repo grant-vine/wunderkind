@@ -3,6 +3,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { WUNDERKIND_AGENT_IDS } from "../../src/agents/manifest.js"
+import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
+import {
+  bootstrapDesignMd,
+  scaffoldDesignMd,
+  validateDesignMd,
+  validateDesignPath,
+} from "../../src/cli/design-md-helper.js"
 
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
 type ConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
@@ -214,6 +221,155 @@ describe("design workflow config template", () => {
       expect(parsed?.designPath).toBe("./custom-design.md")
       expect(parsed?.designMcpOwnership).toBe("wunderkind-managed")
     })
+  })
+})
+
+describe("design-md helpers", () => {
+  it("validateDesignPath accepts valid relative paths", () => {
+    expect(validateDesignPath("./DESIGN.md")).toEqual({ valid: true })
+    expect(validateDesignPath("DESIGN.md")).toEqual({ valid: true })
+    expect(validateDesignPath("docs/DESIGN.md")).toEqual({ valid: true })
+  })
+
+  it("validateDesignPath rejects an absolute path", () => {
+    expect(validateDesignPath("/DESIGN.md")).toEqual({
+      valid: false,
+      error: "designPath must be a relative path",
+    })
+  })
+
+  it("validateDesignPath rejects parent traversal", () => {
+    expect(validateDesignPath("../DESIGN.md")).toEqual({
+      valid: false,
+      error: "designPath must not traverse parent directories",
+    })
+    expect(validateDesignPath("docs/../DESIGN.md")).toEqual({
+      valid: false,
+      error: "designPath must not traverse parent directories",
+    })
+  })
+
+  it("scaffoldDesignMd returns all section headings in order", () => {
+    const scaffold = scaffoldDesignMd()
+    const headingMatches = [...scaffold.matchAll(/^## (.+)$/gm)].map((match) => match[1])
+
+    expect(headingMatches).toEqual([...GOOGLE_STITCH_ADAPTER.designSections])
+  })
+
+  it("scaffoldDesignMd includes color placeholders in the Colors section", () => {
+    const scaffold = scaffoldDesignMd()
+
+    expect(scaffold).toContain("Primary:")
+    expect(scaffold).toContain("Secondary:")
+    expect(scaffold).toContain("Tertiary:")
+    expect(scaffold).toContain("Neutral:")
+  })
+
+  it("scaffoldDesignMd includes at least 2 Do bullets and 2 Don't bullets", () => {
+    const scaffold = scaffoldDesignMd()
+    const doMatches = scaffold.match(/^- Do:/gm) ?? []
+    const dontMatches = scaffold.match(/^- Don't:/gm) ?? []
+
+    expect(doMatches.length).toBeGreaterThan(1)
+    expect(dontMatches.length).toBeGreaterThan(1)
+  })
+
+  it("bootstrapDesignMd creates DESIGN.md when the file does not exist", () => {
+    const sandbox = createSandbox("design-bootstrap-create")
+
+    try {
+      bootstrapDesignMd("docs/DESIGN.md", sandbox.projectDir)
+
+      const created = readFileSync(join(sandbox.projectDir, "docs", "DESIGN.md"), "utf8")
+      expect(created).toBe(scaffoldDesignMd())
+    } finally {
+      cleanupSandbox(sandbox)
+    }
+  })
+
+  it("bootstrapDesignMd does not overwrite an existing DESIGN.md", () => {
+    const sandbox = createSandbox("design-bootstrap-preserve")
+    const designDir = join(sandbox.projectDir, "docs")
+    const designPath = join(designDir, "DESIGN.md")
+    const existingContent = "# Existing design file\n"
+
+    try {
+      mkdirSync(designDir, { recursive: true })
+      writeFileSync(designPath, existingContent)
+
+      bootstrapDesignMd("docs/DESIGN.md", sandbox.projectDir)
+
+      expect(readFileSync(designPath, "utf8")).toBe(existingContent)
+    } finally {
+      cleanupSandbox(sandbox)
+    }
+  })
+
+  it("validateDesignMd passes for the valid scaffold", () => {
+    expect(validateDesignMd(scaffoldDesignMd())).toEqual({ valid: true, errors: [] })
+  })
+
+  it("validateDesignMd fails when a section is missing", () => {
+    const invalid = scaffoldDesignMd().replace("## Typography\nDefine font families, sizes, weights, and usage rules before design generation.\n\n", "")
+    const result = validateDesignMd(invalid)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((error: string) => error.includes("Missing required section: Typography"))).toBe(true)
+  })
+
+  it("validateDesignMd fails when section order is wrong", () => {
+    const invalid = `## Overview
+Capture the product, audience, and intended experience in 2-4 sentences.
+
+## Typography
+Define font families, sizes, weights, and usage rules before design generation.
+
+## Colors
+Primary: TODO define the main brand color and usage.
+Secondary: TODO define the supporting accent color and usage.
+Tertiary: TODO define the optional highlight color and usage.
+Neutral: TODO define the neutral palette and surfaces.
+
+## Elevation
+Describe shadows, borders, radii, and layering rules.
+
+## Components
+List priority components, states, and reusable interaction patterns.
+
+## Do's and Don'ts
+- Do: TODO capture one approved visual behavior.
+- Do: TODO capture another approved visual behavior.
+- Don't: TODO capture one disallowed visual behavior.
+- Don't: TODO capture another disallowed visual behavior.
+`
+    const result = validateDesignMd(invalid)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((error: string) => error.includes("Sections must appear in canonical order"))).toBe(true)
+  })
+
+  it("validateDesignMd fails when a top-level section is duplicated", () => {
+    const invalid = `${scaffoldDesignMd()}\n## Colors\nPrimary: duplicate\nSecondary: duplicate\nTertiary: duplicate\nNeutral: duplicate\n`
+    const result = validateDesignMd(invalid)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((error: string) => error.includes("Duplicate top-level section: Colors"))).toBe(true)
+  })
+
+  it("validateDesignMd fails when required color entries are missing", () => {
+    const invalid = scaffoldDesignMd().replace("Neutral: TODO define the neutral palette and surfaces.\n", "")
+    const result = validateDesignMd(invalid)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((error: string) => error.includes("Colors section must include Neutral:"))).toBe(true)
+  })
+
+  it("validateDesignMd fails when Do and Don't bullets are insufficient", () => {
+    const invalid = scaffoldDesignMd().replace("- Don't: TODO capture another disallowed visual behavior.", "")
+    const result = validateDesignMd(invalid)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((error: string) => error.includes("Do's and Don'ts section must include at least 2 '- Don't:' bullets"))).toBe(true)
   })
 })
 

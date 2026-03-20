@@ -52,3 +52,8 @@
 - `init` flag coverage in `tests/unit/cli-help-text.test.ts` can validate both surfacing and guardrail behavior quickly by pairing `runCliHelp("init", "--help")` assertions with `runCliRaw(...)` status/error checks for invalid enum values.
 - Because `bin/wunderkind.js` executes compiled `dist/cli/index.js`, evidence commands that invoke the bin entry must run after `bun run build` so the command output reflects newly added flags and validation.
 - For this phase, `src/cli/index.ts` can pass the new init-only design/stitch fields through `initOptions` without changing `src/cli/init.ts`; TypeScript remains clean due structural assignability and strict optional handling.
+
+## [2026-03-20] Task: task-6
+- Keep the canonical DESIGN.md contract single-sourced by iterating `GOOGLE_STITCH_ADAPTER.designSections`; section-specific scaffold text can live in a typed record keyed by those adapter-owned names without duplicating the ordered list.
+- Strict validation stays deterministic by parsing only top-level `##` headings, then reporting missing sections, duplicate sections, canonical-order drift, missing `Primary`/`Secondary`/`Tertiary`/`Neutral` lines, and insufficient `- Do:` or `- Don't:` bullets separately.
+- The red-phase evidence for a brand-new helper can safely fail on module resolution first, then the green-phase run can prove both scaffold generation and invalid-structure rejection in one targeted `config-template` test file.

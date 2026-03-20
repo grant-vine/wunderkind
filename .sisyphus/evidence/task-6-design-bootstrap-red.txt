@@ -1,0 +1,14 @@
+bun test v1.3.10 (30e609e0)
+
+tests/unit/config-template.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module '../../src/cli/design-md-helper.js' from '/Users/grantv/Code/wunderkind/tests/unit/config-template.test.ts'
+-------------------------------
+
+
+ 0 pass
+ 1 fail
+ 1 error
+Ran 1 test across 1 file. [8.00ms]
