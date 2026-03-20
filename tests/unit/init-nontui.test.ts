@@ -28,7 +28,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     legalPersonality: "pragmatic-advisor" as const,
     docsEnabled: false,
     docsPath: "./docs",
-    docHistoryMode: "overwrite" as const,
+    docHistoryMode: "append-dated" as const,
     prdPipelineMode: "filesystem" as const,
     ...overrides,
   }
@@ -111,7 +111,7 @@ describe("runInit non-interactive branching", () => {
       const writtenConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(writtenConfig.docsEnabled).toBe(true)
       expect(writtenConfig.docsPath).toBe("./notes/docs")
-      expect(writtenConfig.docHistoryMode).toBe("overwrite")
+      expect(writtenConfig.docHistoryMode).toBe("append-dated")
 
       expect(existsSync(join(tempProject, "AGENTS.md"))).toBe(true)
       expect(existsSync(join(tempProject, ".sisyphus", "plans"))).toBe(true)

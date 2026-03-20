@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts"
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import {
   detectCurrentConfig,
@@ -53,7 +53,40 @@ function normalizeDocHistoryMode(mode: string): DocHistoryMode {
   if (validateDocHistoryMode(mode)) {
     return mode
   }
-  return "overwrite"
+  return "append-dated"
+}
+
+const SOUL_PERSONA_BANNERS: Record<SoulPersonaDefinition["agentKey"], readonly [string, string, string]> = {
+  "product-wunderkind": [
+    " .-<>-.   PRODUCT WUNDERKIND   .-<>-.",
+    "( scope )  outcomes | evidence  (plan )",
+    " '-<>-'   user value before noise '-<>-'",
+  ],
+  "fullstack-wunderkind": [
+    " .-[##]-  FULLSTACK WUNDERKIND  -[##]-.",
+    "( build ) reliability | tests | ops (ship )",
+    " '-[##]-  clean diffs, strong rails  -[##]-'",
+  ],
+  "marketing-wunderkind": [
+    " .-{/}-.  MARKETING WUNDERKIND  .-{/}-.",
+    "( signal ) trust | narrative | growth (reach )",
+    " '-{/}-   no vanity, prove value   -{/}-'",
+  ],
+  "creative-director": [
+    " .-(* )-   CREATIVE DIRECTOR   -( * )-.",
+    "( form ) clarity | craft | access (feel )",
+    " '-(* )-  distinct, legible, alive -( * )-'",
+  ],
+  ciso: [
+    " .-[!!]-          CISO          -[!!]-.",
+    "( guard ) privacy | risk | controls (audit)",
+    " '-[!!]- secure by default, no leaks -[!!]-'",
+  ],
+  "legal-counsel": [
+    " .-[==]-      LEGAL COUNSEL      -[==]-.",
+    "( terms ) licensing | claims | risk (plain )",
+    " '-[==]- clarity first, promises last -[==]-'",
+  ],
 }
 
 const TEAM_CULTURE_OPTIONS: Array<{ value: TeamCulture; label: string; hint: string }> = [
@@ -108,6 +141,13 @@ interface SoulCustomizationAnswers {
   challengeStyle: string
   projectMemory: string
   antiGoals: string
+}
+
+const SOUL_FIELD_LABELS: Record<keyof SoulCustomizationAnswers, string> = {
+  priorityLens: "Priority lens",
+  challengeStyle: "Challenge style",
+  projectMemory: "Project memory",
+  antiGoals: "Anti-goals",
 }
 
 const SOUL_PERSONAS: readonly SoulPersonaDefinition[] = [
@@ -361,16 +401,52 @@ function renderSoulFile(persona: SoulPersonaDefinition, answers: SoulCustomizati
   ].join("\n")
 }
 
-async function promptRequiredText(message: string): Promise<string | null> {
-  const response = await p.text({
-    message,
-    validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
-  })
-  if (p.isCancel(response)) return null
-  return (response as string).trim()
+function renderSoulPersonaBanner(persona: SoulPersonaDefinition): string {
+  return SOUL_PERSONA_BANNERS[persona.agentKey].join("\n")
 }
 
-async function promptSoulAnswer(question: SoulQuestionDefinition): Promise<string | null> {
+function parseSoulFileAnswers(fileContent: string): SoulCustomizationAnswers | null {
+  const extract = (label: string): string | null => {
+    const pattern = new RegExp(`^- ${label}: (.+)$`, "m")
+    const match = fileContent.match(pattern)
+    return match?.[1]?.trim() ?? null
+  }
+
+  const priorityLens = extract(SOUL_FIELD_LABELS.priorityLens)
+  const challengeStyle = extract(SOUL_FIELD_LABELS.challengeStyle)
+  const projectMemory = extract(SOUL_FIELD_LABELS.projectMemory)
+  const antiGoals = extract(SOUL_FIELD_LABELS.antiGoals)
+
+  if (!priorityLens || !challengeStyle || !projectMemory || !antiGoals) {
+    return null
+  }
+
+  return { priorityLens, challengeStyle, projectMemory, antiGoals }
+}
+
+function readExistingSoulAnswers(cwd: string): Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers> {
+  const existingAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
+
+  for (const persona of SOUL_PERSONAS) {
+    const soulPath = join(cwd, ".wunderkind", "souls", `${persona.agentKey}.md`)
+    if (!existsSync(soulPath)) continue
+
+    const parsed = parseSoulFileAnswers(readFileSync(soulPath, "utf-8"))
+    if (parsed) {
+      existingAnswers.set(persona.agentKey, parsed)
+    }
+  }
+
+  return existingAnswers
+}
+
+async function promptSoulAnswer(question: SoulQuestionDefinition, existingValue?: string): Promise<string | null> {
+  const initialValue = existingValue !== undefined && question.options.includes(existingValue)
+    ? existingValue
+    : existingValue !== undefined
+      ? CUSTOM_SOUL_ANSWER_VALUE
+      : question.options[0]
+
   const selection = await p.select<string>({
     message: question.message,
     options: [
@@ -381,7 +457,7 @@ async function promptSoulAnswer(question: SoulQuestionDefinition): Promise<strin
         hint: "Type a custom SOUL line",
       },
     ],
-    initialValue: question.options[0],
+    initialValue,
   })
   if (p.isCancel(selection)) return null
 
@@ -389,7 +465,18 @@ async function promptSoulAnswer(question: SoulQuestionDefinition): Promise<strin
     return selection
   }
 
-  return promptRequiredText(`${question.message} (custom answer)`)
+  const custom = existingValue !== undefined
+    ? await p.text({
+        message: `${question.message} (custom answer)`,
+        initialValue: existingValue,
+        validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
+      })
+    : await p.text({
+        message: `${question.message} (custom answer)`,
+        validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
+      })
+  if (p.isCancel(custom)) return null
+  return (custom as string).trim()
 }
 
 async function promptSelect<T extends string>(
@@ -442,6 +529,7 @@ export async function runInit(options: InitOptions): Promise<number> {
 
     const noTui = options.noTui === true || !process.stdin.isTTY || !process.stdout.isTTY
     const soulAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
+    const existingSoulAnswers = readExistingSoulAnswers(cwd)
 
     const config: InstallConfig = {
       region: detected.region,
@@ -505,7 +593,7 @@ export async function runInit(options: InitOptions): Promise<number> {
 
       const createSoulCustomizations = await p.confirm({
         message: "Do you want to create project-local SOUL customizations for any retained Wunderkind personas?",
-        initialValue: false,
+        initialValue: existingSoulAnswers.size > 0,
       })
       if (p.isCancel(createSoulCustomizations)) return 1
 
@@ -541,6 +629,7 @@ export async function runInit(options: InitOptions): Promise<number> {
                       : config.legalPersonality
             ]?.hint ?? "",
           })),
+          initialValues: [...existingSoulAnswers.keys()],
           required: true,
         })
         if (p.isCancel(selectedSoulPersonas)) return 1
@@ -553,13 +642,17 @@ export async function runInit(options: InitOptions): Promise<number> {
         for (const persona of SOUL_PERSONAS) {
           if (!selectedSoulPersonaKeys.has(persona.agentKey)) continue
 
-          const priorityLens = await promptSoulAnswer(persona.questions[0])
+          console.log(renderSoulPersonaBanner(persona))
+
+          const existingAnswers = existingSoulAnswers.get(persona.agentKey)
+
+          const priorityLens = await promptSoulAnswer(persona.questions[0], existingAnswers?.priorityLens)
           if (priorityLens === null) return 1
-          const challengeStyle = await promptSoulAnswer(persona.questions[1])
+          const challengeStyle = await promptSoulAnswer(persona.questions[1], existingAnswers?.challengeStyle)
           if (challengeStyle === null) return 1
-          const projectMemory = await promptSoulAnswer(persona.questions[2])
+          const projectMemory = await promptSoulAnswer(persona.questions[2], existingAnswers?.projectMemory)
           if (projectMemory === null) return 1
-          const antiGoals = await promptSoulAnswer(persona.questions[3])
+          const antiGoals = await promptSoulAnswer(persona.questions[3], existingAnswers?.antiGoals)
           if (antiGoals === null) return 1
 
           soulAnswers.set(persona.agentKey, {

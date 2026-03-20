@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
@@ -33,7 +33,7 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   legalPersonality: "pragmatic-advisor" as const,
   docsEnabled: false,
   docsPath: "./docs",
-  docHistoryMode: "overwrite" as const,
+  docHistoryMode: "append-dated" as const,
   prdPipelineMode: "filesystem" as const,
 }
 
@@ -125,9 +125,12 @@ describe("runInit interactive SOUL prompts", () => {
     const restoreLog = console.log
     const originalCwd = process.cwd()
     const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    const messages: string[] = []
     writeFileSync(join(tempProject, "package.json"), "{}")
     process.chdir(tempProject)
-    console.log = () => {}
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map((arg) => String(arg)).join(" "))
+    }
 
     try {
       const code = await runInit({})
@@ -160,6 +163,7 @@ describe("runInit interactive SOUL prompts", () => {
       expect(soulFile).toContain("- Project memory: Remember that thin vertical slices and fast validation matter here.")
       expect(soulFile).toContain("- Anti-goals: Avoid roadmap theater, speculative scope, and big-bang planning.")
       expect(soulFile).toContain("## Durable Knowledge")
+      expect(messages.some((message) => message.includes("PRODUCT WUNDERKIND"))).toBe(true)
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -212,6 +216,82 @@ describe("runInit interactive SOUL prompts", () => {
 
       const soulPath = join(tempProject, ".wunderkind", "souls", "product-wunderkind.md")
       expect(readFileSync(soulPath, "utf-8")).toContain("- Priority lens: Optimize for partner-led expansion first.")
+    } finally {
+      console.log = restoreLog
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
+      Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })
+    }
+  })
+
+  it("hydrates existing soul answers when re-running init on a configured project", async () => {
+    const originalStdinTTY = process.stdin.isTTY
+    const originalStdoutTTY = process.stdout.isTTY
+
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true })
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true })
+
+    const textAnswers = ["EU", "SaaS"]
+    mockText.mockImplementation(async () => textAnswers.shift() ?? "")
+
+    const confirmAnswers = [true, false]
+    mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
+    mockMultiselect.mockImplementation(async () => ["product-wunderkind"])
+
+    const selectAnswers = [
+      "GDPR",
+      "POPIA",
+      "formal-strict",
+      "hierarchical",
+      "Optimize for user value and problem clarity first.",
+      "Push back clearly when scope or priorities are not justified.",
+      "Remember that user pain, onboarding friction, and support signals matter here.",
+      "Avoid treating stakeholder requests as automatic priorities.",
+      "filesystem",
+    ]
+    mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
+
+    const restoreLog = console.log
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
+    const soulsDir = join(tempProject, ".wunderkind", "souls")
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    mkdirSync(soulsDir, { recursive: true })
+    process.chdir(tempProject)
+    console.log = () => {}
+
+    try {
+      writeFileSync(
+        join(tempProject, ".wunderkind", "souls", "product-wunderkind.md"),
+        [
+          "<!-- wunderkind:soul-file:v1 -->",
+          "# Product Wunderkind SOUL",
+          "",
+          "- agentKey: product-wunderkind",
+          "",
+          "## Customization",
+          "- Priority lens: Optimize for measurable business outcomes and adoption first.",
+          "- Challenge style: Push back clearly when scope or priorities are not justified.",
+          "- Project memory: Remember that prioritization should stay tied to measurable outcomes and evidence.",
+          "- Anti-goals: Avoid treating stakeholder requests as automatic priorities.",
+          "",
+          "## Durable Knowledge",
+          "",
+        ].join("\n"),
+      )
+
+      const code = await runInit({})
+      expect(code).toBe(0)
+
+      const soulConfirmCall = mockConfirm.mock.calls[0]?.[0] as { initialValue?: boolean }
+      expect(soulConfirmCall.initialValue).toBe(true)
+
+      const soulMultiselectCall = mockMultiselect.mock.calls[0]?.[0] as { initialValues?: string[] }
+      expect(soulMultiselectCall.initialValues).toEqual(["product-wunderkind"])
+
+      const firstSoulSelectCall = mockSelect.mock.calls[4]?.[0] as { initialValue?: string }
+      expect(firstSoulSelectCall.initialValue).toBe("Optimize for measurable business outcomes and adoption first.")
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)
@@ -357,7 +437,7 @@ describe("runInit interactive SOUL prompts", () => {
     const confirmAnswers = [false, true, true]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? true)
 
-    const selectAnswers = ["GDPR", "", "pragmatic-balanced", "flat", "filesystem", "overwrite"]
+    const selectAnswers = ["GDPR", "", "pragmatic-balanced", "flat", "filesystem", "append-dated"]
     mockSelect.mockImplementation(async () => selectAnswers.shift() ?? "")
 
     const restoreLog = console.log

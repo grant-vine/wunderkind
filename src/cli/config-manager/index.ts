@@ -160,7 +160,7 @@ const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   legalPersonality: "pragmatic-advisor",
   docsEnabled: false,
   docsPath: "./docs",
-  docHistoryMode: "overwrite",
+  docHistoryMode: "append-dated",
   prdPipelineMode: "filesystem",
 }
 
