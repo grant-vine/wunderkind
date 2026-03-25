@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -52,19 +52,18 @@ type TestOutput = {
 type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void> }> }
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
+const initPromise = (async () => {
+  registerConfigManagerMock()
+  const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+  const pluginResult = await mod.default({})
+  const transform = pluginResult["experimental.chat.system.transform"]
+  if (!transform) {
+    throw new Error("Expected experimental.chat.system.transform to exist")
+  }
+  cachedTransform = transform
+})()
 
 describe("Wunderkind plugin transform", () => {
-  beforeAll(async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const transform = pluginResult["experimental.chat.system.transform"]
-    if (!transform) {
-      throw new Error("Expected experimental.chat.system.transform to exist")
-    }
-    cachedTransform = transform
-  })
-
   beforeEach(() => {
     mockReadWunderkindConfig.mockClear()
     mockReadWunderkindConfig.mockImplementation(() => null)
@@ -72,6 +71,7 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("always injects the native agent catalog and delegation rules", async () => {
+    await initPromise
     const output: TestOutput = { system: [] }
 
     await cachedTransform!({}, output)
@@ -100,9 +100,14 @@ describe("Wunderkind plugin transform", () => {
       "Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability",
     )
     expect(nativeAgentsSection).toContain("Use legal-counsel for OSS licensing and legal/compliance review")
+    expect(nativeAgentsSection).toContain(
+      "Use `task(...)` for retained-agent or subagent delegation; always include explicit `load_skills` and `run_in_background`.",
+    )
+    expect(nativeAgentsSection).toContain(`Use \`skill(name="...")\` for shipped skills and sub-skills.`)
   })
 
   it("injects resolved runtime context with fallback labels for blank baseline fields", async () => {
+    await initPromise
     mockReadWunderkindConfig.mockImplementation(() => ({
       region: "South Africa",
       industry: "",
@@ -129,6 +134,7 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("does not inject runtime context when no Wunderkind config is available", async () => {
+    await initPromise
     const output: TestOutput = { system: [] }
 
     await cachedTransform!({}, output)
@@ -137,6 +143,7 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("injects a SOUL overlay for the detected retained persona when a project-local file exists", async () => {
+    await initPromise
     const tempDir = join(tmpdir(), `wunderkind-soul-${Date.now()}`)
     const soulsDir = join(tempDir, ".wunderkind", "souls")
     const soulContent = [
@@ -168,11 +175,13 @@ describe("Wunderkind plugin transform", () => {
       expect(soulSection).toContain("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")
       expect(soulSection).toContain(soulContent.trim())
     } finally {
+      process.chdir(ORIGINAL_CWD)
       rmSync(tempDir, { recursive: true, force: true })
     }
   })
 
   it("skips SOUL injection when the persona sentinel is already present", async () => {
+    await initPromise
     const tempDir = join(tmpdir(), `wunderkind-soul-idempotent-${Date.now()}`)
     const soulsDir = join(tempDir, ".wunderkind", "souls")
 
@@ -191,11 +200,13 @@ describe("Wunderkind plugin transform", () => {
       await cachedTransform!({}, output)
       expect(output.system.filter((entry) => entry.includes("<!-- wunderkind:soul-runtime-start:product-wunderkind -->")).length).toBe(1)
     } finally {
+      process.chdir(ORIGINAL_CWD)
       rmSync(tempDir, { recursive: true, force: true })
     }
   })
 
   it("skips SOUL overlay when the soul file exists but is empty or whitespace-only", async () => {
+    await initPromise
     const tempDir = join(tmpdir(), `wunderkind-soul-empty-${Date.now()}`)
     const soulsDir = join(tempDir, ".wunderkind", "souls")
     mkdirSync(soulsDir, { recursive: true })
@@ -206,11 +217,13 @@ describe("Wunderkind plugin transform", () => {
       await cachedTransform!({}, output)
       expect(output.system.some((s) => s.includes("## Wunderkind SOUL Overlay"))).toBe(false)
     } finally {
+      process.chdir(ORIGINAL_CWD)
       rmSync(tempDir, { recursive: true, force: true })
     }
   })
 
   it("skips docs injection when the docs sentinel is already present", async () => {
+    await initPromise
     mockReadWunderkindConfig.mockImplementation(() => ({
       docsEnabled: true,
       docsPath: "./docs/output",
@@ -230,6 +243,7 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("skips SOUL overlay when the soul file does not exist on disk", async () => {
+    await initPromise
     const tempDir = join(tmpdir(), `wunderkind-soul-missing-${Date.now()}`)
     mkdirSync(tempDir, { recursive: true })
     process.chdir(tempDir)

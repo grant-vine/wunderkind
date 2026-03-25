@@ -31,8 +31,11 @@ function readSoulOverlay(agentKey: (typeof SOUL_HEADING_MARKERS)[number]["agentK
   try {
     const content = readFileSync(soulPath, "utf-8").trim()
     return content === "" ? null : content
-  } catch {
-    return null
+  } catch (err) {
+    if (err instanceof Error && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
+      return null
+    }
+    throw err
   }
 }
 
@@ -44,7 +47,7 @@ const WunderkindPlugin: Plugin = async (_input) => {
 
       if (wunderkindConfig?.docsEnabled === true && !hasDocsOutputSentinel) {
         const docsPath = wunderkindConfig.docsPath ?? "./docs"
-        const docHistoryMode = wunderkindConfig.docHistoryMode ?? "overwrite"
+        const docHistoryMode = wunderkindConfig.docHistoryMode ?? "append-dated"
         const docsTargets = Object.entries(AGENT_DOCS_CONFIG)
           .filter(([, config]) => config.eligible)
           .map(([agentKey, config]) => `- ${agentKey}: ${docsPath}/${config.canonicalFilename}`)
@@ -138,6 +141,11 @@ The following specialist agents are available as native OpenCode agents. Delegat
 - Route directly to legal-counsel for OSS licensing and legal/compliance review.
 
 Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, brand, community, developer advocacy, docs-led launches, tutorials, migration support, funnel interpretation, and adoption work. Use fullstack-wunderkind for engineering implementation, architecture, TDD, technical diagnosis, reliability engineering, runbooks, incidents, and supportability. Use legal-counsel for OSS licensing and legal/compliance review.
+
+### Tool Usage
+
+- Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
+- Use \`skill(name="...")\` for shipped skills and sub-skills.
 
 ### Project Configuration
 
