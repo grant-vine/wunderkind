@@ -1,20 +1,15 @@
-F3 Real Manual QA
+F3 MANUAL QA REVIEW — Round 2
+Date: 2026-03-25
 
-Date: 2026-03-19
-Repo: /Users/grantv/Code/wunderkind
+AGENT-BY-AGENT REVIEW:
+- marketing-wunderkind.md: PASS — No `## Delegation Contract` present; line 147 uses `- Invoke via `skill(name="technical-writer")` when the work becomes deep developer-documentation drafting.`
+- creative-director.md: PASS — No `## Delegation Contract` present; lines 111, 127, and 145 use `Invoke via `skill(name="visual-artist")``.
+- product-wunderkind.md: PASS — Line 167 contains `## Delegation Contract`; lines 171-172 include both `skill(name="<skill>")` and `task(...)`, with canonical `task({` examples at lines 183-195.
+- fullstack-wunderkind.md: PASS — Line 169 contains `## Delegation Contract`; line 270 is `- Delegate via `task(...)` to `git-master` for git operations.` and line 271 separately states `- Invoke via `skill(name="technical-writer")` for external developer docs or tutorials.`
+- ciso.md: PASS — Line 107 contains `## Delegation Contract`; `/threat-model` line 153 leads with `Invoke via `skill(name="security-analyst")``, `/security-audit` line 159 leads with `Invoke via `skill(name="pen-tester")``, and `/incident-response` line 171 contains sentence-leading `Invoke via `skill(name="compliance-officer")``.
+- legal-counsel.md: PASS — No `## Delegation Contract` present; no `run_in_background` or `load_skills` strings appear anywhere in the file, and line 139 states `- Legal Counsel stays advisory and does not delegate through sub-skills.`
 
-Commands run:
-- `npx tsc --noEmit`
-- `bun test tests/unit/`
-- `bun run build`
-- `node bin/wunderkind.js --help`
-- `node bin/wunderkind.js doctor --verbose`
+ISSUES FOUND:
+None
 
-Results:
-- `npx tsc --noEmit` succeeded.
-- `bun test tests/unit/` succeeded with `194 pass, 0 fail`.
-- `bun run build` succeeded and regenerated 6 agent files.
-- `node bin/wunderkind.js --help` succeeded.
-- `node bin/wunderkind.js doctor --verbose` succeeded.
-
-Verdict: PASS
+VERDICT: APPROVE
