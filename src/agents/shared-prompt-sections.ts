@@ -60,3 +60,36 @@ export function renderSlashCommandRegistry(registry: SlashCommandRegistry): stri
     ...sectionBlocks,
   ].join("\n\n---\n\n")
 }
+
+export function buildDelegationContractSection(): string {
+  return `## Delegation Contract
+
+Use this contract to choose the right delegation mechanism.
+
+- Invoke via \`skill(name="<skill>")\` for shipped Wunderkind skills and sub-skills — invoke directly, never wrap in \`task()\`.
+- Delegate via \`task(...)\` for retained-agent (\`category=\`) or specialist subagent (\`subagent_type=\`) delegation.
+
+### Required fields in every \`task()\` call
+
+- \`load_skills\`: required in every \`task()\` call. Use \`[]\` when no skills apply; never omit.
+- \`run_in_background\`: required in every \`task()\` call. Must be explicitly \`true\` or \`false\`; never omit.
+- \`category\` and \`subagent_type\`: mutually exclusive. Pass exactly one, never both.
+
+### Canonical examples
+
+\`\`\`typescript
+task({
+  category: "deep",
+  load_skills: [],
+  run_in_background: false,
+  prompt: "...",
+})
+
+task({
+  subagent_type: "oracle",
+  load_skills: [],
+  run_in_background: true,
+  prompt: "...",
+})
+\`\`\``
+}

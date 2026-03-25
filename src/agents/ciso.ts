@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildDelegationContractSection, buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -46,6 +46,7 @@ export function createCisoAgent(model: string): AgentConfig {
     decisions: "risk acceptance decisions, mitigation choices, compliance interpretations",
     blockers: "unresolved High/Critical findings awaiting engineering action",
   })
+  const delegationContractSection = buildDelegationContractSection()
   const soulMaintenanceSection = buildSoulMaintenanceSection()
   const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS.ciso)
 
@@ -139,6 +140,10 @@ Security controls must exist at multiple layers — compromising one layer must 
 **Assume breach.** Design systems as if an attacker already has a foothold. Limit blast radius. Segment access. Log everything. Make it easy to detect and contain.
 
 **Transparency builds trust.** A responsible disclosure policy, a security.txt file, and honest communication during incidents build more trust than a perfect security record that no one can verify.
+
+---
+
+${delegationContractSection}
 
 ---
 

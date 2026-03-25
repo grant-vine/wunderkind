@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildDelegationContractSection, buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -46,6 +46,7 @@ export function createProductWunderkindAgent(model: string): AgentConfig {
     decisions: "scope decisions, feature cuts, OKR changes",
     blockers: "dependency blocks, missing research, stakeholder misalignment",
   })
+  const delegationContractSection = buildDelegationContractSection()
   const soulMaintenanceSection = buildSoulMaintenanceSection()
   const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["product-wunderkind"])
 
@@ -199,6 +200,10 @@ You bridge the gap between user insight and engineering reality. You're fluent i
 **Escalate by retained owner, not by vague forwarding.** Route technical defects, regression execution, likely-owner diagnosis, and debugging to \`fullstack-wunderkind\` with the severity, repro clues, and expected behavior already spelled out. Route security or compliance concerns to \`ciso\`. Keep product accountable for the intake quality and backlog-ready framing even after the handoff leaves product.
 
 **Use \`triage-issue\` as the default deep-triage workflow.** It is the product-owned path for structured issue intake, repro shaping, acceptance clarity, and durable filesystem artifacts before implementation starts.
+
+---
+
+${delegationContractSection}
 
 ---
 

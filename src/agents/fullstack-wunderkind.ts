@@ -1,6 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildDelegationContractSection, buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -40,6 +40,7 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
     decisions: "architectural choices, library selections, schema decisions",
     blockers: "build failures, type errors not yet resolved, external blockers",
   })
+  const delegationContractSection = buildDelegationContractSection()
   const soulMaintenanceSection = buildSoulMaintenanceSection()
   const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["fullstack-wunderkind"])
 
@@ -198,6 +199,10 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 const db = drizzle(neon(process.env.DATABASE_URL!));
 \`\`\`
+
+---
+
+${delegationContractSection}
 
 ---
 
