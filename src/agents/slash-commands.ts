@@ -36,7 +36,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         command: "/content-calendar <platform> <period>",
         summary: "Generate a platform-specific content calendar.",
-        details: ["Use `social-media-maven` for channel-native plans, posting cadence, themes, and copy scaffolding."],
+        details: ["Invoke via `skill(name=\"social-media-maven\")` for channel-native plans, posting cadence, themes, and copy scaffolding."],
       },
       {
         command: "/community-audit",
@@ -49,7 +49,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         command: "/docs-launch-brief <release>",
         summary: "Plan the audience-facing launch package for a technical release.",
-        details: ["Use `technical-writer` when the work becomes deep developer-documentation drafting."],
+        details: ["Invoke via `skill(name=\"technical-writer\")` when the work becomes deep developer-documentation drafting."],
       },
       {
         command: "/dx-audit",
@@ -66,7 +66,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
         items: [
           "Use `visual-engineering` for campaign design, launch visuals, and brand-system execution.",
           "Use `librarian` for market research, event inventories, and external trend gathering.",
-          "Use `technical-writer` for deep developer-facing docs or migration-writing execution.",
+          "Invoke via `skill(name=\"technical-writer\")` for deep developer-facing docs or migration-writing execution.",
           "Use `fullstack-wunderkind` to verify technical setup steps or code-example correctness.",
           "Use `legal-counsel` for launch, claim, or regulatory review that needs legal authority.",
         ],
@@ -78,7 +78,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         command: "/brand-identity <brief>",
         summary: "Develop a brand identity system from a creative brief.",
-        details: ["Use `visual-artist` for palette generation, token export, and WCAG auditing."],
+        details: ["Invoke via `skill(name=\"visual-artist\")` for palette generation, token export, and WCAG auditing."],
       },
       {
         command: "/design-audit <url>",
@@ -88,7 +88,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         command: "/generate-palette <seed>",
         summary: "Generate an accessible color system from a seed color.",
-        details: ["Use `visual-artist` for palette math, token export, and WCAG checks."],
+        details: ["Invoke via `skill(name=\"visual-artist\")` for palette math, token export, and WCAG checks."],
       },
       {
         command: "/design-system-review",
@@ -102,7 +102,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
     sections: [
       {
         heading: "Sub-Skill Delegation",
-        items: ["Use `visual-artist` for detailed color systems, design tokens, and WCAG-focused palette work."],
+        items: ["Invoke via `skill(name=\"visual-artist\")` for detailed color systems, design tokens, and WCAG-focused palette work."],
       },
       {
         heading: "Delegation Patterns",
@@ -118,11 +118,11 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
     commands: [
       {
         command: "/breakdown <task>",
-        summary: "Delegate to `agile-pm` for concern-grouped, parallel-safe subtasks with file targets and dependency order.",
+        summary: "Invoke via `skill(name=\"agile-pm\")` for concern-grouped, parallel-safe subtasks with file targets and dependency order.",
       },
       {
         command: "/sprint-plan",
-        summary: "Delegate to `agile-pm` for a sprint plan with points, file targets, dependencies, and stretch work.",
+        summary: "Invoke via `skill(name=\"agile-pm\")` for a sprint plan with points, file targets, dependencies, and stretch work.",
       },
       {
         command: "/prd <feature>",
@@ -135,7 +135,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       },
       {
         command: "/file-conflict-check",
-        summary: "Use `agile-pm` to build a file-to-task conflict matrix with severity and safe sequencing.",
+        summary: "Invoke via `skill(name=\"agile-pm\")` to build a file-to-task conflict matrix with severity and safe sequencing.",
       },
       {
         command: "/north-star <product>",
@@ -146,18 +146,18 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
-          "Keep `grill-me`, `prd-pipeline`, `ubiquitous-language`, and `triage-issue` explicit for deep product work.",
-          "Use `agile-pm` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.",
+          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"ubiquitous-language\")`, and `skill(name=\"triage-issue\")` for deep product work.",
+          "Invoke via `skill(name=\"agile-pm\")` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.",
         ],
       },
       {
         heading: "Delegation Patterns",
         items: [
-          "Use `librarian` for competitor research, market data, and industry-report gathering.",
-          "Use `explore` for codebase mapping before decomposition or acceptance review.",
-          "Use `writing` for PRDs, specs, and long-form product documentation.",
-          "Route campaign, launch, and funnel authority to `marketing-wunderkind`.",
-          "Route technical follow-up after product intake to `fullstack-wunderkind` with the repro, severity, and expected behavior already framed.",
+          "Delegate via `task(...)` to `librarian` for competitor research, market data, and industry-report gathering.",
+          "Delegate via `task(...)` to `explore` for codebase mapping before decomposition or acceptance review.",
+          "Delegate via `task(...)` to `writing` for PRDs, specs, and long-form product documentation.",
+          "Delegate via `task(...)` to `marketing-wunderkind` for campaign, launch, and funnel authority.",
+          "Delegate via `task(...)` to `fullstack-wunderkind` for technical follow-up after product intake with the repro, severity, and expected behavior already framed.",
         ],
       },
     ],
@@ -171,15 +171,15 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       },
       {
         command: "/bundle-analyze",
-        summary: "Use `vercel-architect` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.",
+        summary: "Invoke via `skill(name=\"vercel-architect\")` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.",
       },
       {
         command: "/db-audit",
-        summary: "Use `db-architect` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.",
+        summary: "Invoke via `skill(name=\"db-architect\")` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.",
       },
       {
         command: "/edge-vs-node <filepath>",
-        summary: "Use `vercel-architect` to decide runtime compatibility and explain blockers.",
+        summary: "Invoke via `skill(name=\"vercel-architect\")` to decide runtime compatibility and explain blockers.",
       },
       {
         command: "/architecture-review <component>",
@@ -198,18 +198,19 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
-          "Use `tdd` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
-          "Use `vercel-architect` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",
-          "Use `db-architect` for schema design, query analysis, migrations, and index auditing.",
+          "Invoke via `skill(name=\"tdd\")` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
+          "Invoke via `skill(name=\"vercel-architect\")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",
+          "Invoke via `skill(name=\"db-architect\")` for schema design, query analysis, migrations, and index auditing.",
         ],
       },
       {
         heading: "Delegation Patterns",
         items: [
-          "Use `visual-engineering` for UI implementation and coded visual work.",
-          "Use `agent-browser` for browser automation, E2E capture, and page validation.",
-          "Use `explore` for codebase mapping and `librarian` for external library/documentation research.",
-          "Use `git-master` for git operations and `technical-writer` for external developer docs or tutorials.",
+          "Delegate via `task(...)` to `visual-engineering` for UI implementation and coded visual work.",
+          "Delegate via `task(...)` to `agent-browser` for browser automation, E2E capture, and page validation.",
+          "Delegate via `task(...)` to `explore` for codebase mapping and `librarian` for external library/documentation research.",
+          "Delegate via `task(...)` to `git-master` for git operations.",
+          "Invoke via `skill(name=\"technical-writer\")` for external developer docs or tutorials.",
         ],
       },
     ],
@@ -218,19 +219,19 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
     commands: [
       {
         command: "/threat-model <system or feature>",
-        summary: "Build a STRIDE threat model, rate risks, map mitigations, and use `security-analyst` for deeper assessment.",
+        summary: "Invoke via `skill(name=\"security-analyst\")` to build a STRIDE threat model, rate risks, and map mitigations.",
       },
       {
         command: "/security-audit <scope>",
-        summary: "Review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use `pen-tester` when active testing is required.",
+        summary: "Invoke via `skill(name=\"pen-tester\")` for active security testing; review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk.",
       },
       {
         command: "/compliance-check <regulation>",
-        summary: "Use `compliance-officer` to assess obligations and evidence gaps against a named regulation.",
+        summary: "Invoke via `skill(name=\"compliance-officer\")` to assess obligations and evidence gaps against a named regulation.",
       },
       {
         command: "/incident-response <incident type>",
-        summary: "Run contain/assess/notify/eradicate/recover/learn, delegate operational containment to `fullstack-wunderkind`, and use `compliance-officer` before routing formal wording to `legal-counsel`.",
+        summary: "Run contain/assess/notify/eradicate/recover/learn. Delegate operational containment to `fullstack-wunderkind`. Invoke via `skill(name=\"compliance-officer\")` before routing formal wording to `legal-counsel`.",
       },
       {
         command: "/security-headers-check <url>",
@@ -245,14 +246,14 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
-          "Use `security-analyst` for vulnerability assessment, OWASP analysis, code review, and auth testing.",
-          "Use `pen-tester` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.",
-          "Use `compliance-officer` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.",
+          "Invoke via `skill(name=\"security-analyst\")` for vulnerability assessment, OWASP analysis, code review, and auth testing.",
+          "Invoke via `skill(name=\"pen-tester\")` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.",
+          "Invoke via `skill(name=\"compliance-officer\")` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.",
         ],
       },
       {
         heading: "Delegation Patterns",
-        items: ["Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to `legal-counsel`."],
+        items: ["Delegate via `task(...)` to `legal-counsel` for OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work."],
       },
     ],
   },
