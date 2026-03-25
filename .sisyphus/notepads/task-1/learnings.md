@@ -1,0 +1,3 @@
+- Added delegation contract assertions to tests/unit/agent-factories.test.ts for task-capable product-wunderkind, fullstack-wunderkind, and ciso only.
+- The new assertions intentionally fail because the prompts do not yet contain ## Delegation Contract, Invoke via `skill(name=, Delegate via `task(...)`, load_skills, or run_in_background.
+- Captured failing bun test output in .sisyphus/evidence/task-1-agent-contract.txt for the red-state handoff.
