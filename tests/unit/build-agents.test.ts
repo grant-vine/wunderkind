@@ -72,4 +72,19 @@ describe("build-agents script", () => {
       }
     }
   })
+
+  it("tracks delegation contract coverage in generated agent markdown", () => {
+    const TASK_CAPABLE = ["product-wunderkind", "fullstack-wunderkind", "ciso"] as const
+    const TASK_DENIED = ["marketing-wunderkind", "creative-director", "legal-counsel"] as const
+
+    for (const agent of TASK_CAPABLE) {
+      const markdown = readFileSync(join(AGENTS_DIR, `${agent}.md`), "utf-8")
+      expect(markdown).toContain("## Delegation Contract")
+    }
+
+    for (const agent of TASK_DENIED) {
+      const markdown = readFileSync(join(AGENTS_DIR, `${agent}.md`), "utf-8")
+      expect(markdown).not.toContain("## Delegation Contract")
+    }
+  })
 })

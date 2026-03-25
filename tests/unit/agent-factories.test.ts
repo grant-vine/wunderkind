@@ -108,8 +108,7 @@ describe("retained agent factory structure", () => {
       })
 
       it("prompt contains all registered slash commands for the agent", () => {
-        const registry = RETAINED_AGENT_SLASH_COMMANDS[name]
-        if (!registry) return
+        const registry = RETAINED_AGENT_SLASH_COMMANDS[name as keyof typeof RETAINED_AGENT_SLASH_COMMANDS]
 
         for (const command of registry.commands) {
           expect(config.prompt).toContain(`### \`${command.command}\``)
@@ -194,6 +193,53 @@ describe("Documentation Output static sections", () => {
       expect(config.prompt).not.toContain(
         "## Documentation Output (Static Reference)",
       )
+    })
+  }
+})
+
+describe("delegation contract", () => {
+  const TASK_CAPABLE = [
+    { name: "product-wunderkind", factory: createProductWunderkindAgent },
+    { name: "fullstack-wunderkind", factory: createFullstackWunderkindAgent },
+    { name: "ciso", factory: createCisoAgent },
+  ] as const
+
+  const TASK_DENIED = [
+    { name: "marketing-wunderkind", factory: createMarketingWunderkindAgent },
+    { name: "creative-director", factory: createCreativeDirectorAgent },
+    { name: "legal-counsel", factory: createLegalCounselAgent },
+  ] as const
+
+  for (const { name, factory } of TASK_CAPABLE) {
+    describe(name, () => {
+      const config = factory("test-model")
+
+      it("prompt contains ## Delegation Contract section", () => {
+        expect(config.prompt).toContain("## Delegation Contract")
+      })
+
+      it("prompt uses Invoke via `skill(name=` prefix for skill references", () => {
+        expect(config.prompt).toContain("Invoke via `skill(name=")
+      })
+
+      it("prompt uses Delegate via `task(...)` prefix for task delegation", () => {
+        expect(config.prompt).toContain("Delegate via `task(...)")
+      })
+
+      it("delegation contract mentions load_skills as required", () => {
+        expect(config.prompt).toContain("load_skills")
+      })
+
+      it("delegation contract mentions run_in_background as required", () => {
+        expect(config.prompt).toContain("run_in_background")
+      })
+    })
+  }
+
+  for (const { name, factory } of TASK_DENIED) {
+    it(`${name} does NOT contain ## Delegation Contract section`, () => {
+      const config = factory("test-model")
+      expect(config.prompt).not.toContain("## Delegation Contract")
     })
   }
 })
