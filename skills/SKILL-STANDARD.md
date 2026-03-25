@@ -142,6 +142,17 @@ A skill is complete only when all of the following are true:
 - Split rare detail into sibling files before `SKILL.md` becomes bloated.
 - Keep repo-specific language stronger than generic methodology language.
 
+### Task Delegation Contract
+
+If a skill includes `task(...)` examples, they MUST include both required fields:
+
+- `load_skills: []` (or the relevant skill list) — never omit
+- `run_in_background: true | false` — never omit, must be explicit
+
+Use `skill(name="<skill>")` syntax for skill invocations; never wrap skill calls in `task()`.
+
+Historical `.sisyphus/**` archives are intentionally excluded from this compliance change.
+
 ## Skill inventory
 
 | Skill Name | Current Owner | Disposition | Notes |

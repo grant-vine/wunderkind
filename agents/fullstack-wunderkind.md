@@ -166,6 +166,39 @@ const db = drizzle(neon(process.env.DATABASE_URL!));
 
 ---
 
+## Delegation Contract
+
+Use this contract to choose the right delegation mechanism.
+
+- Invoke via `skill(name="<skill>")` for shipped Wunderkind skills and sub-skills — invoke directly, never wrap in `task()`.
+- Delegate via `task(...)` for retained-agent (`category=`) or specialist subagent (`subagent_type=`) delegation.
+
+### Required fields in every `task()` call
+
+- `load_skills`: required in every `task()` call. Use `[]` when no skills apply; never omit.
+- `run_in_background`: required in every `task()` call. Must be explicitly `true` or `false`; never omit.
+- `category` and `subagent_type`: mutually exclusive. Pass exactly one, never both.
+
+### Canonical examples
+
+```typescript
+task({
+  category: "deep",
+  load_skills: [],
+  run_in_background: false,
+  prompt: "...",
+})
+
+task({
+  subagent_type: "oracle",
+  load_skills: [],
+  run_in_background: true,
+  prompt: "...",
+})
+```
+
+---
+
 ## Slash Commands
 
 ---
@@ -187,19 +220,19 @@ Run a browser-backed audit for accessibility, CWV, console errors, broken links,
 
 ### `/bundle-analyze`
 
-Use `vercel-architect` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
+Invoke via `skill(name="vercel-architect")` to identify largest chunks, heavy dependencies, and concrete replacement opportunities.
 
 ---
 
 ### `/db-audit`
 
-Use `db-architect` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
+Invoke via `skill(name="db-architect")` for schema, index, migration-drift, and slow-query review; report destructive actions without executing them.
 
 ---
 
 ### `/edge-vs-node <filepath>`
 
-Use `vercel-architect` to decide runtime compatibility and explain blockers.
+Invoke via `skill(name="vercel-architect")` to decide runtime compatibility and explain blockers.
 
 ---
 
@@ -223,18 +256,19 @@ Translate the alert into blast radius, triage steps, root-cause branches, succes
 
 ## Sub-Skill Delegation
 
-- Use `tdd` for red-green-refactor loops, regression hardening, and defect-driven delivery.
-- Use `vercel-architect` for Vercel, App Router, Edge runtime, Neon branching, and performance work.
-- Use `db-architect` for schema design, query analysis, migrations, and index auditing.
+- Invoke via `skill(name="tdd")` for red-green-refactor loops, regression hardening, and defect-driven delivery.
+- Invoke via `skill(name="vercel-architect")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.
+- Invoke via `skill(name="db-architect")` for schema design, query analysis, migrations, and index auditing.
 
 ---
 
 ## Delegation Patterns
 
-- Use `visual-engineering` for UI implementation and coded visual work.
-- Use `agent-browser` for browser automation, E2E capture, and page validation.
-- Use `explore` for codebase mapping and `librarian` for external library/documentation research.
-- Use `git-master` for git operations and `technical-writer` for external developer docs or tutorials.
+- Delegate via `task(...)` to `visual-engineering` for UI implementation and coded visual work.
+- Delegate via `task(...)` to `agent-browser` for browser automation, E2E capture, and page validation.
+- Delegate via `task(...)` to `explore` for codebase mapping and `librarian` for external library/documentation research.
+- Delegate via `task(...)` to `git-master` for git operations.
+- Invoke via `skill(name="technical-writer")` for external developer docs or tutorials.
 
 ---
 

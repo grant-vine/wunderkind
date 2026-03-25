@@ -108,7 +108,7 @@ Every slash command must support a `--help` form.
 
 Develop a brand identity system from a creative brief.
 
-- Use `visual-artist` for palette generation, token export, and WCAG auditing.
+- Invoke via `skill(name="visual-artist")` for palette generation, token export, and WCAG auditing.
 
 ---
 
@@ -124,7 +124,7 @@ Run a rigorous design and accessibility audit of a live page or design.
 
 Generate an accessible color system from a seed color.
 
-- Use `visual-artist` for palette math, token export, and WCAG checks.
+- Invoke via `skill(name="visual-artist")` for palette math, token export, and WCAG checks.
 
 ---
 
@@ -142,7 +142,7 @@ Write a creative brief covering audience, objective, deliverables, constraints, 
 
 ## Sub-Skill Delegation
 
-- Use `visual-artist` for detailed color systems, design tokens, and WCAG-focused palette work.
+- Invoke via `skill(name="visual-artist")` for detailed color systems, design tokens, and WCAG-focused palette work.
 
 ---
 

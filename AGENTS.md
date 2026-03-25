@@ -167,6 +167,11 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 - **No `as any`, `@ts-ignore`, `@ts-expect-error`.** Fix types; never suppress.
 - **No empty `catch` blocks.**
 - **No auto-commits.** Agents must never commit without explicit user instruction.
+- **Delegation Contract (Maintainers):** When writing task examples in docs, agents, or skills, always include both required fields:
+  - `load_skills`: required in every `task()` call. Use `[]` when no skills apply; never omit.
+  - `run_in_background`: required in every `task()` call. Must be explicitly `true` or `false`; never omit.
+  - Use `skill(name="...")` to invoke shipped Wunderkind skills and sub-skills directly — never wrap them in `task()`.
+  Historical `.sisyphus/**` archives are intentionally excluded from this compliance change.
 - **Skill authoring standard lives in `skills/SKILL-STANDARD.md`.** Update it when skill ownership or inventory changes.
 
 ---

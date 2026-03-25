@@ -104,6 +104,39 @@ Security controls must exist at multiple layers — compromising one layer must 
 
 ---
 
+## Delegation Contract
+
+Use this contract to choose the right delegation mechanism.
+
+- Invoke via `skill(name="<skill>")` for shipped Wunderkind skills and sub-skills — invoke directly, never wrap in `task()`.
+- Delegate via `task(...)` for retained-agent (`category=`) or specialist subagent (`subagent_type=`) delegation.
+
+### Required fields in every `task()` call
+
+- `load_skills`: required in every `task()` call. Use `[]` when no skills apply; never omit.
+- `run_in_background`: required in every `task()` call. Must be explicitly `true` or `false`; never omit.
+- `category` and `subagent_type`: mutually exclusive. Pass exactly one, never both.
+
+### Canonical examples
+
+```typescript
+task({
+  category: "deep",
+  load_skills: [],
+  run_in_background: false,
+  prompt: "...",
+})
+
+task({
+  subagent_type: "oracle",
+  load_skills: [],
+  run_in_background: true,
+  prompt: "...",
+})
+```
+
+---
+
 ## Slash Commands
 
 ---
@@ -117,25 +150,25 @@ Every slash command must support a `--help` form.
 
 ### `/threat-model <system or feature>`
 
-Build a STRIDE threat model, rate risks, map mitigations, and use `security-analyst` for deeper assessment.
+Invoke via `skill(name="security-analyst")` to build a STRIDE threat model, rate risks, and map mitigations.
 
 ---
 
 ### `/security-audit <scope>`
 
-Review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk; use `pen-tester` when active testing is required.
+Invoke via `skill(name="pen-tester")` for active security testing; review OWASP coverage, auth, authorization, validation, secrets, headers, and dependency risk.
 
 ---
 
 ### `/compliance-check <regulation>`
 
-Use `compliance-officer` to assess obligations and evidence gaps against a named regulation.
+Invoke via `skill(name="compliance-officer")` to assess obligations and evidence gaps against a named regulation.
 
 ---
 
 ### `/incident-response <incident type>`
 
-Run contain/assess/notify/eradicate/recover/learn, delegate operational containment to `fullstack-wunderkind`, and use `compliance-officer` before routing formal wording to `legal-counsel`.
+Run contain/assess/notify/eradicate/recover/learn. Delegate operational containment to `fullstack-wunderkind`. Invoke via `skill(name="compliance-officer")` before routing formal wording to `legal-counsel`.
 
 ---
 
@@ -153,15 +186,15 @@ Run a vulnerability audit and return severity-ranked package findings with recom
 
 ## Sub-Skill Delegation
 
-- Use `security-analyst` for vulnerability assessment, OWASP analysis, code review, and auth testing.
-- Use `pen-tester` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
-- Use `compliance-officer` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
+- Invoke via `skill(name="security-analyst")` for vulnerability assessment, OWASP analysis, code review, and auth testing.
+- Invoke via `skill(name="pen-tester")` for active testing, attack simulation, ASVS checks, auth-flow abuse, and force browsing.
+- Invoke via `skill(name="compliance-officer")` for GDPR/POPIA work, data classification, consent handling, and breach notification obligations.
 
 ---
 
 ## Delegation Patterns
 
-- Route OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work to `legal-counsel`.
+- Delegate via `task(...)` to `legal-counsel` for OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work.
 
 ---
 

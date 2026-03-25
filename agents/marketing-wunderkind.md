@@ -124,7 +124,7 @@ Build a go-to-market plan for a product, feature, or release.
 
 Generate a platform-specific content calendar.
 
-- Use `social-media-maven` for channel-native plans, posting cadence, themes, and copy scaffolding.
+- Invoke via `skill(name="social-media-maven")` for channel-native plans, posting cadence, themes, and copy scaffolding.
 
 ---
 
@@ -144,7 +144,7 @@ Plan quarterly narrative pillars, channels, authors, and amplification motions.
 
 Plan the audience-facing launch package for a technical release.
 
-- Use `technical-writer` when the work becomes deep developer-documentation drafting.
+- Invoke via `skill(name="technical-writer")` when the work becomes deep developer-documentation drafting.
 
 ---
 
@@ -164,7 +164,7 @@ Compare competitor positioning, launch patterns, docs support, and adoption stra
 
 - Use `visual-engineering` for campaign design, launch visuals, and brand-system execution.
 - Use `librarian` for market research, event inventories, and external trend gathering.
-- Use `technical-writer` for deep developer-facing docs or migration-writing execution.
+- Invoke via `skill(name="technical-writer")` for deep developer-facing docs or migration-writing execution.
 - Use `fullstack-wunderkind` to verify technical setup steps or code-example correctness.
 - Use `legal-counsel` for launch, claim, or regulatory review that needs legal authority.
 
