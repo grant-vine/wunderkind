@@ -136,3 +136,8 @@ src/cli/config-manager/index.ts       |   16.18 |   19.17 | Bun merge bug; real 
 src/agents/docs-index-plan.ts         |  100.00 |   98.21 | line 33 — accepted ceiling
 [all src/agents/* files]              |  100.00 |  100.00 |
 ```
+## 2026-03-25 — plugin transform delegation contract
+
+- Added red-state assertions to `tests/unit/plugin-transform.test.ts` for the native agent catalog section.
+- The test currently fails as intended because `src/index.ts` still does not inject the exact `task(...)` and `skill(name="...")` delegation contract sentences.
+- Bun test evidence is captured in `.sisyphus/evidence/task-2-plugin-transform.txt`.
