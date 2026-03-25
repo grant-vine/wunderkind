@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -358,6 +358,89 @@ describe("config-manager coverage", () => {
       expect(omoVersionInfo.staleOverrideWarning).toBe(
         "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
       )
+      expect(omoVersionInfo.freshness?.status).toBe("unknown")
+    })
+  })
+
+  it("detectOmoVersionInfo parses upstream freshness JSON when get-local-version succeeds", async () => {
+    await withSandbox("omo-freshness-success", async (sandbox) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@3.12.2"] }))
+
+      const childProcess = await import("node:child_process")
+      const originalSpawnSync = childProcess.spawnSync
+
+      mock.module("node:child_process", () => ({
+        spawnSync: ((command: string, args: string[]) => {
+          if (
+            command === "bunx" &&
+            args[0] === "oh-my-opencode" &&
+            args[1] === "get-local-version" &&
+            args[2] === "--json"
+          ) {
+            return {
+              status: 0,
+              stdout: JSON.stringify({
+                currentVersion: "3.12.2",
+                latestVersion: "3.13.1",
+                isUpToDate: false,
+                isLocalDev: false,
+                isPinned: false,
+                pinnedVersion: null,
+                status: "outdated",
+              }),
+              stderr: "",
+            }
+          }
+
+          return originalSpawnSync(command, args, { encoding: "utf8" })
+        }) as typeof childProcess.spawnSync,
+      }))
+
+      try {
+        const freshMod = (await import(`${CONFIG_MANAGER_MODULE_URL}&omo-freshness-success=1`)) as ConfigManagerModule
+        freshMod.__setConfigManagerPathOverrideForTests({ cwd: sandbox.projectDir, home: sandbox.homeDir })
+        const info = freshMod.detectOmoVersionInfo()
+        expect(info.freshness?.status).toBe("outdated")
+        expect(info.freshness?.latestVersion).toBe("3.13.1")
+        expect(info.freshness?.currentVersion).toBe("3.12.2")
+      } finally {
+        mock.module("node:child_process", () => ({ spawnSync: originalSpawnSync }))
+      }
+    })
+  })
+
+  it("detectOmoVersionInfo falls back when upstream freshness JSON is invalid", async () => {
+    await withSandbox("omo-freshness-invalid", async (sandbox) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@3.12.2"] }))
+
+      const childProcess = await import("node:child_process")
+      const originalSpawnSync = childProcess.spawnSync
+
+      mock.module("node:child_process", () => ({
+        spawnSync: ((command: string, args: string[]) => {
+          if (command === "bunx" && args[0] === "oh-my-opencode" && args[1] === "get-local-version") {
+            return {
+              status: 0,
+              stdout: "not-json",
+              stderr: "",
+            }
+          }
+
+          return originalSpawnSync(command, args, { encoding: "utf8" })
+        }) as typeof childProcess.spawnSync,
+      }))
+
+      try {
+        const freshMod = (await import(`${CONFIG_MANAGER_MODULE_URL}&omo-freshness-invalid=1`)) as ConfigManagerModule
+        freshMod.__setConfigManagerPathOverrideForTests({ cwd: sandbox.projectDir, home: sandbox.homeDir })
+        const info = freshMod.detectOmoVersionInfo()
+        expect(info.freshness?.status).toBe("unknown")
+        expect(info.freshness?.latestVersion).toBe(null)
+      } finally {
+        mock.module("node:child_process", () => ({ spawnSync: originalSpawnSync }))
+      }
     })
   })
 

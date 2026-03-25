@@ -40,6 +40,58 @@ function line(label: string, value: string): void {
   console.log(`${color.dim("- ")}${color.bold(label)} ${value}`)
 }
 
+function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInfo>): { label: string; guidance: string } {
+  const freshness = omoVersion.freshness
+
+  if (!omoVersion.registered) {
+    return {
+      label: color.dim("not checked"),
+      guidance: "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately.",
+    }
+  }
+
+  if (omoVersion.staleOverrideWarning) {
+    return {
+      label: color.yellow("stale override detected"),
+      guidance: "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode.",
+    }
+  }
+
+  if (!freshness || freshness.status === "unknown" || freshness.status === "error") {
+    return {
+      label: color.dim("not verified"),
+      guidance: "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice.",
+    }
+  }
+
+  if (freshness.status === "up-to-date") {
+    return {
+      label: color.green("up to date"),
+      guidance: "oh-my-openagent is already up to date.",
+    }
+  }
+
+  if (freshness.status === "outdated") {
+    const upgradeCommand = freshness.renderedOutput?.split("\n").find((lineValue) => lineValue.includes("Run:"))
+    return {
+      label: color.yellow("update available"),
+      guidance: upgradeCommand ?? "An oh-my-openagent update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
+    }
+  }
+
+  if (freshness.status === "local-dev") {
+    return {
+      label: color.cyan("local development mode"),
+      guidance: "oh-my-openagent is running in local development mode — upstream update checks are informational only.",
+    }
+  }
+
+  return {
+    label: color.magenta(`pinned${freshness.pinnedVersion ? ` (${freshness.pinnedVersion})` : ""}`),
+    guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
+  }
+}
+
 function configValue(value: string): string {
   return value.trim() !== "" ? value : "(not set)"
 }
@@ -178,13 +230,9 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("oh-my-openagent warning:", color.yellow(omoVersion.staleOverrideWarning))
     }
 
-    const versionAdvice = !omoVersion.registered
-      ? "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately."
-      : omoVersion.loadedVersion === null
-        ? "oh-my-openagent is registered but its loaded version could not be determined locally — verify before upgrading both together."
-        : omoVersion.staleOverrideWarning
-          ? "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode."
-        : "Versions are advisory only — upgrade Wunderkind and oh-my-openagent independently unless your test case requires both."
+    const omoFreshness = summarizeOmoFreshness(omoVersion)
+    line("oh-my-openagent freshness:", omoFreshness.label)
+    const versionAdvice = omoFreshness.guidance
     line("upgrade guidance:", color.dim(versionAdvice))
 
     if (options.verbose) {

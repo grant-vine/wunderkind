@@ -25,6 +25,8 @@ import type {
   InstallRegistrationScope,
   InstallScope,
   LegalPersonality,
+  OmoFreshnessInfo,
+  OmoFreshnessStatus,
   OrgStructure,
   BaselineConfigKey,
   PluginVersionInfo,
@@ -277,6 +279,84 @@ function readJsonVersion(filePath: string): string | null {
   }
 }
 
+function stripAnsi(value: string): string {
+  return value.replace(new RegExp("\\u001b\\[[0-9;]*m", "g"), "")
+}
+
+function isOmoFreshnessStatus(value: unknown): value is OmoFreshnessStatus {
+  return (
+    value === "up-to-date" ||
+    value === "outdated" ||
+    value === "local-dev" ||
+    value === "pinned" ||
+    value === "error" ||
+    value === "unknown"
+  )
+}
+
+function parseOmoFreshnessJson(stdoutValue: string): OmoFreshnessInfo | null {
+  try {
+    const parsed = JSON.parse(stdoutValue) as unknown
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null
+
+    const record = parsed as Record<string, unknown>
+    const status = record.status
+    if (!isOmoFreshnessStatus(status)) return null
+
+    return {
+      status,
+      currentVersion: typeof record.currentVersion === "string" ? record.currentVersion : null,
+      latestVersion: typeof record.latestVersion === "string" ? record.latestVersion : null,
+      pinnedVersion: typeof record.pinnedVersion === "string" ? record.pinnedVersion : null,
+      renderedOutput: null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function detectOmoFreshnessInfo(cwd: string, fallbackVersion: string | null): OmoFreshnessInfo {
+  const baseInfo: OmoFreshnessInfo = {
+    status: "unknown",
+    currentVersion: fallbackVersion,
+    latestVersion: null,
+    pinnedVersion: null,
+    renderedOutput: null,
+  }
+
+  const jsonResult = spawnSync("bunx", ["oh-my-opencode", "get-local-version", "--json", "--directory", cwd], {
+    encoding: "utf8",
+    timeout: 750,
+    maxBuffer: 1024 * 32,
+  })
+
+  if (jsonResult.error) return baseInfo
+
+  const parsed = typeof jsonResult.stdout === "string" ? parseOmoFreshnessJson(jsonResult.stdout) : null
+  if (parsed === null) return baseInfo
+
+  if (parsed.status !== "outdated") {
+    return {
+      ...parsed,
+      currentVersion: parsed.currentVersion ?? fallbackVersion,
+      renderedOutput: null,
+    }
+  }
+
+  const textResult = spawnSync("bunx", ["oh-my-opencode", "get-local-version", "--directory", cwd], {
+    encoding: "utf8",
+    timeout: 750,
+    maxBuffer: 1024 * 32,
+  })
+  const renderedOutput = textResult.error ? "" : typeof textResult.stdout === "string" ? stripAnsi(textResult.stdout).trim() : ""
+
+  return {
+    ...parsed,
+    currentVersion: parsed.currentVersion ?? fallbackVersion,
+    renderedOutput: renderedOutput !== "" ? renderedOutput : null,
+  }
+}
+
 function normalizeDependencyVersion(entry: string | null): string | null {
   if (!entry) return null
   const match = entry.match(/\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/)
@@ -415,6 +495,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     globalVersion: loadedSources.global.version,
     cacheVersion: loadedSources.cache.version,
   })
+  const freshness = registeredEntry !== null ? detectOmoFreshnessInfo(resolveConfigManagerRuntimeContext().cwd, loaded.version) : null
 
   return {
     packageName: OMO_CANONICAL_PACKAGE_NAME,
@@ -427,6 +508,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     registered: registeredEntry !== null,
     loadedSources,
     staleOverrideWarning,
+    freshness,
   }
 }
 

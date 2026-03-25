@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
-import type { DetectedConfig, InstallConfig, PluginVersionInfo } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, OmoFreshnessInfo, PluginVersionInfo } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
@@ -94,7 +94,25 @@ const mockDetectOmoVersionInfo = mock<() => PluginVersionInfo>(() => ({
     },
   },
   staleOverrideWarning: null,
+  freshness: {
+    status: "unknown",
+    currentVersion: "3.12.2",
+    latestVersion: null,
+    pinnedVersion: null,
+    renderedOutput: null,
+  },
 }))
+
+function createOmoFreshness(overrides: Partial<OmoFreshnessInfo> = {}): OmoFreshnessInfo {
+  return {
+    status: "unknown",
+    currentVersion: "3.12.2",
+    latestVersion: null,
+    pinnedVersion: null,
+    renderedOutput: null,
+    ...overrides,
+  }
+}
 const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
   scope === "global"
     ? { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }
@@ -685,6 +703,7 @@ describe("runDoctor", () => {
         cache: { version: null, packagePath: null },
       },
       staleOverrideWarning: null,
+      freshness: null,
     }))
 
     try {
@@ -697,6 +716,93 @@ describe("runDoctor", () => {
       console.log = originalLog
       console.error = originalError
     }
+  })
+
+  it("shows upstream up-to-date guidance when OMO freshness is verified", async () => {
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@3.12.2",
+      registeredVersion: null,
+      loadedVersion: "3.12.2",
+      configPath: "/tmp/opencode.json",
+      loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json",
+      registered: true,
+      loadedSources: {
+        global: { version: "3.12.2", packagePath: "/tmp/node_modules/oh-my-openagent/package.json" },
+        cache: { version: null, packagePath: null },
+      },
+      staleOverrideWarning: null,
+      freshness: createOmoFreshness({
+        status: "up-to-date",
+        currentVersion: "3.12.2",
+        latestVersion: "3.12.2",
+      }),
+    }))
+
+    const { code, messages } = await captureDoctorOutput({})
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("oh-my-openagent freshness:") && m.includes("up to date"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("already up to date"))).toBe(true)
+  })
+
+  it("shows upstream update command when OMO reports an update is available", async () => {
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@3.12.2",
+      registeredVersion: null,
+      loadedVersion: "3.12.2",
+      configPath: "/tmp/opencode.json",
+      loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json",
+      registered: true,
+      loadedSources: {
+        global: { version: "3.12.2", packagePath: "/tmp/node_modules/oh-my-openagent/package.json" },
+        cache: { version: null, packagePath: null },
+      },
+      staleOverrideWarning: null,
+      freshness: createOmoFreshness({
+        status: "outdated",
+        currentVersion: "3.12.2",
+        latestVersion: "3.13.1",
+        renderedOutput: "Run: cd ~/.config/opencode && bun update oh-my-opencode",
+      }),
+    }))
+
+    const { code, messages } = await captureDoctorOutput({})
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("oh-my-openagent freshness:") && m.includes("update available"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bun update oh-my-opencode"))).toBe(true)
+  })
+
+  it("falls back cleanly when OMO freshness cannot be verified", async () => {
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@3.12.2",
+      registeredVersion: null,
+      loadedVersion: "3.12.2",
+      configPath: "/tmp/opencode.json",
+      loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json",
+      registered: true,
+      loadedSources: {
+        global: { version: "3.12.2", packagePath: "/tmp/node_modules/oh-my-openagent/package.json" },
+        cache: { version: null, packagePath: null },
+      },
+      staleOverrideWarning: null,
+      freshness: createOmoFreshness({
+        status: "error",
+        currentVersion: "3.12.2",
+      }),
+    }))
+
+    const { code, messages } = await captureDoctorOutput({})
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("oh-my-openagent freshness:") && m.includes("not verified"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("could not be verified"))).toBe(true)
   })
 
   it("shows Agent Personalities section in verbose mode", async () => {

@@ -103,6 +103,16 @@ export interface DetectedConfig {
   designMcpOwnership: DesignMcpOwnership
 }
 
+export type OmoFreshnessStatus = "up-to-date" | "outdated" | "local-dev" | "pinned" | "error" | "unknown"
+
+export interface OmoFreshnessInfo {
+  status: OmoFreshnessStatus
+  currentVersion: string | null
+  latestVersion: string | null
+  pinnedVersion: string | null
+  renderedOutput: string | null
+}
+
 export interface PluginVersionInfo {
   packageName: string
   currentVersion: string | null
@@ -117,6 +127,7 @@ export interface PluginVersionInfo {
     cache: { version: string | null; packagePath: string | null }
   }
   staleOverrideWarning?: string | null
+  freshness?: OmoFreshnessInfo | null
 }
 
 export type BaselineConfigKey = keyof GlobalConfig
