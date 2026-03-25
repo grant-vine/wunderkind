@@ -1,0 +1,7 @@
+bun test tests/unit/skill-task-contract.test.ts
+
+bun test v1.3.10 (30e609e0)
+
+ 22 pass
+ 0 fail
+Ran 22 tests across 1 file. [15.00ms]

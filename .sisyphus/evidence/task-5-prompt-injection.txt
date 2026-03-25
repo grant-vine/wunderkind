@@ -1,0 +1,9 @@
+bun test tests/unit/agent-factories.test.ts
+(Run after Task 5 injected contract into product-wunderkind, fullstack-wunderkind, ciso and updated slash-commands.ts wording)
+
+bun test v1.3.10 (30e609e0)
+
+ 112 pass
+ 0 fail
+ 160 expect() calls
+Ran 112 tests across 1 file. [15.00ms]

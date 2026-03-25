@@ -1,0 +1,8 @@
+bun test tests/unit/build-agents.test.ts
+
+bun test v1.3.10 (30e609e0)
+
+ 4 pass
+ 0 fail
+ 72 expect() calls
+Ran 4 tests across 1 file. [18.00ms]

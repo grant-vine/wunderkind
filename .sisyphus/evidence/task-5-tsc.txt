@@ -1,1 +1,0 @@
-src/cli/index.ts(82,11): error TS2741: Property 'scope' is missing in type '{ tui: boolean; region: string | undefined; industry: string | undefined; primaryRegulation: string | undefined; secondaryRegulation: string | undefined; }' but required in type 'InstallArgs'.

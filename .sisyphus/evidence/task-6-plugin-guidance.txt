@@ -1,0 +1,9 @@
+bun test tests/unit/plugin-transform.test.ts
+(Run after Task 6 added ### Tool Usage section to src/index.ts native-agent routing block)
+
+bun test v1.3.10 (30e609e0)
+
+ 8 pass
+ 0 fail
+ 33 expect() calls
+Ran 8 tests across 1 file. [19.00ms]
