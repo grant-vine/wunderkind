@@ -1,0 +1,6 @@
+Upstream check: https://github.com/code-yeongyu/oh-my-openagent
+
+Findings:
+- The README documents category-based delegation and retained-agent orchestration.
+- A concrete `task(...)` prompt example with all required fields was not locatable in the fetched README content.
+- Fallback style used: Wunderkind-compatible skill/task contract wording with canonical examples matching the requested field requirements.

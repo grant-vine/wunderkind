@@ -1,0 +1,9 @@
+bun test tests/unit/agent-factories.test.ts
+(Run after Task 1 added delegation contract test assertions — these initially failed (RED), then passed GREEN after Tasks 4-5 implemented the contract)
+
+bun test v1.3.10 (30e609e0)
+
+ 112 pass
+ 0 fail
+ 160 expect() calls
+Ran 112 tests across 1 file. [15.00ms]
