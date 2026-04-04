@@ -118,6 +118,32 @@ describe("retained agent factory structure", () => {
   }
 
   describe("tool deny lists", () => {
+    it("marketing-wunderkind denies code mutation tools", () => {
+      const config = createMarketingWunderkindAgent("test-model")
+      const permissions = config.permission as Record<string, string> | undefined
+      expect(permissions?.["write"]).toBe("deny")
+      expect(permissions?.["edit"]).toBe("deny")
+      expect(permissions?.["apply_patch"]).toBe("deny")
+    })
+
+    it("product-wunderkind denies code mutation tools but stays task-capable", () => {
+      const config = createProductWunderkindAgent("test-model")
+      const permissions = config.permission as Record<string, string> | undefined
+      expect(permissions?.["write"]).toBe("deny")
+      expect(permissions?.["edit"]).toBe("deny")
+      expect(permissions?.["apply_patch"]).toBe("deny")
+      expect(permissions?.["task"]).toBeUndefined()
+    })
+
+    it("ciso denies code mutation tools but stays task-capable", () => {
+      const config = createCisoAgent("test-model")
+      const permissions = config.permission as Record<string, string> | undefined
+      expect(permissions?.["write"]).toBe("deny")
+      expect(permissions?.["edit"]).toBe("deny")
+      expect(permissions?.["apply_patch"]).toBe("deny")
+      expect(permissions?.["task"]).toBeUndefined()
+    })
+
     it("legal-counsel denies task", () => {
       const config = createLegalCounselAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
@@ -140,6 +166,14 @@ describe("retained agent factory structure", () => {
       const config = createFullstackWunderkindAgent("test-model")
       const permissions = config.permission as Record<string, string> | undefined
       expect(permissions?.["task"]).toBeUndefined()
+    })
+
+    it("fullstack-wunderkind does NOT deny code mutation tools", () => {
+      const config = createFullstackWunderkindAgent("test-model")
+      const permissions = config.permission as Record<string, string> | undefined
+      expect(permissions?.["write"]).toBeUndefined()
+      expect(permissions?.["edit"]).toBeUndefined()
+      expect(permissions?.["apply_patch"]).toBeUndefined()
     })
   })
 })

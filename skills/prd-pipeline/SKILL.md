@@ -15,7 +15,7 @@ This skill converts product intent into a durable delivery workflow.
 
 Read `prdPipelineMode` from `.wunderkind/wunderkind.config.jsonc`.
 
-- `filesystem` — write artifacts into `.sisyphus/`
+- `filesystem` — create artifacts in `.sisyphus/` via Wunderkind's bounded durable-artifact writer
 - `github` — use `gh`-backed GitHub issues/PRD flow only when the repo is GitHub-ready
 
 If the mode is missing, treat it as `filesystem`.

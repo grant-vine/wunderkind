@@ -1,7 +1,9 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin/tool"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { AGENT_DOCS_CONFIG } from "./agents/docs-config.js"
+import { DURABLE_ARTIFACT_TOOL_NAME, writeDurableArtifact } from "./artifact-writer.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
@@ -14,6 +16,51 @@ const SOUL_HEADING_MARKERS = [
   { heading: "# CISO", agentKey: "ciso" },
   { heading: "# Legal Counsel", agentKey: "legal-counsel" },
 ] as const
+
+const NON_FULLSTACK_RETAINED_AGENTS = new Set([
+  "marketing-wunderkind",
+  "creative-director",
+  "product-wunderkind",
+  "ciso",
+  "legal-counsel",
+])
+
+const SHELL_FILE_MUTATION_PATTERNS = [
+  />/, 
+  />>/,
+  /\btee\b/,
+  /\bmv\b/,
+  /\bcp\b/,
+  /\brm\b/,
+  /\btouch\b/,
+  /\bmkdir\b/,
+  /\btruncate\b/,
+  /\bsed\b/,
+  /\bawk\b/,
+  /\bperl\b/,
+  /\bpython\b.*\bwrite\b/,
+  /\bnode\b.*\bwrite\b/,
+] as const
+
+function inferPermissionAgent(metadata: Record<string, unknown>): string | null {
+  const directAgent = metadata["agent"]
+  if (typeof directAgent === "string" && directAgent.trim() !== "") return directAgent
+
+  const nestedAgent = metadata["agentID"]
+  if (typeof nestedAgent === "string" && nestedAgent.trim() !== "") return nestedAgent
+
+  return null
+}
+
+function shouldDenyShellMutation(pattern: string | string[] | undefined, metadata: Record<string, unknown>): boolean {
+  const agent = inferPermissionAgent(metadata)
+  if (!agent || !NON_FULLSTACK_RETAINED_AGENTS.has(agent)) return false
+
+  const rawPattern = Array.isArray(pattern) ? pattern.join(" ") : (pattern ?? "")
+  const normalized = rawPattern.toLowerCase()
+
+  return SHELL_FILE_MUTATION_PATTERNS.some((regex) => regex.test(normalized))
+}
 
 function detectActiveSoulAgent(systemSections: readonly string[]): (typeof SOUL_HEADING_MARKERS)[number]["agentKey"] | null {
   const systemText = systemSections.join("\n")
@@ -41,6 +88,55 @@ function readSoulOverlay(agentKey: (typeof SOUL_HEADING_MARKERS)[number]["agentK
 
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
+    tool: {
+      [DURABLE_ARTIFACT_TOOL_NAME]: tool({
+        description:
+          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues, docs-output files, DESIGN.md, or notepads.",
+        args: {
+          agentKey: tool.schema.enum([
+            "marketing-wunderkind",
+            "creative-director",
+            "product-wunderkind",
+            "fullstack-wunderkind",
+            "ciso",
+            "legal-counsel",
+          ]),
+          kind: tool.schema.enum(["prd", "plan", "issue", "docs-output", "design-md", "notepad"]),
+          relativePath: tool.schema.string().min(1),
+          content: tool.schema.string(),
+        },
+        async execute(args, context) {
+          await context.ask({
+            permission: "edit",
+            patterns: [args.relativePath],
+            always: [args.relativePath],
+            metadata: {
+              title: `Write durable artifact: ${args.relativePath}`,
+              agentKey: args.agentKey,
+              kind: args.kind,
+            },
+          })
+
+          const result = writeDurableArtifact(args, context.directory)
+          context.metadata({
+            title: `Durable artifact written: ${result.relativePath}`,
+            metadata: {
+              path: result.relativePath,
+              created: result.created,
+              agentKey: args.agentKey,
+              kind: args.kind,
+            },
+          })
+
+          return `Durable artifact written to ${result.relativePath}`
+        },
+      }),
+    },
+    "permission.ask": async (input, output) => {
+      if (input.type === "bash" && shouldDenyShellMutation(input.pattern, input.metadata)) {
+        output.status = "deny"
+      }
+    },
     "experimental.chat.system.transform": async (_input, output) => {
       const wunderkindConfig = readWunderkindConfig()
       const hasDocsOutputSentinel = output.system.join("").includes(DOCS_OUTPUT_SENTINEL)
@@ -146,6 +242,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
+- Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, docs-output lanes, DESIGN.md, and allowed notepads.
 
 ### Project Configuration
 

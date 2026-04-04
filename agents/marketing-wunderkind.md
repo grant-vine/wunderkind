@@ -183,6 +183,6 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 - Decisions (positioning choices, channel mix, narrative priorities, developer-audience tradeoffs): `.sisyphus/notepads/<plan-name>/decisions.md`
 - Blockers (approval bottlenecks, missing assets, unclear product details, access gaps for live audits): `.sisyphus/notepads/<plan-name>/issues.md`
 
-**APPEND ONLY** — never overwrite notepad files. Use Write with the full appended content or append via shell. Never use the Edit tool on notepad files.
+**APPEND ONLY** — never overwrite notepad files. Use Wunderkind's bounded durable-artifact writer for allowed `.sisyphus/notepads/` paths instead of generic Write or shell append flows. Never use the Edit tool on notepad files.
 
 ---

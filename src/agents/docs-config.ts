@@ -61,6 +61,8 @@ export function buildDocsInstruction(
 
   return `When docs output is enabled, write to: ${docsPath}/${config.canonicalFilename}
 
+Use Wunderkind's bounded durable-artifact writer for this managed docs lane. Do not rely on generic Write/Edit tools or shell-based file mutation for docs-output.
+
 History mode: ${docHistoryMode}
 - overwrite: Replace the file contents each time.
 - append-dated: Append a UTC-timestamped section heading like \`## Update 2026-03-12T18-37-52Z\` to the canonical home file.

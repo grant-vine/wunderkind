@@ -49,7 +49,7 @@ type TestOutput = {
   system: string[]
 }
 
-type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void> }> }
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 const initPromise = (async () => {
@@ -104,6 +104,59 @@ describe("Wunderkind plugin transform", () => {
       "Use `task(...)` for retained-agent or subagent delegation; always include explicit `load_skills` and `run_in_background`.",
     )
     expect(nativeAgentsSection).toContain(`Use \`skill(name="...")\` for shipped skills and sub-skills.`)
+  })
+
+  it("registers a bounded durable artifact writer tool", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+
+    expect(pluginResult.tool).toBeDefined()
+    expect(Object.keys(pluginResult.tool ?? {})).toContain("wunderkind_write_artifact")
+  })
+
+  it("denies shell-based file mutation for non-fullstack retained agents", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const hook = pluginResult["permission.ask"]
+    if (!hook) {
+      throw new Error("Expected permission.ask hook")
+    }
+
+    const output = { status: "ask" as const }
+    await hook(
+      {
+        type: "bash",
+        pattern: "python script.py > docs/output.md",
+        metadata: { agent: "product-wunderkind" },
+      },
+      output,
+    )
+
+    expect(output.status).toBe("deny")
+  })
+
+  it("does not deny shell access for fullstack-wunderkind through the retained-agent hook", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const hook = pluginResult["permission.ask"]
+    if (!hook) {
+      throw new Error("Expected permission.ask hook")
+    }
+
+    const output = { status: "ask" as const }
+    await hook(
+      {
+        type: "bash",
+        pattern: "bun test tests/unit/",
+        metadata: { agent: "fullstack-wunderkind" },
+      },
+      output,
+    )
+
+    expect(output.status).toBe("ask")
   })
 
   it("injects resolved runtime context with fallback labels for blank baseline fields", async () => {

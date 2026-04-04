@@ -77,6 +77,7 @@ describe("docs-config", () => {
     expect(instruction).toContain("Refresh its contents if it already exists")
     expect(instruction).toContain("create it if missing")
     expect(instruction).toContain("optional follow-up")
+    expect(instruction).toContain("bounded durable-artifact writer")
     expect(instruction).not.toContain("explicit completion result")
   })
 

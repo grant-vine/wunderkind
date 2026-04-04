@@ -16,7 +16,7 @@ This command is invoked as `/design-md`.
 2. Treat `DESIGN.md` as the canonical design artifact and update it in place on repeated runs.
 3. Keep the `DESIGN.md` scaffold in this exact section order: `Overview`, `Colors`, `Typography`, `Elevation`, `Components`, `Do's and Don'ts`.
 4. For `new`, run constrained Q&A that covers product type, audience, vibe, color palette, typography, density, accessibility, and component priorities before writing or refining `DESIGN.md`.
-5. For `capture-existing`, inspect the current project for existing design signals such as logos, icons, screenshots, CSS or theme sources, and token sources, then write or refine `DESIGN.md` from that evidence.
+5. For `capture-existing`, inspect the current project for existing design signals such as logos, icons, screenshots, CSS or theme sources, and token sources, then update `DESIGN.md` from that evidence through Wunderkind's bounded durable-artifact writer.
 6. For `capture-existing`, write or update `.wunderkind/stitch/source-assets.md` with project-relative paths to the discovered source assets.
 7. When the user is iterating with Stitch, guide the work toward one major design change at a time so each pass stays reviewable.
 8. Summarize what was created, updated, inferred, and left unresolved.
