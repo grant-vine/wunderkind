@@ -28,6 +28,13 @@ describe("manifest version sync", () => {
     expect(pluginVersion.length).toBeGreaterThan(0)
     expect(pluginVersion).toBe(packageVersion)
   })
+
+  it("keeps package metadata aligned with the six retained-agent product surface", () => {
+    const packageBody = readText(new URL("../../package.json", import.meta.url))
+
+    expect(packageBody).toContain("6 retained specialist agents")
+    expect(packageBody).not.toContain("12 professional agents")
+  })
 })
 
 describe("design-md command asset", () => {

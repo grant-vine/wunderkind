@@ -77,7 +77,7 @@ The TUI will guide you through:
 3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
-> Note: upstream's canonical npm package is `oh-my-openagent`, while the upstream CLI command and config filename remain `oh-my-opencode` and `oh-my-opencode.jsonc`.
+> Note: upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`.
 
 ### Non-interactive install
 

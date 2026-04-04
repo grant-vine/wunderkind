@@ -67,6 +67,10 @@ interface ConfigManagerPaths {
   globalOpenCodeSkillsDir: string
   globalOpenCodeNodeModules: string
   globalCacheDir: string
+  omoConfigJson: string
+  omoConfigJsonc: string
+  omoLegacyConfigJson: string
+  omoLegacyConfigJsonc: string
   wunderkindDir: string
   wunderkindConfig: string
   legacyWunderkindConfig: string
@@ -118,6 +122,10 @@ function resolveConfigManagerPaths(cwd?: string, home?: string): ConfigManagerPa
     globalOpenCodeSkillsDir: join(configDir, "skills"),
     globalOpenCodeNodeModules: join(configDir, "node_modules"),
     globalCacheDir: join(resolvedHome, ".cache", "opencode"),
+    omoConfigJson: join(configDir, "oh-my-openagent.json"),
+    omoConfigJsonc: join(configDir, "oh-my-openagent.jsonc"),
+    omoLegacyConfigJson: join(configDir, "oh-my-opencode.json"),
+    omoLegacyConfigJsonc: join(configDir, "oh-my-opencode.jsonc"),
     wunderkindDir,
     wunderkindConfig: join(wunderkindDir, "wunderkind.config.jsonc"),
     legacyWunderkindConfig: join(resolvedCwd, "wunderkind.config.jsonc"),
@@ -254,6 +262,34 @@ export function resolveOpenCodeConfigPath(scope: InstallScope): {
   if (existsSync(paths.legacyConfigJson)) return { path: paths.legacyConfigJson, format: "json", source: "config.json" }
   if (existsSync(paths.legacyConfigJsonc)) return { path: paths.legacyConfigJsonc, format: "jsonc", source: "config.jsonc" }
   return { path: paths.configJson, format: "none", source: "default" }
+}
+
+function resolveOmoConfigPath(): {
+  path: string | null
+  format: "json" | "jsonc" | "none"
+  source:
+    | "oh-my-openagent.json"
+    | "oh-my-openagent.jsonc"
+    | "oh-my-opencode.json"
+    | "oh-my-opencode.jsonc"
+    | "default"
+} {
+  const paths = resolveConfigManagerPaths()
+
+  if (existsSync(paths.omoConfigJson)) {
+    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json" }
+  }
+  if (existsSync(paths.omoConfigJsonc)) {
+    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc" }
+  }
+  if (existsSync(paths.omoLegacyConfigJson)) {
+    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json" }
+  }
+  if (existsSync(paths.omoLegacyConfigJsonc)) {
+    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc" }
+  }
+
+  return { path: null, format: "none", source: "default" }
 }
 
 function parseConfig(path: string): OpenCodeConfig | null {
@@ -472,9 +508,14 @@ export function detectWunderkindVersionInfo(): PluginVersionInfo {
 }
 
 export function detectOmoVersionInfo(): PluginVersionInfo {
-  const configResolution = resolveOpenCodeConfigPath("global")
-  const configPath = existsSync(configResolution.path) ? configResolution.path : null
-  const config = configPath ? parseConfig(configPath) : null
+  const omoConfigResolution = resolveOmoConfigPath()
+  const openCodeConfigResolution = resolveOpenCodeConfigPath("global")
+  const configPath = omoConfigResolution.path
+  const config = configPath
+    ? parseConfig(configPath)
+    : existsSync(openCodeConfigResolution.path)
+      ? parseConfig(openCodeConfigResolution.path)
+      : null
   const plugins = (config?.plugin ?? []) as string[]
 
   const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)

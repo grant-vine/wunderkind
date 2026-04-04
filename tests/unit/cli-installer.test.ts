@@ -1033,7 +1033,7 @@ describe("detectOmoVersionInfo", () => {
       expect(versionInfo.registeredVersion).toBe("3.12.2")
       expect(versionInfo.loadedVersion).toBe("3.12.2")
       expect(versionInfo.loadedPackagePath).toBe(fakeLegacyPackagePath)
-      expect(versionInfo.configPath).toBe(join(fakeHome, ".config", "opencode", "opencode.json"))
+      expect(versionInfo.configPath).toBe(null)
     } finally {
       process.chdir(originalCwd)
       mock.module("node:os", () => ({

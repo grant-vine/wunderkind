@@ -192,6 +192,29 @@ describe("config-manager coverage", () => {
     })
   })
 
+  it("prefers canonical OMO config basenames before legacy basenames", async () => {
+    await withSandbox("omo-config-precedence", async (sandbox, mod) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+
+      const canonicalJson = join(sandbox.globalConfigDir, "oh-my-openagent.json")
+      const canonicalJsonc = join(sandbox.globalConfigDir, "oh-my-openagent.jsonc")
+      const legacyJson = join(sandbox.globalConfigDir, "oh-my-opencode.json")
+      const legacyJsonc = join(sandbox.globalConfigDir, "oh-my-opencode.jsonc")
+
+      writeFileSync(legacyJsonc, JSON.stringify({ plugin: ["oh-my-opencode"] }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJsonc)
+
+      writeFileSync(legacyJson, JSON.stringify({ plugin: ["oh-my-opencode"] }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
+
+      writeFileSync(canonicalJsonc, JSON.stringify({ plugin: ["oh-my-openagent"] }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJsonc)
+
+      writeFileSync(canonicalJson, JSON.stringify({ plugin: ["oh-my-openagent"] }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJson)
+    })
+  })
+
   it("adds and removes project plugin registrations across key cases", async () => {
     await withSandbox("project-plugin", async (sandbox, mod) => {
       expect(mod.addPluginToOpenCodeConfig("project").success).toBe(true)

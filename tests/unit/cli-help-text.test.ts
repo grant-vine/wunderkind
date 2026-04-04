@@ -54,6 +54,8 @@ describe("CLI help copy", () => {
     expect(output).toContain("Install Wunderkind into your OpenCode setup.")
     expect(output).toContain("non-interactive use in CI or scripted environments")
     expect(output).toContain("optional baseline default flags")
+    expect(output).toContain("oh-my-openagent")
+    expect(output).toContain("oh-my-opencode")
   })
 
   it("includes uninstall command help text", () => {

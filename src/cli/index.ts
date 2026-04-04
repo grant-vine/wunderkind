@@ -47,6 +47,9 @@ program
       "",
       "Runs the interactive TUI by default. Pass --no-tui for",
       "non-interactive use in CI or scripted environments.",
+      "",
+      "Upstream naming note: plugin/config naming now prefers oh-my-openagent,",
+      "while the package and CLI command still use oh-my-opencode.",
     ].join("\n"),
   )
   .option("--no-tui", "Run non-interactive CLI installer with optional baseline default flags")

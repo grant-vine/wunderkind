@@ -46,7 +46,7 @@ function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInf
   if (!omoVersion.registered) {
     return {
       label: color.dim("not checked"),
-      guidance: "oh-my-openagent not detected — upgrade Wunderkind independently unless you intentionally use it separately.",
+      guidance: "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
     }
   }
 
@@ -60,7 +60,7 @@ function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInf
   if (!freshness || freshness.status === "unknown" || freshness.status === "error") {
     return {
       label: color.dim("not verified"),
-      guidance: "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice.",
+      guidance: "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
     }
   }
 
@@ -75,7 +75,7 @@ function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInf
     const upgradeCommand = freshness.renderedOutput?.split("\n").find((lineValue) => lineValue.includes("Run:"))
     return {
       label: color.yellow("update available"),
-      guidance: upgradeCommand ?? "An oh-my-openagent update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
+      guidance: upgradeCommand ?? "An oh-my-openagent plugin/config update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
     }
   }
 

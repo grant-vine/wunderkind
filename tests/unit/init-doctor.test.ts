@@ -352,6 +352,7 @@ describe("runInit", () => {
 describe("runDoctor", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
+    mockDetectOmoVersionInfo.mockClear()
     mockReadGlobalWunderkindConfig.mockClear()
     mockReadProjectWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
@@ -359,6 +360,34 @@ describe("runDoctor", () => {
     mockDetectGitHubWorkflowReadiness.mockClear()
     mockDetectStitchMcpPresence.mockClear()
     mockDetectStitchMcpPresence.mockImplementation(async () => "missing")
+    mockDetectOmoVersionInfo.mockImplementation(() => ({
+      packageName: "oh-my-openagent",
+      currentVersion: null,
+      registeredEntry: "oh-my-openagent@3.12.2" as string | null,
+      registeredVersion: null,
+      loadedVersion: "3.12.2" as string | null,
+      configPath: "/tmp/opencode.json" as string | null,
+      loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json" as string | null,
+      registered: true,
+      loadedSources: {
+        global: {
+          version: "3.12.2" as string | null,
+          packagePath: "/tmp/node_modules/oh-my-openagent/package.json" as string | null,
+        },
+        cache: {
+          version: null,
+          packagePath: null,
+        },
+      },
+      staleOverrideWarning: null,
+      freshness: {
+        status: "unknown",
+        currentVersion: "3.12.2",
+        latestVersion: null,
+        pinnedVersion: null,
+        renderedOutput: null,
+      },
+    }))
     mockDetectCurrentConfig.mockImplementation(() => ({
       isInstalled: true,
       scope: "global" as const,
@@ -716,6 +745,14 @@ describe("runDoctor", () => {
       console.log = originalLog
       console.error = originalError
     }
+  })
+
+  it("describes the real upstream naming split in doctor guidance", async () => {
+    const { code, messages } = await captureDoctorOutput({})
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("oh-my-openagent plugin/config naming"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-opencode"))).toBe(true)
   })
 
   it("shows upstream up-to-date guidance when OMO freshness is verified", async () => {
