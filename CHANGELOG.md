@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.11.3
+## 0.12.0
+
+- reclassify the previous 0.11.3 patch as a minor release because it introduces a new bounded writer tool and a new retained-agent security architecture
 
 - prefer `oh-my-openagent` plugin/config naming while keeping `oh-my-opencode` package/CLI compatibility
 - improve `doctor` output with OMO freshness/status guidance and clearer naming-split messaging
