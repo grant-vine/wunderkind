@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import color from "picocolors"
 import {
@@ -89,6 +89,34 @@ function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInf
   return {
     label: color.magenta(`pinned${freshness.pinnedVersion ? ` (${freshness.pinnedVersion})` : ""}`),
     guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
+  }
+}
+
+function summarizeWunderkindUpgradeCommands(input: {
+  registrationScope: "both" | "project" | "global" | "none" | undefined
+  globalOpenCodePath: string
+  projectOpenCodePath: string
+}): { lifecycle: string; packageRefresh: string } {
+  const globalInstallCommand = `cd ${JSON.stringify(dirname(input.globalOpenCodePath))} && bun install @grant-vine/wunderkind`
+  const projectInstallCommand = `cd ${JSON.stringify(dirname(input.projectOpenCodePath))} && bun install @grant-vine/wunderkind`
+
+  switch (input.registrationScope) {
+    case "project":
+      return {
+        lifecycle: "wunderkind upgrade --scope=project",
+        packageRefresh: projectInstallCommand,
+      }
+    case "both":
+      return {
+        lifecycle: "wunderkind upgrade --scope=project && wunderkind upgrade --scope=global",
+        packageRefresh: `project: ${projectInstallCommand} | global: ${globalInstallCommand}`,
+      }
+    case "global":
+    default:
+      return {
+        lifecycle: "wunderkind upgrade --scope=global",
+        packageRefresh: globalInstallCommand,
+      }
   }
 }
 
@@ -217,6 +245,13 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
     section("Version Status")
     line("wunderkind cli version:", color.cyan(wunderkindVersion.currentVersion ?? "unknown"))
+    const wunderkindUpgrade = summarizeWunderkindUpgradeCommands({
+      registrationScope: detected.registrationScope,
+      globalOpenCodePath,
+      projectOpenCodePath,
+    })
+    line("wunderkind lifecycle:", color.dim(wunderkindUpgrade.lifecycle))
+    line("wunderkind package refresh:", color.dim(wunderkindUpgrade.packageRefresh))
     line(
       "oh-my-openagent registration:",
       omoVersion.registered

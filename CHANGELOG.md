@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.1
+
+- make `wunderkind doctor` show both the preferred scope-aware `wunderkind upgrade --scope=...` command and the direct package refresh command for the detected install location
+
 ## 0.12.0
 
 - reclassify the previous 0.11.3 patch as a minor release because it introduces a new bounded writer tool and a new retained-agent security architecture

@@ -751,8 +751,35 @@ describe("runDoctor", () => {
     const { code, messages } = await captureDoctorOutput({})
 
     expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=global"))).toBe(true)
+    expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("oh-my-openagent plugin/config naming"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-opencode"))).toBe(true)
+  })
+
+  it("shows project-scope wunderkind upgrade guidance when registration is project-only", async () => {
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-project-upgrade-"))
+    const restore = silenceConsole()
+    const originalCwd = process.cwd()
+
+    try {
+      process.chdir(tempProject)
+      mockProjectDoctorContext(tempProject, {
+        globalInstalled: false,
+        projectInstalled: true,
+        registrationScope: "project",
+      })
+
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=project"))).toBe(true)
+      expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes(tempProject) && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      restore()
+      rmSync(tempProject, { recursive: true, force: true })
+    }
   })
 
   it("shows upstream up-to-date guidance when OMO freshness is verified", async () => {
