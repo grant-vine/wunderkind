@@ -133,9 +133,11 @@ wunderkind upgrade --scope=global
 
 Current upgrade behavior:
 - refreshes Wunderkind native agents and native skills in the requested scope
-- refreshes Wunderkind's shipped native command assets globally
+- refreshes Wunderkind's shipped native command assets globally (e.g. `/docs-index`, `/dream`)
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
 - supports `--dry-run` and `--refresh-config` for safe testing
+
+Older installs require `wunderkind upgrade` to receive the `/dream` command. `wunderkind doctor` will surface missing or stale command assets.
 
 This keeps the lifecycle concept explicit without overloading `install`.
 
@@ -320,6 +322,17 @@ Wunderkind supports that upstream bootstrap flow in this order:
 4. Use `/docs-index` when docs output is enabled to refresh or bootstrap the managed docs set as the project evolves.
 
 Treat this as the recommended audit/bootstrap process for bringing a project up to a high-context Wunderkind baseline.
+
+---
+
+## /dream
+
+The `/dream` native command is a mixed-domain workflow for ideation, soul synthesis, and project-aware exploration. It is owned by `product-wunderkind` and shipped as a static command asset.
+
+1. **Workflow**: /dream [topic] → ideation → soul synthesis → exploration.
+2. **Context**: Uses project-local SOUL overlays from `.wunderkind/souls/<agent-key>.md`, `AGENTS.md` knowledge, and `.sisyphus/` notepads/evidence for high-fidelity reasoning.
+3. **Output**: Chat-first. Any durable findings or artifacts must be explicitly requested for save (to `.sisyphus/notepads/` or `.sisyphus/evidence/` only).
+4. **Lifecycle**: Refreshed via `wunderkind install` and `wunderkind upgrade`. Run `wunderkind doctor` to check for stale assets.
 
 ---
 
