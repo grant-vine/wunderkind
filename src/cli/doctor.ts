@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { dirname, join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import color from "picocolors"
 import {
@@ -11,6 +11,7 @@ import {
   detectNativeSkillFiles,
   detectCurrentConfig,
   detectWunderkindVersionInfo,
+  getNativeCommandFilePaths,
   getProjectOverrideMarker,
   readProjectWunderkindConfig,
   resolveOpenCodeConfigPath,
@@ -386,6 +387,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       }
       if (detected.globalInstalled === true && !globalNativeCommands.allPresent) {
         warnings.push(`missing native global command files: ${globalNativeCommands.dir}`)
+        const missingCommandFiles = getNativeCommandFilePaths()
+          .filter((path) => !existsSync(path))
+          .map((path) => basename(path))
+        if (missingCommandFiles.length > 0) {
+          warnings.push(`missing native command files: ${missingCommandFiles.join(", ")}`)
+        }
       }
       if (detected.globalInstalled === true && !globalNativeSkills.allPresent) {
         warnings.push(`missing native global skill files: ${globalNativeSkills.dir}`)
@@ -418,6 +425,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line(".sisyphus/evidence present:", status(hasEvidence))
       line("global native agents present:", status(globalNativeAgents.allPresent))
       line("global native commands present:", status(globalNativeCommands.allPresent))
+      const dreamInstalled = getNativeCommandFilePaths().some((path) => path.endsWith("dream.md") && existsSync(path))
+      line("/dream available:", status(dreamInstalled))
       line("global native skills present:", status(globalNativeSkills.allPresent))
 
       if (options.verbose) {
