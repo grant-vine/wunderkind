@@ -550,10 +550,14 @@ describe("config-manager coverage", () => {
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("design-md.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("threat-model.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("prd.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("dream.md"))).toBe(true)
 
       const threatModelContent = readFileSync(join(mod.getNativeCommandsDir(), "threat-model.md"), "utf-8")
       expect(threatModelContent).toContain("agent: ciso")
       expect(threatModelContent).toContain("name: threat-model")
+
+      const dreamContent = readFileSync(join(mod.getNativeCommandsDir(), "dream.md"), "utf-8")
+      expect(dreamContent).toContain("agent: product-wunderkind")
 
       let duplicateError: string | null = null
       try {

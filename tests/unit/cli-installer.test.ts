@@ -1333,10 +1333,15 @@ describe("writeNativeCommandFiles", () => {
       expect(existsSync(designMdPath)).toBe(true)
       expect(existsSync(threatModelPath)).toBe(true)
       expect(existsSync(prdPath)).toBe(true)
+      const dreamPath = join(commandsDir, "dream.md")
+      expect(existsSync(dreamPath)).toBe(true)
 
       const written = readFileSync(docsIndexPath, "utf-8")
       expect(written).toContain("/docs-index")
       expect(written).toContain("agent: product-wunderkind")
+
+      const writtenDream = readFileSync(dreamPath, "utf-8")
+      expect(writtenDream).toContain("agent: product-wunderkind")
 
       const generatedThreatModel = readFileSync(threatModelPath, "utf-8")
       expect(generatedThreatModel).toContain("agent: ciso")
