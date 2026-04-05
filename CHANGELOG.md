@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+- add the shipped `/dream` native command as a mixed ideation, SOUL-synthesis, and exploration workflow owned by `product-wunderkind`
+- extend `wunderkind doctor` to report `/dream` availability and identify stale installs that are missing `dream.md`
+- refresh packaging, lifecycle, and doctor test coverage for the shared native command asset
+
 ## 0.12.1
 
 - make `wunderkind doctor` show both the preferred scope-aware `wunderkind upgrade --scope=...` command and the direct package refresh command for the detected install location
