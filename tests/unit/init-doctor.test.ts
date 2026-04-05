@@ -57,6 +57,11 @@ const mockDetectNativeCommandFiles = mock(() => ({
   totalCount: 38,
   allPresent: true,
 }))
+const mockGetNativeCommandFilePaths = mock<() => string[]>(() => [
+  "/tmp/global-commands/docs-index.md",
+  "/tmp/global-commands/design-md.md",
+  "/tmp/global-commands/dream.md",
+])
 const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
   dir: scope === "global" ? "/tmp/global-skills" : `${process.cwd()}/.opencode/skills`,
   presentCount: 11,
@@ -144,6 +149,7 @@ mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectNativeSkillFiles: mockDetectNativeSkillFiles,
   detectOmoVersionInfo: mockDetectOmoVersionInfo,
   detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
+  getNativeCommandFilePaths: mockGetNativeCommandFilePaths,
   readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
@@ -1589,5 +1595,114 @@ describe("runDoctor", () => {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
     }
+  })
+
+  describe("runDoctor /dream availability", () => {
+    it("shows /dream available line in project health output", async () => {
+      const originalCwd = process.cwd()
+      const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-dream-line-"))
+      writeProjectHealthFixture(tempProject)
+      process.chdir(tempProject)
+
+      const globalCommandsDir = join(tempProject, "global-commands")
+      mkdirSync(globalCommandsDir, { recursive: true })
+      writeFileSync(join(globalCommandsDir, "docs-index.md"), "# docs-index\n")
+      writeFileSync(join(globalCommandsDir, "design-md.md"), "# design-md\n")
+      writeFileSync(join(globalCommandsDir, "dream.md"), "# dream\n")
+      const commandPaths = [
+        join(globalCommandsDir, "docs-index.md"),
+        join(globalCommandsDir, "design-md.md"),
+        join(globalCommandsDir, "dream.md"),
+      ]
+
+      mockProjectDoctorContext(tempProject)
+      mockDetectNativeCommandFiles.mockImplementation(() => ({
+        dir: globalCommandsDir,
+        presentCount: commandPaths.length,
+        totalCount: commandPaths.length,
+        allPresent: true,
+      }))
+      mockGetNativeCommandFilePaths.mockImplementation(() => commandPaths)
+
+      try {
+        const { code, messages } = await captureDoctorOutput()
+        expect(code).toBe(0)
+        expect(messages.some((m) => m.includes("/dream") && (m.includes("available") || m.includes("present")))).toBe(true)
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(tempProject, { recursive: true, force: true })
+      }
+    })
+
+    it("verbose mode names dream.md as missing when native commands are stale", async () => {
+      const originalCwd = process.cwd()
+      const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-dream-stale-"))
+      writeProjectHealthFixture(tempProject)
+      process.chdir(tempProject)
+
+      const globalCommandsDir = join(tempProject, "global-commands")
+      mkdirSync(globalCommandsDir, { recursive: true })
+      writeFileSync(join(globalCommandsDir, "docs-index.md"), "# docs-index\n")
+      writeFileSync(join(globalCommandsDir, "design-md.md"), "# design-md\n")
+      const commandPaths = [
+        join(globalCommandsDir, "docs-index.md"),
+        join(globalCommandsDir, "design-md.md"),
+        join(globalCommandsDir, "dream.md"),
+      ]
+
+      mockProjectDoctorContext(tempProject)
+      mockDetectNativeCommandFiles.mockImplementation(() => ({
+        dir: globalCommandsDir,
+        presentCount: 2,
+        totalCount: commandPaths.length,
+        allPresent: false,
+      }))
+      mockGetNativeCommandFilePaths.mockImplementation(() => commandPaths)
+
+      try {
+        const { code, messages } = await captureDoctorOutput({ verbose: true })
+        expect(code).toBe(0)
+        expect(messages.some((m) => m.includes("dream.md"))).toBe(true)
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(tempProject, { recursive: true, force: true })
+      }
+    })
+
+    it("verbose mode does not mention dream.md when native commands are complete", async () => {
+      const originalCwd = process.cwd()
+      const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-dream-healthy-"))
+      writeProjectHealthFixture(tempProject)
+      process.chdir(tempProject)
+
+      const globalCommandsDir = join(tempProject, "global-commands")
+      mkdirSync(globalCommandsDir, { recursive: true })
+      writeFileSync(join(globalCommandsDir, "docs-index.md"), "# docs-index\n")
+      writeFileSync(join(globalCommandsDir, "design-md.md"), "# design-md\n")
+      writeFileSync(join(globalCommandsDir, "dream.md"), "# dream\n")
+      const commandPaths = [
+        join(globalCommandsDir, "docs-index.md"),
+        join(globalCommandsDir, "design-md.md"),
+        join(globalCommandsDir, "dream.md"),
+      ]
+
+      mockProjectDoctorContext(tempProject)
+      mockDetectNativeCommandFiles.mockImplementation(() => ({
+        dir: globalCommandsDir,
+        presentCount: commandPaths.length,
+        totalCount: commandPaths.length,
+        allPresent: true,
+      }))
+      mockGetNativeCommandFilePaths.mockImplementation(() => commandPaths)
+
+      try {
+        const { code, messages } = await captureDoctorOutput({ verbose: true })
+        expect(code).toBe(0)
+        expect(messages.some((m) => m.includes("dream.md") && m.includes("missing"))).toBe(false)
+      } finally {
+        process.chdir(originalCwd)
+        rmSync(tempProject, { recursive: true, force: true })
+      }
+    })
   })
 })
