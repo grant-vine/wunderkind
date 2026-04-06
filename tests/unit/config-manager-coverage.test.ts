@@ -192,7 +192,7 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("prefers canonical OMO config basenames before legacy basenames", async () => {
+  it("keeps legacy OMO config basenames ahead of canonical basenames when both exist", async () => {
     await withSandbox("omo-config-precedence", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
 
@@ -208,10 +208,10 @@ describe("config-manager coverage", () => {
       expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
 
       writeFileSync(canonicalJsonc, JSON.stringify({ plugin: ["oh-my-openagent"] }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJsonc)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
 
       writeFileSync(canonicalJson, JSON.stringify({ plugin: ["oh-my-openagent"] }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJson)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
     })
   })
 
@@ -276,6 +276,40 @@ describe("config-manager coverage", () => {
       expect(scoped?.region).toBe("Project Region")
       expect(scoped?.primaryRegulation).toBe("POPIA")
       expect(scoped?.teamCulture).toBe("pragmatic-balanced")
+    })
+  })
+
+  it("returns null when neither global nor project config exists", async () => {
+    await withSandbox("read-null-no-config", async (_sandbox, mod) => {
+      expect(mod.readWunderkindConfig()).toBe(null)
+    })
+  })
+
+  it("uses only project docs-output fields for effective merged docs settings", async () => {
+    await withSandbox("read-project-docs-only", async (sandbox, mod) => {
+      mkdirSync(join(sandbox.projectDir, ".wunderkind"), { recursive: true })
+      mkdirSync(join(sandbox.homeDir, ".wunderkind"), { recursive: true })
+
+      writeFileSync(
+        sandbox.projectConfigPath,
+        `{
+  "docsEnabled": true,
+  "docsPath": "./project-docs"
+}`,
+      )
+      writeFileSync(
+        sandbox.globalWunderkindPath,
+        `{
+  "docsEnabled": false,
+  "docsPath": "./global-docs",
+  "docHistoryMode": "append-dated"
+}`,
+      )
+
+      expect(mod.readWunderkindConfig()).toEqual({
+        docsEnabled: true,
+        docsPath: "./project-docs",
+      })
     })
   })
 
@@ -382,6 +416,26 @@ describe("config-manager coverage", () => {
         "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
       )
       expect(omoVersionInfo.freshness?.status).toBe("unknown")
+    })
+  })
+
+  it("falls back to the legacy oh-my-opencode package when canonical OMO is absent", async () => {
+    await withSandbox("omo-legacy-fallback", async (sandbox, mod) => {
+      const legacyPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
+
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      mkdirSync(join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode"), { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-opencode@3.12.2"] }))
+      writeFileSync(legacyPackagePath, JSON.stringify({ version: "3.12.2" }))
+
+      const versionInfo = mod.detectOmoVersionInfo()
+      expect(versionInfo.packageName).toBe("oh-my-openagent")
+      expect(versionInfo.registered).toBe(true)
+      expect(versionInfo.registeredEntry).toBe("oh-my-opencode@3.12.2")
+      expect(versionInfo.registeredVersion).toBe("3.12.2")
+      expect(versionInfo.loadedVersion).toBe("3.12.2")
+      expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
+      expect(versionInfo.configPath).toBe(null)
     })
   })
 
@@ -636,6 +690,143 @@ describe("config-manager coverage", () => {
       expect(removedGlobal.success).toBe(true)
       expect(removedGlobal.changed).toBe(true)
       expect(existsSync(sandbox.globalWunderkindPath)).toBe(false)
+    })
+  })
+
+  it("writes sparse project config without baseline fields when they match the global baseline", async () => {
+    await withSandbox("project-sparse-baseline", async (_sandbox, mod) => {
+      expect(mod.writeGlobalWunderkindConfig({
+        ...mod.getDefaultGlobalConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }).success).toBe(true)
+
+      const result = mod.writeWunderkindConfig({
+        ...mod.getDefaultInstallConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }, "project")
+      expect(result.success).toBe(true)
+      expect(result.configPath.endsWith(join(".wunderkind", "wunderkind.config.jsonc"))).toBe(true)
+
+      const written = readFileSync(result.configPath, "utf-8")
+      expect(written).not.toContain('"region"')
+      expect(written).not.toContain('"industry"')
+      expect(written).not.toContain('"primaryRegulation"')
+      expect(written).not.toContain('"secondaryRegulation"')
+      expect(written).toContain('"teamCulture"')
+      expect(written).toContain('"docsEnabled"')
+    })
+  })
+
+  it("writes project baseline overrides when they differ from the global baseline", async () => {
+    await withSandbox("project-override-baseline", async (_sandbox, mod) => {
+      expect(mod.writeGlobalWunderkindConfig({
+        ...mod.getDefaultGlobalConfig(),
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+      }).success).toBe(true)
+
+      const result = mod.writeWunderkindConfig({
+        ...mod.getDefaultInstallConfig(),
+        region: "EU",
+        industry: "Marketplace",
+        primaryRegulation: "GDPR",
+        secondaryRegulation: "",
+      }, "project")
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(result.configPath, "utf-8")
+      expect(written).toContain('"region": "EU"')
+      expect(written).toContain('"industry": "Marketplace"')
+      expect(written).toContain('"primaryRegulation": "GDPR"')
+      expect(written).toContain('"secondaryRegulation": ""')
+    })
+  })
+
+  it("writes native asset files into the sandboxed global OpenCode directories", async () => {
+    await withSandbox("native-asset-write-paths", async (_sandbox, mod) => {
+      const agentResult = mod.writeNativeAgentFiles("project")
+      expect(agentResult.success).toBe(true)
+
+      const agentDir = mod.getNativeAgentDir()
+      const marketingPath = join(agentDir, "marketing-wunderkind.md")
+      const cisoPath = join(agentDir, "ciso.md")
+      expect(existsSync(agentDir)).toBe(true)
+      expect(existsSync(marketingPath)).toBe(true)
+      expect(existsSync(cisoPath)).toBe(true)
+      expect(readFileSync(marketingPath, "utf-8")).toContain("# Marketing Wunderkind")
+
+      const commandResult = mod.writeNativeCommandFiles()
+      expect(commandResult.success).toBe(true)
+
+      const commandDir = mod.getNativeCommandsDir()
+      const docsIndexPath = join(commandDir, "docs-index.md")
+      const designMdPath = join(commandDir, "design-md.md")
+      const threatModelPath = join(commandDir, "threat-model.md")
+      const prdPath = join(commandDir, "prd.md")
+      const dreamPath = join(commandDir, "dream.md")
+      expect(existsSync(commandDir)).toBe(true)
+      expect(existsSync(docsIndexPath)).toBe(true)
+      expect(existsSync(designMdPath)).toBe(true)
+      expect(existsSync(threatModelPath)).toBe(true)
+      expect(existsSync(prdPath)).toBe(true)
+      expect(existsSync(dreamPath)).toBe(true)
+      expect(readFileSync(docsIndexPath, "utf-8")).toContain("/docs-index")
+      expect(readFileSync(dreamPath, "utf-8")).toContain("agent: product-wunderkind")
+      expect(readFileSync(threatModelPath, "utf-8")).toContain("name: threat-model")
+      expect(readFileSync(prdPath, "utf-8")).toContain("name: prd")
+
+      const skillResult = mod.writeNativeSkillFiles("project")
+      expect(skillResult.success).toBe(true)
+
+      const skillsDir = mod.getNativeSkillsDir()
+      const agilePmSkill = join(skillsDir, "agile-pm", "SKILL.md")
+      const securityAnalystSkill = join(skillsDir, "security-analyst", "SKILL.md")
+      expect(existsSync(skillsDir)).toBe(true)
+      expect(existsSync(agilePmSkill)).toBe(true)
+      expect(existsSync(securityAnalystSkill)).toBe(true)
+      expect(readFileSync(agilePmSkill, "utf-8")).toContain("Agile PM")
+    })
+  })
+
+  it("removes an empty global Wunderkind directory after deleting the global config file", async () => {
+    await withSandbox("remove-empty-global-dir", async (sandbox, mod) => {
+      mkdirSync(join(sandbox.homeDir, ".wunderkind"), { recursive: true })
+      writeFileSync(sandbox.globalWunderkindPath, "{}\n")
+
+      const result = mod.removeGlobalWunderkindConfig()
+      expect(result.success).toBe(true)
+      expect(result.changed).toBe(true)
+      expect(result.configPath).toBe(sandbox.globalWunderkindPath)
+      expect(existsSync(sandbox.globalWunderkindPath)).toBe(false)
+      expect(existsSync(join(sandbox.homeDir, ".wunderkind"))).toBe(false)
+    })
+  })
+
+  it("writes the schema URL into global config output", async () => {
+    await withSandbox("global-schema-output", async (sandbox, mod) => {
+      const result = mod.writeGlobalWunderkindConfig(mod.getDefaultGlobalConfig())
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(sandbox.globalWunderkindPath, "utf-8")
+      expect(written).toContain('"$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"')
+    })
+  })
+
+  it("writes the schema URL into project config output", async () => {
+    await withSandbox("project-schema-output", async (sandbox, mod) => {
+      const result = mod.writeProjectWunderkindConfig(mod.getDefaultProjectConfig())
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(sandbox.projectConfigPath, "utf-8")
+      expect(written).toContain('"$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"')
     })
   })
 

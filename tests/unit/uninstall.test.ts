@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { homedir, tmpdir } from "node:os"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { DetectedConfig } from "../../src/cli/types.js"
+
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 
 const mockConfirm = mock(async () => true)
 const mockIsCancel = mock(() => false)
@@ -54,15 +58,80 @@ const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath
 const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/agents", changed: true }))
 const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands", changed: true }))
 const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/skills", changed: true }))
+const mockDetectLegacyConfig = mock(() => false)
+const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
+const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockReadWunderkindConfigForScope = mock(() => null)
+const mockReadGlobalWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock(() => null)
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
+const configManagerMockFactory = () => ({
+  addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectLegacyConfig: mockDetectLegacyConfig,
+  detectGitHubWorkflowReadiness: () => ({
+    isGitRepo: false,
+    hasGitHubRemote: false,
+    ghInstalled: false,
+    authVerified: false,
+    authCheckAttempted: false,
+  }),
+  detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectOmoVersionInfo: () => ({
+    packageName: "oh-my-openagent",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    loadedSources: {
+      global: { version: null, packagePath: null },
+      cache: { version: null, packagePath: null },
+    },
+    staleOverrideWarning: null,
+    freshness: null,
+  }),
+  detectWunderkindVersionInfo: () => ({
+    packageName: "@grant-vine/wunderkind",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    staleOverrideWarning: null,
+  }),
+  getNativeCommandFilePaths: () => [],
+  getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
+  readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
+  readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
+  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
   removeNativeAgentFiles: mockRemoveNativeAgentFiles,
   removeNativeCommandFiles: mockRemoveNativeCommandFiles,
   removeNativeSkillFiles: mockRemoveNativeSkillFiles,
   removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
-}))
+  writeWunderkindConfig: mockWriteWunderkindConfig,
+  writeNativeAgentFiles: mockWriteNativeAgentFiles,
+  writeNativeCommandFiles: mockWriteNativeCommandFiles,
+  writeNativeSkillFiles: mockWriteNativeSkillFiles,
+  resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
+  getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+})
+
+mock.module("../../src/cli/config-manager/index.js", configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_JS_URL, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_TS_URL, configManagerMockFactory)
 
 import { runUninstall } from "../../src/cli/uninstall.js"
 
@@ -738,31 +807,4 @@ describe("runUninstall", () => {
     }
   })
 
-  it("removes an empty global Wunderkind directory after deleting the global config file", async () => {
-    const testRoot = mkdtempSync(join(tmpdir(), "wk-uninstall-empty-global-dir-"))
-    const fakeHome = join(testRoot, "fake-home")
-    const globalDir = join(fakeHome, ".wunderkind")
-    const globalConfigPath = join(globalDir, "wunderkind.config.jsonc")
-
-    try {
-      mkdirSync(globalDir, { recursive: true })
-      writeFileSync(globalConfigPath, "{}\n")
-      mock.module("node:os", () => ({ homedir: () => fakeHome }))
-
-      const { removeGlobalWunderkindConfig } = await import(
-        `../../src/cli/config-manager/index.ts?uninstall-empty-global-dir=${Date.now()}`,
-      )
-
-      const result = removeGlobalWunderkindConfig()
-
-      expect(result.success).toBe(true)
-      expect(result.changed).toBe(true)
-      expect(result.configPath).toBe(globalConfigPath)
-      expect(existsSync(globalConfigPath)).toBe(false)
-      expect(existsSync(globalDir)).toBe(false)
-    } finally {
-      mock.module("node:os", () => ({ homedir }))
-      rmSync(testRoot, { recursive: true, force: true })
-    }
-  })
 })

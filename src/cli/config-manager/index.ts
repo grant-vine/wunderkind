@@ -276,17 +276,17 @@ function resolveOmoConfigPath(): {
 } {
   const paths = resolveConfigManagerPaths()
 
-  if (existsSync(paths.omoConfigJson)) {
-    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json" }
-  }
-  if (existsSync(paths.omoConfigJsonc)) {
-    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc" }
-  }
   if (existsSync(paths.omoLegacyConfigJson)) {
     return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json" }
   }
   if (existsSync(paths.omoLegacyConfigJsonc)) {
     return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc" }
+  }
+  if (existsSync(paths.omoConfigJson)) {
+    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json" }
+  }
+  if (existsSync(paths.omoConfigJsonc)) {
+    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc" }
   }
 
   return { path: null, format: "none", source: "default" }

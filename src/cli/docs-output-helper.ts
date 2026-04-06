@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs"
+import { existsSync, lstatSync, mkdirSync, realpathSync, writeFileSync } from "node:fs"
 import { isAbsolute, join, normalize, relative, resolve } from "node:path"
 import type { DocHistoryMode } from "./types.js"
 
@@ -65,17 +65,41 @@ export function isManagedDocsFamilyFilename(canonicalFilename: string, candidate
 }
 
 export function validateDocsPath(docsPath: string): { valid: boolean; error?: string } {
-  const normalizedInput = docsPath.replaceAll("\\", "/")
+  const trimmed = docsPath.trim()
+  const rawInput = trimmed.replaceAll("\\", "/")
+  const normalizedInput = normalize(trimmed === "" ? "./docs" : trimmed).replaceAll("\\", "/")
 
   if (isAbsolute(docsPath)) {
     return { valid: false, error: "docsPath must be a relative path" }
   }
 
-  if (normalizedInput.startsWith("../") || normalizedInput.includes("/../") || normalizedInput === "..") {
+  if (rawInput.startsWith("../") || rawInput.includes("/../") || rawInput === "..") {
     return { valid: false, error: "docsPath must not traverse parent directories" }
   }
 
+  if (normalizedInput === "." || normalizedInput === "./") {
+    return { valid: false, error: "docsPath must resolve inside the current project root" }
+  }
+
   return { valid: true }
+}
+
+export function ensureDocsPathHasNoSymlinkSegments(docsPath: string, cwd: string): void {
+  const normalizedDocsPath = normalize(docsPath.trim() === "" ? "./docs" : docsPath.trim())
+  const segments = normalizedDocsPath.replaceAll("\\", "/").split("/").filter((segment) => segment.length > 0 && segment !== ".")
+  let currentPath = cwd
+
+  for (const segment of segments) {
+    currentPath = join(currentPath, segment)
+
+    if (!existsSync(currentPath)) {
+      return
+    }
+
+    if (lstatSync(currentPath).isSymbolicLink()) {
+      throw new Error("docs-output lane must not include symlinked segments")
+    }
+  }
 }
 
 export function resolveProjectLocalDocsPath(docsPath: string, cwd: string): {
@@ -96,6 +120,8 @@ export function resolveProjectLocalDocsPath(docsPath: string, cwd: string): {
     throw new Error("docsPath must resolve inside the current project root")
   }
 
+  ensureDocsPathHasNoSymlinkSegments(normalizedDocsPath, cwd)
+
   return {
     docsPath: normalizedDocsPath.endsWith("/") ? normalizedDocsPath.slice(0, -1) : normalizedDocsPath,
     absolutePath,
@@ -107,7 +133,7 @@ export function validateDocHistoryMode(mode: string): mode is DocHistoryMode {
 }
 
 export function bootstrapDocsReadme(docsPath: string, cwd: string): void {
-  const normalizedDocsPath = normalize(docsPath)
+  const normalizedDocsPath = resolveProjectLocalDocsPath(docsPath, cwd).docsPath
   const docsDir = join(cwd, normalizedDocsPath)
   const readmePath = join(docsDir, "README.md")
 

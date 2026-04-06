@@ -1,13 +1,15 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
 type StitchPresence = "missing" | "project-local" | "global-only" | "both"
 
-interface ConfigManagerModule {
-  __setConfigManagerPathOverrideForTests: (override: { cwd?: string; home?: string }) => void
-  __resetConfigManagerPathOverrideForTests: () => void
+type RealConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
+type ConfigManagerModule = Pick<RealConfigManagerModule, "__setConfigManagerPathOverrideForTests" | "__resetConfigManagerPathOverrideForTests">
+
+function realConfigManagerFactory(): RealConfigManagerModule {
+  return { ...realConfigManager }
 }
 
 interface McpHelpersModule {
@@ -31,9 +33,19 @@ const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CACHE_BUST = Date.now()
 const CONFIG_MANAGER_MODULE_URL = `${PROJECT_ROOT}src/cli/config-manager/index.ts?mcp-helpers-config=${CACHE_BUST}`
 const MCP_HELPERS_MODULE_URL = `${PROJECT_ROOT}src/cli/mcp-helpers.ts?mcp-helpers=${CACHE_BUST}`
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 
 let configManagerPromise: Promise<ConfigManagerModule> | null = null
 let mcpHelpersPromise: Promise<McpHelpersModule> | null = null
+
+const realConfigManager = (await import(CONFIG_MANAGER_MODULE_URL)) as RealConfigManagerModule
+
+mock.module("../../src/cli/config-manager/index.js", realConfigManagerFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, realConfigManagerFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, realConfigManagerFactory)
+mock.module(CONFIG_MANAGER_JS_URL, realConfigManagerFactory)
+mock.module(CONFIG_MANAGER_TS_URL, realConfigManagerFactory)
 
 function createSandbox(prefix: string): TestSandbox {
   const rootDir = mkdtempSync(join(tmpdir(), prefix))
@@ -62,7 +74,7 @@ function cleanupSandbox(sandbox: TestSandbox): void {
 }
 
 async function importConfigManager(): Promise<ConfigManagerModule> {
-  configManagerPromise ??= import(CONFIG_MANAGER_MODULE_URL) as Promise<ConfigManagerModule>
+  configManagerPromise ??= Promise.resolve(realConfigManager)
   return configManagerPromise
 }
 

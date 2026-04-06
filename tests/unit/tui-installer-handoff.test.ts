@@ -1,7 +1,9 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
 import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 
 mock.module("picocolors", () => ({
   default: {
@@ -24,7 +26,14 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
+const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/mock-agents", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/mock-commands", changed: true }))
+const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/mock-skills", changed: true }))
+const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
 const mockReadWunderkindConfigForScope = mock<(scope: InstallScope) => Partial<InstallConfig> | null>(() => null)
+const mockReadGlobalWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock(() => null)
 const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   isInstalled: true,
   scope: "global" as const,
@@ -49,6 +58,9 @@ const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => ({
   docsPath: "./docs",
   docHistoryMode: "overwrite" as const,
   prdPipelineMode: "filesystem" as const,
+  designTool: "none" as const,
+  designPath: "./DESIGN.md",
+  designMcpOwnership: "none" as const,
 }))
 
 const initModuleFactory = () => ({
@@ -63,6 +75,11 @@ const configManagerFactory = () => ({
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
+  removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  removeNativeAgentFiles: mockRemoveNativeAgentFiles,
+  removeNativeCommandFiles: mockRemoveNativeCommandFiles,
+  removeNativeSkillFiles: mockRemoveNativeSkillFiles,
+  removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
   getDefaultGlobalConfig: () => ({
     region: "Global",
     industry: "",
@@ -70,12 +87,59 @@ const configManagerFactory = () => ({
     secondaryRegulation: "",
   }),
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
+  readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
+  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
+  detectGitHubWorkflowReadiness: () => ({
+    isGitRepo: false,
+    hasGitHubRemote: false,
+    ghInstalled: false,
+    authVerified: false,
+    authCheckAttempted: false,
+  }),
+  detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  getNativeCommandFilePaths: () => [],
+  detectOmoVersionInfo: () => ({
+    packageName: "oh-my-openagent",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    loadedSources: {
+      global: { version: null, packagePath: null },
+      cache: { version: null, packagePath: null },
+    },
+    staleOverrideWarning: null,
+    freshness: null,
+  }),
+  detectWunderkindVersionInfo: () => ({
+    packageName: "@grant-vine/wunderkind",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    staleOverrideWarning: null,
+  }),
+  getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
+  resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
 })
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerFactory)
+mock.module(CONFIG_MANAGER_JS_URL, configManagerFactory)
+mock.module(CONFIG_MANAGER_TS_URL, configManagerFactory)
 
-const mockAddAiTracesToGitignore = mock(() => ({ success: true, added: [], alreadyPresent: [] }))
+const mockAddAiTracesToGitignore = mock<
+  () => { success: boolean; added: string[]; alreadyPresent: string[]; error?: string }
+>(() => ({ success: true, added: [], alreadyPresent: [] }))
 
 const gitignoreFactory = () => ({
   addAiTracesToGitignore: mockAddAiTracesToGitignore,
@@ -125,16 +189,21 @@ const TUI_INSTALLER_URL = new URL("src/cli/tui-installer.ts", `file://${PROJECT_
 
 let runTuiInstaller: (scope?: InstallScope) => Promise<number>
 
+async function ensureTuiInstaller(): Promise<void> {
+  if (runTuiInstaller !== undefined) {
+    return
+  }
+
+  const mod = await import(TUI_INSTALLER_URL)
+  runTuiInstaller = mod.runTuiInstaller as (scope?: InstallScope) => Promise<number>
+}
+
 describe("runTuiInstaller init handoff", () => {
   let originalStdinTTY: boolean | undefined
   let originalStdoutTTY: boolean | undefined
 
-  beforeAll(async () => {
-    const mod = await import(TUI_INSTALLER_URL)
-    runTuiInstaller = mod.runTuiInstaller as (scope?: InstallScope) => Promise<number>
-  })
-
-  beforeEach(() => {
+  beforeEach(async () => {
+    await ensureTuiInstaller()
     mockRunInit.mockClear()
     mockSelect.mockClear()
     mockConfirm.mockClear()
@@ -195,6 +264,9 @@ describe("runTuiInstaller init handoff", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
+      designTool: "none" as const,
+      designPath: "./DESIGN.md",
+      designMcpOwnership: "none" as const,
     }))
 
     originalStdinTTY = process.stdin.isTTY
@@ -313,6 +385,9 @@ describe("runTuiInstaller init handoff", () => {
       docsPath: "./docs",
       docHistoryMode: "overwrite" as const,
       prdPipelineMode: "filesystem" as const,
+      designTool: "none" as const,
+      designPath: "./DESIGN.md",
+      designMcpOwnership: "none" as const,
     }))
     mockReadWunderkindConfigForScope.mockImplementation((scope: string) =>
       scope === "global"
@@ -484,7 +559,7 @@ describe("runTuiInstaller init handoff", () => {
     try {
       const code = await runTuiInstaller("project")
       expect(code).toBe(0)
-      expect(mockLogSuccess).toHaveBeenCalledWith(expect.stringContaining("entries to"))
+      expect(mockLogSuccess.mock.calls.some((call) => String(call[0] ?? "").includes("entries to"))).toBe(true)
     } finally {
       Object.defineProperty(process.stdin, "isTTY", { value: originalStdinTTY, configurable: true })
       Object.defineProperty(process.stdout, "isTTY", { value: originalStdoutTTY, configurable: true })

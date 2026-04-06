@@ -4,9 +4,51 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { AGENT_DOCS_CONFIG } from "./agents/docs-config.js"
 import { DURABLE_ARTIFACT_TOOL_NAME, writeDurableArtifact } from "./artifact-writer.js"
+import { resolveProjectLocalDocsPath } from "./cli/docs-output-helper.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
+
+function isReservedDocsPath(path: string): boolean {
+  const normalized = path.replaceAll("\\", "/").replace(/^\.\//, "")
+  return normalized === "DESIGN.md" || normalized.startsWith("DESIGN.md/")
+}
+
+function getDocsOutputRuntimeState(configuredDocsPath: string): {
+  displayDocsPath: string
+  docsTargets: string
+  warning: string | null
+} {
+  try {
+    const resolvedDocs = resolveProjectLocalDocsPath(configuredDocsPath, process.cwd()).docsPath
+
+    if (isReservedDocsPath(resolvedDocs)) {
+      return {
+        displayDocsPath: configuredDocsPath,
+        docsTargets: "- docs-output invalid: configured docsPath conflicts with reserved design-md path DESIGN.md",
+        warning:
+          `The configured docsPath (${configuredDocsPath}) is invalid for docs-output because it conflicts with the reserved design-md path \`DESIGN.md\`. \`wunderkind_write_artifact\` will reject docs-output writes until docsPath is changed to a non-conflicting directory.`,
+      }
+    }
+
+    return {
+      displayDocsPath: resolvedDocs,
+      docsTargets: Object.entries(AGENT_DOCS_CONFIG)
+        .filter(([, config]) => config.eligible)
+        .map(([agentKey, config]) => `- ${agentKey}: ${resolvedDocs}/${config.canonicalFilename}`)
+        .join("\n"),
+      warning: null,
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Invalid docsPath"
+    return {
+      displayDocsPath: configuredDocsPath,
+      docsTargets: `- docs-output invalid: configured docsPath is invalid (${reason})`,
+      warning:
+        `The configured docsPath (${configuredDocsPath}) is invalid for docs-output: ${reason}. \`wunderkind_write_artifact\` will reject docs-output writes until docsPath is changed to a valid project-local directory.`,
+    }
+  }
+}
 
 const SOUL_HEADING_MARKERS = [
   { heading: "# Product Wunderkind", agentKey: "product-wunderkind" },
@@ -91,7 +133,7 @@ const WunderkindPlugin: Plugin = async (_input) => {
     tool: {
       [DURABLE_ARTIFACT_TOOL_NAME]: tool({
         description:
-          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues, docs-output files, DESIGN.md, or notepads.",
+          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues/drafts, docs-output files, DESIGN.md, or notepads.",
         args: {
           agentKey: tool.schema.enum([
             "marketing-wunderkind",
@@ -101,11 +143,17 @@ const WunderkindPlugin: Plugin = async (_input) => {
             "ciso",
             "legal-counsel",
           ]),
-          kind: tool.schema.enum(["prd", "plan", "issue", "docs-output", "design-md", "notepad"]),
+          kind: tool.schema.enum(["prd", "plan", "issue", "draft", "docs-output", "design-md", "notepad"]),
           relativePath: tool.schema.string().min(1),
           content: tool.schema.string(),
         },
         async execute(args, context) {
+          const wunderkindConfig = readWunderkindConfig()
+          const durableArtifactOptions =
+            typeof wunderkindConfig?.docsPath === "string"
+              ? { docsPath: wunderkindConfig.docsPath }
+              : undefined
+
           await context.ask({
             permission: "edit",
             patterns: [args.relativePath],
@@ -114,10 +162,10 @@ const WunderkindPlugin: Plugin = async (_input) => {
               title: `Write durable artifact: ${args.relativePath}`,
               agentKey: args.agentKey,
               kind: args.kind,
-            },
-          })
+              },
+            })
 
-          const result = writeDurableArtifact(args, context.directory)
+          const result = writeDurableArtifact(args, context.directory, durableArtifactOptions)
           context.metadata({
             title: `Durable artifact written: ${result.relativePath}`,
             metadata: {
@@ -144,10 +192,10 @@ const WunderkindPlugin: Plugin = async (_input) => {
       if (wunderkindConfig?.docsEnabled === true && !hasDocsOutputSentinel) {
         const docsPath = wunderkindConfig.docsPath ?? "./docs"
         const docHistoryMode = wunderkindConfig.docHistoryMode ?? "append-dated"
-        const docsTargets = Object.entries(AGENT_DOCS_CONFIG)
-          .filter(([, config]) => config.eligible)
-          .map(([agentKey, config]) => `- ${agentKey}: ${docsPath}/${config.canonicalFilename}`)
-          .join("\n")
+        const docsOutputRuntimeState = getDocsOutputRuntimeState(docsPath)
+        const docsPathWarning = docsOutputRuntimeState.warning
+          ? `\n\n### Docs Output Warning\n\n${docsOutputRuntimeState.warning}\n`
+          : ""
 
         output.system.push(`
 ${DOCS_OUTPUT_SENTINEL}
@@ -155,7 +203,7 @@ ${DOCS_OUTPUT_SENTINEL}
 
 Documentation output is enabled for this project. Use these resolved runtime values instead of re-reading config files.
 
-- docsPath: ${docsPath}
+- docsPath: ${docsOutputRuntimeState.displayDocsPath}
 - docHistoryMode: ${docHistoryMode}
 - docs scope: current project root only
 
@@ -168,8 +216,10 @@ Documentation output is enabled for this project. Use these resolved runtime val
 
 Treat the canonical unsuffixed files below as managed home files. Within \`/docs-index\`, refresh them if present or bootstrap them if missing for \`append-dated\`. For \`new-dated-file\`, write timestamped family files alongside the canonical home file.
 
+${docsPathWarning}
+
 Eligible Wunderkind docs targets:
-${docsTargets}
+${docsOutputRuntimeState.docsTargets}
 `.trim())
       }
 
@@ -242,7 +292,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
-- Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, docs-output lanes, DESIGN.md, and allowed notepads.
+          - Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, drafts, docs-output lanes, DESIGN.md, and allowed notepads.
 
 ### Project Configuration
 

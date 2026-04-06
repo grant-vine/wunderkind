@@ -1,13 +1,19 @@
-import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test"
+import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import type { ProjectConfig } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
+const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?docs-injection=${Date.now()}`, `file://${PROJECT_ROOT}`).href
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
 function registerConfigManagerMock(): void {
-  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
+  const factory = () => ({
     readWunderkindConfig: mockReadWunderkindConfig,
     detectCurrentConfig: () => ({ isInstalled: false }),
     detectGitHubWorkflowReadiness: () => ({
@@ -33,12 +39,18 @@ function registerConfigManagerMock(): void {
     detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+    getNativeCommandFilePaths: () => [],
     detectOmoVersionInfo: () => ({ registered: false, loadedVersion: null, staleOverrideWarning: null }),
     detectWunderkindVersionInfo: () => ({ currentVersion: null }),
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
     readProjectWunderkindConfig: () => null,
     resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
-  }))
+  })
+
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, factory)
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, factory)
+  mock.module(CONFIG_MANAGER_JS_URL, factory)
+  mock.module(CONFIG_MANAGER_TS_URL, factory)
 }
 
 type TestOutput = {
@@ -57,19 +69,24 @@ type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.c
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 
-describe("runtime docs-output system injection", () => {
-  beforeAll(async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const transform = pluginResult["experimental.chat.system.transform"]
-    if (!transform) {
-      throw new Error("Expected experimental.chat.system.transform to exist")
-    }
-    cachedTransform = transform
-  })
+async function ensureTransform(): Promise<void> {
+  if (cachedTransform) {
+    return
+  }
 
-  beforeEach(() => {
+  registerConfigManagerMock()
+  const mod = (await import(INDEX_TEST_MODULE_URL)) as PluginModule
+  const pluginResult = await mod.default({})
+  const transform = pluginResult["experimental.chat.system.transform"]
+  if (!transform) {
+    throw new Error("Expected experimental.chat.system.transform to exist")
+  }
+  cachedTransform = transform
+}
+
+describe("runtime docs-output system injection", () => {
+  beforeEach(async () => {
+    await ensureTransform()
     mockReadWunderkindConfig.mockClear()
     mockReadWunderkindConfig.mockImplementation(() => null)
   })
@@ -96,7 +113,7 @@ describe("runtime docs-output system injection", () => {
 
     expect(hasDocsSection(output.system)).toBe(true)
     expect(output.system.some((entry) => entry.includes(DOCS_OUTPUT_SENTINEL))).toBe(true)
-    expect(output.system.some((entry) => entry.includes("./docs/output"))).toBe(true)
+    expect(output.system.some((entry) => entry.includes("docs/output"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("append-dated"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("Eligible Wunderkind docs targets:"))).toBe(true)
     expect(output.system.some((entry) => entry.includes("docs scope: current project root only"))).toBe(true)
@@ -131,6 +148,102 @@ describe("runtime docs-output system injection", () => {
 
     expect(countSentinel(output.system)).toBe(1)
     expect(output.system.filter((entry) => entry.includes("## Documentation Output")).length).toBe(1)
+  })
+
+  it("injects a docs-output warning when docsPath conflicts with reserved DESIGN.md", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsEnabled: true,
+      docsPath: "./DESIGN.md/subdir",
+      docHistoryMode: "append-dated",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+
+    const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+    expect(docsContent).toContain("### Docs Output Warning")
+    expect(docsContent).toContain("./DESIGN.md/subdir")
+    expect(docsContent).toContain("is invalid for docs-output")
+    expect(docsContent).toContain("wunderkind_write_artifact` will reject docs-output writes")
+    expect(docsContent).toContain("docs-output invalid: configured docsPath conflicts with reserved design-md path DESIGN.md")
+  })
+
+  it("injects a docs-output warning when docsPath is an absolute path", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsEnabled: true,
+      docsPath: "/tmp/docs",
+      docHistoryMode: "append-dated",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+
+    const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+    expect(docsContent).toContain("### Docs Output Warning")
+    expect(docsContent).toContain("/tmp/docs")
+    expect(docsContent).toContain("docsPath must be a relative path")
+    expect(docsContent).toContain("docs-output invalid: configured docsPath is invalid")
+  })
+
+  it("injects a docs-output warning when docsPath traverses parent directories", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsEnabled: true,
+      docsPath: "../outside-docs",
+      docHistoryMode: "append-dated",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+
+    const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+    expect(docsContent).toContain("### Docs Output Warning")
+    expect(docsContent).toContain("../outside-docs")
+    expect(docsContent).toContain("docsPath must not traverse parent directories")
+    expect(docsContent).toContain("docs-output invalid: configured docsPath is invalid")
+  })
+
+  it("injects a docs-output warning when docsPath resolves to the project root", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsEnabled: true,
+      docsPath: ".",
+      docHistoryMode: "append-dated",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+
+    const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+    expect(docsContent).toContain("### Docs Output Warning")
+    expect(docsContent).toContain("docsPath must resolve inside the current project root")
+    expect(docsContent).toContain("docs-output invalid: configured docsPath is invalid")
+  })
+
+  it("injects a docs-output warning when docsPath points at a symlinked lane", async () => {
+    const sandbox = mkdtempSync(join(tmpdir(), "wk-docs-injection-symlink-"))
+    const originalCwd = process.cwd()
+    mkdirSync(join(sandbox, "real-docs"), { recursive: true })
+    symlinkSync(join(sandbox, "real-docs"), join(sandbox, "linked-docs"), "dir")
+
+    try {
+      process.chdir(sandbox)
+      mockReadWunderkindConfig.mockImplementation(() => ({
+        docsEnabled: true,
+        docsPath: "./linked-docs",
+        docHistoryMode: "append-dated",
+      }))
+      const output: TestOutput = { system: [] }
+
+      await cachedTransform!({}, output)
+
+      const docsContent = output.system.find((entry) => entry.includes("## Documentation Output")) ?? ""
+      expect(docsContent).toContain("### Docs Output Warning")
+      expect(docsContent).toContain("./linked-docs")
+      expect(docsContent).toContain("docs-output lane must not include symlinked segments")
+      expect(docsContent).toContain("docs-output invalid: configured docsPath is invalid")
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(sandbox, { recursive: true, force: true })
+    }
   })
 
   it("does not inject docs section when config is null", async () => {

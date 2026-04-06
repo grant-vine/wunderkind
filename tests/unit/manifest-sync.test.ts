@@ -29,6 +29,31 @@ describe("manifest version sync", () => {
     expect(pluginVersion).toBe(packageVersion)
   })
 
+  it("keeps the plugin manifest in the minimal currently-supported shape", () => {
+    const pluginManifest = JSON.parse(readText(new URL("../../.claude-plugin/plugin.json", import.meta.url))) as unknown
+
+    expect(isRecord(pluginManifest)).toBe(true)
+    if (!isRecord(pluginManifest)) {
+      throw new Error("Expected plugin manifest to be a record")
+    }
+
+    expect(Object.keys(pluginManifest).sort()).toEqual(["description", "main", "name", "version"])
+    expect(pluginManifest.name).toBe("wunderkind")
+    expect(pluginManifest.main).toBe("dist/index.js")
+
+    const version = pluginManifest.version
+    const description = pluginManifest.description
+
+    expect(typeof version).toBe("string")
+    expect(typeof description).toBe("string")
+    if (typeof version !== "string" || typeof description !== "string") {
+      throw new Error("Expected plugin manifest version and description to be strings")
+    }
+
+    expect(version.length).toBeGreaterThan(0)
+    expect(description.length).toBeGreaterThan(0)
+  })
+
   it("keeps package metadata aligned with the six retained-agent product surface", () => {
     const packageBody = readText(new URL("../../package.json", import.meta.url))
 

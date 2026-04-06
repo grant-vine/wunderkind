@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { ProjectConfig } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
+const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?plugin-transform=${Date.now()}`, `file://${PROJECT_ROOT}`).href
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 const ORIGINAL_CWD = process.cwd()
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
 function registerConfigManagerMock(): void {
-  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
+  const factory = () => ({
     readWunderkindConfig: mockReadWunderkindConfig,
     detectCurrentConfig: () => ({ isInstalled: false }),
     detectGitHubWorkflowReadiness: () => ({
@@ -37,12 +40,18 @@ function registerConfigManagerMock(): void {
     detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+    getNativeCommandFilePaths: () => [],
     detectOmoVersionInfo: () => ({ registered: false, loadedVersion: null, staleOverrideWarning: null }),
     detectWunderkindVersionInfo: () => ({ currentVersion: null }),
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
     readProjectWunderkindConfig: () => null,
     resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
-  }))
+  })
+
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, factory)
+  mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, factory)
+  mock.module(CONFIG_MANAGER_JS_URL, factory)
+  mock.module(CONFIG_MANAGER_TS_URL, factory)
 }
 
 type TestOutput = {
@@ -54,7 +63,7 @@ type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.c
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 const initPromise = (async () => {
   registerConfigManagerMock()
-  const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+  const mod = (await import(INDEX_TEST_MODULE_URL)) as PluginModule
   const pluginResult = await mod.default({})
   const transform = pluginResult["experimental.chat.system.transform"]
   if (!transform) {
@@ -113,6 +122,373 @@ describe("Wunderkind plugin transform", () => {
 
     expect(pluginResult.tool).toBeDefined()
     expect(Object.keys(pluginResult.tool ?? {})).toContain("wunderkind_write_artifact")
+  })
+
+  it("passes a non-default configured docsPath through the durable artifact tool runtime seam", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "./project-docs",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-docs-path-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    const askCalls: unknown[] = []
+    const metadataCalls: unknown[] = []
+
+    try {
+      const result = await durableArtifactTool.execute(
+        {
+          agentKey: "product-wunderkind",
+          kind: "docs-output",
+          relativePath: "project-docs/product-decisions.md",
+          content: "# Product decisions\n",
+        },
+        {
+          directory: sandbox,
+          ask: async (input) => {
+            askCalls.push(input)
+          },
+          metadata: (input) => {
+            metadataCalls.push(input)
+          },
+        },
+      )
+
+      expect(result).toBe("Durable artifact written to project-docs/product-decisions.md")
+      expect(readFileSync(join(sandbox, "project-docs/product-decisions.md"), "utf-8")).toBe("# Product decisions\n")
+      expect(askCalls).toHaveLength(1)
+      expect(metadataCalls).toHaveLength(1)
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("does not let an invalid docsPath break non-docs durable artifact writes", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "/tmp/invalid-docs",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-invalid-docs-nondocs-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      const result = await durableArtifactTool.execute(
+        {
+          agentKey: "product-wunderkind",
+          kind: "draft",
+          relativePath: ".sisyphus/drafts/idea.md",
+          content: "# Idea\n",
+        },
+        {
+          directory: sandbox,
+          ask: async () => {},
+          metadata: () => {},
+        },
+      )
+
+      expect(result).toBe("Durable artifact written to .sisyphus/drafts/idea.md")
+      expect(readFileSync(join(sandbox, ".sisyphus/drafts/idea.md"), "utf-8")).toBe("# Idea\n")
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("rejects the durable artifact tool when configured docsPath is a symlinked lane", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "./project-docs",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-docs-symlink-${Date.now()}`)
+    mkdirSync(join(sandbox, ".sisyphus/notepads"), { recursive: true })
+    try {
+      symlinkSync(join(sandbox, ".sisyphus/notepads"), join(sandbox, "project-docs"), "dir")
+
+      try {
+        await durableArtifactTool.execute(
+          {
+            agentKey: "product-wunderkind",
+            kind: "docs-output",
+            relativePath: "project-docs/product-decisions.md",
+            content: "bad",
+          },
+          {
+            directory: sandbox,
+            ask: async () => {},
+            metadata: () => {},
+          },
+        )
+        throw new Error("Expected symlinked docsPath rejection")
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).toContain("docs-output lane must not include symlinked segments")
+      }
+
+      expect(existsSync(join(sandbox, ".sisyphus/notepads/product-decisions.md"))).toBe(false)
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("allows the durable artifact tool when configured docsPath directory name ends with .md", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "./docs.md",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-docs-md-dir-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      const result = await durableArtifactTool.execute(
+        {
+          agentKey: "product-wunderkind",
+          kind: "docs-output",
+          relativePath: "docs.md/product-decisions.md",
+          content: "# Product decisions\n",
+        },
+        {
+          directory: sandbox,
+          ask: async () => {},
+          metadata: () => {},
+        },
+      )
+
+      expect(result).toBe("Durable artifact written to docs.md/product-decisions.md")
+      expect(readFileSync(join(sandbox, "docs.md/product-decisions.md"), "utf-8")).toBe("# Product decisions\n")
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("rejects the durable artifact tool when configured docsPath is ./DESIGN.md", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "./DESIGN.md",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-docs-design-md-dir-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      try {
+        await durableArtifactTool.execute(
+          {
+            agentKey: "product-wunderkind",
+            kind: "docs-output",
+            relativePath: "DESIGN.md/product-decisions.md",
+            content: "# Product decisions\n",
+          },
+          {
+            directory: sandbox,
+            ask: async () => {},
+            metadata: () => {},
+          },
+        )
+        throw new Error("Expected reserved DESIGN.md docsPath rejection")
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).toContain(
+          "docs-output artifacts may not use DESIGN.md as docsPath because that path is reserved for design-md",
+        )
+      }
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("rejects the durable artifact tool when configured docsPath is nested under ./DESIGN.md", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      docsPath: "./DESIGN.md/subdir",
+    }))
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-docs-design-md-subdir-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      try {
+        await durableArtifactTool.execute(
+          {
+            agentKey: "product-wunderkind",
+            kind: "docs-output",
+            relativePath: "DESIGN.md/subdir/product-decisions.md",
+            content: "# Product decisions\n",
+          },
+          {
+            directory: sandbox,
+            ask: async () => {},
+            metadata: () => {},
+          },
+        )
+        throw new Error("Expected nested reserved DESIGN.md docsPath rejection")
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).toContain(
+          "docs-output artifacts may not use DESIGN.md as docsPath because that path is reserved for design-md",
+        )
+      }
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("exposes the currently adopted plugin hook surface", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+
+    expect(typeof pluginResult["permission.ask"]).toBe("function")
+    expect(typeof pluginResult["experimental.chat.system.transform"]).toBe("function")
+    expect(pluginResult).not.toHaveProperty("tool.execute.before")
+    expect(pluginResult).not.toHaveProperty("tool.execute.after")
+    expect(pluginResult).not.toHaveProperty("command.execute.before")
+    expect(pluginResult).not.toHaveProperty("chat.headers")
+    expect(pluginResult).not.toHaveProperty("shell.env")
+    expect(pluginResult).not.toHaveProperty("experimental.session.compacting")
   })
 
   it("denies shell-based file mutation for non-fullstack retained agents", async () => {

@@ -6,6 +6,8 @@ import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { DetectedConfig, InstallConfig, OmoFreshnessInfo, PluginVersionInfo } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
     isInstalled: false,
@@ -43,6 +45,14 @@ const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock<() => Record<string, unknown> | null>(() => null)
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/wunderkind.config.jsonc" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
+const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/mock-agents", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/mock-commands", changed: true }))
+const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/mock-skills", changed: true }))
+const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
+const mockReadWunderkindConfigForScope = mock<() => Partial<InstallConfig> | null>(() => null)
+const mockDetectLegacyConfig = mock(() => false)
+const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
 const mockDetectNativeAgentFiles = mock((scope: "global" | "project") => ({
   dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
   presentCount: 6,
@@ -141,8 +151,10 @@ mock.module(`${PROJECT_ROOT}src/cli/mcp-helpers.js`, () => ({
   writeStitchSecretFile: mock(async () => {}),
 }))
 
-mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
+const configManagerMockFactory = () => ({
+  addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
   detectNativeCommandFiles: mockDetectNativeCommandFiles,
@@ -151,15 +163,26 @@ mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, () => ({
   detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
   getNativeCommandFilePaths: mockGetNativeCommandFilePaths,
   readWunderkindConfig: mockReadWunderkindConfig,
+  readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
+  removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  removeNativeAgentFiles: mockRemoveNativeAgentFiles,
+  removeNativeCommandFiles: mockRemoveNativeCommandFiles,
+  removeNativeSkillFiles: mockRemoveNativeSkillFiles,
+  removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
   resolveOpenCodeConfigPath: mockResolveOpenCodeConfigPath,
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" }),
-}))
+})
+
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_JS_URL, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_TS_URL, configManagerMockFactory)
 
 mock.module("picocolors", () => ({
   default: {

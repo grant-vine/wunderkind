@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import type { DetectedConfig, InstallConfig } from "../../src/cli/types.js"
 import type { GitHubWorkflowReadiness } from "../../src/cli/config-manager/index.js"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { StitchPresence } from "../../src/cli/mcp-helpers.js"
+
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 
 const mockText = mock(async () => "")
 const mockSelect = mock(async () => "")
@@ -59,6 +63,12 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockDetectLegacyConfig = mock(() => false)
+const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
+const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
+const mockReadWunderkindConfigForScope = mock(() => null)
+const mockReadGlobalWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock(() => null)
 const mockDetectGitHubWorkflowReadiness = mock<(cwd: string) => GitHubWorkflowReadiness>(() => ({
   isGitRepo: true,
   hasGitHubRemote: true,
@@ -86,15 +96,61 @@ const mockWriteStitchSecretFile = mock<(apiKey: string, cwd: string) => Promise<
   writeFileSync(secretPath, apiKey.trim())
 })
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
+const configManagerMockFactory = () => ({
+  addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
   readWunderkindConfig: mockReadWunderkindConfig,
+  readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
+  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
+  readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
+  removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
-}))
+  detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  getNativeCommandFilePaths: () => [],
+  detectOmoVersionInfo: () => ({
+    packageName: "oh-my-openagent",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    loadedSources: {
+      global: { version: null, packagePath: null },
+      cache: { version: null, packagePath: null },
+    },
+    staleOverrideWarning: null,
+    freshness: null,
+  }),
+  detectWunderkindVersionInfo: () => ({
+    packageName: "@grant-vine/wunderkind",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    staleOverrideWarning: null,
+  }),
+  getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
+  getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+  resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
+})
+
+mock.module("../../src/cli/config-manager/index.js", configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_JS_URL, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_TS_URL, configManagerMockFactory)
 
 mock.module("../../src/cli/mcp-helpers.js", () => ({
   detectStitchMcpPresence: mockDetectStitchMcpPresence,
@@ -527,6 +583,8 @@ describe("runInit interactive SOUL prompts", () => {
     mockText.mockImplementation(async (opts?: { validate?: (v: string) => string | undefined }) => {
       if (opts?.validate) {
         docsPathValidateResults.push(opts.validate("../outside"))
+        docsPathValidateResults.push(opts.validate("./DESIGN.md/subdir"))
+        docsPathValidateResults.push(opts.validate("./linked-docs"))
         docsPathValidateResults.push(opts.validate("./valid-docs"))
         return "./valid-docs"
       }
@@ -543,6 +601,8 @@ describe("runInit interactive SOUL prompts", () => {
     const originalCwd = process.cwd()
     const tempProject = mkdtempSync(join(tmpdir(), "wk-init-interactive-"))
     writeFileSync(join(tempProject, "package.json"), "{}")
+    mkdirSync(join(tempProject, "real-docs"), { recursive: true })
+    symlinkSync(join(tempProject, "real-docs"), join(tempProject, "linked-docs"), "dir")
     process.chdir(tempProject)
     console.log = () => {}
 
@@ -552,7 +612,9 @@ describe("runInit interactive SOUL prompts", () => {
 
       expect(docsPathValidateResults[0]).toBeDefined()
       expect(typeof docsPathValidateResults[0]).toBe("string")
-      expect(docsPathValidateResults[1]).toBeUndefined()
+      expect(docsPathValidateResults[1]).toContain("DESIGN.md is reserved for design-md")
+      expect(docsPathValidateResults[2]).toContain("docs-output lane must not include symlinked segments")
+      expect(docsPathValidateResults[3]).toBeUndefined()
 
       const installConfig = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
       expect(installConfig.docsEnabled).toBe(true)

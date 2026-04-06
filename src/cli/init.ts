@@ -11,7 +11,7 @@ import {
   writeWunderkindConfig,
 } from "./config-manager/index.js"
 import { bootstrapDesignMd, validateDesignPath } from "./design-md-helper.js"
-import { bootstrapDocsReadme, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
+import { bootstrapDocsReadme, resolveProjectLocalDocsPath, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { detectStitchMcpPresence, mergeStitchMcpConfig, writeStitchSecretFile } from "./mcp-helpers.js"
 import { DOCS_HISTORY_META, PERSONALITY_META } from "./personality-meta.js"
 import type {
@@ -77,6 +77,24 @@ function normalizeDesignPath(designPath: string): string {
 
 function normalizeDesignTool(designTool: string | undefined): DesignTool {
   return designTool === "google-stitch" ? "google-stitch" : "none"
+}
+
+function validateResolvedDocsPath(docsPath: string, cwd: string): string | undefined {
+  const lexicalValidation = validateDocsPath(docsPath)
+  if (!lexicalValidation.valid) {
+    return lexicalValidation.error
+  }
+
+  try {
+    const resolved = resolveProjectLocalDocsPath(docsPath, cwd).docsPath
+    if (resolved === "DESIGN.md" || resolved.startsWith("DESIGN.md/")) {
+      return "docsPath is invalid for docs-output because DESIGN.md is reserved for design-md"
+    }
+  } catch (error) {
+    return error instanceof Error ? error.message : "Invalid docsPath"
+  }
+
+  return undefined
 }
 
 function normalizeStitchSetup(stitchSetup: string | undefined): StitchSetupChoice | null {
@@ -758,12 +776,11 @@ export async function runInit(options: InitOptions): Promise<number> {
         const docsPathRaw = await p.text({
           message: "Docs output directory path (relative):",
           placeholder: "./docs",
-          initialValue: config.docsPath,
-          validate: (v) => {
-            const validation = validateDocsPath(v)
-            return validation.valid ? undefined : validation.error
-          },
-        })
+            initialValue: config.docsPath,
+            validate: (v) => {
+              return validateResolvedDocsPath(v, cwd)
+            },
+          })
         if (p.isCancel(docsPathRaw)) return 1
         docsPath = (docsPathRaw as string).trim() || "./docs"
 
@@ -929,9 +946,9 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
 
     if (config.docsEnabled) {
-      const docsPathValidation = validateDocsPath(config.docsPath)
-      if (!docsPathValidation.valid) {
-        console.error(`Error: ${docsPathValidation.error}`)
+      const docsPathValidationError = validateResolvedDocsPath(config.docsPath, cwd)
+      if (docsPathValidationError !== undefined) {
+        console.error(`Error: ${docsPathValidationError}`)
         return 1
       }
     }

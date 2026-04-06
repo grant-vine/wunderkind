@@ -4,6 +4,10 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
 
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
+const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
+const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
+
 function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
     isInstalled: true,
@@ -29,17 +33,90 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     docsPath: "./docs",
     docHistoryMode: "append-dated" as const,
     prdPipelineMode: "filesystem" as const,
+    designTool: "none" as const,
+    designPath: "./DESIGN.md",
+    designMcpOwnership: "none" as const,
     ...overrides,
   }
 }
 
 const mockDetectCurrentConfig = mock<() => DetectedConfig>(() => makeDetectedConfig())
 const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
+const mockDetectLegacyConfig = mock(() => false)
+const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
+const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
+const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
+const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
+const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockReadWunderkindConfigForScope = mock(() => null)
+const mockReadGlobalWunderkindConfig = mock(() => null)
+const mockReadProjectWunderkindConfig = mock(() => null)
 
-mock.module("../../src/cli/config-manager/index.js", () => ({
+const configManagerMockFactory = () => ({
+  addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectLegacyConfig: mockDetectLegacyConfig,
+  detectGitHubWorkflowReadiness: () => ({
+    isGitRepo: false,
+    hasGitHubRemote: false,
+    ghInstalled: false,
+    authVerified: false,
+    authCheckAttempted: false,
+  }),
+  detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectOmoVersionInfo: () => ({
+    packageName: "oh-my-openagent",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    loadedSources: {
+      global: { version: null, packagePath: null },
+      cache: { version: null, packagePath: null },
+    },
+    staleOverrideWarning: null,
+    freshness: null,
+  }),
+  detectWunderkindVersionInfo: () => ({
+    packageName: "@grant-vine/wunderkind",
+    currentVersion: null,
+    registeredEntry: null,
+    registeredVersion: null,
+    loadedVersion: null,
+    configPath: null,
+    loadedPackagePath: null,
+    registered: false,
+    staleOverrideWarning: null,
+  }),
+  getNativeCommandFilePaths: () => [],
+  getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
-}))
+  readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
+  readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
+  writeWunderkindConfig: mockWriteWunderkindConfig,
+  writeNativeAgentFiles: mockWriteNativeAgentFiles,
+  writeNativeCommandFiles: mockWriteNativeCommandFiles,
+  writeNativeSkillFiles: mockWriteNativeSkillFiles,
+  readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
+  resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
+  getDefaultGlobalConfig: () => ({
+    region: "Global",
+    industry: "",
+    primaryRegulation: "",
+    secondaryRegulation: "",
+  }),
+})
+
+mock.module("../../src/cli/config-manager/index.js", configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerMockFactory)
+mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_JS_URL, configManagerMockFactory)
+mock.module(CONFIG_MANAGER_TS_URL, configManagerMockFactory)
 
 import { runProjectCleanup } from "../../src/cli/cleanup.js"
 

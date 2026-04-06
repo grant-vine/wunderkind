@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -50,6 +50,9 @@ describe("docs-output-helper", () => {
     expect(validateDocsPath("../docs")).toEqual({ valid: false, error: "docsPath must not traverse parent directories" })
     expect(validateDocsPath("../../docs")).toEqual({ valid: false, error: "docsPath must not traverse parent directories" })
     expect(validateDocsPath("/tmp/docs")).toEqual({ valid: false, error: "docsPath must be a relative path" })
+    expect(validateDocsPath(".")).toEqual({ valid: false, error: "docsPath must resolve inside the current project root" })
+    expect(validateDocsPath("./")).toEqual({ valid: false, error: "docsPath must resolve inside the current project root" })
+    expect(validateDocsPath("docs/..")).toEqual({ valid: false, error: "docsPath must resolve inside the current project root" })
   })
 
   it("resolves project-local docs paths and rejects project-root escapes", () => {
@@ -73,6 +76,19 @@ describe("docs-output-helper", () => {
       } catch (error) {
         expect(error instanceof Error).toBe(true)
         expect((error as Error).message).toBe("docsPath must resolve inside the current project root")
+      }
+
+      const symlinkTarget = join(realProject, "real-docs")
+      mkdirSync(symlinkTarget, { recursive: true })
+      const symlinkPath = join(realProject, "linked-docs")
+      symlinkSync(symlinkTarget, symlinkPath, "dir")
+
+      try {
+        resolveProjectLocalDocsPath("./linked-docs", tempProject)
+        throw new Error("Expected resolveProjectLocalDocsPath to reject symlinked docs path")
+      } catch (error) {
+        expect(error instanceof Error).toBe(true)
+        expect((error as Error).message).toBe("docs-output lane must not include symlinked segments")
       }
     } finally {
       rmSync(tempProject, { recursive: true, force: true })
