@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.0
+
+- add draft-lane support and harden durable artifact writes around docsPath validation, symlink containment, and reserved `DESIGN.md` conflicts
+- upgrade `oh-my-openagent` / `@opencode-ai/plugin` compatibility and stabilize the CLI/config-manager test harnesses so full Bun suite runs stay green
+
 ## 0.13.0
 
 - add the shipped `/dream` native command as a mixed ideation, SOUL-synthesis, and exploration workflow owned by `product-wunderkind`
