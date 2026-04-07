@@ -24,7 +24,7 @@ This command is invoked as `/dream`.
 ## Constraints
 
 - **Chat-First**: Default behavior is chat-first output. Do not create or modify files by default.
-- **Save Only on Request**: Save output ONLY when the user explicitly asks. Permitted targets: `.sisyphus/notepads/` and `.sisyphus/evidence/`.
+- **Save Only on Request**: Save output ONLY when the user explicitly asks. Permitted targets: `.sisyphus/notepads/` and `.sisyphus/evidence/`, written via Wunderkind's bounded durable-artifact writer.
 - **Target Restrictions**: Never write to project planning directories or any other directory not listed above.
 - **No Mutation**: Do not mutate, update, or change SOUL files in `.wunderkind/souls/`. These are read-only for this workflow.
 - **No Configuration Edits**: Do not reference, read, or modify the project configuration file, system configuration keys, or environment setup prompts.
@@ -35,7 +35,7 @@ This command is invoked as `/dream`.
 
 - This command is shipped as `/dream`.
 - Use the workflow to bridge the gap between abstract project goals and concrete codebase reality.
-- When saving evidence of exploration, append findings to the requested file in `.sisyphus/evidence/` with a clear description of the discovery.
+- When saving evidence of exploration, append findings to the requested file in `.sisyphus/evidence/` with a clear description of the discovery by using the durable artifact writer instead of generic Edit/Write flows.
 - Soul synthesis ensures that the "dream" is aligned with the specific personalities configured for the project.
 
 <user-request>

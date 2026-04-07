@@ -99,7 +99,8 @@ describe("retained agent factory structure", () => {
 
       it("prompt contains SOUL maintenance guidance", () => {
         expect(config.prompt).toContain("## SOUL Maintenance (.wunderkind/souls/)")
-        expect(config.prompt).toContain("remember something durable")
+        expect(config.prompt).toContain("SOUL files are read-only")
+        expect(config.prompt).toContain("remember this")
       })
 
       it("prompt contains shared slash-command help contract", () => {

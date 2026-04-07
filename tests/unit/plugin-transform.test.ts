@@ -124,6 +124,164 @@ describe("Wunderkind plugin transform", () => {
     expect(Object.keys(pluginResult.tool ?? {})).toContain("wunderkind_write_artifact")
   })
 
+  it("writes durable artifacts without routing through generic write/edit permission asks", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-write-permission-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+      const askCalls: unknown[] = []
+
+      try {
+        await durableArtifactTool.execute(
+          {
+            agentKey: "product-wunderkind",
+            kind: "notepad",
+            relativePath: ".sisyphus/notepads/runtime/learnings.md",
+            content: "Entry\n",
+          },
+          {
+            directory: sandbox,
+            ask: async (input) => {
+              askCalls.push(input)
+            },
+            metadata: () => {},
+          },
+        )
+
+        expect(askCalls).toHaveLength(0)
+        expect(readFileSync(join(sandbox, ".sisyphus/notepads/runtime/learnings.md"), "utf-8")).toBe("Entry\n")
+      } finally {
+        rmSync(sandbox, { recursive: true, force: true })
+      }
+  })
+
+  it("lets product-wunderkind write a PRD through the durable artifact tool despite generic write/edit denial", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-prd-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      const result = await durableArtifactTool.execute(
+        {
+          agentKey: "product-wunderkind",
+          kind: "prd",
+          relativePath: ".sisyphus/prds/new-checkout.md",
+          content: "# Checkout PRD\n",
+        },
+        {
+          directory: sandbox,
+          ask: async () => {
+            throw new Error("durable artifact tool should not require generic ask permission")
+          },
+          metadata: () => {},
+        },
+      )
+
+      expect(result).toBe("Durable artifact written to .sisyphus/prds/new-checkout.md")
+      expect(readFileSync(join(sandbox, ".sisyphus/prds/new-checkout.md"), "utf-8")).toBe("# Checkout PRD\n")
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
+  it("supports evidence writes through the durable artifact tool", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
+      | {
+          execute?: (
+            args: {
+              agentKey: string
+              kind: string
+              relativePath: string
+              content: string
+            },
+            context: {
+              directory: string
+              ask: (input: unknown) => Promise<void>
+              metadata: (input: unknown) => void
+            },
+          ) => Promise<string>
+        }
+      | undefined
+
+    if (!durableArtifactTool?.execute) {
+      throw new Error("Expected wunderkind_write_artifact.execute to exist")
+    }
+
+    const sandbox = join(tmpdir(), `wunderkind-tool-evidence-${Date.now()}`)
+    mkdirSync(sandbox, { recursive: true })
+
+    try {
+      const result = await durableArtifactTool.execute(
+        {
+          agentKey: "product-wunderkind",
+          kind: "evidence",
+          relativePath: ".sisyphus/evidence/dream/findings.md",
+          content: "Discovery\n",
+        },
+        {
+          directory: sandbox,
+          ask: async () => {},
+          metadata: () => {},
+        },
+      )
+
+      expect(result).toBe("Durable artifact written to .sisyphus/evidence/dream/findings.md")
+      expect(readFileSync(join(sandbox, ".sisyphus/evidence/dream/findings.md"), "utf-8")).toBe("Discovery\n")
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+    }
+  })
+
   it("passes a non-default configured docsPath through the durable artifact tool runtime seam", async () => {
     registerConfigManagerMock()
     const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
@@ -181,7 +339,7 @@ describe("Wunderkind plugin transform", () => {
 
       expect(result).toBe("Durable artifact written to project-docs/product-decisions.md")
       expect(readFileSync(join(sandbox, "project-docs/product-decisions.md"), "utf-8")).toBe("# Product decisions\n")
-      expect(askCalls).toHaveLength(1)
+      expect(askCalls).toHaveLength(0)
       expect(metadataCalls).toHaveLength(1)
     } finally {
       rmSync(sandbox, { recursive: true, force: true })

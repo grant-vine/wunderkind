@@ -113,6 +113,79 @@ describe("artifact-writer", () => {
     }
   })
 
+  it("allows all retained agents to append to notepad lanes", () => {
+    const agents = [
+      "marketing-wunderkind",
+      "creative-director",
+      "product-wunderkind",
+      "fullstack-wunderkind",
+      "ciso",
+      "legal-counsel",
+    ] as const
+
+    for (const agentKey of agents) {
+      const sandbox = createSandbox(`notepad-${agentKey}`)
+      cleanupPaths.push(sandbox)
+      try {
+        const relativePath = ".sisyphus/notepads/permissions/learnings.md"
+        writeDurableArtifact({ agentKey, kind: "notepad", relativePath, content: "First line\n" }, sandbox)
+        writeDurableArtifact({ agentKey, kind: "notepad", relativePath, content: "Second line\n" }, sandbox)
+
+        expect(readFileSync(join(sandbox, relativePath), "utf-8")).toBe("First line\nSecond line\n")
+      } finally {
+        rmSync(sandbox, { recursive: true, force: true })
+        cleanupPaths.splice(cleanupPaths.indexOf(sandbox), 1)
+      }
+    }
+  })
+
+  it("allows all retained agents to append to evidence lanes", () => {
+    const agents = [
+      "marketing-wunderkind",
+      "creative-director",
+      "product-wunderkind",
+      "fullstack-wunderkind",
+      "ciso",
+      "legal-counsel",
+    ] as const
+
+    for (const agentKey of agents) {
+      const sandbox = createSandbox(`evidence-${agentKey}`)
+      cleanupPaths.push(sandbox)
+      try {
+        const relativePath = ".sisyphus/evidence/permissions/findings.md"
+        writeDurableArtifact({ agentKey, kind: "evidence", relativePath, content: "Observation A\n" }, sandbox)
+        writeDurableArtifact({ agentKey, kind: "evidence", relativePath, content: "Observation B\n" }, sandbox)
+
+        expect(readFileSync(join(sandbox, relativePath), "utf-8")).toBe("Observation A\nObservation B\n")
+      } finally {
+        rmSync(sandbox, { recursive: true, force: true })
+        cleanupPaths.splice(cleanupPaths.indexOf(sandbox), 1)
+      }
+    }
+  })
+
+  it("rejects evidence artifacts outside .sisyphus/evidence", () => {
+    const sandbox = createSandbox("evidence-wrong-path")
+    cleanupPaths.push(sandbox)
+    try {
+      try {
+        writeDurableArtifact({
+          agentKey: "product-wunderkind",
+          kind: "evidence",
+          relativePath: ".sisyphus/notepads/not-evidence.md",
+          content: "bad",
+        }, sandbox)
+        throw new Error("Expected evidence wrong-path rejection")
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).toContain("evidence artifacts must stay under .sisyphus/evidence/")
+      }
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
+      cleanupPaths.splice(cleanupPaths.indexOf(sandbox), 1)
+    }
+  })
+
   it("rejects draft artifacts for agents outside the draft lane allowlist", () => {
     const sandbox = createSandbox("marketing-draft")
     cleanupPaths.push(sandbox)

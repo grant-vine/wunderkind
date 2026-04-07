@@ -14,6 +14,7 @@ export type DurableArtifactAgentKey =
   | "legal-counsel"
 
 export type DurableArtifactKind = "prd" | "plan" | "issue" | "draft" | "docs-output" | "design-md" | "notepad"
+  | "evidence"
 
 export interface DurableArtifactWriteRequest {
   agentKey: DurableArtifactAgentKey
@@ -116,18 +117,26 @@ function getAllowedArtifactRoots(agentKey: DurableArtifactAgentKey, docsOutputRo
         directoryLane(".sisyphus/issues"),
         directoryLane(".sisyphus/drafts"),
         directoryLane(".sisyphus/notepads"),
+        directoryLane(".sisyphus/evidence"),
         directoryLane(docsOutputRoot),
       ]
     case "creative-director":
-      return [exactFileLane("DESIGN.md"), directoryLane(".wunderkind/stitch"), directoryLane(".sisyphus/notepads"), directoryLane(docsOutputRoot)]
+      return [
+        exactFileLane("DESIGN.md"),
+        directoryLane(".wunderkind/stitch"),
+        directoryLane(".sisyphus/notepads"),
+        directoryLane(".sisyphus/evidence"),
+        directoryLane(docsOutputRoot),
+      ]
     case "marketing-wunderkind":
-      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads")]
+      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
     case "ciso":
-      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads")]
+      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
     case "fullstack-wunderkind":
       return [
         directoryLane(docsOutputRoot),
         directoryLane(".sisyphus/notepads"),
+        directoryLane(".sisyphus/evidence"),
         directoryLane(".sisyphus/prds"),
         directoryLane(".sisyphus/plans"),
         directoryLane(".sisyphus/issues"),
@@ -135,8 +144,12 @@ function getAllowedArtifactRoots(agentKey: DurableArtifactAgentKey, docsOutputRo
         directoryLane(".wunderkind/stitch"),
       ]
     case "legal-counsel":
-      return [directoryLane(".sisyphus/notepads")]
+      return [directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
   }
+}
+
+function appendOnlyArtifactKinds(kind: DurableArtifactKind): boolean {
+  return kind === "notepad" || kind === "evidence"
 }
 
 function isAllowedArtifactPath(agentKey: DurableArtifactAgentKey, normalizedRelativePath: string, docsOutputRoot: string): boolean {
@@ -243,6 +256,10 @@ function validateArtifactKind(
   if (kind === "notepad" && !normalizedRelativePath.startsWith(".sisyphus/notepads/")) {
     throw new Error("notepad artifacts must stay under .sisyphus/notepads/")
   }
+
+  if (kind === "evidence" && !normalizedRelativePath.startsWith(".sisyphus/evidence/")) {
+    throw new Error("evidence artifacts must stay under .sisyphus/evidence/")
+  }
 }
 
 export function writeDurableArtifact(
@@ -304,7 +321,10 @@ export function writeDurableArtifact(
   }
 
   const created = !existsSync(finalAbsolutePath)
-  writeFileSync(finalAbsolutePath, request.content, "utf-8")
+  const nextContent = appendOnlyArtifactKinds(request.kind) && existsSync(finalAbsolutePath)
+    ? `${readFileSync(finalAbsolutePath, "utf-8")}${request.content}`
+    : request.content
+  writeFileSync(finalAbsolutePath, nextContent, "utf-8")
 
   return {
     absolutePath: finalAbsolutePath,

@@ -133,7 +133,7 @@ const WunderkindPlugin: Plugin = async (_input) => {
     tool: {
       [DURABLE_ARTIFACT_TOOL_NAME]: tool({
         description:
-          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues/drafts, docs-output files, DESIGN.md, or notepads.",
+          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues/drafts, append-only notepads/evidence, docs-output files, DESIGN.md, or Stitch support files.",
         args: {
           agentKey: tool.schema.enum([
             "marketing-wunderkind",
@@ -143,7 +143,7 @@ const WunderkindPlugin: Plugin = async (_input) => {
             "ciso",
             "legal-counsel",
           ]),
-          kind: tool.schema.enum(["prd", "plan", "issue", "draft", "docs-output", "design-md", "notepad"]),
+          kind: tool.schema.enum(["prd", "plan", "issue", "draft", "docs-output", "design-md", "notepad", "evidence"]),
           relativePath: tool.schema.string().min(1),
           content: tool.schema.string(),
         },
@@ -153,17 +153,6 @@ const WunderkindPlugin: Plugin = async (_input) => {
             typeof wunderkindConfig?.docsPath === "string"
               ? { docsPath: wunderkindConfig.docsPath }
               : undefined
-
-          await context.ask({
-            permission: "edit",
-            patterns: [args.relativePath],
-            always: [args.relativePath],
-            metadata: {
-              title: `Write durable artifact: ${args.relativePath}`,
-              agentKey: args.agentKey,
-              kind: args.kind,
-              },
-            })
 
           const result = writeDurableArtifact(args, context.directory, durableArtifactOptions)
           context.metadata({
@@ -292,7 +281,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
-          - Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, drafts, docs-output lanes, DESIGN.md, and allowed notepads.
+- Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, drafts, append-only notepads/evidence, docs-output lanes, DESIGN.md, and allowed Stitch support files.
 
 ### Project Configuration
 

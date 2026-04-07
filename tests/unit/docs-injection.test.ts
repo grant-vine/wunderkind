@@ -135,6 +135,17 @@ describe("runtime docs-output system injection", () => {
     expect(docsContent).not.toMatch(/explicit completion result/)
   })
 
+  it("injects native agent guidance that points durable saves to the artifact writer", async () => {
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+
+    const nativeAgentsContent = output.system.find((entry) => entry.includes("## Wunderkind Native Agents")) ?? ""
+    expect(nativeAgentsContent).toContain("append-only notepads/evidence")
+    expect(nativeAgentsContent).toContain("allowed Stitch support files")
+    expect(nativeAgentsContent).toContain("wunderkind_write_artifact")
+  })
+
   it("does not duplicate docs section when transform runs twice", async () => {
     mockReadWunderkindConfig.mockImplementation(() => ({
       docsEnabled: true,
