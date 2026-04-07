@@ -27,7 +27,7 @@ function getDocsOutputRuntimeState(configuredDocsPath: string): {
         displayDocsPath: configuredDocsPath,
         docsTargets: "- docs-output invalid: configured docsPath conflicts with reserved design-md path DESIGN.md",
         warning:
-          `The configured docsPath (${configuredDocsPath}) is invalid for docs-output because it conflicts with the reserved design-md path \`DESIGN.md\`. \`wunderkind_write_artifact\` will reject docs-output writes until docsPath is changed to a non-conflicting directory.`,
+          `The configured docsPath (${configuredDocsPath}) is invalid for docs-output because it conflicts with the reserved design-md path \`DESIGN.md\`. Normal docs-output writes should be redirected to a non-conflicting directory before continuing.`,
       }
     }
 
@@ -45,7 +45,7 @@ function getDocsOutputRuntimeState(configuredDocsPath: string): {
       displayDocsPath: configuredDocsPath,
       docsTargets: `- docs-output invalid: configured docsPath is invalid (${reason})`,
       warning:
-        `The configured docsPath (${configuredDocsPath}) is invalid for docs-output: ${reason}. \`wunderkind_write_artifact\` will reject docs-output writes until docsPath is changed to a valid project-local directory.`,
+        `The configured docsPath (${configuredDocsPath}) is invalid for docs-output: ${reason}. Normal docs-output writes should be redirected to a valid project-local directory before continuing.`,
     }
   }
 }
@@ -133,17 +133,8 @@ const WunderkindPlugin: Plugin = async (_input) => {
     tool: {
       [DURABLE_ARTIFACT_TOOL_NAME]: tool({
         description:
-          "Write a durable Wunderkind artifact within an agent-specific bounded lane such as .sisyphus PRDs/plans/issues/drafts, append-only notepads/evidence, docs-output files, DESIGN.md, or Stitch support files.",
+          "Append durable memory only inside protected Wunderkind lanes such as .sisyphus/notepads or .sisyphus/evidence. Use normal Write/Edit for ordinary repo files, docs-output, DESIGN.md, Stitch files, and planning files.",
         args: {
-          agentKey: tool.schema.enum([
-            "marketing-wunderkind",
-            "creative-director",
-            "product-wunderkind",
-            "fullstack-wunderkind",
-            "ciso",
-            "legal-counsel",
-          ]),
-          kind: tool.schema.enum(["prd", "plan", "issue", "draft", "docs-output", "design-md", "notepad", "evidence"]),
           relativePath: tool.schema.string().min(1),
           content: tool.schema.string(),
         },
@@ -154,16 +145,22 @@ const WunderkindPlugin: Plugin = async (_input) => {
               ? { docsPath: wunderkindConfig.docsPath }
               : undefined
 
-          const result = writeDurableArtifact(args, context.directory, durableArtifactOptions)
-          context.metadata({
-            title: `Durable artifact written: ${result.relativePath}`,
-            metadata: {
-              path: result.relativePath,
-              created: result.created,
-              agentKey: args.agentKey,
-              kind: args.kind,
+          const result = writeDurableArtifact(
+            {
+              relativePath: args.relativePath,
+              content: args.content,
             },
-          })
+            context.directory,
+            durableArtifactOptions,
+          )
+          context.metadata({
+              title: `Durable artifact written: ${result.relativePath}`,
+              metadata: {
+                path: result.relativePath,
+                created: result.created,
+                mode: "append",
+              },
+            })
 
           return `Durable artifact written to ${result.relativePath}`
         },
@@ -281,7 +278,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
-- Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` for bounded durable artifact writes such as PRDs, plans, issues, drafts, append-only notepads/evidence, docs-output lanes, DESIGN.md, and allowed Stitch support files.
+- Use normal \`Write\`/\`Edit\` for ordinary repo files, docs-output, \`DESIGN.md\`, \`.wunderkind/stitch/\`, and managed \`.sisyphus/\` planning files. Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` only for append-only Wunderkind memory lanes such as \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\`.
 
 ### Project Configuration
 

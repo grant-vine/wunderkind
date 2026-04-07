@@ -1,24 +1,9 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs"
 import { dirname, isAbsolute, join, normalize, relative } from "node:path"
-import { getDocsEligibleAgentKeys } from "./agents/docs-config.js"
-import { resolveProjectLocalDocsPath } from "./cli/docs-output-helper.js"
 
 export const DURABLE_ARTIFACT_TOOL_NAME = "wunderkind_write_artifact" as const
 
-export type DurableArtifactAgentKey =
-  | "marketing-wunderkind"
-  | "creative-director"
-  | "product-wunderkind"
-  | "fullstack-wunderkind"
-  | "ciso"
-  | "legal-counsel"
-
-export type DurableArtifactKind = "prd" | "plan" | "issue" | "draft" | "docs-output" | "design-md" | "notepad"
-  | "evidence"
-
 export interface DurableArtifactWriteRequest {
-  agentKey: DurableArtifactAgentKey
-  kind: DurableArtifactKind
   relativePath: string
   content: string
 }
@@ -31,13 +16,6 @@ export interface DurableArtifactWriteResult {
 
 export interface DurableArtifactWriteOptions {
   docsPath?: string
-}
-
-const DOCS_OUTPUT_ELIGIBLE_AGENT_KEYS = new Set<DurableArtifactAgentKey>(getDocsEligibleAgentKeys() as DurableArtifactAgentKey[])
-
-interface DurableArtifactLane {
-  path: string
-  exactFile: boolean
 }
 
 function normalizeRelativePath(input: string): string {
@@ -61,23 +39,6 @@ function isPathWithin(parentPath: string, candidatePath: string): boolean {
   return !normalizedSegments.includes("..")
 }
 
-function ensurePathHasNoSymlinkSegments(cwd: string, normalizedRelativePath: string, errorMessage: string): void {
-  const segments = normalizedRelativePath.split("/").filter((segment) => segment.length > 0)
-  let lexicalCurrentPath = cwd
-
-  for (const segment of segments) {
-    lexicalCurrentPath = join(lexicalCurrentPath, segment)
-
-    if (!existsSync(lexicalCurrentPath)) {
-      return
-    }
-
-    if (lstatSync(lexicalCurrentPath).isSymbolicLink()) {
-      throw new Error(errorMessage)
-    }
-  }
-}
-
 function ensureSafeRelativePath(relativePath: string): string {
   const normalized = normalizeRelativePath(relativePath)
 
@@ -92,74 +53,12 @@ function ensureSafeRelativePath(relativePath: string): string {
   return normalized
 }
 
-function getDocsOutputRoot(cwd: string, options?: DurableArtifactWriteOptions): string {
-  return resolveProjectLocalDocsPath(options?.docsPath ?? "./docs", cwd).docsPath.replaceAll("\\", "/")
+function isAppendOnlyPath(normalizedRelativePath: string): boolean {
+  return normalizedRelativePath.startsWith(".sisyphus/notepads/") || normalizedRelativePath.startsWith(".sisyphus/evidence/")
 }
 
-function isReservedDesignMdPath(path: string): boolean {
-  return path === "DESIGN.md" || path.startsWith("DESIGN.md/")
-}
-
-function directoryLane(path: string): DurableArtifactLane {
-  return { path, exactFile: false }
-}
-
-function exactFileLane(path: string): DurableArtifactLane {
-  return { path, exactFile: true }
-}
-
-function getAllowedArtifactRoots(agentKey: DurableArtifactAgentKey, docsOutputRoot: string): readonly DurableArtifactLane[] {
-  switch (agentKey) {
-    case "product-wunderkind":
-      return [
-        directoryLane(".sisyphus/prds"),
-        directoryLane(".sisyphus/plans"),
-        directoryLane(".sisyphus/issues"),
-        directoryLane(".sisyphus/drafts"),
-        directoryLane(".sisyphus/notepads"),
-        directoryLane(".sisyphus/evidence"),
-        directoryLane(docsOutputRoot),
-      ]
-    case "creative-director":
-      return [
-        exactFileLane("DESIGN.md"),
-        directoryLane(".wunderkind/stitch"),
-        directoryLane(".sisyphus/notepads"),
-        directoryLane(".sisyphus/evidence"),
-        directoryLane(docsOutputRoot),
-      ]
-    case "marketing-wunderkind":
-      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
-    case "ciso":
-      return [directoryLane(docsOutputRoot), directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
-    case "fullstack-wunderkind":
-      return [
-        directoryLane(docsOutputRoot),
-        directoryLane(".sisyphus/notepads"),
-        directoryLane(".sisyphus/evidence"),
-        directoryLane(".sisyphus/prds"),
-        directoryLane(".sisyphus/plans"),
-        directoryLane(".sisyphus/issues"),
-        exactFileLane("DESIGN.md"),
-        directoryLane(".wunderkind/stitch"),
-      ]
-    case "legal-counsel":
-      return [directoryLane(".sisyphus/notepads"), directoryLane(".sisyphus/evidence")]
-  }
-}
-
-function appendOnlyArtifactKinds(kind: DurableArtifactKind): boolean {
-  return kind === "notepad" || kind === "evidence"
-}
-
-function isAllowedArtifactPath(agentKey: DurableArtifactAgentKey, normalizedRelativePath: string, docsOutputRoot: string): boolean {
-  return getAllowedArtifactRoots(agentKey, docsOutputRoot).some((allowedLane) => {
-    if (allowedLane.exactFile) {
-      return normalizedRelativePath === allowedLane.path
-    }
-
-    return normalizedRelativePath === allowedLane.path || normalizedRelativePath.startsWith(`${allowedLane.path}/`)
-  })
+function isAllowedArtifactPath(normalizedRelativePath: string): boolean {
+  return isAppendOnlyPath(normalizedRelativePath)
 }
 
 function resolveWritableParentPath(rootRealPath: string, cwd: string, normalizedRelativePath: string): string {
@@ -203,90 +102,30 @@ function resolveWritableParentPath(rootRealPath: string, cwd: string, normalized
   return resolvedCurrentPath
 }
 
-function validateArtifactKind(
-  agentKey: DurableArtifactAgentKey,
-  kind: DurableArtifactKind,
-  normalizedRelativePath: string,
-  docsOutputRoot: string,
-): void {
-  if (kind === "prd" && (agentKey !== "product-wunderkind" && agentKey !== "fullstack-wunderkind")) {
-    throw new Error(`${agentKey} may not write PRD artifacts`)
+function validateProtectedArtifactPath(normalizedRelativePath: string): void {
+  if (normalizedRelativePath.startsWith(".sisyphus/notepads/")) {
+    return
   }
 
-  if (kind === "prd" && !normalizedRelativePath.startsWith(".sisyphus/prds/")) {
-    throw new Error("prd artifacts must stay under .sisyphus/prds/")
+  if (normalizedRelativePath.startsWith(".sisyphus/evidence/")) {
+    return
   }
 
-  if (kind === "plan" && (agentKey !== "product-wunderkind" && agentKey !== "fullstack-wunderkind")) {
-    throw new Error(`${agentKey} may not write plan artifacts`)
-  }
-
-  if (kind === "plan" && !normalizedRelativePath.startsWith(".sisyphus/plans/")) {
-    throw new Error("plan artifacts must stay under .sisyphus/plans/")
-  }
-
-  if (kind === "issue" && (agentKey !== "product-wunderkind" && agentKey !== "fullstack-wunderkind")) {
-    throw new Error(`${agentKey} may not write issue artifacts`)
-  }
-
-  if (kind === "issue" && !normalizedRelativePath.startsWith(".sisyphus/issues/")) {
-    throw new Error("issue artifacts must stay under .sisyphus/issues/")
-  }
-
-  if (kind === "design-md" && agentKey !== "creative-director" && agentKey !== "fullstack-wunderkind") {
-    throw new Error(`${agentKey} may not write design artifacts`)
-  }
-
-  if (kind === "design-md" && normalizedRelativePath !== "DESIGN.md") {
-    throw new Error("design-md artifacts must write exactly to DESIGN.md")
-  }
-
-  if (kind === "draft" && !normalizedRelativePath.startsWith(".sisyphus/drafts/")) {
-    throw new Error("draft artifacts must stay under .sisyphus/drafts/")
-  }
-
-  if (kind === "docs-output" && !DOCS_OUTPUT_ELIGIBLE_AGENT_KEYS.has(agentKey)) {
-    throw new Error(`${agentKey} may not write docs-output artifacts`)
-  }
-
-  if (kind === "docs-output" && !normalizedRelativePath.startsWith(`${docsOutputRoot}/`)) {
-    throw new Error(`docs-output artifacts must stay under ${docsOutputRoot}/`)
-  }
-
-  if (kind === "notepad" && !normalizedRelativePath.startsWith(".sisyphus/notepads/")) {
-    throw new Error("notepad artifacts must stay under .sisyphus/notepads/")
-  }
-
-  if (kind === "evidence" && !normalizedRelativePath.startsWith(".sisyphus/evidence/")) {
-    throw new Error("evidence artifacts must stay under .sisyphus/evidence/")
-  }
+  throw new Error("durable artifacts must stay inside append-only Wunderkind memory lanes")
 }
 
 export function writeDurableArtifact(
   request: DurableArtifactWriteRequest,
   cwd: string,
-  options?: DurableArtifactWriteOptions,
+  _options?: DurableArtifactWriteOptions,
 ): DurableArtifactWriteResult {
   const normalizedRelativePath = ensureSafeRelativePath(request.relativePath)
-  const docsOutputRoot = request.kind === "docs-output" ? getDocsOutputRoot(cwd, options) : null
 
-  if (request.kind === "docs-output") {
-    if (docsOutputRoot === null) {
-      throw new Error("docs-output artifacts require a resolved docsPath")
-    }
-
-    if (isReservedDesignMdPath(docsOutputRoot)) {
-      throw new Error("docs-output artifacts may not use DESIGN.md as docsPath because that path is reserved for design-md")
-    }
-
-    ensurePathHasNoSymlinkSegments(cwd, docsOutputRoot, "docs-output lane must not include symlinked segments")
+  if (!isAllowedArtifactPath(normalizedRelativePath)) {
+    throw new Error("durable artifacts must stay inside append-only Wunderkind memory lanes")
   }
 
-  if (!isAllowedArtifactPath(request.agentKey, normalizedRelativePath, docsOutputRoot ?? "__docs-output-disabled__")) {
-    throw new Error(`${request.agentKey} may not write outside its bounded durable-artifact lanes`)
-  }
-
-  validateArtifactKind(request.agentKey, request.kind, normalizedRelativePath, docsOutputRoot ?? "__docs-output-disabled__")
+  validateProtectedArtifactPath(normalizedRelativePath)
 
   const rootRealPath = realpathSync(cwd)
   const resolvedAbsolutePath = resolveWritableParentPath(rootRealPath, cwd, normalizedRelativePath)
@@ -321,7 +160,7 @@ export function writeDurableArtifact(
   }
 
   const created = !existsSync(finalAbsolutePath)
-  const nextContent = appendOnlyArtifactKinds(request.kind) && existsSync(finalAbsolutePath)
+  const nextContent = existsSync(finalAbsolutePath)
     ? `${readFileSync(finalAbsolutePath, "utf-8")}${request.content}`
     : request.content
   writeFileSync(finalAbsolutePath, nextContent, "utf-8")

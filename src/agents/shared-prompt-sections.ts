@@ -19,7 +19,7 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 - Blockers (${options.blockers}): \`.sisyphus/notepads/<plan-name>/issues.md\`
 - Evidence (when the command or workflow explicitly asks for durable proof): \`.sisyphus/evidence/<topic>.md\`
 
-**APPEND ONLY** — never overwrite notepad or evidence files. Use Wunderkind's bounded durable-artifact writer for allowed \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\` paths instead of generic Write/Edit tools or shell append flows. When a durable artifact is requested, prefer \`wunderkind_write_artifact\` immediately instead of retrying with Edit. Never use the Edit tool on notepad or evidence files.`
+**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\` paths so append-only guarantees are preserved. Never use the Edit tool directly on notepad or evidence files.`
 }
 
 export function buildSoulMaintenanceSection(): string {

@@ -141,8 +141,8 @@ describe("runtime docs-output system injection", () => {
     await cachedTransform!({}, output)
 
     const nativeAgentsContent = output.system.find((entry) => entry.includes("## Wunderkind Native Agents")) ?? ""
-    expect(nativeAgentsContent).toContain("append-only notepads/evidence")
-    expect(nativeAgentsContent).toContain("allowed Stitch support files")
+    expect(nativeAgentsContent).toContain("Use normal `Write`/`Edit` for ordinary repo files")
+    expect(nativeAgentsContent).toContain("append-only Wunderkind memory lanes")
     expect(nativeAgentsContent).toContain("wunderkind_write_artifact")
   })
 
@@ -175,7 +175,7 @@ describe("runtime docs-output system injection", () => {
     expect(docsContent).toContain("### Docs Output Warning")
     expect(docsContent).toContain("./DESIGN.md/subdir")
     expect(docsContent).toContain("is invalid for docs-output")
-    expect(docsContent).toContain("wunderkind_write_artifact` will reject docs-output writes")
+    expect(docsContent).toContain("Normal docs-output writes should be redirected to a non-conflicting directory")
     expect(docsContent).toContain("docs-output invalid: configured docsPath conflicts with reserved design-md path DESIGN.md")
   })
 

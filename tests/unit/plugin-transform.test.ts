@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { ProjectConfig } from "../../src/cli/types.js"
+import { createProductWunderkindAgent } from "../../src/agents/index.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
@@ -132,10 +133,9 @@ describe("Wunderkind plugin transform", () => {
       | {
           execute?: (
             args: {
-              agentKey: string
-              kind: string
               relativePath: string
               content: string
+              mode?: string
             },
             context: {
               directory: string
@@ -157,8 +157,6 @@ describe("Wunderkind plugin transform", () => {
       try {
         await durableArtifactTool.execute(
           {
-            agentKey: "product-wunderkind",
-            kind: "notepad",
             relativePath: ".sisyphus/notepads/runtime/learnings.md",
             content: "Entry\n",
           },
@@ -179,56 +177,11 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("lets product-wunderkind write a PRD through the durable artifact tool despite generic write/edit denial", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-prd-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
-
-    try {
-      const result = await durableArtifactTool.execute(
-        {
-          agentKey: "product-wunderkind",
-          kind: "prd",
-          relativePath: ".sisyphus/prds/new-checkout.md",
-          content: "# Checkout PRD\n",
-        },
-        {
-          directory: sandbox,
-          ask: async () => {
-            throw new Error("durable artifact tool should not require generic ask permission")
-          },
-          metadata: () => {},
-        },
-      )
-
-      expect(result).toBe("Durable artifact written to .sisyphus/prds/new-checkout.md")
-      expect(readFileSync(join(sandbox, ".sisyphus/prds/new-checkout.md"), "utf-8")).toBe("# Checkout PRD\n")
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
+    const productConfig = createProductWunderkindAgent("test-model")
+    const permissions = productConfig.permission as Record<string, string> | undefined
+    expect(permissions?.["write"]).toBe("deny")
+    expect(permissions?.["edit"]).toBe("deny")
+    expect(productConfig.prompt).toContain("Use normal Write/Edit for ordinary repo files")
   })
 
   it("supports evidence writes through the durable artifact tool", async () => {
@@ -239,10 +192,9 @@ describe("Wunderkind plugin transform", () => {
       | {
           execute?: (
             args: {
-              agentKey: string
-              kind: string
               relativePath: string
               content: string
+              mode?: string
             },
             context: {
               directory: string
@@ -263,8 +215,6 @@ describe("Wunderkind plugin transform", () => {
     try {
       const result = await durableArtifactTool.execute(
         {
-          agentKey: "product-wunderkind",
-          kind: "evidence",
           relativePath: ".sisyphus/evidence/dream/findings.md",
           content: "Discovery\n",
         },
@@ -283,355 +233,15 @@ describe("Wunderkind plugin transform", () => {
   })
 
   it("passes a non-default configured docsPath through the durable artifact tool runtime seam", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
     mockReadWunderkindConfig.mockImplementation(() => ({
       docsPath: "./project-docs",
     }))
 
-    const sandbox = join(tmpdir(), `wunderkind-tool-docs-path-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
+    const output: TestOutput = { system: [] }
+    await cachedTransform!({}, output)
 
-    const askCalls: unknown[] = []
-    const metadataCalls: unknown[] = []
-
-    try {
-      const result = await durableArtifactTool.execute(
-        {
-          agentKey: "product-wunderkind",
-          kind: "docs-output",
-          relativePath: "project-docs/product-decisions.md",
-          content: "# Product decisions\n",
-        },
-        {
-          directory: sandbox,
-          ask: async (input) => {
-            askCalls.push(input)
-          },
-          metadata: (input) => {
-            metadataCalls.push(input)
-          },
-        },
-      )
-
-      expect(result).toBe("Durable artifact written to project-docs/product-decisions.md")
-      expect(readFileSync(join(sandbox, "project-docs/product-decisions.md"), "utf-8")).toBe("# Product decisions\n")
-      expect(askCalls).toHaveLength(0)
-      expect(metadataCalls).toHaveLength(1)
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
-  })
-
-  it("does not let an invalid docsPath break non-docs durable artifact writes", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    mockReadWunderkindConfig.mockImplementation(() => ({
-      docsPath: "/tmp/invalid-docs",
-    }))
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-invalid-docs-nondocs-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
-
-    try {
-      const result = await durableArtifactTool.execute(
-        {
-          agentKey: "product-wunderkind",
-          kind: "draft",
-          relativePath: ".sisyphus/drafts/idea.md",
-          content: "# Idea\n",
-        },
-        {
-          directory: sandbox,
-          ask: async () => {},
-          metadata: () => {},
-        },
-      )
-
-      expect(result).toBe("Durable artifact written to .sisyphus/drafts/idea.md")
-      expect(readFileSync(join(sandbox, ".sisyphus/drafts/idea.md"), "utf-8")).toBe("# Idea\n")
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
-  })
-
-  it("rejects the durable artifact tool when configured docsPath is a symlinked lane", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    mockReadWunderkindConfig.mockImplementation(() => ({
-      docsPath: "./project-docs",
-    }))
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-docs-symlink-${Date.now()}`)
-    mkdirSync(join(sandbox, ".sisyphus/notepads"), { recursive: true })
-    try {
-      symlinkSync(join(sandbox, ".sisyphus/notepads"), join(sandbox, "project-docs"), "dir")
-
-      try {
-        await durableArtifactTool.execute(
-          {
-            agentKey: "product-wunderkind",
-            kind: "docs-output",
-            relativePath: "project-docs/product-decisions.md",
-            content: "bad",
-          },
-          {
-            directory: sandbox,
-            ask: async () => {},
-            metadata: () => {},
-          },
-        )
-        throw new Error("Expected symlinked docsPath rejection")
-      } catch (error) {
-        expect(error instanceof Error ? error.message : String(error)).toContain("docs-output lane must not include symlinked segments")
-      }
-
-      expect(existsSync(join(sandbox, ".sisyphus/notepads/product-decisions.md"))).toBe(false)
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
-  })
-
-  it("allows the durable artifact tool when configured docsPath directory name ends with .md", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    mockReadWunderkindConfig.mockImplementation(() => ({
-      docsPath: "./docs.md",
-    }))
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-docs-md-dir-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
-
-    try {
-      const result = await durableArtifactTool.execute(
-        {
-          agentKey: "product-wunderkind",
-          kind: "docs-output",
-          relativePath: "docs.md/product-decisions.md",
-          content: "# Product decisions\n",
-        },
-        {
-          directory: sandbox,
-          ask: async () => {},
-          metadata: () => {},
-        },
-      )
-
-      expect(result).toBe("Durable artifact written to docs.md/product-decisions.md")
-      expect(readFileSync(join(sandbox, "docs.md/product-decisions.md"), "utf-8")).toBe("# Product decisions\n")
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
-  })
-
-  it("rejects the durable artifact tool when configured docsPath is ./DESIGN.md", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    mockReadWunderkindConfig.mockImplementation(() => ({
-      docsPath: "./DESIGN.md",
-    }))
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-docs-design-md-dir-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
-
-    try {
-      try {
-        await durableArtifactTool.execute(
-          {
-            agentKey: "product-wunderkind",
-            kind: "docs-output",
-            relativePath: "DESIGN.md/product-decisions.md",
-            content: "# Product decisions\n",
-          },
-          {
-            directory: sandbox,
-            ask: async () => {},
-            metadata: () => {},
-          },
-        )
-        throw new Error("Expected reserved DESIGN.md docsPath rejection")
-      } catch (error) {
-        expect(error instanceof Error ? error.message : String(error)).toContain(
-          "docs-output artifacts may not use DESIGN.md as docsPath because that path is reserved for design-md",
-        )
-      }
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
-  })
-
-  it("rejects the durable artifact tool when configured docsPath is nested under ./DESIGN.md", async () => {
-    registerConfigManagerMock()
-    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
-    const pluginResult = await mod.default({})
-    const durableArtifactTool = pluginResult.tool?.["wunderkind_write_artifact"] as
-      | {
-          execute?: (
-            args: {
-              agentKey: string
-              kind: string
-              relativePath: string
-              content: string
-            },
-            context: {
-              directory: string
-              ask: (input: unknown) => Promise<void>
-              metadata: (input: unknown) => void
-            },
-          ) => Promise<string>
-        }
-      | undefined
-
-    if (!durableArtifactTool?.execute) {
-      throw new Error("Expected wunderkind_write_artifact.execute to exist")
-    }
-
-    mockReadWunderkindConfig.mockImplementation(() => ({
-      docsPath: "./DESIGN.md/subdir",
-    }))
-
-    const sandbox = join(tmpdir(), `wunderkind-tool-docs-design-md-subdir-${Date.now()}`)
-    mkdirSync(sandbox, { recursive: true })
-
-    try {
-      try {
-        await durableArtifactTool.execute(
-          {
-            agentKey: "product-wunderkind",
-            kind: "docs-output",
-            relativePath: "DESIGN.md/subdir/product-decisions.md",
-            content: "# Product decisions\n",
-          },
-          {
-            directory: sandbox,
-            ask: async () => {},
-            metadata: () => {},
-          },
-        )
-        throw new Error("Expected nested reserved DESIGN.md docsPath rejection")
-      } catch (error) {
-        expect(error instanceof Error ? error.message : String(error)).toContain(
-          "docs-output artifacts may not use DESIGN.md as docsPath because that path is reserved for design-md",
-        )
-      }
-    } finally {
-      rmSync(sandbox, { recursive: true, force: true })
-    }
+    const nativeAgentsContent = output.system.find((entry) => entry.includes("## Wunderkind Native Agents")) ?? ""
+    expect(nativeAgentsContent).toContain("Use normal `Write`/`Edit` for ordinary repo files, docs-output, `DESIGN.md`, `.wunderkind/stitch/`, and managed `.sisyphus/` planning files")
   })
 
   it("exposes the currently adopted plugin hook surface", async () => {

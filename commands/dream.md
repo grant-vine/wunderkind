@@ -24,7 +24,7 @@ This command is invoked as `/dream`.
 ## Constraints
 
 - **Chat-First**: Default behavior is chat-first output. Do not create or modify files by default.
-- **Save Only on Request**: Save output ONLY when the user explicitly asks. Permitted targets: `.sisyphus/notepads/` and `.sisyphus/evidence/`, written via Wunderkind's bounded durable-artifact writer.
+- **Save Only on Request**: Save output ONLY when the user explicitly asks. Permitted targets: `.sisyphus/notepads/` and `.sisyphus/evidence/`, written via Wunderkind's bounded durable-artifact writer so append-only guarantees are preserved.
 - **Target Restrictions**: Never write to project planning directories or any other directory not listed above.
 - **No Mutation**: Do not mutate, update, or change SOUL files in `.wunderkind/souls/`. These are read-only for this workflow.
 - **No Configuration Edits**: Do not reference, read, or modify the project configuration file, system configuration keys, or environment setup prompts.

@@ -61,7 +61,7 @@ export function buildDocsInstruction(
 
   return `When docs output is enabled, write to: ${docsPath}/${config.canonicalFilename}
 
-Use Wunderkind's bounded durable-artifact writer for this managed docs lane. Do not rely on generic Write/Edit tools or shell-based file mutation for docs-output.
+Use normal Write/Edit tools for this managed docs lane. Do not use shell-based file mutation for docs-output.
 
 History mode: ${docHistoryMode}
 - overwrite: Replace the file contents each time.
