@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.2
+
+- simplify `wunderkind_write_artifact` to an append-only memory-lane helper for `.sisyphus/notepads/` and `.sisyphus/evidence/` only
+- route docs, design, stitch, and planning writes back to normal OpenCode `Write`/`Edit` flows while preserving the existing docsPath and `DESIGN.md` safety checks
+
 ## 0.14.1
 
 - unblock retained agents from using `wunderkind_write_artifact` by removing the generic write/edit permission ask from the bounded durable writer path
