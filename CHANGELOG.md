@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.1
+
+- unblock retained agents from using `wunderkind_write_artifact` by removing the generic write/edit permission ask from the bounded durable writer path
+- add first-class `.sisyphus/evidence/` support, keep notepad/evidence writes append-only, and align shared prompts plus `/dream` with the bounded writer contract
+
 ## 0.14.0
 
 - add draft-lane support and harden durable artifact writes around docsPath validation, symlink containment, and reserved `DESIGN.md` conflicts
