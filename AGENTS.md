@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.10.8  
+**Package:** `@grant-vine/wunderkind` v0.15.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal) into any OpenCode project via a `bunx`/`npx` interactive installer. Uses an orchestrator-first topology with `product-wunderkind` as the default front door.
@@ -63,7 +63,7 @@ wunderkind/
 | Build pipeline (two-step) | `src/build-agents.ts` + `package.json` scripts |
 | Change install scope | `src/cli/index.ts` (`--scope` flag) + `src/cli/tui-installer.ts` + `src/cli/cli-installer.ts` |
 | Change config paths / constants | `src/cli/config-manager/index.ts` |
-| Check if oh-my-openagent is installed | `src/cli/config-manager/index.ts` → `detectCurrentConfig()` |
+| Check if oh-my-openagent is installed | `src/cli/config-manager/index.ts` → `detectOmoInstallReadiness()` |
 | Change wunderkind config written | `src/cli/config-manager/index.ts` → `writeWunderkindConfig()` |
 | Add gitignore entries | `src/cli/gitignore-manager.ts` → `addAiTracesToGitignore()` |
 
@@ -240,9 +240,9 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
-- **oh-my-openagent must be installed before wunderkind** — upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`. The TUI auto-runs `bunx oh-my-opencode install` if OMO is absent; the non-interactive CLI exits 1 with instructions instead.
+- **oh-my-openagent must be installed before wunderkind** — upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`. Wunderkind now centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-opencode install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
-- **OMO detection uses `detectCurrentConfig()`** — checks the `plugin` array in `opencode.json` for a `"@grant-vine/wunderkind"` entry to determine if wunderkind is already installed. OMO compatibility now prefers `oh-my-openagent.{json,jsonc}` and falls back to legacy `oh-my-opencode.{json,jsonc}` when inspecting dedicated OMO config files.
+- **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — compatibility now prefers `oh-my-openagent.{json,jsonc}` and falls back to legacy `oh-my-opencode.{json,jsonc}` when inspecting dedicated OMO config files, while still probing the upstream executable through `bunx oh-my-opencode ...` until upstream package/CLI naming changes.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
 - **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke any automated cleanup tool, Python scripts, or external package manager workflows. There is no config key for enabling automated cleanup; any stale config keys from older versions are silently ignored on read.

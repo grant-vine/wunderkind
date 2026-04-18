@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0
+
+- modernize OMO compatibility around canonical `oh-my-openagent` config basenames while preserving legacy `oh-my-opencode` fallback support
+- centralize OMO readiness and freshness checks so `doctor`, `install`, `upgrade`, and the TUI installer share the same upstream guidance
+- add a canonical `oh-my-openagent.jsonc` template asset, keep the legacy template for transition, and align packaging plus documentation with the new install behavior
+
 ## 0.14.2
 
 - simplify `wunderkind_write_artifact` to an append-only memory-lane helper for `.sisyphus/notepads/` and `.sisyphus/evidence/` only
