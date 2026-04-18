@@ -130,4 +130,31 @@ export interface PluginVersionInfo {
   freshness?: OmoFreshnessInfo | null
 }
 
+export interface OmoInstallReadiness {
+  installed: boolean
+  registered: boolean
+  loadedVersion: string | null
+  configPath: string | null
+  staleOverrideWarning: string | null
+  freshness: OmoFreshnessInfo | null
+  freshnessSummary: OmoFreshnessSummary
+  interactiveInstallCommand: string
+  nonTuiInstallCommand: string
+  guidance: string
+}
+
+export type OmoFreshnessState =
+  | "not-detected"
+  | "stale-override"
+  | "not-verified"
+  | "up-to-date"
+  | "update-available"
+  | "local-dev"
+  | "pinned"
+
+export interface OmoFreshnessSummary {
+  state: OmoFreshnessState
+  guidance: string
+}
+
 export type BaselineConfigKey = keyof GlobalConfig

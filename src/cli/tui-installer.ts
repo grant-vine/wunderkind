@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts"
 import color from "picocolors"
+import { ensureOmoPreflightForTui } from "./cli-installer.js"
 import {
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
@@ -18,6 +19,12 @@ import type { InstallConfig, InstallScope } from "./types.js"
 export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     console.error("Error: Interactive installer requires a TTY. Use --no-tui and pass flags directly.")
+    return 1
+  }
+
+  const omoPreflight = ensureOmoPreflightForTui()
+  if (!omoPreflight.ok) {
+    console.error(`Error: ${omoPreflight.message ?? "oh-my-openagent must be installed before running the Wunderkind installer."}`)
     return 1
   }
 

@@ -72,12 +72,14 @@ bunx @grant-vine/wunderkind install
 or
 
 The TUI will guide you through:
-1. Installing oh-my-openagent if it isn't already (runs its own setup flow first).
+1. Checking for oh-my-openagent first, then auto-running `bunx oh-my-opencode install` when the upstream CLI is available and OMO is missing.
 2. Selecting the install scope (Global vs Project).
 3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
 > Note: upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`.
+>
+> Wunderkind now ships both `oh-my-openagent.jsonc` (canonical) and `oh-my-opencode.jsonc` (legacy compatibility) template assets. Prefer the canonical file for new setups.
 
 ### Non-interactive install
 
@@ -87,6 +89,8 @@ For CI/CD or scripted environments, use the `install` command with the `--no-tui
 > ```bash
 > bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes
 > ```
+> Wunderkind now performs this OMO readiness check up front during non-interactive `install` and `upgrade`, and exits early with the upstream install command when OMO is missing.
+>
 > See the [oh-my-openagent docs](https://github.com/code-yeongyu/oh-my-openagent) for all available options.
 
 ```bash

@@ -29,6 +29,8 @@ import type {
   OmoFreshnessStatus,
   OrgStructure,
   BaselineConfigKey,
+  OmoInstallReadiness,
+  OmoFreshnessSummary,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
@@ -276,17 +278,17 @@ function resolveOmoConfigPath(): {
 } {
   const paths = resolveConfigManagerPaths()
 
-  if (existsSync(paths.omoLegacyConfigJson)) {
-    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json" }
-  }
-  if (existsSync(paths.omoLegacyConfigJsonc)) {
-    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc" }
-  }
   if (existsSync(paths.omoConfigJson)) {
     return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json" }
   }
   if (existsSync(paths.omoConfigJsonc)) {
     return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc" }
+  }
+  if (existsSync(paths.omoLegacyConfigJson)) {
+    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json" }
+  }
+  if (existsSync(paths.omoLegacyConfigJsonc)) {
+    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc" }
   }
 
   return { path: null, format: "none", source: "default" }
@@ -400,7 +402,19 @@ function normalizeDependencyVersion(entry: string | null): string | null {
 }
 
 function findPluginEntry(entries: readonly string[], packageName: string): string | null {
-  return entries.find((entry) => entry === packageName || entry.startsWith(`${packageName}@`) || entry.startsWith(`file://`)) ?? null
+  return (
+    entries.find((entry) => {
+      if (entry === packageName || entry.startsWith(`${packageName}@`)) {
+        return true
+      }
+
+      if (!entry.startsWith("file://")) {
+        return false
+      }
+
+      return entry.includes(`/${packageName}`) || entry.endsWith(packageName)
+    }) ?? null
+  )
 }
 
 function detectLoadedPackageVersion(packageName: string): { version: string | null; packagePath: string | null } {
@@ -511,12 +525,11 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
   const omoConfigResolution = resolveOmoConfigPath()
   const openCodeConfigResolution = resolveOpenCodeConfigPath("global")
   const configPath = omoConfigResolution.path
-  const config = configPath
-    ? parseConfig(configPath)
-    : existsSync(openCodeConfigResolution.path)
-      ? parseConfig(openCodeConfigResolution.path)
-      : null
-  const plugins = (config?.plugin ?? []) as string[]
+  const omoConfig = configPath ? parseConfig(configPath) : null
+  const openCodeConfig = existsSync(openCodeConfigResolution.path) ? parseConfig(openCodeConfigResolution.path) : null
+  const omoPlugins = (omoConfig?.plugin ?? []) as string[]
+  const openCodePlugins = (openCodeConfig?.plugin ?? []) as string[]
+  const plugins = omoPlugins.length > 0 ? omoPlugins : openCodePlugins
 
   const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
   const registeredLegacyEntry = findPluginEntry(plugins, OMO_LEGACY_PACKAGE_NAME)
@@ -550,6 +563,83 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     loadedSources,
     staleOverrideWarning,
     freshness,
+  }
+}
+
+export function detectOmoInstallReadiness(): OmoInstallReadiness {
+  const versionInfo = detectOmoVersionInfo()
+  const installed = versionInfo.registered
+  const freshnessSummary = summarizeOmoFreshness(versionInfo)
+
+  return {
+    installed,
+    registered: versionInfo.registered,
+    loadedVersion: versionInfo.loadedVersion,
+    configPath: versionInfo.configPath,
+    staleOverrideWarning: versionInfo.staleOverrideWarning ?? null,
+    freshness: versionInfo.freshness ?? null,
+    freshnessSummary,
+    interactiveInstallCommand: "bunx oh-my-opencode install",
+    nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance:
+      "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+  }
+}
+
+export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshnessSummary {
+  const freshness = versionInfo.freshness
+
+  if (!versionInfo.registered) {
+    return {
+      state: "not-detected",
+      guidance:
+        "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
+    }
+  }
+
+  if (versionInfo.staleOverrideWarning) {
+    return {
+      state: "stale-override",
+      guidance:
+        "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode.",
+    }
+  }
+
+  if (!freshness || freshness.status === "unknown" || freshness.status === "error") {
+    return {
+      state: "not-verified",
+      guidance:
+        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+    }
+  }
+
+  if (freshness.status === "up-to-date") {
+    return {
+      state: "up-to-date",
+      guidance: "oh-my-openagent is already up to date.",
+    }
+  }
+
+  if (freshness.status === "outdated") {
+    const upgradeCommand = freshness.renderedOutput?.split("\n").find((lineValue) => lineValue.includes("Run:"))
+    return {
+      state: "update-available",
+      guidance:
+        upgradeCommand ??
+        "An oh-my-openagent plugin/config update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
+    }
+  }
+
+  if (freshness.status === "local-dev") {
+    return {
+      state: "local-dev",
+      guidance: "oh-my-openagent is running in local development mode — upstream update checks are informational only.",
+    }
+  }
+
+  return {
+    state: "pinned",
+    guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
   }
 }
 

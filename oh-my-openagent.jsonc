@@ -1,14 +1,10 @@
 {
-  // Wunderkind OMO configuration template (legacy filename retained for compatibility)
+  // Wunderkind OMO configuration template (canonical filename)
   // ──────────────────────────────────────────────────────────────────────
   // Upstream now prefers "oh-my-openagent" for plugin entries and OMO config
-  // basenames, but the package and CLI command still remain "oh-my-opencode".
-  // Prefer the canonical oh-my-openagent.jsonc template when possible.
-  // This legacy file is kept for one transition window so existing automation
-  // can keep working while downstream tooling catches up.
-  //
-  // Copy (or symlink) this file to your project's .opencode/oh-my-openagent.jsonc
-  // to activate the full wunderkind agent suite with recommended settings.
+  // basenames, while the package and CLI command still remain "oh-my-opencode".
+  // Use this file as your project's .opencode/oh-my-openagent.jsonc to
+  // activate the full wunderkind agent suite with recommended settings.
   //
   // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
   //

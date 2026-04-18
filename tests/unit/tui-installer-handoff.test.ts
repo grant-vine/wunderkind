@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, InstallScope, OmoInstallReadiness } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
@@ -15,11 +15,30 @@ mock.module("picocolors", () => ({
     red: (s: string) => s,
     yellow: (s: string) => s,
     bold: (s: string) => s,
+    blue: (s: string) => s,
   },
 }))
 
 const mockRunInit = mock(async () => 0)
 const mockIsProjectContext = mock(() => true)
+const mockDetectOmoInstallReadiness = mock<() => OmoInstallReadiness>(() => ({
+  installed: true,
+  registered: true,
+  loadedVersion: "3.17.4",
+  configPath: "/tmp/oh-my-openagent.jsonc",
+  staleOverrideWarning: null,
+  freshness: null,
+  freshnessSummary: {
+    state: "not-verified",
+    guidance:
+      "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+  },
+  interactiveInstallCommand: "bunx oh-my-opencode install",
+  nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+  guidance:
+    "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+}))
+const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
 const mockDetectLegacyConfig = mock(() => false)
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
@@ -90,6 +109,7 @@ const configManagerFactory = () => ({
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectOmoInstallReadiness: mockDetectOmoInstallReadiness,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: () => ({
     isGitRepo: false,
@@ -136,6 +156,9 @@ mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerFacto
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerFactory)
 mock.module(CONFIG_MANAGER_JS_URL, configManagerFactory)
 mock.module(CONFIG_MANAGER_TS_URL, configManagerFactory)
+mock.module("node:child_process", () => ({
+  spawnSync: mockSpawnSync,
+}))
 
 const mockAddAiTracesToGitignore = mock<
   () => { success: boolean; added: string[]; alreadyPresent: string[]; error?: string }
@@ -218,6 +241,8 @@ describe("runTuiInstaller init handoff", () => {
     mockLogSuccess.mockClear()
     mockLogMessage.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
+    mockDetectOmoInstallReadiness.mockClear()
+    mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockReadWunderkindConfigForScope.mockClear()
@@ -232,6 +257,24 @@ describe("runTuiInstaller init handoff", () => {
     mockIsProjectContext.mockImplementation(() => true)
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc" }))
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/tmp/opencode.json" }))
+    mockDetectOmoInstallReadiness.mockImplementation(() => ({
+      installed: true,
+      registered: true,
+      loadedVersion: "3.15.3",
+      configPath: "/tmp/oh-my-openagent.jsonc",
+      staleOverrideWarning: null,
+      freshness: null,
+      freshnessSummary: {
+        state: "not-verified",
+        guidance:
+          "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+      },
+      interactiveInstallCommand: "bunx oh-my-opencode install",
+      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance:
+        "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+    }))
+    mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
@@ -452,6 +495,98 @@ describe("runTuiInstaller init handoff", () => {
       expect(mockCancel).toHaveBeenCalledTimes(1)
     } finally {
       mockDetectLegacyConfig.mockImplementation(() => false)
+    }
+  })
+
+  it("auto-runs the upstream OMO installer when OMO is missing", async () => {
+    let readinessChecks = 0
+    mockDetectOmoInstallReadiness.mockImplementation(() => {
+      readinessChecks += 1
+
+      if (readinessChecks === 1) {
+        return {
+          installed: false,
+          registered: false,
+          loadedVersion: null,
+          configPath: null,
+          staleOverrideWarning: null,
+          freshness: null,
+          freshnessSummary: {
+            state: "not-detected",
+            guidance:
+              "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
+          },
+          interactiveInstallCommand: "bunx oh-my-opencode install",
+          nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+          guidance:
+            "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+        }
+      }
+
+      return {
+        installed: true,
+        registered: true,
+        loadedVersion: "3.17.4",
+        configPath: "/tmp/oh-my-openagent.jsonc",
+        staleOverrideWarning: null,
+        freshness: null,
+        freshnessSummary: {
+          state: "not-verified",
+          guidance:
+            "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        },
+        interactiveInstallCommand: "bunx oh-my-opencode install",
+        nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+        guidance:
+          "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+      }
+    })
+
+    mockSelect.mockImplementation(async () => "global")
+    mockConfirm.mockImplementation(async () => false)
+
+    const code = await runTuiInstaller("global")
+    expect(code).toBe(0)
+    expect(mockSpawnSync).toHaveBeenCalledTimes(2)
+    expect(mockSpawnSync.mock.calls[0]?.[0]).toBe("bunx")
+    expect(mockSpawnSync.mock.calls[0]?.[1]).toEqual(["oh-my-opencode", "--help"])
+    expect(mockSpawnSync.mock.calls[1]?.[0]).toBe("bunx")
+    expect(mockSpawnSync.mock.calls[1]?.[1]).toEqual(["oh-my-opencode", "install"])
+  })
+
+  it("returns 1 with manual guidance when OMO is missing and auto-bootstrap is unavailable", async () => {
+    mockDetectOmoInstallReadiness.mockImplementation(() => ({
+      installed: false,
+      registered: false,
+      loadedVersion: null,
+      configPath: null,
+      staleOverrideWarning: null,
+      freshness: null,
+      freshnessSummary: {
+        state: "not-detected",
+        guidance:
+          "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
+      },
+      interactiveInstallCommand: "bunx oh-my-opencode install",
+      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance:
+        "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+    }))
+    mockSpawnSync.mockImplementation(() => ({ status: 1, stdout: "", stderr: "missing" }))
+
+    const errors: string[] = []
+    const originalError = console.error
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map(String).join(" "))
+    }
+
+    try {
+      const code = await runTuiInstaller("global")
+      expect(code).toBe(1)
+      expect(errors.some((message) => message.includes("bunx oh-my-opencode install"))).toBe(true)
+      expect(mockAddPluginToOpenCodeConfig).toHaveBeenCalledTimes(0)
+    } finally {
+      console.error = originalError
     }
   })
 

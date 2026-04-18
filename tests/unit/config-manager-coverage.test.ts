@@ -192,26 +192,28 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("keeps legacy OMO config basenames ahead of canonical basenames when both exist", async () => {
+  it("prefers canonical OMO config basenames with legacy fallback", async () => {
     await withSandbox("omo-config-precedence", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@3.12.2"] }))
 
       const canonicalJson = join(sandbox.globalConfigDir, "oh-my-openagent.json")
       const canonicalJsonc = join(sandbox.globalConfigDir, "oh-my-openagent.jsonc")
       const legacyJson = join(sandbox.globalConfigDir, "oh-my-opencode.json")
       const legacyJsonc = join(sandbox.globalConfigDir, "oh-my-opencode.jsonc")
 
-      writeFileSync(legacyJsonc, JSON.stringify({ plugin: ["oh-my-opencode"] }))
+      writeFileSync(legacyJsonc, JSON.stringify({ agents: {} }))
       expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJsonc)
+      expect(mod.detectOmoVersionInfo().registeredEntry).toBe("oh-my-openagent@3.12.2")
 
-      writeFileSync(legacyJson, JSON.stringify({ plugin: ["oh-my-opencode"] }))
+      writeFileSync(legacyJson, JSON.stringify({ agents: {} }))
       expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
 
-      writeFileSync(canonicalJsonc, JSON.stringify({ plugin: ["oh-my-openagent"] }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
+      writeFileSync(canonicalJsonc, JSON.stringify({ agents: {} }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJsonc)
 
-      writeFileSync(canonicalJson, JSON.stringify({ plugin: ["oh-my-openagent"] }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
+      writeFileSync(canonicalJson, JSON.stringify({ agents: {} }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJson)
     })
   })
 
@@ -415,7 +417,7 @@ describe("config-manager coverage", () => {
       expect(omoVersionInfo.staleOverrideWarning).toBe(
         "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
       )
-      expect(omoVersionInfo.freshness?.status).toBe("unknown")
+      expect(omoVersionInfo.freshness?.status).toBe("up-to-date")
     })
   })
 
@@ -436,6 +438,38 @@ describe("config-manager coverage", () => {
       expect(versionInfo.loadedVersion).toBe("3.12.2")
       expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
       expect(versionInfo.configPath).toBe(null)
+    })
+  })
+
+  it("does not treat unrelated file plugins as OMO registrations", async () => {
+    await withSandbox("omo-unrelated-file-plugin", async (sandbox, mod) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(
+        sandbox.globalOpenCodePath,
+        JSON.stringify({ plugin: ["file:///tmp/custom-local-plugin", "@grant-vine/wunderkind"] }),
+      )
+
+      const versionInfo = mod.detectOmoVersionInfo()
+      expect(versionInfo.registered).toBe(false)
+      expect(versionInfo.registeredEntry).toBe(null)
+      expect(versionInfo.registeredVersion).toBe(null)
+    })
+  })
+
+  it("requires OMO registration for install readiness even when a package copy is present", async () => {
+    await withSandbox("omo-readiness-needs-registration", async (sandbox, mod) => {
+      const canonicalPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-openagent", "package.json")
+
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      mkdirSync(join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-openagent"), { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+      writeFileSync(canonicalPackagePath, JSON.stringify({ version: "3.15.3" }))
+
+      const readiness = mod.detectOmoInstallReadiness()
+      expect(readiness.installed).toBe(false)
+      expect(readiness.registered).toBe(false)
+      expect(readiness.loadedVersion).toBe("3.15.3")
+      expect(readiness.freshnessSummary.state).toBe("not-detected")
     })
   })
 

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { InstallArgs } from "../../src/cli/types.js"
-import type { DetectedConfig, InstallConfig, InstallScope } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, InstallScope, OmoInstallReadiness } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
@@ -56,7 +56,30 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
   }
 }
 
+function makeOmoInstallReadiness(overrides: Partial<OmoInstallReadiness> = {}): OmoInstallReadiness {
+  return {
+    installed: true,
+    registered: true,
+    loadedVersion: "3.17.4",
+    configPath: "/tmp/oh-my-openagent.jsonc",
+    staleOverrideWarning: null,
+    freshness: null,
+    freshnessSummary: {
+      state: "not-verified",
+      guidance:
+        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+    },
+    interactiveInstallCommand: "bunx oh-my-opencode install",
+    nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance:
+      "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+    ...overrides,
+  }
+}
+
 const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
+const mockDetectOmoInstallReadiness = mock(() => makeOmoInstallReadiness())
+const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
@@ -86,6 +109,7 @@ const mockResolveOpenCodeConfigPath = mock((scope: InstallScope) =>
 
 const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
+  detectOmoInstallReadiness: mockDetectOmoInstallReadiness,
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
@@ -142,6 +166,10 @@ const configManagerMockFactory = () => ({
   }),
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
 })
+
+mock.module("node:child_process", () => ({
+  spawnSync: mockSpawnSync,
+}))
 
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, configManagerMockFactory)
 mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.ts`, configManagerMockFactory)
@@ -278,6 +306,8 @@ describe("cli output helpers", () => {
 describe("runCliInstaller", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
+    mockDetectOmoInstallReadiness.mockClear()
+    mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
@@ -293,6 +323,8 @@ describe("runCliInstaller", () => {
 
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
+    mockDetectOmoInstallReadiness.mockImplementation(() => makeOmoInstallReadiness())
+    mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
@@ -311,6 +343,33 @@ describe("runCliInstaller", () => {
       expect(code).toBe(1)
     } finally {
       restore()
+    }
+  })
+
+  it("returns 1 with install guidance when OMO is missing for non-interactive install", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    mockDetectOmoInstallReadiness.mockImplementation(() =>
+      makeOmoInstallReadiness({
+        installed: false,
+        registered: false,
+        loadedVersion: null,
+        configPath: null,
+      }),
+    )
+
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(1)
+      expect(messages.some((message) => message.includes("oh-my-openagent must already be installed"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx oh-my-opencode install --no-tui"))).toBe(true)
+      expect(mockAddPluginToOpenCodeConfig).toHaveBeenCalledTimes(0)
+    } finally {
+      console.log = origLog
     }
   })
 
@@ -561,6 +620,8 @@ describe("runCliInstaller", () => {
 describe("runCliUpgrade", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
+    mockDetectOmoInstallReadiness.mockClear()
+    mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
@@ -574,6 +635,8 @@ describe("runCliUpgrade", () => {
 
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig({ isInstalled: true, globalInstalled: true, registrationScope: "global" }))
+    mockDetectOmoInstallReadiness.mockImplementation(() => makeOmoInstallReadiness())
+    mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockReadWunderkindConfigForScope.mockImplementation((scope: InstallScope) =>
       scope === "global"
         ? {
@@ -604,6 +667,33 @@ describe("runCliUpgrade", () => {
       expect(code).toBe(1)
     } finally {
       restore()
+    }
+  })
+
+  it("returns 1 with install guidance when OMO is missing for upgrade", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    mockDetectOmoInstallReadiness.mockImplementation(() =>
+      makeOmoInstallReadiness({
+        installed: false,
+        registered: false,
+        loadedVersion: null,
+        configPath: null,
+      }),
+    )
+
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(1)
+      expect(messages.some((message) => message.includes("oh-my-openagent must already be installed"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx oh-my-opencode install --no-tui"))).toBe(true)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(0)
+    } finally {
+      console.log = origLog
     }
   })
 

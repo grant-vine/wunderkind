@@ -1,9 +1,11 @@
 import color from "picocolors"
+import { spawnSync } from "node:child_process"
 import type { InstallArgs, InstallConfig, InstallScope } from "./types.js"
 import {
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
   detectLegacyConfig,
+  detectOmoInstallReadiness,
   getDefaultGlobalConfig,
   readWunderkindConfigForScope,
   writeNativeAgentFiles,
@@ -96,6 +98,84 @@ export interface UpgradeArgs {
   secondaryRegulation?: string
 }
 
+function canAutoBootstrapOmoInTui(): boolean {
+  const result = spawnSync("bunx", ["oh-my-opencode", "--help"], {
+    encoding: "utf8",
+    timeout: 1500,
+    maxBuffer: 1024 * 32,
+  })
+
+  return !result.error && result.status === 0
+}
+
+export function runOmoInstallerForTui(): { success: boolean; error?: string } {
+  const result = spawnSync("bunx", ["oh-my-opencode", "install"], {
+    stdio: "inherit",
+  })
+
+  if (result.error) {
+    return { success: false, error: String(result.error) }
+  }
+
+  if (result.status !== 0) {
+    return { success: false, error: `oh-my-opencode install exited with status ${result.status ?? "unknown"}` }
+  }
+
+  return { success: true }
+}
+
+export function validateOmoPreflightForCli(): { valid: boolean; message?: string } {
+  const readiness = detectOmoInstallReadiness()
+  if (readiness.installed) {
+    return { valid: true }
+  }
+
+  return {
+    valid: false,
+    message:
+      `oh-my-openagent must already be installed before running non-interactive mode. ` +
+      `${readiness.guidance}. Install it first with:\n  ${readiness.nonTuiInstallCommand}`,
+  }
+}
+
+export function ensureOmoPreflightForTui(): { ok: boolean; message?: string } {
+  const readiness = detectOmoInstallReadiness()
+  if (readiness.installed) {
+    return { ok: true }
+  }
+
+  if (!canAutoBootstrapOmoInTui()) {
+    return {
+      ok: false,
+      message:
+        `oh-my-openagent is required before installing Wunderkind. ${readiness.guidance}. ` +
+        `Run ${readiness.interactiveInstallCommand} first, then rerun this installer.`,
+    }
+  }
+
+  const result = runOmoInstallerForTui()
+  if (!result.success) {
+    return {
+      ok: false,
+      message:
+        `Could not auto-install oh-my-openagent. ${readiness.guidance}. ` +
+        `${result.error ?? `Run ${readiness.interactiveInstallCommand} manually and retry.`}`,
+    }
+  }
+
+  const refreshedReadiness = detectOmoInstallReadiness()
+  if (!refreshedReadiness.installed) {
+    return {
+      ok: false,
+      message:
+        `oh-my-openagent still was not detected after the upstream installer ran. ` +
+        `Run ${refreshedReadiness.interactiveInstallCommand} manually and retry.`,
+    }
+  }
+
+  return { ok: true }
+}
+
 export async function runCliInstaller(args: InstallArgs): Promise<number> {
   const validation = validateNonTuiArgs(args)
   if (!validation.valid) {
@@ -115,6 +195,11 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   const detected = detectCurrentConfig()
   if (detectLegacyConfig()) {
     printError("Legacy config found at project root wunderkind.config.jsonc — move it to .wunderkind/wunderkind.config.jsonc")
+    return 1
+  }
+  const omoPreflight = validateOmoPreflightForCli()
+  if (!omoPreflight.valid) {
+    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind install --no-tui")
     return 1
   }
   const isUpdate = args.scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
@@ -212,6 +297,11 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   const detected = detectCurrentConfig()
   if (detectLegacyConfig()) {
     printError("Legacy config found at project root wunderkind.config.jsonc — move it to .wunderkind/wunderkind.config.jsonc")
+    return 1
+  }
+  const omoPreflight = validateOmoPreflightForCli()
+  if (!omoPreflight.valid) {
+    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind upgrade")
     return 1
   }
 

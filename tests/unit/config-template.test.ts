@@ -95,6 +95,29 @@ describe("package publish surface", () => {
     expect(Array.isArray(pkg.files)).toBe(true)
     expect(pkg.files).toContain("commands/")
   })
+
+  it("includes both canonical and legacy OMO template assets in package files", () => {
+    const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { files?: string[] }
+
+    expect(Array.isArray(pkg.files)).toBe(true)
+    expect(pkg.files).toContain("oh-my-openagent.jsonc")
+    expect(pkg.files).toContain("oh-my-opencode.jsonc")
+  })
+})
+
+describe("OMO template assets", () => {
+  it("ships a canonical oh-my-openagent template and a legacy compatibility copy", () => {
+    const canonical = readFileSync(new URL("../../oh-my-openagent.jsonc", import.meta.url), "utf8")
+    const legacy = readFileSync(new URL("../../oh-my-opencode.jsonc", import.meta.url), "utf8")
+
+    expect(canonical).toContain("Wunderkind OMO configuration template")
+    expect(canonical).toContain('"$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json"')
+    expect(canonical).toContain('"wunderkind:product-wunderkind"')
+
+    expect(legacy).toContain("legacy filename retained for compatibility")
+    expect(legacy).toContain("oh-my-openagent.jsonc")
+    expect(legacy).toContain('"wunderkind:product-wunderkind"')
+  })
 })
 
 describe("wunderkind config schema asset", () => {

@@ -15,6 +15,7 @@ import {
   getProjectOverrideMarker,
   readProjectWunderkindConfig,
   resolveOpenCodeConfigPath,
+  summarizeOmoFreshness as summarizeOmoFreshnessInfo,
 } from "./config-manager/index.js"
 import { isProjectContext } from "./init.js"
 import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
@@ -42,54 +43,30 @@ function line(label: string, value: string): void {
 }
 
 function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInfo>): { label: string; guidance: string } {
-  const freshness = omoVersion.freshness
+  const summary = summarizeOmoFreshnessInfo(omoVersion)
 
-  if (!omoVersion.registered) {
-    return {
-      label: color.dim("not checked"),
-      guidance: "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
-    }
-  }
-
-  if (omoVersion.staleOverrideWarning) {
-    return {
-      label: color.yellow("stale override detected"),
-      guidance: "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode.",
-    }
-  }
-
-  if (!freshness || freshness.status === "unknown" || freshness.status === "error") {
-    return {
-      label: color.dim("not verified"),
-      guidance: "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
-    }
-  }
-
-  if (freshness.status === "up-to-date") {
-    return {
-      label: color.green("up to date"),
-      guidance: "oh-my-openagent is already up to date.",
-    }
-  }
-
-  if (freshness.status === "outdated") {
-    const upgradeCommand = freshness.renderedOutput?.split("\n").find((lineValue) => lineValue.includes("Run:"))
-    return {
-      label: color.yellow("update available"),
-      guidance: upgradeCommand ?? "An oh-my-openagent plugin/config update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
-    }
-  }
-
-  if (freshness.status === "local-dev") {
-    return {
-      label: color.cyan("local development mode"),
-      guidance: "oh-my-openagent is running in local development mode — upstream update checks are informational only.",
-    }
-  }
-
-  return {
-    label: color.magenta(`pinned${freshness.pinnedVersion ? ` (${freshness.pinnedVersion})` : ""}`),
-    guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
+  switch (summary.state) {
+    case "not-detected":
+      return { label: color.dim("not checked"), guidance: summary.guidance }
+    case "stale-override":
+      return { label: color.yellow("stale override detected"), guidance: summary.guidance }
+    case "not-verified":
+      return { label: color.dim("not verified"), guidance: summary.guidance }
+    case "up-to-date":
+      return { label: color.green("up to date"), guidance: summary.guidance }
+    case "update-available":
+      return { label: color.yellow("update available"), guidance: summary.guidance }
+    case "local-dev":
+      return { label: color.cyan("local development mode"), guidance: summary.guidance }
+    case "pinned":
+      return {
+        label: color.magenta(
+          `pinned${omoVersion.freshness?.pinnedVersion ? ` (${omoVersion.freshness.pinnedVersion})` : ""}`,
+        ),
+        guidance: summary.guidance,
+      }
+    default:
+      return { label: color.dim("not verified"), guidance: summary.guidance }
   }
 }
 
