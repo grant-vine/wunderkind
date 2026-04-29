@@ -122,11 +122,15 @@ export interface PluginVersionInfo {
   configPath: string | null
   loadedPackagePath: string | null
   registered: boolean
+  configSource?: string | null
+  legacyConfigPath?: string | null
   loadedSources?: {
     global: { version: string | null; packagePath: string | null }
     cache: { version: string | null; packagePath: string | null }
   }
   staleOverrideWarning?: string | null
+  versionSkewWarning?: string | null
+  dualConfigWarning?: string | null
   freshness?: OmoFreshnessInfo | null
 }
 
@@ -135,7 +139,11 @@ export interface OmoInstallReadiness {
   registered: boolean
   loadedVersion: string | null
   configPath: string | null
+  configSource: string | null
+  legacyConfigPath: string | null
   staleOverrideWarning: string | null
+  versionSkewWarning: string | null
+  dualConfigWarning: string | null
   freshness: OmoFreshnessInfo | null
   freshnessSummary: OmoFreshnessSummary
   interactiveInstallCommand: string
@@ -146,6 +154,7 @@ export interface OmoInstallReadiness {
 export type OmoFreshnessState =
   | "not-detected"
   | "stale-override"
+  | "version-skew"
   | "not-verified"
   | "up-to-date"
   | "update-available"

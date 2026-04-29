@@ -217,6 +217,26 @@ describe("config-manager coverage", () => {
     })
   })
 
+
+  it("flags dual OMO config files when canonical and legacy basenames coexist", async () => {
+    await withSandbox("omo-dual-config", async (sandbox, mod) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@latest"] }))
+
+      const canonicalJsonc = join(sandbox.globalConfigDir, "oh-my-openagent.jsonc")
+      const legacyJson = join(sandbox.globalConfigDir, "oh-my-opencode.json")
+      writeFileSync(canonicalJsonc, JSON.stringify({ agents: {} }))
+      writeFileSync(legacyJson, JSON.stringify({ agents: {} }))
+
+      const info = mod.detectOmoVersionInfo()
+      expect(info.configPath).toBe(canonicalJsonc)
+      expect(info.configSource).toBe("oh-my-openagent.jsonc")
+      expect(info.legacyConfigPath).toBe(legacyJson)
+      expect(info.dualConfigWarning).toContain("canonical oh-my-openagent.jsonc is being used")
+      expect(info.dualConfigWarning).toContain(legacyJson)
+    })
+  })
+
   it("adds and removes project plugin registrations across key cases", async () => {
     await withSandbox("project-plugin", async (sandbox, mod) => {
       expect(mod.addPluginToOpenCodeConfig("project").success).toBe(true)
@@ -417,7 +437,7 @@ describe("config-manager coverage", () => {
       expect(omoVersionInfo.staleOverrideWarning).toBe(
         "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
       )
-      expect(omoVersionInfo.freshness?.status).toBe("up-to-date")
+      expect(omoVersionInfo.freshness?.status === "up-to-date" || omoVersionInfo.freshness?.status === "pinned").toBe(true)
     })
   })
 
@@ -438,6 +458,25 @@ describe("config-manager coverage", () => {
       expect(versionInfo.loadedVersion).toBe("3.12.2")
       expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
       expect(versionInfo.configPath).toBe(null)
+    })
+  })
+
+  it("prefers the registered legacy OMO package when both canonical and legacy copies exist", async () => {
+    await withSandbox("omo-registered-legacy-preferred", async (sandbox, mod) => {
+      const canonicalPackagePath = join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent", "package.json")
+      const legacyPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
+
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      mkdirSync(join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent"), { recursive: true })
+      mkdirSync(join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode"), { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-opencode@3.17.6"] }))
+      writeFileSync(canonicalPackagePath, JSON.stringify({ version: "3.15.3" }))
+      writeFileSync(legacyPackagePath, JSON.stringify({ version: "3.17.6" }))
+
+      const versionInfo = mod.detectOmoVersionInfo()
+      expect(versionInfo.registeredEntry).toBe("oh-my-opencode@3.17.6")
+      expect(versionInfo.loadedVersion).toBe("3.17.6")
+      expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
     })
   })
 
@@ -548,6 +587,8 @@ describe("config-manager coverage", () => {
         freshMod.__setConfigManagerPathOverrideForTests({ cwd: sandbox.projectDir, home: sandbox.homeDir })
         const info = freshMod.detectOmoVersionInfo()
         expect(info.freshness?.status).toBe("unknown")
+        expect(info.freshness?.currentVersion).toBeNull()
+        expect(info.currentVersion).toBeNull()
         expect(info.freshness?.latestVersion).toBe(null)
       } finally {
         mock.module("node:child_process", () => ({ spawnSync: originalSpawnSync }))

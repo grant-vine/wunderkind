@@ -275,23 +275,34 @@ function resolveOmoConfigPath(): {
     | "oh-my-opencode.json"
     | "oh-my-opencode.jsonc"
     | "default"
+  legacyPath: string | null
 } {
   const paths = resolveConfigManagerPaths()
 
-  if (existsSync(paths.omoConfigJson)) {
-    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json" }
+  const canonicalJsonExists = existsSync(paths.omoConfigJson)
+  const canonicalJsoncExists = existsSync(paths.omoConfigJsonc)
+  const legacyJsonExists = existsSync(paths.omoLegacyConfigJson)
+  const legacyJsoncExists = existsSync(paths.omoLegacyConfigJsonc)
+  const legacyPath = legacyJsonExists
+    ? paths.omoLegacyConfigJson
+    : legacyJsoncExists
+      ? paths.omoLegacyConfigJsonc
+      : null
+
+  if (canonicalJsonExists) {
+    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json", legacyPath }
   }
-  if (existsSync(paths.omoConfigJsonc)) {
-    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc" }
+  if (canonicalJsoncExists) {
+    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc", legacyPath }
   }
-  if (existsSync(paths.omoLegacyConfigJson)) {
-    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json" }
+  if (legacyJsonExists) {
+    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json", legacyPath: null }
   }
-  if (existsSync(paths.omoLegacyConfigJsonc)) {
-    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc" }
+  if (legacyJsoncExists) {
+    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc", legacyPath: null }
   }
 
-  return { path: null, format: "none", source: "default" }
+  return { path: null, format: "none", source: "default", legacyPath: null }
 }
 
 function parseConfig(path: string): OpenCodeConfig | null {
@@ -341,11 +352,19 @@ function parseOmoFreshnessJson(stdoutValue: string): OmoFreshnessInfo | null {
     const status = record.status
     if (!isOmoFreshnessStatus(status)) return null
 
+    const currentVersion = typeof record.currentVersion === "string"
+      ? record.currentVersion
+      : typeof record.pluginVersion === "string"
+        ? record.pluginVersion
+        : null
+    const latestVersion = typeof record.latestVersion === "string" ? record.latestVersion : null
+    const pinnedVersion = typeof record.pinnedVersion === "string" ? record.pinnedVersion : null
+
     return {
       status,
-      currentVersion: typeof record.currentVersion === "string" ? record.currentVersion : null,
-      latestVersion: typeof record.latestVersion === "string" ? record.latestVersion : null,
-      pinnedVersion: typeof record.pinnedVersion === "string" ? record.pinnedVersion : null,
+      currentVersion,
+      latestVersion,
+      pinnedVersion,
       renderedOutput: null,
     }
   } catch {
@@ -353,10 +372,17 @@ function parseOmoFreshnessJson(stdoutValue: string): OmoFreshnessInfo | null {
   }
 }
 
-function detectOmoFreshnessInfo(cwd: string, fallbackVersion: string | null): OmoFreshnessInfo {
+function detectOmoFreshnessInfo(cwd: string): OmoFreshnessInfo {
+  const runtimeContext = resolveConfigManagerRuntimeContext()
+  const spawnEnv = {
+    ...process.env,
+    HOME: runtimeContext.home,
+    USERPROFILE: runtimeContext.home,
+    XDG_CONFIG_HOME: join(runtimeContext.home, ".config"),
+  }
   const baseInfo: OmoFreshnessInfo = {
     status: "unknown",
-    currentVersion: fallbackVersion,
+    currentVersion: null,
     latestVersion: null,
     pinnedVersion: null,
     renderedOutput: null,
@@ -366,6 +392,7 @@ function detectOmoFreshnessInfo(cwd: string, fallbackVersion: string | null): Om
     encoding: "utf8",
     timeout: 750,
     maxBuffer: 1024 * 32,
+    env: spawnEnv,
   })
 
   if (jsonResult.error) return baseInfo
@@ -376,7 +403,6 @@ function detectOmoFreshnessInfo(cwd: string, fallbackVersion: string | null): Om
   if (parsed.status !== "outdated") {
     return {
       ...parsed,
-      currentVersion: parsed.currentVersion ?? fallbackVersion,
       renderedOutput: null,
     }
   }
@@ -385,12 +411,12 @@ function detectOmoFreshnessInfo(cwd: string, fallbackVersion: string | null): Om
     encoding: "utf8",
     timeout: 750,
     maxBuffer: 1024 * 32,
+    env: spawnEnv,
   })
   const renderedOutput = textResult.error ? "" : typeof textResult.stdout === "string" ? stripAnsi(textResult.stdout).trim() : ""
 
   return {
     ...parsed,
-    currentVersion: parsed.currentVersion ?? fallbackVersion,
     renderedOutput: renderedOutput !== "" ? renderedOutput : null,
   }
 }
@@ -452,6 +478,47 @@ function detectLoadedPackageSources(packageName: string): {
       version: existsSync(cachePath) ? readJsonVersion(cachePath) : null,
       packagePath: existsSync(cachePath) ? cachePath : null,
     },
+  }
+}
+
+function getOmoLoadedPackageInfo(options: {
+  preferredPackageName: string | null
+}): {
+  loaded: { version: string | null; packagePath: string | null }
+  loadedSources: {
+    global: { version: string | null; packagePath: string | null }
+    cache: { version: string | null; packagePath: string | null }
+  }
+  packageNameUsed: string | null
+} {
+  const candidateNames = [
+    options.preferredPackageName,
+    OMO_CANONICAL_PACKAGE_NAME,
+    OMO_LEGACY_PACKAGE_NAME,
+  ].filter((value, index, array): value is string => value !== null && array.indexOf(value) === index)
+
+  for (const packageName of candidateNames) {
+    const loaded = detectLoadedPackageVersion(packageName)
+    const loadedSources = detectLoadedPackageSources(packageName)
+    const hasLoadedPackage = loaded.version !== null || loaded.packagePath !== null
+    const hasSources = loadedSources.global.packagePath !== null || loadedSources.cache.packagePath !== null
+
+    if (hasLoadedPackage || hasSources) {
+      return {
+        loaded,
+        loadedSources,
+        packageNameUsed: packageName,
+      }
+    }
+  }
+
+  return {
+    loaded: { version: null, packagePath: null },
+    loadedSources: {
+      global: { version: null, packagePath: null },
+      cache: { version: null, packagePath: null },
+    },
+    packageNameUsed: null,
   }
 }
 
@@ -534,34 +601,48 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
   const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
   const registeredLegacyEntry = findPluginEntry(plugins, OMO_LEGACY_PACKAGE_NAME)
   const registeredEntry = registeredCanonicalEntry ?? registeredLegacyEntry
+  const preferredPackageName = registeredCanonicalEntry
+    ? OMO_CANONICAL_PACKAGE_NAME
+    : registeredLegacyEntry
+      ? OMO_LEGACY_PACKAGE_NAME
+      : null
 
-  const loadedCanonical = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
-  const loadedLegacy = detectLoadedPackageVersion(OMO_LEGACY_PACKAGE_NAME)
-  const loadedCanonicalSources = detectLoadedPackageSources(OMO_CANONICAL_PACKAGE_NAME)
-  const loadedLegacySources = detectLoadedPackageSources(OMO_LEGACY_PACKAGE_NAME)
-  const loaded = loadedCanonical.version !== null || loadedCanonical.packagePath !== null ? loadedCanonical : loadedLegacy
-  const loadedSources =
-    loadedCanonicalSources.global.packagePath !== null || loadedCanonicalSources.cache.packagePath !== null
-      ? loadedCanonicalSources
-      : loadedLegacySources
+  const packageInfo = getOmoLoadedPackageInfo({ preferredPackageName })
   const staleOverrideWarning = buildStaleOverrideWarning({
-    packageName: OMO_CANONICAL_PACKAGE_NAME,
-    globalVersion: loadedSources.global.version,
-    cacheVersion: loadedSources.cache.version,
+    packageName: packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME,
+    globalVersion: packageInfo.loadedSources.global.version,
+    cacheVersion: packageInfo.loadedSources.cache.version,
   })
-  const freshness = registeredEntry !== null ? detectOmoFreshnessInfo(resolveConfigManagerRuntimeContext().cwd, loaded.version) : null
+  const freshness = registeredEntry !== null
+    ? detectOmoFreshnessInfo(resolveConfigManagerRuntimeContext().cwd)
+    : null
+  const currentVersion = freshness?.currentVersion ?? null
+  const versionSkewWarning =
+    currentVersion !== null &&
+    packageInfo.loaded.version !== null &&
+    compareVersions(currentVersion, packageInfo.loaded.version) !== 0
+      ? `upstream get-local-version reports ${currentVersion} but the loaded ${packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME} package is ${packageInfo.loaded.version}`
+      : null
+  const dualConfigWarning =
+    omoConfigResolution.legacyPath !== null && configPath !== null
+      ? `canonical ${omoConfigResolution.source} is being used while legacy config still exists at ${omoConfigResolution.legacyPath}`
+      : null
 
   return {
     packageName: OMO_CANONICAL_PACKAGE_NAME,
-    currentVersion: null,
+    currentVersion,
     registeredEntry,
     registeredVersion: normalizeDependencyVersion(registeredEntry),
-    loadedVersion: loaded.version,
+    loadedVersion: packageInfo.loaded.version,
     configPath,
-    loadedPackagePath: loaded.packagePath,
+    configSource: omoConfigResolution.source,
+    legacyConfigPath: omoConfigResolution.legacyPath,
+    loadedPackagePath: packageInfo.loaded.packagePath,
     registered: registeredEntry !== null,
-    loadedSources,
+    loadedSources: packageInfo.loadedSources,
     staleOverrideWarning,
+    versionSkewWarning,
+    dualConfigWarning,
     freshness,
   }
 }
@@ -576,7 +657,11 @@ export function detectOmoInstallReadiness(): OmoInstallReadiness {
     registered: versionInfo.registered,
     loadedVersion: versionInfo.loadedVersion,
     configPath: versionInfo.configPath,
+    configSource: versionInfo.configSource ?? null,
+    legacyConfigPath: versionInfo.legacyConfigPath ?? null,
     staleOverrideWarning: versionInfo.staleOverrideWarning ?? null,
+    versionSkewWarning: versionInfo.versionSkewWarning ?? null,
+    dualConfigWarning: versionInfo.dualConfigWarning ?? null,
     freshness: versionInfo.freshness ?? null,
     freshnessSummary,
     interactiveInstallCommand: "bunx oh-my-opencode install",
@@ -602,6 +687,14 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
       state: "stale-override",
       guidance:
         "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode.",
+    }
+  }
+
+  if (versionInfo.versionSkewWarning) {
+    return {
+      state: "version-skew",
+      guidance:
+        "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-opencode install`, then restart OpenCode so the active plugin matches upstream.",
     }
   }
 
@@ -642,7 +735,6 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
     guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
   }
 }
-
 function parseWunderkindConfig(path: string): Record<string, unknown> | null {
   try {
     const parsed = parseJsonc(readFileSync(path, "utf-8")) as unknown
