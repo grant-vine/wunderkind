@@ -8,8 +8,8 @@
   //
   // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
   //
-  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json
-  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
+  // Schema: https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
 
   "categories": {
     "quick": { "model": "anthropic/claude-haiku-4-5" },

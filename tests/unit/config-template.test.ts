@@ -111,7 +111,7 @@ describe("OMO template assets", () => {
     const legacy = readFileSync(new URL("../../oh-my-opencode.jsonc", import.meta.url), "utf8")
 
     expect(canonical).toContain("Wunderkind OMO configuration template")
-    expect(canonical).toContain('"$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json"')
+    expect(canonical).toContain('"$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json"')
     expect(canonical).toContain('"wunderkind:product-wunderkind"')
 
     expect(legacy).toContain("legacy filename retained for compatibility")
