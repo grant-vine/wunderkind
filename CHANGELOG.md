@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.1
+
+- surface OMO drift warnings in the interactive installer so TUI and non-interactive install paths stay aligned
+- tighten doctor freshness accuracy so Wunderkind only reports an upstream current version when oh-my-openagent actually returns one
+
 ## 0.15.0
 
 - modernize OMO compatibility around canonical `oh-my-openagent` config basenames while preserving legacy `oh-my-opencode` fallback support
