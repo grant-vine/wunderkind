@@ -43,6 +43,7 @@ function registerConfigManagerMock(): void {
     detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
     getNativeCommandFilePaths: () => [],
     detectOmoVersionInfo: () => ({ registered: false, loadedVersion: null, staleOverrideWarning: null }),
+    summarizeOmoFreshness: () => ({ state: "not-detected", guidance: "mock guidance" }),
     detectWunderkindVersionInfo: () => ({ currentVersion: null }),
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
     readProjectWunderkindConfig: () => null,
