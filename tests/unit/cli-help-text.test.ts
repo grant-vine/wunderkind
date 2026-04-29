@@ -89,6 +89,12 @@ describe("CLI help copy", () => {
     expect(output).toContain("Enable verbose diagnostic output")
   })
 
+  it("includes install guidance for OMO version-skew recovery in doctor behavior", () => {
+    const output = runCliHelp("doctor", "--help")
+
+    expect(output).toContain("Run read-only diagnostics")
+  })
+
   it("rejects the removed legacy init flag as unknown", () => {
     const legacyFlag = ["--de", "sloppify-enabled=yes"].join("")
     const result = runCliRaw("init", legacyFlag)

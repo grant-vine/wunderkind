@@ -50,6 +50,8 @@ function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInf
       return { label: color.dim("not checked"), guidance: summary.guidance }
     case "stale-override":
       return { label: color.yellow("stale override detected"), guidance: summary.guidance }
+    case "version-skew":
+      return { label: color.yellow("version skew detected"), guidance: summary.guidance }
     case "not-verified":
       return { label: color.dim("not verified"), guidance: summary.guidance }
     case "up-to-date":
@@ -237,10 +239,21 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         : color.dim("✗ not detected"),
     )
     line("oh-my-openagent loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+    if (omoVersion.currentVersion) {
+      line("oh-my-openagent reported current version:", color.cyan(omoVersion.currentVersion))
+    }
 
     if (omoVersion.staleOverrideWarning) {
       warnings.push(omoVersion.staleOverrideWarning)
       line("oh-my-openagent warning:", color.yellow(omoVersion.staleOverrideWarning))
+    }
+    if (omoVersion.versionSkewWarning) {
+      warnings.push(omoVersion.versionSkewWarning)
+      line("oh-my-openagent warning:", color.yellow(omoVersion.versionSkewWarning))
+    }
+    if (omoVersion.dualConfigWarning) {
+      warnings.push(omoVersion.dualConfigWarning)
+      line("oh-my-openagent warning:", color.yellow(omoVersion.dualConfigWarning))
     }
 
     const omoFreshness = summarizeOmoFreshness(omoVersion)
@@ -267,7 +280,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
       if (omoVersion.configPath) {
-        line("oh-my-openagent config source:", color.dim(omoVersion.configPath))
+        const configSourceLabel = omoVersion.configSource ? ` (${omoVersion.configSource})` : ""
+        line("oh-my-openagent config source:", `${color.dim(omoVersion.configPath)}${color.dim(configSourceLabel)}`)
+      }
+      if (omoVersion.legacyConfigPath) {
+        line("oh-my-openagent legacy config:", color.dim(omoVersion.legacyConfigPath))
       }
       if (omoVersion.loadedPackagePath) {
         line("oh-my-openagent loaded package:", color.dim(omoVersion.loadedPackagePath))
