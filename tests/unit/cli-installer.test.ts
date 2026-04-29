@@ -60,9 +60,13 @@ function makeOmoInstallReadiness(overrides: Partial<OmoInstallReadiness> = {}): 
   return {
     installed: true,
     registered: true,
-    loadedVersion: "3.17.4",
+    loadedVersion: "3.17.6",
     configPath: "/tmp/oh-my-openagent.jsonc",
+    configSource: "oh-my-openagent.jsonc",
+    legacyConfigPath: null,
     staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
     freshness: null,
     freshnessSummary: {
       state: "not-verified",
@@ -615,6 +619,33 @@ describe("runCliInstaller", () => {
       console.log = origLog
     }
   })
+
+
+  it("surfaces OMO drift warnings during install when readiness detects them", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    mockDetectOmoInstallReadiness.mockImplementation(() =>
+      makeOmoInstallReadiness({
+        staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
+        versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
+        dualConfigWarning: "canonical oh-my-openagent.jsonc is being used while legacy config still exists at /tmp/oh-my-opencode.json",
+      }),
+    )
+
+    try {
+      const code = await runCliInstaller(baseArgs())
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
+      expect(messages.some((m) => m.includes("upstream get-local-version reports 3.17.6"))).toBe(true)
+      expect(messages.some((m) => m.includes("legacy config still exists"))).toBe(true)
+    } finally {
+      console.log = origLog
+    }
+  })
 })
 
 describe("runCliUpgrade", () => {
@@ -912,6 +943,29 @@ describe("runCliUpgrade", () => {
       expect(code).toBe(1)
     } finally {
       restore()
+    }
+  })
+
+
+  it("surfaces OMO drift warnings during upgrade when readiness detects them", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    mockDetectOmoInstallReadiness.mockImplementation(() =>
+      makeOmoInstallReadiness({
+        versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
+      }),
+    )
+
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("upstream get-local-version reports 3.17.6"))).toBe(true)
+    } finally {
+      console.log = origLog
     }
   })
 

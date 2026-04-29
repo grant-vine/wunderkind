@@ -1,6 +1,6 @@
 import color from "picocolors"
 import { spawnSync } from "node:child_process"
-import type { InstallArgs, InstallConfig, InstallScope } from "./types.js"
+import type { InstallArgs, InstallConfig, InstallScope, OmoInstallReadiness } from "./types.js"
 import {
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
@@ -138,6 +138,18 @@ export function validateOmoPreflightForCli(): { valid: boolean; message?: string
   }
 }
 
+function printOmoReadinessWarnings(readiness: OmoInstallReadiness): void {
+  if (readiness.staleOverrideWarning) {
+    printWarning(readiness.staleOverrideWarning)
+  }
+  if (readiness.versionSkewWarning) {
+    printWarning(readiness.versionSkewWarning)
+  }
+  if (readiness.dualConfigWarning) {
+    printWarning(readiness.dualConfigWarning)
+  }
+}
+
 export function ensureOmoPreflightForTui(): { ok: boolean; message?: string } {
   const readiness = detectOmoInstallReadiness()
   if (readiness.installed) {
@@ -202,9 +214,11 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind install --no-tui")
     return 1
   }
+  const omoReadiness = detectOmoInstallReadiness()
   const isUpdate = args.scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
 
   printHeader(isUpdate)
+  printOmoReadinessWarnings(omoReadiness)
 
   const totalSteps = 3
   let step = 1
@@ -304,6 +318,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
     printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind upgrade")
     return 1
   }
+  const omoReadiness = detectOmoInstallReadiness()
 
   const installedInScope = args.scope === "project" ? detected.projectInstalled === true : detected.globalInstalled === true
   if (!installedInScope) {
@@ -317,6 +332,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   }
 
   printHeader(true)
+  printOmoReadinessWarnings(omoReadiness)
 
   const defaults = getDefaultGlobalConfig()
   const persisted = readWunderkindConfigForScope(args.scope) ?? {}

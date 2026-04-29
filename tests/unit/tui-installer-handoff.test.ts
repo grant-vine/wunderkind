@@ -24,9 +24,13 @@ const mockIsProjectContext = mock(() => true)
 const mockDetectOmoInstallReadiness = mock<() => OmoInstallReadiness>(() => ({
   installed: true,
   registered: true,
-  loadedVersion: "3.17.4",
+  loadedVersion: "3.17.6",
   configPath: "/tmp/oh-my-openagent.jsonc",
+  configSource: "oh-my-openagent.jsonc",
+  legacyConfigPath: null,
   staleOverrideWarning: null,
+  versionSkewWarning: null,
+  dualConfigWarning: null,
   freshness: null,
   freshnessSummary: {
     state: "not-verified",
@@ -129,6 +133,8 @@ const configManagerFactory = () => ({
     registeredVersion: null,
     loadedVersion: null,
     configPath: null,
+    configSource: null,
+    legacyConfigPath: null,
     loadedPackagePath: null,
     registered: false,
     loadedSources: {
@@ -136,6 +142,8 @@ const configManagerFactory = () => ({
       cache: { version: null, packagePath: null },
     },
     staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
     freshness: null,
   }),
   detectWunderkindVersionInfo: () => ({
@@ -262,7 +270,11 @@ describe("runTuiInstaller init handoff", () => {
       registered: true,
       loadedVersion: "3.15.3",
       configPath: "/tmp/oh-my-openagent.jsonc",
+      configSource: "oh-my-openagent.jsonc",
+      legacyConfigPath: null,
       staleOverrideWarning: null,
+      versionSkewWarning: null,
+      dualConfigWarning: null,
       freshness: null,
       freshnessSummary: {
         state: "not-verified",
@@ -509,7 +521,11 @@ describe("runTuiInstaller init handoff", () => {
           registered: false,
           loadedVersion: null,
           configPath: null,
+          configSource: null,
+          legacyConfigPath: null,
           staleOverrideWarning: null,
+          versionSkewWarning: null,
+          dualConfigWarning: null,
           freshness: null,
           freshnessSummary: {
             state: "not-detected",
@@ -526,9 +542,13 @@ describe("runTuiInstaller init handoff", () => {
       return {
         installed: true,
         registered: true,
-        loadedVersion: "3.17.4",
+        loadedVersion: "3.17.6",
         configPath: "/tmp/oh-my-openagent.jsonc",
+        configSource: "oh-my-openagent.jsonc",
+        legacyConfigPath: null,
         staleOverrideWarning: null,
+        versionSkewWarning: null,
+        dualConfigWarning: null,
         freshness: null,
         freshnessSummary: {
           state: "not-verified",
@@ -560,7 +580,11 @@ describe("runTuiInstaller init handoff", () => {
       registered: false,
       loadedVersion: null,
       configPath: null,
+      configSource: null,
+      legacyConfigPath: null,
       staleOverrideWarning: null,
+      versionSkewWarning: null,
+      dualConfigWarning: null,
       freshness: null,
       freshnessSummary: {
         state: "not-detected",
@@ -711,6 +735,38 @@ describe("runTuiInstaller init handoff", () => {
     expect(code).toBe(0)
     expect(mockLogWarn).toHaveBeenCalledTimes(1)
   })
+  it("surfaces OMO drift warnings during TUI install when readiness detects them", async () => {
+    mockSelect.mockImplementation(async () => "global")
+    mockConfirm.mockImplementation(async () => false)
+    mockDetectOmoInstallReadiness.mockImplementation(() => ({
+      installed: true,
+      registered: true,
+      loadedVersion: "3.15.3",
+      configPath: "/tmp/oh-my-openagent.jsonc",
+      configSource: "oh-my-openagent.jsonc",
+      legacyConfigPath: "/tmp/oh-my-opencode.jsonc",
+      staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
+      versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
+      dualConfigWarning: "canonical oh-my-openagent.jsonc is being used while legacy config still exists at /tmp/oh-my-opencode.jsonc",
+      freshness: null,
+      freshnessSummary: {
+        state: "version-skew",
+        guidance:
+          "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-opencode install`, then restart OpenCode so the active plugin matches upstream.",
+      },
+      interactiveInstallCommand: "bunx oh-my-opencode install",
+      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance:
+        "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+    }))
+
+    const code = await runTuiInstaller("global")
+    expect(code).toBe(0)
+    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
+    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("upstream get-local-version reports 3.17.6"))).toBe(true)
+    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("legacy config still exists"))).toBe(true)
+  })
+
 
   it("warns when init handoff fails after install succeeds", async () => {
     mockSelect.mockImplementation(async () => "project")

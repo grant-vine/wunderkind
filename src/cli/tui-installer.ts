@@ -5,6 +5,7 @@ import {
   addPluginToOpenCodeConfig,
   detectCurrentConfig,
   detectLegacyConfig,
+  detectOmoInstallReadiness,
   getDefaultGlobalConfig,
   readWunderkindConfigForScope,
   writeNativeAgentFiles,
@@ -14,7 +15,19 @@ import {
 } from "./config-manager/index.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import { isProjectContext, runInit } from "./init.js"
-import type { InstallConfig, InstallScope } from "./types.js"
+import type { InstallConfig, InstallScope, OmoInstallReadiness } from "./types.js"
+
+function logOmoReadinessWarnings(readiness: OmoInstallReadiness): void {
+  if (readiness.staleOverrideWarning) {
+    p.log.warn(readiness.staleOverrideWarning)
+  }
+  if (readiness.versionSkewWarning) {
+    p.log.warn(readiness.versionSkewWarning)
+  }
+  if (readiness.dualConfigWarning) {
+    p.log.warn(readiness.dualConfigWarning)
+  }
+}
 
 export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -28,7 +41,10 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
     return 1
   }
 
+  const omoReadiness = detectOmoInstallReadiness()
+
   p.intro(color.bgMagenta(color.white(" Wunderkind... Install ")))
+  logOmoReadinessWarnings(omoReadiness)
 
   const scopeRaw = await p.select<InstallScope>({
     message: "Install scope:",
