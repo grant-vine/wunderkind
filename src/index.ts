@@ -128,6 +128,52 @@ function readSoulOverlay(agentKey: (typeof SOUL_HEADING_MARKERS)[number]["agentK
   }
 }
 
+function buildCompactionContext(wunderkindConfig: ReturnType<typeof readWunderkindConfig>): string[] {
+  const context = [
+    `## Wunderkind compaction priorities
+
+Preserve any active retained-agent routing decisions, delegated specialists, loaded Wunderkind skills, and unfinished task graph state. If parallel subagents were launched, keep which subtasks are complete, still running, blocked, or waiting for synthesis. Do not collapse delegated findings into generic summaries that lose ownership or next-step clarity.`,
+    `## Wunderkind delegation continuity
+
+If the session already delegated research, exploration, or implementation work, preserve the delegated outputs and the synthesis still required. Do not restart the same search loop after compaction unless the preserved output says it was insufficient. Respect upstream background-agent depth limits by favoring continuation of existing delegated work over spawning redundant nested agents.`,
+    `## Wunderkind mode continuity
+
+Preserve whether caveman mode was enabled for the active chat. If the user explicitly turned terse mode on or off, keep that mode decision across compaction unless the user later changed it.`,
+  ]
+
+  if (wunderkindConfig) {
+    context.push(`## Wunderkind runtime context
+
+Preserve the resolved runtime context across compaction:
+- region: ${wunderkindConfig.region ?? "Global"}
+- industry: ${(wunderkindConfig.industry ?? "").trim() !== "" ? wunderkindConfig.industry : "(not set)"}
+- primary regulation: ${(wunderkindConfig.primaryRegulation ?? "").trim() !== "" ? wunderkindConfig.primaryRegulation : "(not set)"}
+- secondary regulation: ${(wunderkindConfig.secondaryRegulation ?? "").trim() !== "" ? wunderkindConfig.secondaryRegulation : "(not set)"}
+- team culture: ${wunderkindConfig.teamCulture ?? "pragmatic-balanced"}
+- org structure: ${wunderkindConfig.orgStructure ?? "flat"}`)
+
+    if (wunderkindConfig.docsEnabled === true) {
+      const docsPath = wunderkindConfig.docsPath ?? "./docs"
+      const docHistoryMode = wunderkindConfig.docHistoryMode ?? "append-dated"
+      const docsOutputRuntimeState = getDocsOutputRuntimeState(docsPath)
+      context.push(`## Wunderkind docs-output continuity
+
+Preserve docs-output decisions and pending writes:
+- docsPath: ${docsOutputRuntimeState.displayDocsPath}
+- docHistoryMode: ${docHistoryMode}
+- docs scope: current project root only`)
+    }
+
+    if ((wunderkindConfig.prdPipelineMode ?? "filesystem") === "github") {
+      context.push(`## Wunderkind workflow continuity
+
+The project is using github PRD/workflow mode. Preserve any active GitHub issue, PRD, triage, or label-mapping decisions instead of downgrading them to generic filesystem-only guidance.`)
+    }
+  }
+
+  return context
+}
+
 const WunderkindPlugin: Plugin = async (_input) => {
   return {
     tool: {
@@ -170,6 +216,10 @@ const WunderkindPlugin: Plugin = async (_input) => {
       if (input.type === "bash" && shouldDenyShellMutation(input.pattern, input.metadata)) {
         output.status = "deny"
       }
+    },
+    "experimental.session.compacting": async (_input, output) => {
+      const wunderkindConfig = readWunderkindConfig()
+      output.context.push(...buildCompactionContext(wunderkindConfig))
     },
     "experimental.chat.system.transform": async (_input, output) => {
       const wunderkindConfig = readWunderkindConfig()
@@ -279,6 +329,15 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
 - Use normal \`Write\`/\`Edit\` for ordinary repo files, docs-output, \`DESIGN.md\`, \`.wunderkind/stitch/\`, and managed \`.sisyphus/\` planning files. Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` only for append-only Wunderkind memory lanes such as \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\`.
+
+### Caveman Mode
+
+- Caveman mode is available in any chat when the user explicitly asks for \`caveman mode\`, \`be brief\`, \`less tokens\`, or similar terse-mode language.
+- When a chat enables caveman mode, keep replies compressed but exact. Do not alter code blocks, commands, exact errors, or safety-critical warnings.
+- Session-scoped caveman mode stays active until the user asks to turn it off or normal clarity is temporarily required for safety.
+${wunderkindConfig?.cavemanEnabled === true
+  ? `- This project has project-default caveman mode enabled. Product, fullstack, and marketing may use terse high-signal replies by default when they would preserve the same value. Creative may do this for status or logistics only. CISO and legal-counsel should stay in normal explicit mode unless the user asks for caveman mode directly.`
+  : ""}
 
 ### Project Configuration
 

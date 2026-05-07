@@ -96,6 +96,7 @@ export interface UpgradeArgs {
   industry?: string
   primaryRegulation?: string
   secondaryRegulation?: string
+  cavemanEnabled?: boolean
 }
 
 function canAutoBootstrapOmoInTui(): boolean {
@@ -240,6 +241,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     docsPath: detected.docsPath,
     docHistoryMode: detected.docHistoryMode,
     prdPipelineMode: detected.prdPipelineMode,
+    cavemanEnabled: detected.cavemanEnabled ?? false,
   }
 
   printStep(step++, totalSteps, "Adding wunderkind to OpenCode config...")
@@ -349,27 +351,42 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
         primaryRegulation: persisted.primaryRegulation ?? defaults.primaryRegulation,
         secondaryRegulation: persisted.secondaryRegulation ?? defaults.secondaryRegulation,
       }
+  const cavemanRequested = args.scope === "project" ? args.cavemanEnabled : undefined
+
   const nextConfig = {
     region: args.region ?? effectiveBaseline.region,
     industry: args.industry ?? effectiveBaseline.industry,
     primaryRegulation: args.primaryRegulation ?? effectiveBaseline.primaryRegulation,
     secondaryRegulation: args.secondaryRegulation ?? effectiveBaseline.secondaryRegulation,
+    cavemanEnabled: cavemanRequested ?? detected.cavemanEnabled ?? false,
   }
 
   const isNoop =
     nextConfig.region === effectiveBaseline.region &&
     nextConfig.industry === effectiveBaseline.industry &&
     nextConfig.primaryRegulation === effectiveBaseline.primaryRegulation &&
-    nextConfig.secondaryRegulation === effectiveBaseline.secondaryRegulation
+    nextConfig.secondaryRegulation === effectiveBaseline.secondaryRegulation &&
+    (args.scope === "global" || nextConfig.cavemanEnabled === (detected.cavemanEnabled ?? false))
 
   if (args.dryRun === true) {
     printInfo(`Dry run: would refresh native agents in ${args.scope} scope`)
     printInfo("Dry run: would refresh global native commands")
     printInfo(`Dry run: would refresh native skills in ${args.scope} scope`)
+    if (args.scope === "global" && args.cavemanEnabled !== undefined) {
+      printWarning("Global upgrades do not persist caveman mode. Caveman stays available per chat globally; use init or project-scope upgrade to set a project default.")
+    }
+
     if (args.refreshConfig === true || !isNoop) {
       printInfo(`Dry run: would rewrite Wunderkind config in ${args.scope} scope`)
     }
+    printInfo(args.scope === "project"
+      ? `Dry run: caveman project default would remain ${nextConfig.cavemanEnabled ? "enabled" : "disabled"}`
+      : "Dry run: caveman remains available per chat globally; project defaults are configured via init or project-scope upgrade")
     return 0
+  }
+
+  if (args.scope === "global" && args.cavemanEnabled !== undefined) {
+    printWarning("Global upgrades do not persist caveman mode. Caveman stays available per chat globally; use init or project-scope upgrade to set a project default.")
   }
 
   if (args.refreshConfig === true || !isNoop) {
@@ -427,11 +444,18 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
       nextConfig.secondaryRegulation
         ? `  ${color.bold("Secondary:")}           ${color.cyan(nextConfig.secondaryRegulation)}`
         : "",
+      args.scope === "project"
+        ? `  ${color.bold("Project caveman:")}     ${color.cyan(nextConfig.cavemanEnabled ? "enabled" : "disabled")}`
+        : `  ${color.bold("Caveman:")}            ${color.cyan("available per chat globally")}`,
     ]
       .filter(Boolean)
       .join("\n"),
     "Upgrade Complete",
   )
+
+  if (args.scope === "global") {
+    printInfo("Caveman is available per chat globally. Ask for \"caveman mode\" or enable a project default through init or project-scope upgrade.")
+  }
 
   return 0
 }

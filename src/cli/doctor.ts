@@ -311,6 +311,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const secondaryRegulationMarker = getProjectOverrideMarker("secondaryRegulation", projectConfig ?? null)
       renderBaselineLine("region:", detected.region, regionMarker.marker, regionMarker.sourceLabel)
       renderBaselineLine("industry:", detected.industry, industryMarker.marker, industryMarker.sourceLabel)
+      const cavemanMarker = projectConfig !== null && "cavemanEnabled" in projectConfig ? "●" : "○"
+      line("caveman mode:", `${detected.cavemanEnabled ? color.green("enabled") : color.dim("disabled")} ${color.dim(`${cavemanMarker} ${cavemanMarker === "●" ? "project override" : "default off"}`)}`)
       renderBaselineLine(
         "primary regulation:",
         detected.primaryRegulation,

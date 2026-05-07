@@ -38,6 +38,7 @@ export interface ProjectConfig {
   designTool: DesignTool
   designPath: string
   designMcpOwnership: DesignMcpOwnership
+  cavemanEnabled?: boolean
 }
 
 export interface InstallArgs {
@@ -58,6 +59,7 @@ export interface InstallArgs {
   docsEnabled?: boolean | undefined
   docsPath?: string | undefined
   docHistoryMode?: string | undefined
+  cavemanEnabled?: boolean | undefined
 }
 
 export interface InstallConfig extends GlobalConfig, Omit<ProjectConfig, "designTool" | "designPath" | "designMcpOwnership"> {
@@ -101,6 +103,7 @@ export interface DetectedConfig {
   designTool: DesignTool
   designPath: string
   designMcpOwnership: DesignMcpOwnership
+  cavemanEnabled?: boolean
 }
 
 export type OmoFreshnessStatus = "up-to-date" | "outdated" | "local-dev" | "pinned" | "error" | "unknown"

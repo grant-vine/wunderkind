@@ -15,6 +15,14 @@ const pkg = require("../../package.json") as { version: string }
 
 const REGULATION_LIST = "GDPR, POPIA, CCPA, LGPD, HIPAA, PIPEDA, PDPA, APPI, SOC2, ISO27001, or any custom value"
 
+function parseYesNoOption(flagName: string, value: string): boolean {
+  const normalized = value.trim().toLowerCase()
+  if (normalized === "yes" || normalized === "y" || normalized === "true") return true
+  if (normalized === "no" || normalized === "n" || normalized === "false") return false
+  console.error(`Error: ${flagName} must be yes|no, got: "${value}"`)
+  process.exit(1)
+}
+
 const program = new Command()
 
 program
@@ -123,6 +131,7 @@ program
   .option("--scope <scope>", "Upgrade scope: global or project")
   .option("--dry-run", "Show what would be refreshed without writing files")
   .option("--refresh-config", "Rewrite Wunderkind config in canonical current format")
+  .option("--caveman-enabled <yes|no>", "Set project-default caveman mode during project-scope upgrade")
   .addHelpText(
     "after",
     [
@@ -135,19 +144,27 @@ program
       "  - refreshes Wunderkind native commands globally",
       "  - preserves project-local soul/docs settings unless explicit config overrides are passed",
       "  - supports --dry-run and --refresh-config for safe testing",
+      "  - project upgrades can set --caveman-enabled yes|no; global upgrades keep caveman session-scoped",
     ].join("\n"),
   )
-  .action((opts: { scope?: string | undefined; dryRun?: boolean | undefined; refreshConfig?: boolean | undefined }) => {
+  .action((opts: { scope?: string | undefined; dryRun?: boolean | undefined; refreshConfig?: boolean | undefined; cavemanEnabled?: string | undefined }) => {
     if (opts.scope !== undefined && opts.scope !== "global" && opts.scope !== "project") {
       console.error(`Error: --scope must be \"global\" or \"project\", got: \"${opts.scope}\"`)
       process.exit(1)
     }
 
-    runCliUpgrade({
+    const cavemanEnabled = typeof opts.cavemanEnabled === "string"
+      ? parseYesNoOption("--caveman-enabled", opts.cavemanEnabled)
+      : undefined
+
+    const upgradeArgs = {
       scope: (opts.scope as InstallScope | undefined) ?? "global",
       dryRun: opts.dryRun === true,
       refreshConfig: opts.refreshConfig === true,
-    }).then((exitCode) => {
+      ...(cavemanEnabled !== undefined ? { cavemanEnabled } : {}),
+    }
+
+    runCliUpgrade(upgradeArgs).then((exitCode) => {
       process.exit(exitCode)
     })
   })
@@ -213,6 +230,7 @@ program
   .option("--design-path <path>", "Path for DESIGN.md file", "./DESIGN.md")
   .option("--stitch-setup <reuse|project-local|skip>", "Stitch MCP setup mode (reuse, project-local, skip)")
   .option("--stitch-api-key-file <path>", "Path to file containing Stitch API key")
+  .option("--caveman-enabled <yes|no>", "Enable project-default caveman mode during init")
   .addHelpText(
     "after",
     [
@@ -234,6 +252,7 @@ program
     designPath?: string | undefined
     stitchSetup?: string | undefined
     stitchApiKeyFile?: string | undefined
+    cavemanEnabled?: string | undefined
   }) => {
     let docsEnabled: boolean | undefined
     if (typeof opts.docsEnabled === "string") {
@@ -247,6 +266,10 @@ program
         process.exit(1)
       }
     }
+
+    const cavemanEnabled = typeof opts.cavemanEnabled === "string"
+      ? parseYesNoOption("--caveman-enabled", opts.cavemanEnabled)
+      : undefined
 
     if (typeof opts.designTool === "string" && opts.designTool !== "none" && opts.designTool !== "google-stitch") {
       console.error(`Error: --design-tool must be "none" or "google-stitch", got: "${opts.designTool}"`)
@@ -274,6 +297,7 @@ program
       designPath?: string
       stitchSetup?: string
       stitchApiKeyFile?: string
+      cavemanEnabled?: boolean
     } = {
       noTui: !opts.tui,
     }
@@ -285,6 +309,7 @@ program
     if (opts.designPath !== undefined) initOptions.designPath = opts.designPath
     if (opts.stitchSetup !== undefined) initOptions.stitchSetup = opts.stitchSetup
     if (opts.stitchApiKeyFile !== undefined) initOptions.stitchApiKeyFile = opts.stitchApiKeyFile
+    if (cavemanEnabled !== undefined) initOptions.cavemanEnabled = cavemanEnabled
 
     const exitCode = await runInit(initOptions)
     process.exit(exitCode)

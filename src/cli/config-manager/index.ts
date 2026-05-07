@@ -175,6 +175,7 @@ const PROJECT_CONFIG_KEYS = [
   "designTool",
   "designPath",
   "designMcpOwnership",
+  "cavemanEnabled",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -199,6 +200,7 @@ const DEFAULT_INSTALL_CONFIG: InstallConfig = {
   designTool: "none",
   designPath: "./DESIGN.md",
   designMcpOwnership: "none",
+  cavemanEnabled: false,
 }
 
 const DEFAULT_GLOBAL_CONFIG: GlobalConfig = {
@@ -224,6 +226,7 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   designTool: DEFAULT_INSTALL_CONFIG.designTool ?? "none",
   designPath: DEFAULT_INSTALL_CONFIG.designPath ?? "./DESIGN.md",
   designMcpOwnership: DEFAULT_INSTALL_CONFIG.designMcpOwnership ?? "none",
+  cavemanEnabled: DEFAULT_INSTALL_CONFIG.cavemanEnabled ?? false,
 }
 
 export function getDefaultInstallConfig(): InstallConfig {
@@ -836,6 +839,7 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (isDesignTool(source["designTool"])) result.designTool = source["designTool"]
   if (typeof source["designPath"] === "string") result.designPath = source["designPath"]
   if (isDesignMcpOwnership(source["designMcpOwnership"])) result.designMcpOwnership = source["designMcpOwnership"]
+  if (typeof source["cavemanEnabled"] === "boolean") result.cavemanEnabled = source["cavemanEnabled"]
 
   return result
 }
@@ -1013,6 +1017,10 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
     `  // PRD pipeline mode: "filesystem" | "github"`,
     `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")},`,
+    ``,
+    `  // Communication mode`,
+    `  // Enable project-default caveman mode for terse, high-signal replies when compression preserves full value`,
+    `  "cavemanEnabled": ${JSON.stringify(config.cavemanEnabled ?? false)},`,
     ``,
     `  // Design workflow settings`,
     `  // Design tool: "none" | "google-stitch"`,

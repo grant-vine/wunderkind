@@ -203,7 +203,7 @@ describe("runInit interactive SOUL prompts", () => {
     const textAnswers = ["EU", "SaaS"]
     mockText.mockImplementation(async () => textAnswers.shift() ?? "")
 
-    const confirmAnswers = [true, false, true]
+    const confirmAnswers = [true, false, false]
     mockConfirm.mockImplementation(async () => confirmAnswers.shift() ?? false)
     mockMultiselect.mockImplementation(async () => ["product-wunderkind"])
 
@@ -235,7 +235,7 @@ describe("runInit interactive SOUL prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(10)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockMultiselect).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
@@ -250,6 +250,7 @@ describe("runInit interactive SOUL prompts", () => {
       expect(installConfig.orgStructure).toBe("hierarchical")
       expect(installConfig.docsEnabled).toBe(false)
       expect(installConfig.prdPipelineMode).toBe("filesystem")
+      expect(installConfig.cavemanEnabled).toBe(false)
 
       const soulPath = join(tempProject, ".wunderkind", "souls", "product-wunderkind.md")
       expect(existsSync(soulPath)).toBe(true)
@@ -442,7 +443,7 @@ describe("runInit interactive SOUL prompts", () => {
     try {
       const code = await runInit({})
       expect(code).toBe(0)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockSelect).toHaveBeenCalledTimes(6)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
@@ -459,6 +460,7 @@ describe("runInit interactive SOUL prompts", () => {
       expect(installConfig.ctoPersonality).toBe("startup-bro")
       expect(installConfig.legalPersonality).toBe("plain-english-counselor")
       expect(installConfig.prdPipelineMode).toBe("filesystem")
+      expect(installConfig.cavemanEnabled).toBe(false)
       expect(existsSync(join(tempProject, ".wunderkind", "souls"))).toBe(false)
     } finally {
       console.log = restoreLog
@@ -495,7 +497,7 @@ describe("runInit interactive SOUL prompts", () => {
       const code = await runInit({})
       expect(code).toBe(0)
       expect(mockSelect).toHaveBeenCalledTimes(7)
-      expect(mockConfirm).toHaveBeenCalledTimes(2)
+      expect(mockConfirm).toHaveBeenCalledTimes(3)
       expect(mockMultiselect).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
@@ -508,6 +510,7 @@ describe("runInit interactive SOUL prompts", () => {
       expect(installConfig.docsEnabled).toBe(true)
       expect(installConfig.docHistoryMode).toBe("append-dated")
       expect(installConfig.prdPipelineMode).toBe("github")
+      expect(installConfig.cavemanEnabled).toBe(true)
     } finally {
       console.log = restoreLog
       process.chdir(originalCwd)

@@ -35,6 +35,7 @@ export interface InitOptions {
   designPath?: string
   stitchSetup?: string
   stitchApiKeyFile?: string
+  cavemanEnabled?: boolean
 }
 
 type DesignWorkflowToggle = "no" | "yes"
@@ -640,6 +641,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       designTool: persisted?.designTool ?? detected.designTool,
       designPath: persisted?.designPath ?? detected.designPath,
       designMcpOwnership: persisted?.designMcpOwnership ?? detected.designMcpOwnership,
+      cavemanEnabled: options.cavemanEnabled ?? persisted?.cavemanEnabled ?? detected.cavemanEnabled ?? false,
     }
 
     if (!noTui) {
@@ -804,10 +806,18 @@ export async function runInit(options: InitOptions): Promise<number> {
       config.secondaryRegulation = secondaryRegulation
       config.teamCulture = teamCulture
       config.orgStructure = orgStructure
+      const cavemanEnabledRaw = await p.confirm({
+        message: "Enable project-default caveman mode when terse replies preserve full value?",
+        initialValue: config.cavemanEnabled ?? false,
+      })
+      if (p.isCancel(cavemanEnabledRaw)) return 1
+      const cavemanEnabled = cavemanEnabledRaw
+
       config.docsEnabled = docsEnabled
       config.docsPath = docsPath
       config.docHistoryMode = docHistoryMode
       config.prdPipelineMode = prdPipelineMode
+      config.cavemanEnabled = cavemanEnabled
 
       const enableDesignWorkflow = await promptSelect<DesignWorkflowToggle>(
         "Enable design workflow?",
@@ -925,6 +935,8 @@ export async function runInit(options: InitOptions): Promise<number> {
         }
       }
     }
+
+    config.cavemanEnabled = options.cavemanEnabled ?? config.cavemanEnabled ?? false
 
     config.designTool = designTool
     config.designPath = designPath
