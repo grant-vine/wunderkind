@@ -117,6 +117,11 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
   "product-wunderkind": {
     commands: [
       {
+        command: "/setup-wunderkind-workflow",
+        summary: "Establish the repo-local workflow contract for issue flow, triage vocabulary, glossary/docs locations, and `.sisyphus/` artifact conventions.",
+        details: ["Invoke via `skill(name=\"setup-wunderkind-workflow\")` to adapt Matt-style setup patterns to Wunderkind-native locations such as `AGENTS.md` and `.sisyphus/`."],
+      },
+      {
         command: "/breakdown <task>",
         summary: "Invoke via `skill(name=\"agile-pm\")` for concern-grouped, parallel-safe subtasks with file targets and dependency order.",
       },
@@ -146,7 +151,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
-          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"ubiquitous-language\")`, and `skill(name=\"triage-issue\")` for deep product work.",
+          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"triage-issue\")`, and `skill(name=\"setup-wunderkind-workflow\")` for deep product workflow setup and discovery work. Use `skill(name=\"ubiquitous-language\")` narrowly for glossary maintenance and naming alignment.",
           "Invoke via `skill(name=\"agile-pm\")` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.",
         ],
       },
@@ -184,6 +189,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         command: "/architecture-review <component>",
         summary: "Assess separation of concerns, coupling, traps, and minimal refactor steps with effort and risk.",
+        details: ["Invoke via `skill(name=\"improve-codebase-architecture\")` for deep module/RFC work using seam, depth, locality, and deletion-test framing."],
       },
       {
         command: "/supportability-review <service>",
@@ -201,6 +207,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
           "Invoke via `skill(name=\"tdd\")` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
           "Invoke via `skill(name=\"vercel-architect\")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",
           "Invoke via `skill(name=\"db-architect\")` for schema design, query analysis, migrations, and index auditing.",
+          "Invoke via `skill(name=\"improve-codebase-architecture\")` for deep-module RFCs, seam design, and structural refactoring plans.",
         ],
       },
       {

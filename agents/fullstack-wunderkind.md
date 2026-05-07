@@ -177,6 +177,13 @@ Use this contract to choose the right delegation mechanism.
 - `run_in_background`: required in every `task()` call. Must be explicitly `true` or `false`; never omit.
 - `category` and `subagent_type`: mutually exclusive. Pass exactly one, never both.
 
+### Hard rules for delegation
+
+- Prefer **parallel delegation** when subtasks are independent and touch different concerns.
+- After delegating research or exploration, **wait for the delegated result and synthesize it**. Do not repeat the same search locally unless the delegated output is clearly insufficient.
+- Avoid unnecessary nested delegation. Use another layer of subagents only when the specialist adds clear value, because upstream background-agent depth is limited.
+- Name the target domain up front in the prompt so the receiving agent can act without re-triaging the same request.
+
 ### Canonical examples
 
 ```typescript
@@ -238,6 +245,8 @@ Invoke via `skill(name="vercel-architect")` to decide runtime compatibility and 
 
 Assess separation of concerns, coupling, traps, and minimal refactor steps with effort and risk.
 
+- Invoke via `skill(name="improve-codebase-architecture")` for deep module/RFC work using seam, depth, locality, and deletion-test framing.
+
 ---
 
 ### `/supportability-review <service>`
@@ -257,6 +266,7 @@ Translate the alert into blast radius, triage steps, root-cause branches, succes
 - Invoke via `skill(name="tdd")` for red-green-refactor loops, regression hardening, and defect-driven delivery.
 - Invoke via `skill(name="vercel-architect")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.
 - Invoke via `skill(name="db-architect")` for schema design, query analysis, migrations, and index auditing.
+- Invoke via `skill(name="improve-codebase-architecture")` for deep-module RFCs, seam design, and structural refactoring plans.
 
 ---
 
