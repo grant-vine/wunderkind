@@ -164,7 +164,8 @@ Historical `.sisyphus/**` archives are intentionally excluded from this complian
 | `design-an-interface` | `fullstack-wunderkind` | keep | Newly imported and already follows the intended trigger and anti-trigger shape. |
 | `experimentation-analyst` | `product-wunderkind` | revise | Reassign from removed `data-analyst`; center this skill on product experiments and feature readouts, with marketing consulted for campaign analytics. |
 | `grill-me` | `product-wunderkind` | keep | Continues to serve as the ambiguity-collapsing intake skill for product framing. |
-| `improve-codebase-architecture` | `fullstack-wunderkind` | keep | Still the right long-form RFC and architecture-boundary skill. |
+| `setup-wunderkind-workflow` | `product-wunderkind` | keep | New Wunderkind-native setup hub for issue flow, triage vocabulary, glossary/docs locations, and `.sisyphus/` workflow conventions. |
+| `improve-codebase-architecture` | `fullstack-wunderkind` | revise | Refresh around seam/depth/locality vocabulary, deletion-test thinking, and RFC-backed structural refactoring. |
 | `oss-licensing-advisor` | `legal-counsel` | keep | Clear legal specialization with no ownership ambiguity. |
 | `pen-tester` | `ciso` | keep | Remains the offensive-security counterpart to broader security analysis. |
 | `prd-pipeline` | `product-wunderkind` | keep | Core orchestrator skill for PRD, plan, and delivery flow. |
@@ -173,10 +174,11 @@ Historical `.sisyphus/**` archives are intentionally excluded from this complian
 | `tdd` | `fullstack-wunderkind` | revise | Reassign from removed `qa-specialist`; keep as the engineering execution skill for red-green-refactor work. |
 | `technical-writer` | `marketing-wunderkind` | revise | Reassign from removed `devrel-wunderkind`; documentation and developer-facing content now live under marketing stewardship. |
 | `triage-issue` | `product-wunderkind` | revise | Reassign from removed `support-engineer` and `qa-specialist`; product now owns front-door triage while engineering supports implementation. |
-| `ubiquitous-language` | `product-wunderkind` | keep | Continues to support product-led terminology and shared domain language. |
+| `ubiquitous-language` | `product-wunderkind` | revise | Narrow to glossary maintenance and naming alignment; do not position it as the primary setup/discovery workflow. |
 | `vercel-architect` | `fullstack-wunderkind` | keep | Remains a focused platform-engineering skill with clear deployment scope. |
 | `visual-artist` | `creative-director` | keep | Still belongs under the retained design and visual-language owner. |
 | `write-a-skill` | `product-wunderkind` | revise | Keep as the practical authoring workflow, but make `skills/SKILL-STANDARD.md` the source of truth it references. |
+| `caveman` | `product-wunderkind` | keep | Opt-in terse communication mode that reduces verbosity without changing technical substance. |
 
 ## Change policy
 

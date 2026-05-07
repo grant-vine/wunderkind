@@ -1,44 +1,52 @@
 ---
 name: ubiquitous-language
 description: >
-  USE FOR: shared terminology, domain glossary, DDD language, naming alignment,
-  canonical terms, ambiguous terms, synonym resolution, product vocabulary,
-  concept mapping, domain language, glossary generation.
+  USE FOR: glossary maintenance, shared terminology cleanup, naming alignment,
+  canonical terms, alias resolution, domain-language drift, and explicit updates
+  to `.sisyphus/glossary.md`.
 
 ---
 
 # Ubiquitous Language
 
-You create and maintain a shared domain glossary so humans and agents use the same words for the same concepts.
+Maintain a shared domain glossary so humans and agents keep using the same words for the same concepts.
+
+## Primary owner
 
 **Owned by:** wunderkind:product-wunderkind
-
-## When to use
-
-- Product discovery introduced new domain concepts
-- Multiple terms are being used for the same thing
-- One term is overloaded across different meanings
-- A PRD, plan, or architecture discussion needs cleaner language
 
 ## Output target
 
 Write or update `.sisyphus/glossary.md`.
 
+## When to trigger
+
+- A term is overloaded or ambiguous and the team needs a canonical definition.
+- Multiple aliases are drifting through PRDs, plans, code comments, or issues.
+- A rename or terminology cleanup needs the glossary updated.
+- Another skill or workflow already established the repo contract, and now the glossary itself needs maintenance.
+
+## Anti-triggers
+
+- Do not use this as the default repo setup workflow; prefer `setup-wunderkind-workflow` for initial workflow/domain setup.
+- Do not use it when the real need is a broader discovery interview; prefer `grill-me` or `prd-pipeline`.
+- Do not hide unresolved ambiguity. Mark it explicitly instead of guessing.
+
 ## What to capture
 
 - Canonical term
-- One-sentence definition
-- Common aliases / deprecated synonyms
-- Related terms and distinctions
-- Open ambiguities still needing resolution
+- Short concrete definition
+- Aliases or deprecated synonyms
+- Related distinctions that prevent future confusion
+- Open questions that still need human resolution
 
 ## Process
 
-1. Scan the conversation, PRD, plan, and relevant repo context.
-2. Extract candidate terms and detect collisions/synonyms.
-3. Choose canonical terms where possible.
-4. Flag unresolved ambiguity explicitly instead of hiding it.
-5. Update `.sisyphus/glossary.md` incrementally if it already exists.
+1. Scan the conversation, PRD, plan, issue, and relevant repo context.
+2. Extract candidate terms and detect collisions or synonym drift.
+3. Choose canonical terms where the evidence is strong.
+4. Mark unresolved ambiguity explicitly instead of forcing false consensus.
+5. Update `.sisyphus/glossary.md` incrementally.
 
 ## Formatting guidance
 
@@ -47,11 +55,15 @@ Prefer a compact markdown table:
 | Term | Definition | Aliases | Notes |
 |---|---|---|---|
 
-Then add an `## Open Questions` section if needed.
+Add an `## Open Questions` section when needed.
 
 ## Hard rules
 
 1. One term should map to one concept whenever possible.
 2. Do not silently merge distinct concepts just because the names sound similar.
 3. Definitions should be short, concrete, and domain-specific.
-4. If a term is unresolved, mark it unresolved instead of guessing.
+4. Keep this skill narrow: glossary quality and naming alignment, not full workflow setup.
+
+## Review gate
+
+This skill is complete only when `.sisyphus/glossary.md` reflects the canonical term decisions and unresolved ambiguities are clearly flagged.

@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.15.0  
+**Package:** `@grant-vine/wunderkind` v0.16.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal) into any OpenCode project via a `bunx`/`npx` interactive installer. Uses an orchestrator-first topology with `product-wunderkind` as the default front door.
@@ -19,7 +19,7 @@ wunderkind/
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── commands/                  # Shipped native command assets (currently docs-index)
-├── skills/                    # Static SKILL.md files for 20 shipped skills + SKILL-STANDARD.md
+├── skills/                    # Static SKILL.md files for 22 shipped skills + SKILL-STANDARD.md
 ├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
@@ -187,7 +187,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
 
-Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
+Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
 
 ---
 
@@ -245,6 +245,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — compatibility now prefers `oh-my-openagent.{json,jsonc}` and falls back to legacy `oh-my-opencode.{json,jsonc}` when inspecting dedicated OMO config files, while still probing the upstream executable through `bunx oh-my-opencode ...` until upstream package/CLI naming changes.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
+- **Caveman mode is project-configurable and chat-activatable** — `cavemanEnabled` can enable terse default replies per project, while any chat can still activate caveman mode explicitly without persisting it globally.
 - **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke any automated cleanup tool, Python scripts, or external package manager workflows. There is no config key for enabling automated cleanup; any stale config keys from older versions are silently ignored on read.
 - **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
 - **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.sisyphus/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.

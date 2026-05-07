@@ -133,6 +133,9 @@ Wunderkind exposes an explicit upgrade lifecycle command:
 
 ```bash
 wunderkind upgrade --scope=global
+
+# project-scope caveman default refresh
+wunderkind upgrade --scope=project --caveman-enabled=yes
 ```
 
 Current upgrade behavior:
@@ -140,6 +143,7 @@ Current upgrade behavior:
 - refreshes Wunderkind's shipped native command assets globally (e.g. `/docs-index`, `/dream`)
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
 - supports `--dry-run` and `--refresh-config` for safe testing
+- project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
 
 Older installs require `wunderkind upgrade` to receive the `/dream` command. `wunderkind doctor` will surface missing or stale command assets.
 
@@ -163,6 +167,7 @@ wunderkind init [options]
 | `--docs-history-mode <mode>` | Update style: `append-dated` (default), `overwrite`, `new-dated-file`, `overwrite-archive` | `append-dated` |
 | `--docs-enabled <yes\|no>` | Enable or disable documentation output | `no` |
 | `--no-tui` | Skip interactive prompts | (false) |
+| `--caveman-enabled <yes\|no>` | Enable project-default caveman mode during non-interactive init | (not set) |
 
 Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona. Those SOUL questions are now select-first with an explicit custom-answer fallback, show a compact persona banner before each persona block, and prefill current project-local SOUL answers when you rerun `init` on an already configured project. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
@@ -171,6 +176,10 @@ Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready
 
 If `prdPipelineMode` is absent in an older project config, Wunderkind treats it as `filesystem`.
+
+### Caveman Mode
+
+`wunderkind init` can optionally enable **project-default caveman mode**. When enabled, terse high-signal replies become the default for safe contexts where certain agents would still preserve the same value. Users can still enable caveman mode ad hoc in any chat by asking for it explicitly, even without project config.
 
 `wunderkind init` creates the following project "soul files":
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
@@ -380,15 +389,17 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `visual-artist` | creative-director | Colour palettes, design tokens, WCAG |
 | `agile-pm` | product-wunderkind | Sprint planning, task decomposition |
 | `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
-| `ubiquitous-language` | product-wunderkind | Shared domain glossary & canonical terminology |
+| `setup-wunderkind-workflow` | product-wunderkind | Repo-local workflow contract for issue flow, triage vocabulary, glossary/docs paths, and `.sisyphus` conventions |
+| `ubiquitous-language` | product-wunderkind | Glossary maintenance, canonical terminology, and naming alignment |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
 | `triage-issue` | product-wunderkind | Issue intake, repro shaping, acceptance clarity, and backlog-ready handoff |
 | `experimentation-analyst` | product-wunderkind | Product experiments, feature readouts, and statistical interpretation |
 | `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
+| `caveman` | product-wunderkind | Opt-in terse response mode for low-token, high-signal output |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
-| `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, module boundaries, deep modules |
+| `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |
 | `design-an-interface` | fullstack-wunderkind | High-complexity API and abstraction design |
 | `tdd` | fullstack-wunderkind | Red-green-refactor loops for Bun + strict TypeScript |
 | `security-analyst` | ciso | OWASP Top 10, vulnerability assessment |
@@ -457,7 +468,10 @@ Edit the global file to change region/industry/regulation defaults after install
   "docHistoryMode": "append-dated",
 
   // PRD / planning workflow mode
-  "prdPipelineMode": "filesystem"
+  "prdPipelineMode": "filesystem",
+
+  // Enable project-default caveman mode for terse, high-signal replies when value is preserved
+  "cavemanEnabled": false
 }
 ```
 
