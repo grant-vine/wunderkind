@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.0
+
+- add project-configurable caveman mode with init/upgrade/doctor support while keeping caveman available per chat globally
+- upgrade OpenCode and oh-my-openagent integration surfaces with compaction continuity, stronger delegation guidance, and refreshed retained-agent prompts
+- add setup-wunderkind-workflow, refresh improve-codebase-architecture, and narrow ubiquitous-language to glossary maintenance
+
 ## 0.15.1
 
 - surface OMO drift warnings in the interactive installer so TUI and non-interactive install paths stay aligned
