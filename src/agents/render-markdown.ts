@@ -1,5 +1,6 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { WunderkindAgentDefinition } from "./manifest.js"
+import { readOwnPackageVersion, WUNDERKIND_AGENT_VERSION_FRONTMATTER_KEY } from "./versioning.js"
 
 function renderMultilineScalar(value: string): string {
   const normalized = value.replace(/\r\n/g, "\n").trim()
@@ -25,10 +26,12 @@ function renderPermissionBlock(permission: AgentConfig["permission"]): string[] 
 
 export function renderNativeAgentMarkdown(definition: WunderkindAgentDefinition): string {
   const config = definition.factory("")
+  const ownVersion = readOwnPackageVersion()
   const frontmatter = [
     "---",
     "description: >",
     renderMultilineScalar(`${definition.roleLabel} — ${definition.summary}`),
+    ...(ownVersion ? [`${WUNDERKIND_AGENT_VERSION_FRONTMATTER_KEY}: "${ownVersion}"`] : []),
     `mode: ${definition.factory.mode}`,
     ...(typeof config.temperature === "number" ? [`temperature: ${config.temperature}`] : []),
     ...renderPermissionBlock(config.permission),

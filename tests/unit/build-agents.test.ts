@@ -7,6 +7,8 @@ import { renderNativeAgentMarkdown } from "../../src/agents/render-markdown.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "../../src/agents/slash-commands.js"
 
 const AGENTS_DIR = fileURLToPath(new URL("../../agents/", import.meta.url))
+const PACKAGE_JSON_PATH = fileURLToPath(new URL("../../package.json", import.meta.url))
+const PACKAGE_VERSION = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf-8")).version as string
 
 describe("build-agents script", () => {
   it("regenerates every shipped agent markdown file from the manifest", async () => {
@@ -51,6 +53,7 @@ describe("build-agents script", () => {
     const fullstack = readFileSync(join(AGENTS_DIR, "fullstack-wunderkind.md"), "utf-8")
 
     expect(marketing).toContain("---\ndescription: >")
+    expect(marketing).toContain(`wunderkind_version: "${PACKAGE_VERSION}"`)
     expect(marketing).toContain("mode: all")
     expect(marketing).toContain("# Marketing Wunderkind — Soul")
     expect(marketing).toContain("## SOUL Maintenance (.wunderkind/souls/)")
