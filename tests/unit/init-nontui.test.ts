@@ -87,6 +87,7 @@ const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({ kind, dir: "/tmp", dirPresent: false, markerPath: "/tmp/.wunderkind-version.json", markerPresent: false, installedVersion: null, currentVersion: null, needsUpgrade: false }),
   readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
@@ -434,6 +435,7 @@ describe("runInit non-interactive branching", () => {
       expect(writtenConfig.docHistoryMode).toBe("append-dated")
 
       expect(existsSync(join(tempProject, "AGENTS.md"))).toBe(true)
+      expect(existsSync(join(tempProject, "CONTEXT.md"))).toBe(true)
       expect(existsSync(join(tempProject, ".sisyphus", "plans"))).toBe(true)
       expect(existsSync(join(tempProject, ".sisyphus", "notepads"))).toBe(true)
       expect(existsSync(join(tempProject, ".sisyphus", "evidence"))).toBe(true)

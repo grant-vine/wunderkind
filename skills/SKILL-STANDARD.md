@@ -164,6 +164,7 @@ Historical `.sisyphus/**` archives are intentionally excluded from this complian
 | `design-an-interface` | `fullstack-wunderkind` | keep | Newly imported and already follows the intended trigger and anti-trigger shape. |
 | `experimentation-analyst` | `product-wunderkind` | revise | Reassign from removed `data-analyst`; center this skill on product experiments and feature readouts, with marketing consulted for campaign analytics. |
 | `grill-me` | `product-wunderkind` | keep | Continues to serve as the ambiguity-collapsing intake skill for product framing. |
+| `docs-with-grill` | `product-wunderkind` | keep | Context-aware documentation grilling that uses literal `CONTEXT.md` plus repo inspection before final docs writing. |
 | `setup-wunderkind-workflow` | `product-wunderkind` | keep | New Wunderkind-native setup hub for issue flow, triage vocabulary, glossary/docs locations, and `.sisyphus/` workflow conventions. |
 | `improve-codebase-architecture` | `fullstack-wunderkind` | revise | Refresh around seam/depth/locality vocabulary, deletion-test thinking, and RFC-backed structural refactoring. |
 | `oss-licensing-advisor` | `legal-counsel` | keep | Clear legal specialization with no ownership ambiguity. |

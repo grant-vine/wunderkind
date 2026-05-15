@@ -20,6 +20,7 @@ Establish the repo-local workflow contract that other Wunderkind skills depend o
 
 Read:
 - `AGENTS.md`
+- `CONTEXT.md`
 - `.wunderkind/wunderkind.config.jsonc`
 - `.sisyphus/`
 - docs-output settings if present
@@ -27,6 +28,7 @@ Read:
 
 Write:
 - `AGENTS.md` (update or add a compact workflow-contract section)
+- `CONTEXT.md` (compact current product/domain context for future docs and grilling work)
 - `.sisyphus/glossary.md`
 - `.sisyphus/triage/README.md`
 
@@ -54,7 +56,7 @@ Walk these one at a time, not all at once:
 ## Process
 
 1. Explore the current repo state before proposing anything.
-2. Summarize what already exists in `AGENTS.md`, `.wunderkind/`, `.sisyphus/`, and GitHub readiness.
+2. Summarize what already exists in `AGENTS.md`, `CONTEXT.md`, `.wunderkind/`, `.sisyphus/`, and GitHub readiness.
 3. Present one setup decision at a time, with a short explainer and a recommended default.
 4. Show the user the draft workflow contract before writing.
 5. Write the agreed contract into Wunderkind-native locations.
@@ -68,6 +70,10 @@ Add or update a compact section summarizing:
 - triage vocabulary
 - glossary / architecture-doc locations
 
+### `CONTEXT.md`
+
+Create or refresh the compact shared context file that future docs-grilling, planning, and handoff workflows should read first. Keep it short, current, and domain-focused.
+
 ### `.sisyphus/triage/README.md`
 
 Record the canonical triage vocabulary and where issue/triage artifacts should live.
@@ -79,10 +85,10 @@ Create or refresh the shared domain glossary if terminology setup is part of the
 ## Hard rules
 
 1. Preserve existing repo conventions where possible; do not flatten them into generic defaults.
-2. Prefer Wunderkind-native locations (`AGENTS.md`, `.sisyphus/*`) over Matt's `docs/agents/*` layout.
+2. Prefer Wunderkind-native locations (`AGENTS.md`, `CONTEXT.md`, `.sisyphus/*`) over Matt's `docs/agents/*` layout.
 3. Confirm each decision with the user before writing.
 4. Keep the written contract concise enough that other skills can read it quickly.
 
 ## Review gate
 
-This skill is complete only when the repo has an explicit, readable workflow contract in `AGENTS.md`, triage conventions are written under `.sisyphus/triage/`, and glossary ownership/location is no longer ambiguous.
+This skill is complete only when the repo has an explicit, readable workflow contract in `AGENTS.md`, the compact shared context in `CONTEXT.md`, triage conventions are written under `.sisyphus/triage/`, and glossary ownership/location is no longer ambiguous.

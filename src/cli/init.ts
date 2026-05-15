@@ -50,6 +50,31 @@ This file documents the AI agents configured for this project via Wunderkind.
 Run \`wunderkind doctor\` to see current agent configuration and status.
 `
 
+const CONTEXT_MD_PLACEHOLDER = `# Project Context
+
+This file captures the compact shared context for this project. Keep it current when the core product/domain framing changes.
+
+## Product and domain summary
+- What problem is this project solving?
+- Who is it for?
+- What counts as success?
+
+## Core workflows
+- What user or operator workflows matter most right now?
+- Where does the product currently feel brittle or unclear?
+
+## Shared language
+- Canonical terms the team should use
+- Ambiguous terms to avoid
+
+## Important constraints
+- Compliance, security, or business constraints that keep showing up
+- Technical seams or architectural boundaries other agents should respect
+
+## Open questions
+- Questions that still need decisions before docs, PRDs, or implementation can settle
+`
+
 function ensureDir(path: string): void {
   mkdirSync(path, { recursive: true })
 }
@@ -1013,6 +1038,7 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
 
     ensureFile(join(cwd, "AGENTS.md"), AGENTS_MD_PLACEHOLDER)
+    ensureFile(join(cwd, "CONTEXT.md"), CONTEXT_MD_PLACEHOLDER)
     ensureDir(join(cwd, ".sisyphus", "plans"))
     ensureDir(join(cwd, ".sisyphus", "notepads"))
     ensureDir(join(cwd, ".sisyphus", "evidence"))

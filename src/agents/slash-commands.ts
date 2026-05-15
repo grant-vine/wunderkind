@@ -122,6 +122,11 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
         details: ["Invoke via `skill(name=\"setup-wunderkind-workflow\")` to adapt Matt-style setup patterns to Wunderkind-native locations such as `AGENTS.md` and `.sisyphus/`."],
       },
       {
+        command: "/docs-with-grill <topic>",
+        summary: "Stress-test a docs or product topic against repo context, update `CONTEXT.md` when needed, and prepare Wunderkind-native documentation follow-up.",
+        details: ["Invoke via `skill(name=\"docs-with-grill\")` for one-question-at-a-time context grilling that inspects the repo before asking and treats `CONTEXT.md` as the compact shared context lane."],
+      },
+      {
         command: "/breakdown <task>",
         summary: "Invoke via `skill(name=\"agile-pm\")` for concern-grouped, parallel-safe subtasks with file targets and dependency order.",
       },
@@ -151,7 +156,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
-          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"triage-issue\")`, and `skill(name=\"setup-wunderkind-workflow\")` for deep product workflow setup and discovery work. Use `skill(name=\"ubiquitous-language\")` narrowly for glossary maintenance and naming alignment.",
+          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"docs-with-grill\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"triage-issue\")`, and `skill(name=\"setup-wunderkind-workflow\")` for deep product workflow setup, context-aware docs grilling, and discovery work. Use `skill(name=\"ubiquitous-language\")` narrowly for glossary maintenance and naming alignment.",
           "Invoke via `skill(name=\"agile-pm\")` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.",
         ],
       },
