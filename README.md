@@ -25,7 +25,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 |---|---|---|
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
-| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, docs README |
+| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`, docs README |
 | `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
@@ -38,7 +38,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 Wunderkind distinguishes between **installing** the plugin and **initializing** a project:
 
 1. **Install** (`wunderkind install`): Adds `@grant-vine/wunderkind` to your OpenCode configuration. This makes the agents available to your AI assistant. You typically do this once globally.
-2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates or updates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, optional project-local SOUL files, and optional documentation output folders.
+2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates or updates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, the compact shared `CONTEXT.md` lane, optional project-local SOUL files, and optional documentation output folders.
 
 ---
 
@@ -72,12 +72,12 @@ bunx @grant-vine/wunderkind install
 or
 
 The TUI will guide you through:
-1. Checking for oh-my-openagent first, then auto-running `bunx oh-my-opencode install` when the upstream CLI is available and OMO is missing.
+1. Checking for oh-my-openagent first, then auto-running `bunx oh-my-openagent install` when the upstream CLI is available and OMO is missing.
 2. Selecting the install scope (Global vs Project).
 3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
-> Note: upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`.
+> Note: upstream now prefers `oh-my-openagent` for plugin entries, OMO config basenames, and public install commands. Legacy `oh-my-opencode` aliases and schema filenames may still appear during the transition.
 >
 > Wunderkind now ships both `oh-my-openagent.jsonc` (canonical) and `oh-my-opencode.jsonc` (legacy compatibility) template assets. Prefer the canonical file for new setups.
 
@@ -87,7 +87,7 @@ For CI/CD or scripted environments, use the `install` command with the `--no-tui
 
 > **oh-my-openagent must already be installed** before running non-interactive mode. If it isn't, install it first:
 > ```bash
-> bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes
+> bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes
 > ```
 > Wunderkind now performs this OMO readiness check up front during non-interactive `install` and `upgrade`, and exits early with the upstream install command when OMO is missing.
 >
@@ -141,6 +141,8 @@ wunderkind upgrade --scope=project --caveman-enabled=yes
 Current upgrade behavior:
 - refreshes Wunderkind native agents and native skills in the requested scope
 - refreshes Wunderkind's shipped native command assets globally (e.g. `/docs-index`, `/dream`)
+- rewrites Wunderkind-managed native-asset version markers so `doctor` can detect stale installed files
+- embeds a Wunderkind version value in generated native agent markdown so `doctor` can compare installed agent files too
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
 - supports `--dry-run` and `--refresh-config` for safe testing
 - project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
@@ -184,6 +186,7 @@ If `prdPipelineMode` is absent in an older project config, Wunderkind treats it 
 `wunderkind init` creates the following project "soul files":
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
 - `AGENTS.md` — Project knowledge base for agents
+- `CONTEXT.md` — Compact shared context for docs grilling, planning, and future skill compatibility
 - `.sisyphus/` — Directory for agent planning, notepads, and evidence
 - `<docsPath>/README.md` — Auto-generated documentation index (if enabled)
 
@@ -241,6 +244,8 @@ wunderkind doctor
 `wunderkind doctor` reports:
 - Installed version and scope (Global vs Project)
 - Detected Wunderkind and OMO version state
+- Whether installed native agents/commands/skills look stale and should be refreshed via `wunderkind upgrade`
+- Whether installed native agent markdown versions drift from the current Wunderkind package
 - Location of configuration files
 - Presence and status of project soul files (in a project context)
 - Current Documentation Output configuration and index status
@@ -389,6 +394,7 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `visual-artist` | creative-director | Colour palettes, design tokens, WCAG |
 | `agile-pm` | product-wunderkind | Sprint planning, task decomposition |
 | `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
+| `docs-with-grill` | product-wunderkind | Repo-aware docs grilling with `CONTEXT.md` maintenance |
 | `setup-wunderkind-workflow` | product-wunderkind | Repo-local workflow contract for issue flow, triage vocabulary, glossary/docs paths, and `.sisyphus` conventions |
 | `ubiquitous-language` | product-wunderkind | Glossary maintenance, canonical terminology, and naming alignment |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |

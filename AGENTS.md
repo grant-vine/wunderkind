@@ -34,6 +34,7 @@ wunderkind/
 
 ```
 <project-root>/
+├── CONTEXT.md                  # Compact shared product/domain context for docs grilling and future skill compatibility
 └── .wunderkind/                 # Per-project config + state (gitignored)
     └── wunderkind.config.jsonc  # Per-project config override
 ```
@@ -76,7 +77,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 - **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
 - **`upgrade`** (`src/cli/cli-installer.ts`) — Refreshes Wunderkind-owned native agents and skills for the selected scope, plus global native commands.
 - **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to `.gitignore` idempotently.
-- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
+- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
 - **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.sisyphus/`, docs output, and shared global native assets intact.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
 - **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
@@ -187,7 +188,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
 
-Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
+Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `docs-with-grill` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
 
 ---
 
@@ -240,9 +241,9 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
-- **oh-my-openagent must be installed before wunderkind** — upstream now prefers `oh-my-openagent` for plugin entries and OMO config basenames, while the npm package and CLI command still remain `oh-my-opencode`. Wunderkind now centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-opencode install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead.
+- **oh-my-openagent must be installed before wunderkind** — upstream now prefers `oh-my-openagent` for plugin entries, config basenames, and public install commands, while legacy aliases and schema filenames may still appear during transition. Wunderkind now centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
-- **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — compatibility now prefers `oh-my-openagent.{json,jsonc}` and falls back to legacy `oh-my-opencode.{json,jsonc}` when inspecting dedicated OMO config files, while still probing the upstream executable through `bunx oh-my-opencode ...` until upstream package/CLI naming changes.
+- **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — compatibility now prefers `oh-my-openagent.{json,jsonc}` and falls back to legacy `oh-my-opencode.{json,jsonc}` when inspecting dedicated OMO config files, while install/upgrade guidance should prefer `bunx oh-my-openagent ...` and only mention legacy aliases as compatibility notes.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
 - **Caveman mode is project-configurable and chat-activatable** — `cavemanEnabled` can enable terse default replies per project, while any chat can still activate caveman mode explicitly without persisting it globally.
@@ -296,3 +297,17 @@ All test files must use `new URL("../../", import.meta.url).pathname` to derive 
 | `src/cli/index.ts` | (absent) | Pure Commander.js wiring with `process.exit()` — subprocess-tested via `cli-help-text.test.ts` |
 
 Full details and coverage snapshot: `.sisyphus/notepads/unit-testing/learnings.md`.
+
+
+## SUPPORTING TOOLS UPGRADE WORKFLOW
+
+When upgrading Wunderkind against upstream support tooling (`oh-my-openagent`, OpenCode, `@opencode-ai/plugin`, or adopted external skill repos), follow this sequence:
+
+1. Verify current upstream versions and release notes before touching `package.json`.
+2. Classify changes into: dependency/runtime, naming/config migration, lifecycle UX (`install`/`upgrade`/`doctor`), and prompt/skill opportunity.
+3. Prefer canonical upstream names in new output, while preserving documented legacy compatibility where the repo contract already promises it.
+4. Adapt external workflow ideas into Wunderkind-native artifacts first: `AGENTS.md`, `CONTEXT.md`, `.sisyphus/*`, and docs-output lanes — do not copy external filesystem layouts verbatim unless the repo explicitly adopts them.
+5. Ensure `wunderkind upgrade` refreshes all Wunderkind-managed native agents, commands, skills, and their installed-version markers.
+6. Ensure `wunderkind doctor` can detect stale installed native assets and tell the user when an upgrade is needed.
+7. Validate with `tsc --noEmit`, `bun test tests/unit/`, `bun run build`, and CLI help/doctor/upgrade checks before release metadata is touched.
+8. Keep `.claude-plugin/plugin.json` version-synced with `package.json` whenever a release version changes.
