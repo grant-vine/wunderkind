@@ -71,12 +71,12 @@ function makeOmoInstallReadiness(overrides: Partial<OmoInstallReadiness> = {}): 
     freshnessSummary: {
       state: "not-verified",
       guidance:
-        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
     },
     interactiveInstallCommand: "bunx oh-my-opencode install",
     nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
     guidance:
-      "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+      "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
     ...overrides,
   }
 }

@@ -10,6 +10,8 @@ import {
   detectNativeCommandFiles,
   detectNativeSkillFiles,
   detectCurrentConfig,
+  detectNativeAssetVersion,
+  detectNativeAgentMarkdownVersions,
   detectWunderkindVersionInfo,
   getNativeCommandFilePaths,
   getProjectOverrideMarker,
@@ -230,8 +232,31 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       globalOpenCodePath,
       projectOpenCodePath,
     })
+    const nativeAgentVersion = detectNativeAssetVersion("agents")
+    const nativeCommandVersion = detectNativeAssetVersion("commands")
+    const nativeSkillVersion = detectNativeAssetVersion("skills")
+    const nativeAgentMarkdownVersions = detectNativeAgentMarkdownVersions("global")
+    const staleNativeAssets = [
+      { kind: "agents", needsUpgrade: nativeAgentVersion.needsUpgrade || !nativeAgentMarkdownVersions.allCurrent },
+      { kind: "commands", needsUpgrade: nativeCommandVersion.needsUpgrade },
+      { kind: "skills", needsUpgrade: nativeSkillVersion.needsUpgrade },
+    ]
+      .filter((asset) => asset.needsUpgrade)
+      .map((asset) => asset.kind)
     line("wunderkind lifecycle:", color.dim(wunderkindUpgrade.lifecycle))
     line("wunderkind package refresh:", color.dim(wunderkindUpgrade.packageRefresh))
+    line(
+      "native agent markdown versions:",
+      nativeAgentMarkdownVersions.allCurrent
+        ? color.green("up to date")
+        : color.yellow(`upgrade recommended (${nativeAgentMarkdownVersions.staleAgentIds.join(", ")})`),
+    )
+    line(
+      "native asset freshness:",
+      staleNativeAssets.length > 0
+        ? color.yellow(`upgrade recommended (${staleNativeAssets.join(", ")})`)
+        : color.green("up to date"),
+    )
     line(
       "oh-my-openagent registration:",
       omoVersion.registered
@@ -275,8 +300,22 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
       line("global native agents dir:", `${status(globalNativeAgents.allPresent)} ${color.dim(globalNativeAgents.dir)}`)
+      line("global native agents version:", `${color.cyan(nativeAgentVersion.installedVersion ?? color.dim("unknown"))} ${color.dim(`(${nativeAgentVersion.markerPresent ? "marker present" : "marker missing"})`)}`)
+      line(
+        "global native agent markdown versions:",
+        nativeAgentMarkdownVersions.allCurrent
+          ? color.green(`up to date (${nativeAgentMarkdownVersions.currentVersion ?? "unknown"})`)
+          : color.yellow(
+              nativeAgentMarkdownVersions.agents
+                .filter((agent) => agent.filePresent && !agent.matchesCurrent)
+                .map((agent) => `${agent.id}@${agent.installedVersion ?? "missing"}`)
+                .join(", "),
+            ),
+      )
       line("global native commands dir:", `${status(globalNativeCommands.allPresent)} ${color.dim(globalNativeCommands.dir)}`)
+      line("global native commands version:", `${color.cyan(nativeCommandVersion.installedVersion ?? color.dim("unknown"))} ${color.dim(`(${nativeCommandVersion.markerPresent ? "marker present" : "marker missing"})`)}`)
       line("global native skills dir:", `${status(globalNativeSkills.allPresent)} ${color.dim(globalNativeSkills.dir)}`)
+      line("global native skills version:", `${color.cyan(nativeSkillVersion.installedVersion ?? color.dim("unknown"))} ${color.dim(`(${nativeSkillVersion.markerPresent ? "marker present" : "marker missing"})`)}`)
       line("global Wunderkind config:", `${status(globalConfigExists)} ${color.dim(globalConfigPath)}`)
       line("project Wunderkind config:", `${status(localConfigExists)} ${color.dim(localConfigPath)}`)
       if (omoVersion.configPath) {
@@ -346,6 +385,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const sisyphusPlansPath = join(cwd, ".sisyphus", "plans")
       const sisyphusNotepadsPath = join(cwd, ".sisyphus", "notepads")
       const sisyphusEvidencePath = join(cwd, ".sisyphus", "evidence")
+      const contextPath = join(cwd, "CONTEXT.md")
       const docsPath = join(cwd, detected.docsPath)
       const docsReadmePath = join(docsPath, "README.md")
       const designTool = projectConfig?.designTool ?? detected.designTool ?? "none"
@@ -364,6 +404,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const globalStitchEntry = getStitchEntry(globalOpenCodePath)
 
       const hasAgents = existsSync(agentsPath)
+      const hasContext = existsSync(contextPath)
       const hasPlans = existsSync(sisyphusPlansPath)
       const hasNotepads = existsSync(sisyphusNotepadsPath)
       const hasEvidence = existsSync(sisyphusEvidencePath)
@@ -374,6 +415,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
       if (!localConfigExists) warnings.push(`missing local config: ${localConfigPath}`)
       if (!hasAgents) warnings.push(`missing soul file: ${agentsPath}`)
+      if (localConfigExists && !hasContext) warnings.push(`missing project context file: ${contextPath}`)
       if (!hasPlans) warnings.push(`missing soul directory: ${sisyphusPlansPath}`)
       if (!hasNotepads) warnings.push(`missing soul directory: ${sisyphusNotepadsPath}`)
       if (!hasEvidence) warnings.push(`missing soul directory: ${sisyphusEvidencePath}`)
@@ -392,6 +434,19 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       }
       if (detected.globalInstalled === true && !globalNativeSkills.allPresent) {
         warnings.push(`missing native global skill files: ${globalNativeSkills.dir}`)
+      }
+      if (detected.globalInstalled === true) {
+        for (const asset of [nativeAgentVersion, nativeCommandVersion, nativeSkillVersion]) {
+          if (asset.needsUpgrade) {
+            warnings.push(`native ${asset.kind} were installed from ${asset.installedVersion ?? "an unknown version"}; current Wunderkind is ${asset.currentVersion ?? "unknown"}. Run ${wunderkindUpgrade.lifecycle}.`)
+          }
+        }
+
+        if (!nativeAgentMarkdownVersions.allCurrent) {
+          warnings.push(
+            `native agent markdown versions are stale for ${nativeAgentMarkdownVersions.staleAgentIds.join(", ")}; current Wunderkind is ${nativeAgentMarkdownVersions.currentVersion ?? "unknown"}. Run ${wunderkindUpgrade.lifecycle}.`,
+          )
+        }
       }
       if (designTool === "google-stitch" && !designFilePresent) {
         warnings.push(`design workflow is enabled but the design brief is missing: ${designFilePath}`)
@@ -416,6 +471,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       section(options.verbose ? "Project Health" : "Project health")
       line("cwd:", color.dim(cwd))
       line("AGENTS.md present:", status(hasAgents))
+      line("CONTEXT.md present:", status(hasContext))
       line(".sisyphus/plans present:", status(hasPlans))
       line(".sisyphus/notepads present:", status(hasNotepads))
       line(".sisyphus/evidence present:", status(hasEvidence))

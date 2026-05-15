@@ -78,6 +78,31 @@ const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
   totalCount: 11,
   allPresent: true,
 }))
+const mockDetectNativeAgentMarkdownVersions = mock(() => ({
+  currentVersion: "0.9.4",
+  agents: [
+    {
+      id: "product-wunderkind",
+      filePath: "/tmp/global-agents/product-wunderkind.md",
+      filePresent: true,
+      installedVersion: "0.9.4",
+      matchesCurrent: true,
+    },
+  ],
+  staleAgentIds: [],
+  missingVersionAgentIds: [],
+  allCurrent: true,
+}))
+const mockDetectNativeAssetVersion = mock((kind: "agents" | "commands" | "skills") => ({
+  kind,
+  dir: kind === "agents" ? "/tmp/global-agents" : kind === "commands" ? "/tmp/global-commands" : "/tmp/global-skills",
+  dirPresent: true,
+  markerPath: `/tmp/${kind}/.wunderkind-version.json`,
+  markerPresent: true,
+  installedVersion: "0.9.4",
+  currentVersion: "0.9.4",
+  needsUpgrade: false,
+}))
 const mockDetectWunderkindVersionInfo = mock<() => PluginVersionInfo>(() => ({
   packageName: "@grant-vine/wunderkind",
   currentVersion: "0.9.4" as string | null,
@@ -158,6 +183,8 @@ const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  detectNativeAgentMarkdownVersions: mockDetectNativeAgentMarkdownVersions,
+  detectNativeAssetVersion: mockDetectNativeAssetVersion,
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
   detectNativeCommandFiles: mockDetectNativeCommandFiles,
   detectNativeSkillFiles: mockDetectNativeSkillFiles,
@@ -166,7 +193,7 @@ const configManagerMockFactory = () => ({
     if (!versionInfo.registered) {
       return {
         state: "not-detected" as const,
-        guidance: "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
+        guidance: "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
       }
     }
 
@@ -180,7 +207,7 @@ const configManagerMockFactory = () => ({
     if (versionInfo.versionSkewWarning) {
       return {
         state: "version-skew" as const,
-        guidance: "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-opencode install`, then restart OpenCode so the active plugin matches upstream.",
+        guidance: "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-openagent install`, then restart OpenCode so the active plugin matches upstream.",
       }
     }
 
@@ -194,7 +221,7 @@ const configManagerMockFactory = () => ({
     if (!versionInfo.freshness || versionInfo.freshness.status === "unknown" || versionInfo.freshness.status === "error") {
       return {
         state: "not-verified" as const,
-        guidance: "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        guidance: "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
       }
     }
 
@@ -208,7 +235,7 @@ const configManagerMockFactory = () => ({
     if (versionInfo.freshness.status === "outdated") {
       return {
         state: "update-available" as const,
-        guidance: versionInfo.freshness.renderedOutput ?? "An oh-my-openagent plugin/config update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
+        guidance: versionInfo.freshness.renderedOutput ?? "An oh-my-openagent plugin/config update is available — run `bunx oh-my-openagent get-local-version` for the recommended command.",
       }
     }
 
@@ -314,6 +341,7 @@ async function captureDoctorOutput(options: { verbose?: boolean } = {}): Promise
 function writeProjectHealthFixture(projectPath: string): void {
   writeFileSync(join(projectPath, "package.json"), "{}")
   writeFileSync(join(projectPath, "AGENTS.md"), "# AGENTS\n")
+  writeFileSync(join(projectPath, "CONTEXT.md"), "# Context\n")
   mkdirSync(join(projectPath, ".sisyphus", "plans"), { recursive: true })
   mkdirSync(join(projectPath, ".sisyphus", "notepads"), { recursive: true })
   mkdirSync(join(projectPath, ".sisyphus", "evidence"), { recursive: true })
@@ -846,8 +874,9 @@ describe("runDoctor", () => {
     expect(code).toBe(0)
     expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=global"))).toBe(true)
     expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
+    expect(messages.some((m) => m.includes("native agent markdown versions:") && m.includes("up to date"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("oh-my-openagent plugin/config naming"))).toBe(true)
-    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-opencode"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-openagent"))).toBe(true)
   })
 
   it("shows project-scope wunderkind upgrade guidance when registration is project-only", async () => {
@@ -962,7 +991,7 @@ describe("runDoctor", () => {
     expect(code).toBe(0)
     expect(messages.some((m) => m.includes("oh-my-openagent reported current version:") && m.includes("3.17.6"))).toBe(true)
     expect(messages.some((m) => m.includes("oh-my-openagent freshness:") && m.includes("version skew detected"))).toBe(true)
-    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-opencode install"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-openagent install"))).toBe(true)
   })
 
   it("falls back cleanly when OMO freshness cannot be verified", async () => {

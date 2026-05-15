@@ -100,7 +100,7 @@ export interface UpgradeArgs {
 }
 
 function canAutoBootstrapOmoInTui(): boolean {
-  const result = spawnSync("bunx", ["oh-my-opencode", "--help"], {
+  const result = spawnSync("bunx", ["oh-my-openagent", "--help"], {
     encoding: "utf8",
     timeout: 1500,
     maxBuffer: 1024 * 32,
@@ -110,7 +110,7 @@ function canAutoBootstrapOmoInTui(): boolean {
 }
 
 export function runOmoInstallerForTui(): { success: boolean; error?: string } {
-  const result = spawnSync("bunx", ["oh-my-opencode", "install"], {
+  const result = spawnSync("bunx", ["oh-my-openagent", "install"], {
     stdio: "inherit",
   })
 
@@ -119,7 +119,7 @@ export function runOmoInstallerForTui(): { success: boolean; error?: string } {
   }
 
   if (result.status !== 0) {
-    return { success: false, error: `oh-my-opencode install exited with status ${result.status ?? "unknown"}` }
+    return { success: false, error: `oh-my-openagent install exited with status ${result.status ?? "unknown"}` }
   }
 
   return { success: true }

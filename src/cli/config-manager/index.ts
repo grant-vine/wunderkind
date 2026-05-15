@@ -6,6 +6,7 @@ import { parse as parseJsonc } from "jsonc-parser"
 import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
+import { readOwnPackageVersion, readWunderkindAgentMarkdownVersion } from "../../agents/versioning.js"
 import {
   getGeneratedRetainedNativeCommands,
   renderGeneratedRetainedNativeCommandMarkdown,
@@ -42,6 +43,9 @@ const PACKAGE_NAME = "@grant-vine/wunderkind"
 const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
 const OMO_CANONICAL_PACKAGE_NAME = "oh-my-openagent"
 const OMO_LEGACY_PACKAGE_NAME = "oh-my-opencode"
+const NATIVE_ASSET_VERSION_MARKER_FILENAME = ".wunderkind-version.json"
+
+type NativeAssetKind = "agents" | "commands" | "skills"
 
 function isDesignTool(value: unknown): value is DesignTool {
   return value === "none" || value === "google-stitch"
@@ -563,10 +567,6 @@ function buildStaleOverrideWarning(options: {
   return `global ${packageName} ${globalVersion} likely overrides newer cache ${cacheVersion}`
 }
 
-function getOwnPackageVersion(): string | null {
-  return readJsonVersion(fileURLToPath(new URL("../../../package.json", import.meta.url)))
-}
-
 export function detectPluginVersionInfo(packageName: string): PluginVersionInfo {
   const configResolution = resolveOpenCodeConfigPath("global")
   const configPath = existsSync(configResolution.path) ? configResolution.path : null
@@ -576,7 +576,7 @@ export function detectPluginVersionInfo(packageName: string): PluginVersionInfo 
 
   return {
     packageName,
-    currentVersion: packageName === PACKAGE_NAME ? getOwnPackageVersion() : null,
+    currentVersion: packageName === PACKAGE_NAME ? readOwnPackageVersion() : null,
     registeredEntry,
     registeredVersion: normalizeDependencyVersion(registeredEntry),
     loadedVersion: loaded.version,
@@ -667,10 +667,10 @@ export function detectOmoInstallReadiness(): OmoInstallReadiness {
     dualConfigWarning: versionInfo.dualConfigWarning ?? null,
     freshness: versionInfo.freshness ?? null,
     freshnessSummary,
-    interactiveInstallCommand: "bunx oh-my-opencode install",
-    nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
     guidance:
-      "upstream now prefers oh-my-openagent for plugin/config naming, but the package and CLI command still remain oh-my-opencode",
+      "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
   }
 }
 
@@ -681,7 +681,7 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
     return {
       state: "not-detected",
       guidance:
-        "oh-my-openagent plugin/config naming was not detected — keep using the oh-my-opencode package/CLI for installs until upstream renames those too.",
+        "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
     }
   }
 
@@ -697,7 +697,7 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
     return {
       state: "version-skew",
       guidance:
-        "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-opencode install`, then restart OpenCode so the active plugin matches upstream.",
+        "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-openagent install`, then restart OpenCode so the active plugin matches upstream.",
     }
   }
 
@@ -705,7 +705,7 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
     return {
       state: "not-verified",
       guidance:
-        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-opencode get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
     }
   }
 
@@ -722,7 +722,7 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
       state: "update-available",
       guidance:
         upgradeCommand ??
-        "An oh-my-openagent plugin/config update is available — run `bunx oh-my-opencode get-local-version` for the recommended command.",
+        "An oh-my-openagent plugin/config update is available — run `bunx oh-my-openagent get-local-version` for the recommended command.",
     }
   }
 
@@ -1343,6 +1343,117 @@ export function getNativeSkillDirectories(scope: InstallScope): string[] {
   return getPackagedSkillDirectories().map((source) => join(dir, basename(source)))
 }
 
+function getNativeAssetDir(kind: NativeAssetKind): string {
+  if (kind === "agents") return getNativeAgentDir()
+  if (kind === "commands") return getNativeCommandsDir()
+  return getNativeSkillsDir()
+}
+
+function getNativeAssetVersionMarkerPath(kind: NativeAssetKind): string {
+  return join(getNativeAssetDir(kind), NATIVE_ASSET_VERSION_MARKER_FILENAME)
+}
+
+function writeNativeAssetVersionMarker(targetDir: string, kind: NativeAssetKind): void {
+  const payload = {
+    package: PACKAGE_NAME,
+    kind,
+    version: readOwnPackageVersion(),
+    writtenAt: new Date().toISOString(),
+  }
+
+  writeFileSync(join(targetDir, NATIVE_ASSET_VERSION_MARKER_FILENAME), `${JSON.stringify(payload, null, 2)}
+`, "utf-8")
+}
+
+function readNativeAssetVersionMarker(markerPath: string): { version: string | null } {
+  try {
+    const parsed = JSON.parse(readFileSync(markerPath, "utf-8")) as unknown
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { version: null }
+    }
+
+    const version = (parsed as Record<string, unknown>).version
+    return { version: typeof version === "string" ? version : null }
+  } catch {
+    return { version: null }
+  }
+}
+
+export function detectNativeAssetVersion(kind: NativeAssetKind): {
+  kind: NativeAssetKind
+  dir: string
+  dirPresent: boolean
+  markerPath: string
+  markerPresent: boolean
+  installedVersion: string | null
+  currentVersion: string | null
+  needsUpgrade: boolean
+} {
+  const dir = getNativeAssetDir(kind)
+  const markerPath = getNativeAssetVersionMarkerPath(kind)
+  const dirPresent = existsSync(dir)
+  const markerPresent = existsSync(markerPath)
+  const installedVersion = markerPresent ? readNativeAssetVersionMarker(markerPath).version : null
+  const currentVersion = readOwnPackageVersion()
+  const needsUpgrade =
+    dirPresent &&
+    currentVersion !== null &&
+    (!markerPresent || installedVersion === null || compareVersions(installedVersion, currentVersion) !== 0)
+
+  return {
+    kind,
+    dir,
+    dirPresent,
+    markerPath,
+    markerPresent,
+    installedVersion,
+    currentVersion,
+    needsUpgrade,
+  }
+}
+
+export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
+  currentVersion: string | null
+  agents: Array<{
+    id: string
+    filePath: string
+    filePresent: boolean
+    installedVersion: string | null
+    matchesCurrent: boolean
+  }>
+  staleAgentIds: string[]
+  missingVersionAgentIds: string[]
+  allCurrent: boolean
+} {
+  void scope
+
+  const currentVersion = readOwnPackageVersion()
+  const agents = WUNDERKIND_AGENT_DEFINITIONS.map((definition) => {
+    const filePath = join(getNativeAgentDir(), `${definition.id}.md`)
+    const filePresent = existsSync(filePath)
+    const installedVersion = filePresent ? readWunderkindAgentMarkdownVersion(filePath) : null
+    const matchesCurrent = currentVersion !== null && installedVersion === currentVersion
+
+    return {
+      id: definition.id,
+      filePath,
+      filePresent,
+      installedVersion,
+      matchesCurrent,
+    }
+  })
+
+  const staleAgents = agents.filter((agent) => agent.filePresent && !agent.matchesCurrent)
+
+  return {
+    currentVersion,
+    agents,
+    staleAgentIds: staleAgents.map((agent) => agent.id),
+    missingVersionAgentIds: staleAgents.filter((agent) => agent.installedVersion === null).map((agent) => agent.id),
+    allCurrent: staleAgents.length === 0,
+  }
+}
+
 function copyFileSet(sourceFiles: string[], sourceRoot: string, targetRoot: string): void {
   mkdirSync(targetRoot, { recursive: true })
   for (const sourceFile of sourceFiles) {
@@ -1362,6 +1473,7 @@ export function writeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
     for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
       writeFileSync(join(targetDir, `${definition.id}.md`), renderNativeAgentMarkdown(definition), "utf-8")
     }
+    writeNativeAssetVersionMarker(targetDir, "agents")
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -1394,6 +1506,7 @@ export function writeNativeCommandFiles(): ConfigMergeResult {
       )
     }
 
+    writeNativeAssetVersionMarker(targetDir, "commands")
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -1409,6 +1522,7 @@ export function writeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   try {
     const sourceFiles = skillDirs.flatMap((skillDir) => collectFilesRecursively(skillDir))
     copyFileSet(sourceFiles, sourceRoot, targetDir)
+    writeNativeAssetVersionMarker(targetDir, "skills")
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -1449,6 +1563,7 @@ export function detectNativeSkillFiles(scope: InstallScope): { dir: string; pres
 export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
   const filePaths = getNativeAgentFilePaths(scope)
   const targetDir = getNativeAgentDir()
+  const markerPath = getNativeAssetVersionMarkerPath("agents")
 
   try {
     let changed = false
@@ -1457,6 +1572,11 @@ export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
         rmSync(filePath, { force: true })
         changed = true
       }
+    }
+
+    if (existsSync(markerPath)) {
+      rmSync(markerPath, { force: true })
+      changed = true
     }
 
     if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
@@ -1473,6 +1593,7 @@ export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
 export function removeNativeCommandFiles(): ConfigMergeResult {
   const filePaths = getNativeCommandFilePaths()
   const targetDir = getNativeCommandsDir()
+  const markerPath = getNativeAssetVersionMarkerPath("commands")
 
   try {
     let changed = false
@@ -1481,6 +1602,11 @@ export function removeNativeCommandFiles(): ConfigMergeResult {
         rmSync(filePath, { force: true })
         changed = true
       }
+    }
+
+    if (existsSync(markerPath)) {
+      rmSync(markerPath, { force: true })
+      changed = true
     }
 
     if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
@@ -1497,6 +1623,7 @@ export function removeNativeCommandFiles(): ConfigMergeResult {
 export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   const skillDirs = getNativeSkillDirectories(scope)
   const targetDir = getNativeSkillsDir()
+  const markerPath = getNativeAssetVersionMarkerPath("skills")
 
   try {
     let changed = false
@@ -1505,6 +1632,11 @@ export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
         rmSync(skillDir, { recursive: true, force: true })
         changed = true
       }
+    }
+
+    if (existsSync(markerPath)) {
+      rmSync(markerPath, { force: true })
+      changed = true
     }
 
     if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
