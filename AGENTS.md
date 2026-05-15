@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.16.0  
+**Package:** `@grant-vine/wunderkind` v0.17.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal) into any OpenCode project via a `bunx`/`npx` interactive installer. Uses an orchestrator-first topology with `product-wunderkind` as the default front door.
@@ -19,7 +19,7 @@ wunderkind/
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── commands/                  # Shipped native command assets (currently docs-index)
-├── skills/                    # Static SKILL.md files for 22 shipped skills + SKILL-STANDARD.md
+├── skills/                    # Static SKILL.md files for 23 shipped skills + SKILL-STANDARD.md
 ├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
