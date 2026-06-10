@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.2
+
+- republish the 0.18.x release line under another fresh patch tag after the previous retry still used the wrong npm publishing key
+
 ## 0.18.1
 
 - republish the 0.18.x release line under a fresh patch tag after the previous GitHub publish failed because the npm publishing key had expired
