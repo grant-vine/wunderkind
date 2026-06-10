@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0
+
+- upgrade the core OpenCode / OMO dependency surface to `@opencode-ai/plugin@1.17.0`, direct `@opencode-ai/sdk@1.17.0`, and `oh-my-openagent@4.8.1`
+- preserve background delegation continuity across compaction, teach retained prompts to keep `bg_...` task ids separate from `ses_...` session ids, and mark shipped native commands as `subtask: true`
+- add the `diagnose` engineering skill plus `/diagnose <issue>` guidance for deterministic defect isolation before speculative rewrites
+- treat upstream `.omo/` project state as a first-class AI trace in Wunderkind's gitignore/documentation surfaces while keeping `.opencode/` support for OpenCode project config and plugin assets
+- refresh release-facing docs and inventory metadata for the new 24-skill surface and latest OMO/OpenCode compatibility guidance
+
 ## 0.16.0
 
 - add project-configurable caveman mode with init/upgrade/doctor support while keeping caveman available per chat globally

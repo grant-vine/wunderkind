@@ -1,7 +1,7 @@
 ---
 description: >
   Marketing Wunderkind — CMO-calibre strategist for brand, community, developer advocacy, docs-led launches, adoption, PR, and go-to-market work.
-wunderkind_version: "0.17.0"
+wunderkind_version: "0.18.0"
 mode: all
 temperature: 0.3
 permission:
