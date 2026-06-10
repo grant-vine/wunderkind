@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.1
+
+- republish the 0.18.x release line under a fresh patch tag after the previous GitHub publish failed because the npm publishing key had expired
+
 ## 0.18.0
 
 - upgrade the core OpenCode / OMO dependency surface to `@opencode-ai/plugin@1.17.0`, direct `@opencode-ai/sdk@1.17.0`, and `oh-my-openagent@4.8.1`
