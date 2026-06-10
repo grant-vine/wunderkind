@@ -6,6 +6,7 @@
 - preserve background delegation continuity across compaction, teach retained prompts to keep `bg_...` task ids separate from `ses_...` session ids, and mark shipped native commands as `subtask: true`
 - add the `diagnose` engineering skill plus `/diagnose <issue>` guidance for deterministic defect isolation before speculative rewrites
 - treat upstream `.omo/` project state as a first-class AI trace in Wunderkind's gitignore/documentation surfaces while keeping `.opencode/` support for OpenCode project config and plugin assets
+- migrate this repository's historical `.sisyphus/` project-working artifacts into `.omo/` so the repo now follows upstream OMO project-state conventions locally
 - refresh release-facing docs and inventory metadata for the new 24-skill surface and latest OMO/OpenCode compatibility guidance
 
 ## 0.16.0

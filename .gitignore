@@ -7,5 +7,6 @@ opencode.json
 
 # oh-my-opencode / opencode runtime files
 AGENTS.md
+.omo/
 .opencode/
 .wunderkind/

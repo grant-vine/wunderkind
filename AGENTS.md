@@ -76,7 +76,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 - **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
 - **`upgrade`** (`src/cli/cli-installer.ts`) — Refreshes Wunderkind-owned native agents and skills for the selected scope, plus global native commands.
-- **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to `.gitignore` idempotently.
+- **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, `.omo/`, and `.opencode/` to `.gitignore` idempotently.
 - **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
 - **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.sisyphus/`, docs output, and shared global native assets intact.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
@@ -225,7 +225,7 @@ node bin/wunderkind.js install --no-tui \
   --primary-regulation=GDPR
 
 # Gitignore helper
-node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, .opencode/ to .gitignore
+node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, .omo/, .opencode/ to .gitignore
 ```
 
 ---
