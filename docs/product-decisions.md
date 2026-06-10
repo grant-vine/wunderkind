@@ -32,7 +32,7 @@ Docs and current flows should prefer `oh-my-openagent`, while still tolerating l
 ## Current feature set to highlight
 
 - Six retained specialist agents.
-- 23 shipped skills.
+- 24 shipped skills.
 - `/docs-index` native command.
 - `/dream` native command.
 - `CONTEXT.md` bootstrap.

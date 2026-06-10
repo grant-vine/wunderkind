@@ -363,7 +363,7 @@ The `/dream` native command is a mixed-domain workflow for ideation, soul synthe
 
 Wunderkind installs native markdown assets into OpenCode's supported directories. Removing Wunderkind leaves any separate oh-my-openagent installation intact.
 
-> **Native asset install note**: Wunderkind registers its specialist agents and skills through OpenCode-native markdown files. Global installs and upgrades refresh the shared native assets, and the shipped `/docs-index` command is refreshed globally as a native command asset.
+> **Native asset install note**: Wunderkind registers its specialist agents and skills through OpenCode-native markdown files. Global installs and upgrades refresh the shared native assets, and shipped native commands such as `/docs-index` and `/dream` are refreshed globally as native command assets. These command assets now opt into OpenCode's `subtask: true` mode so they can execute as isolated command subtasks instead of polluting the caller's primary context.
 
 ---
 
@@ -403,6 +403,7 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
 | `caveman` | product-wunderkind | Opt-in terse response mode for low-token, high-signal output |
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
+| `diagnose` | fullstack-wunderkind | Deterministic defect isolation, ranked hypotheses, and proving regression surfaces |
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |
@@ -561,7 +562,7 @@ Wunderkind's evolving workflow strategy is informed in part by Matt Pocock's pub
 
 - https://github.com/mattpocock/skills
 
-We plan to adapt selected ideas such as ubiquitous language, structured questioning, and PRD/planning flows to Wunderkind's filesystem-first `.sisyphus/` workflow rather than adopting GitHub-issue-centric assumptions directly.
+We plan to adapt selected ideas such as ubiquitous language, structured questioning, deterministic diagnosis, and PRD/planning flows to Wunderkind's filesystem-first `.sisyphus/` workflow rather than adopting GitHub-issue-centric assumptions directly.
 
 ---
 

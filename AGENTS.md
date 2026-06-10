@@ -19,7 +19,7 @@ wunderkind/
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── commands/                  # Shipped native command assets (currently docs-index)
-├── skills/                    # Static SKILL.md files for 23 shipped skills + SKILL-STANDARD.md
+├── skills/                    # Static SKILL.md files for 24 shipped skills + SKILL-STANDARD.md
 ├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
@@ -188,7 +188,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
 
-Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `docs-with-grill` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
+Sub-skills: `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `docs-with-grill` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `diagnose` + `code-health` + `vercel-architect` + `improve-codebase-architecture` + `design-an-interface` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel).
 
 ---
 
