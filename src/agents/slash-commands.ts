@@ -175,6 +175,11 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
   "fullstack-wunderkind": {
     commands: [
       {
+        command: "/diagnose <issue>",
+        summary: "Run a deterministic engineering diagnosis loop before implementation or refactor decisions.",
+        details: ["Invoke via `skill(name=\"diagnose\")` to reproduce the failure, rank hypotheses, add the smallest proving instrumentation, and define the tightest regression surface before changing code."],
+      },
+      {
         command: "/validate-page <url>",
         summary: "Run a browser-backed audit for accessibility, CWV, console errors, broken links, and a screenshot.",
         details: ["Return a CWV table with measured vs target values (`LCP < 2.5s`, `CLS < 0.1`, `FCP < 1.8s`, `TTFB < 800ms`) plus raw violations and errors."],
@@ -209,6 +214,7 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
       {
         heading: "Sub-Skill Delegation",
         items: [
+          "Invoke via `skill(name=\"diagnose\")` for deterministic bug reproduction, ranked hypothesis testing, focused instrumentation, and regression-surface definition before implementation starts.",
           "Invoke via `skill(name=\"tdd\")` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
           "Invoke via `skill(name=\"vercel-architect\")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",
           "Invoke via `skill(name=\"db-architect\")` for schema design, query analysis, migrations, and index auditing.",
@@ -371,6 +377,7 @@ export function renderGeneratedRetainedNativeCommandMarkdown(command: GeneratedR
     "---",
     `description: ${JSON.stringify(command.summary)}`,
     `agent: ${command.agent}`,
+    "subtask: true",
     `name: ${command.name}`,
     "---",
     "",

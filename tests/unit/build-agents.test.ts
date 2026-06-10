@@ -4,7 +4,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { WUNDERKIND_AGENT_DEFINITIONS } from "../../src/agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../src/agents/render-markdown.js"
-import { RETAINED_AGENT_SLASH_COMMANDS } from "../../src/agents/slash-commands.js"
+import { RETAINED_AGENT_SLASH_COMMANDS, renderGeneratedRetainedNativeCommandMarkdown, getGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
 
 const AGENTS_DIR = fileURLToPath(new URL("../../agents/", import.meta.url))
 const PACKAGE_JSON_PATH = fileURLToPath(new URL("../../package.json", import.meta.url))
@@ -88,6 +88,13 @@ describe("build-agents script", () => {
       for (const command of registry.commands) {
         expect(markdown).toContain(`### \`${command.command}\``)
       }
+    }
+  })
+
+  it("renders retained native command markdown as subtask commands", () => {
+    for (const command of getGeneratedRetainedNativeCommands()) {
+      const markdown = renderGeneratedRetainedNativeCommandMarkdown(command)
+      expect(markdown).toContain("subtask: true")
     }
   })
 
