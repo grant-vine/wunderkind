@@ -37,10 +37,11 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
-    "@opencode-ai/plugin": "1.15.0",
+    "@opencode-ai/plugin": "1.17.0",
+    "@opencode-ai/sdk": "1.17.0",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
-    "oh-my-openagent": "4.1.2",
+    "oh-my-openagent": "4.8.1",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
