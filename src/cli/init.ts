@@ -10,6 +10,7 @@ import {
   writeNativeSkillFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
+import { PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 import { bootstrapDesignMd, validateDesignPath } from "./design-md-helper.js"
 import { bootstrapDocsReadme, resolveProjectLocalDocsPath, validateDocHistoryMode, validateDocsPath } from "./docs-output-helper.js"
 import { detectStitchMcpPresence, mergeStitchMcpConfig, writeStitchSecretFile } from "./mcp-helpers.js"
@@ -209,7 +210,7 @@ const ORG_STRUCTURE_OPTIONS: Array<{ value: OrgStructure; label: string; hint: s
 ]
 
 const PRD_PIPELINE_MODE_OPTIONS: Array<{ value: PrdPipelineMode; label: string; hint: string }> = [
-  { value: "filesystem", label: "filesystem", hint: "Write PRDs, plans, and issues into .sisyphus/ files" },
+  { value: "filesystem", label: "filesystem", hint: `Write PRDs, plans, and issues into ${PRIMARY_PROJECT_ARTIFACT_DIR}/ files` },
   { value: "github", label: "github", hint: "Use gh/GitHub workflows for PRD and issue output when ready" },
 ]
 
@@ -1039,9 +1040,9 @@ export async function runInit(options: InitOptions): Promise<number> {
 
     ensureFile(join(cwd, "AGENTS.md"), AGENTS_MD_PLACEHOLDER)
     ensureFile(join(cwd, "CONTEXT.md"), CONTEXT_MD_PLACEHOLDER)
-    ensureDir(join(cwd, ".sisyphus", "plans"))
-    ensureDir(join(cwd, ".sisyphus", "notepads"))
-    ensureDir(join(cwd, ".sisyphus", "evidence"))
+    ensureDir(join(cwd, PRIMARY_PROJECT_ARTIFACT_DIR, "plans"))
+    ensureDir(join(cwd, PRIMARY_PROJECT_ARTIFACT_DIR, "notepads"))
+    ensureDir(join(cwd, PRIMARY_PROJECT_ARTIFACT_DIR, "evidence"))
 
     if (soulAnswers.size > 0) {
       const soulsDir = join(cwd, ".wunderkind", "souls")

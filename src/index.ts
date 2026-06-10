@@ -179,7 +179,7 @@ const WunderkindPlugin: Plugin = async (_input) => {
     tool: {
       [DURABLE_ARTIFACT_TOOL_NAME]: tool({
         description:
-          "Append durable memory only inside protected Wunderkind lanes such as .sisyphus/notepads or .sisyphus/evidence. Use normal Write/Edit for ordinary repo files, docs-output, DESIGN.md, Stitch files, and planning files.",
+          "Append durable memory only inside protected Wunderkind lanes such as .omo/notepads or .omo/evidence. Legacy .sisyphus paths are accepted as compatibility aliases. Use normal Write/Edit for ordinary repo files, docs-output, DESIGN.md, Stitch files, and planning files.",
         args: {
           relativePath: tool.schema.string().min(1),
           content: tool.schema.string(),
@@ -329,7 +329,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
 - For background delegation, keep \`bg_...\` task ids separate from \`ses_...\` session ids, wait for the runtime completion signal, then call \`background_output\` with the background task id.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
-- Use normal \`Write\`/\`Edit\` for ordinary repo files, docs-output, \`DESIGN.md\`, \`.wunderkind/stitch/\`, and managed \`.sisyphus/\` planning files. Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` only for append-only Wunderkind memory lanes such as \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\`.
+- Use normal \`Write\`/\`Edit\` for ordinary repo files, docs-output, \`DESIGN.md\`, \`.wunderkind/stitch/\`, and managed \`.omo/\` planning files. Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` only for append-only Wunderkind memory lanes such as \`.omo/notepads/\` and \`.omo/evidence/\`. Legacy \`.sisyphus/\` paths remain compatibility aliases only.
 
 ### Caveman Mode
 

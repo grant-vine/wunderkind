@@ -41,7 +41,7 @@ export async function runProjectCleanup(): Promise<number> {
     console.log()
     console.log(color.bold("Safety note"))
     console.log("Cleanup removes project-local Wunderkind registration and .wunderkind/ state only.")
-    console.log("It leaves AGENTS.md, .sisyphus/, docs output, and shared global capabilities untouched.")
+    console.log("It leaves AGENTS.md, .omo/, legacy .sisyphus/, docs output, and shared global capabilities untouched.")
 
     return 0
   } catch (error) {

@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs"
 import { dirname, isAbsolute, join, normalize, relative } from "node:path"
+import { isPrimaryAppendOnlyArtifactPath, mapLegacyArtifactPathToPrimary } from "./project-artifacts.js"
 
 export const DURABLE_ARTIFACT_TOOL_NAME = "wunderkind_write_artifact" as const
 
@@ -54,7 +55,7 @@ function ensureSafeRelativePath(relativePath: string): string {
 }
 
 function isAppendOnlyPath(normalizedRelativePath: string): boolean {
-  return normalizedRelativePath.startsWith(".sisyphus/notepads/") || normalizedRelativePath.startsWith(".sisyphus/evidence/")
+  return isPrimaryAppendOnlyArtifactPath(normalizedRelativePath)
 }
 
 function isAllowedArtifactPath(normalizedRelativePath: string): boolean {
@@ -103,11 +104,11 @@ function resolveWritableParentPath(rootRealPath: string, cwd: string, normalized
 }
 
 function validateProtectedArtifactPath(normalizedRelativePath: string): void {
-  if (normalizedRelativePath.startsWith(".sisyphus/notepads/")) {
+  if (normalizedRelativePath.startsWith(".omo/notepads/")) {
     return
   }
 
-  if (normalizedRelativePath.startsWith(".sisyphus/evidence/")) {
+  if (normalizedRelativePath.startsWith(".omo/evidence/")) {
     return
   }
 
@@ -119,7 +120,7 @@ export function writeDurableArtifact(
   cwd: string,
   _options?: DurableArtifactWriteOptions,
 ): DurableArtifactWriteResult {
-  const normalizedRelativePath = ensureSafeRelativePath(request.relativePath)
+  const normalizedRelativePath = mapLegacyArtifactPathToPrimary(ensureSafeRelativePath(request.relativePath))
 
   if (!isAllowedArtifactPath(normalizedRelativePath)) {
     throw new Error("durable artifacts must stay inside append-only Wunderkind memory lanes")

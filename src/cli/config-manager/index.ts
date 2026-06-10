@@ -1014,7 +1014,7 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // History mode: "overwrite" | "append-dated" (UTC-timestamped sections) | "new-dated-file" (UTC-timestamped files) | "overwrite-archive"`,
     `  "docHistoryMode": ${JSON.stringify(config.docHistoryMode)},`,
     `  // PRD / planning workflow mode`,
-    `  // "filesystem" writes to .sisyphus/; "github" expects gh + GitHub repo readiness`,
+    `  // "filesystem" writes to .omo/; "github" expects gh + GitHub repo readiness`,
     `  // PRD pipeline mode: "filesystem" | "github"`,
     `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")},`,
     ``,

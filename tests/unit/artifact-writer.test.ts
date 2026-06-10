@@ -15,7 +15,7 @@ describe("artifact-writer", () => {
     const sandbox = createSandbox("notepad")
 
     try {
-      const relativePath = ".sisyphus/notepads/permissions/learnings.md"
+      const relativePath = ".omo/notepads/permissions/learnings.md"
       writeDurableArtifact({ relativePath, content: "First line\n" }, sandbox)
       writeDurableArtifact({ relativePath, content: "Second line\n" }, sandbox)
 
@@ -29,7 +29,7 @@ describe("artifact-writer", () => {
     const sandbox = createSandbox("evidence")
 
     try {
-      const relativePath = ".sisyphus/evidence/permissions/findings.md"
+      const relativePath = ".omo/evidence/permissions/findings.md"
       writeDurableArtifact({ relativePath, content: "Observation A\n" }, sandbox)
       writeDurableArtifact({ relativePath, content: "Observation B\n" }, sandbox)
 
@@ -80,12 +80,12 @@ describe("artifact-writer", () => {
     const outside = createSandbox("lane-symlink-outside")
 
     try {
-      mkdirSync(join(sandbox, ".sisyphus/notepads"), { recursive: true })
-      symlinkSync(outside, join(sandbox, ".sisyphus/notepads/link"), "dir")
+      mkdirSync(join(sandbox, ".omo/notepads"), { recursive: true })
+      symlinkSync(outside, join(sandbox, ".omo/notepads/link"), "dir")
 
       try {
         writeDurableArtifact({
-          relativePath: ".sisyphus/notepads/link/escape.md",
+          relativePath: ".omo/notepads/link/escape.md",
           content: "bad",
         }, sandbox)
         throw new Error("Expected symlink rejection")
@@ -97,6 +97,19 @@ describe("artifact-writer", () => {
     } finally {
       rmSync(sandbox, { recursive: true, force: true })
       rmSync(outside, { recursive: true, force: true })
+    }
+  })
+
+  it("maps legacy .sisyphus lanes into .omo before writing", () => {
+    const sandbox = createSandbox("legacy-redirect")
+
+    try {
+      writeDurableArtifact({ relativePath: ".sisyphus/notepads/runtime/learnings.md", content: "Entry\n" }, sandbox)
+
+      expect(readFileSync(join(sandbox, ".omo/notepads/runtime/learnings.md"), "utf-8")).toBe("Entry\n")
+      expect(existsSync(join(sandbox, ".sisyphus/notepads/runtime/learnings.md"))).toBe(false)
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true })
     }
   })
 

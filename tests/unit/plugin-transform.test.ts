@@ -39,6 +39,8 @@ function registerConfigManagerMock(): void {
     getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
     readWunderkindConfigForScope: () => null,
     detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeAgentMarkdownVersions: () => ({ allCurrent: true, staleAgentIds: [], currentVersion: null }),
+    detectNativeAssetVersion: () => ({ kind: "agents", installedVersion: null, currentVersion: null, needsUpgrade: false }),
     detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
     getNativeCommandFilePaths: () => [],
@@ -158,7 +160,7 @@ describe("Wunderkind plugin transform", () => {
       try {
         await durableArtifactTool.execute(
           {
-            relativePath: ".sisyphus/notepads/runtime/learnings.md",
+            relativePath: ".omo/notepads/runtime/learnings.md",
             content: "Entry\n",
           },
           {
@@ -171,7 +173,7 @@ describe("Wunderkind plugin transform", () => {
         )
 
         expect(askCalls).toHaveLength(0)
-        expect(readFileSync(join(sandbox, ".sisyphus/notepads/runtime/learnings.md"), "utf-8")).toBe("Entry\n")
+        expect(readFileSync(join(sandbox, ".omo/notepads/runtime/learnings.md"), "utf-8")).toBe("Entry\n")
       } finally {
         rmSync(sandbox, { recursive: true, force: true })
       }
@@ -216,7 +218,7 @@ describe("Wunderkind plugin transform", () => {
     try {
       const result = await durableArtifactTool.execute(
         {
-          relativePath: ".sisyphus/evidence/dream/findings.md",
+          relativePath: ".omo/evidence/dream/findings.md",
           content: "Discovery\n",
         },
         {
@@ -226,8 +228,8 @@ describe("Wunderkind plugin transform", () => {
         },
       )
 
-      expect(result).toBe("Durable artifact written to .sisyphus/evidence/dream/findings.md")
-      expect(readFileSync(join(sandbox, ".sisyphus/evidence/dream/findings.md"), "utf-8")).toBe("Discovery\n")
+        expect(result).toBe("Durable artifact written to .omo/evidence/dream/findings.md")
+        expect(readFileSync(join(sandbox, ".omo/evidence/dream/findings.md"), "utf-8")).toBe("Discovery\n")
     } finally {
       rmSync(sandbox, { recursive: true, force: true })
     }
@@ -242,7 +244,7 @@ describe("Wunderkind plugin transform", () => {
     await cachedTransform!({}, output)
 
     const nativeAgentsContent = output.system.find((entry) => entry.includes("## Wunderkind Native Agents")) ?? ""
-    expect(nativeAgentsContent).toContain("Use normal `Write`/`Edit` for ordinary repo files, docs-output, `DESIGN.md`, `.wunderkind/stitch/`, and managed `.sisyphus/` planning files")
+    expect(nativeAgentsContent).toContain("Use normal `Write`/`Edit` for ordinary repo files, docs-output, `DESIGN.md`, `.wunderkind/stitch/`, and managed `.omo/` planning files")
   })
 
   it("exposes the currently adopted plugin hook surface", async () => {

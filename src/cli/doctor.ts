@@ -3,6 +3,7 @@ import { homedir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import color from "picocolors"
+import { LEGACY_PROJECT_ARTIFACT_PATHS, PRIMARY_PROJECT_ARTIFACT_PATHS } from "../project-artifacts.js"
 import {
   detectGitHubWorkflowReadiness,
   detectOmoVersionInfo,
@@ -382,9 +383,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
     if (inProject) {
       const agentsPath = join(cwd, "AGENTS.md")
-      const sisyphusPlansPath = join(cwd, ".sisyphus", "plans")
-      const sisyphusNotepadsPath = join(cwd, ".sisyphus", "notepads")
-      const sisyphusEvidencePath = join(cwd, ".sisyphus", "evidence")
+      const omoPlansPath = join(cwd, PRIMARY_PROJECT_ARTIFACT_PATHS.plans)
+      const omoNotepadsPath = join(cwd, PRIMARY_PROJECT_ARTIFACT_PATHS.notepads)
+      const omoEvidencePath = join(cwd, PRIMARY_PROJECT_ARTIFACT_PATHS.evidence)
+      const legacyArtifactRootPath = join(cwd, LEGACY_PROJECT_ARTIFACT_PATHS.root)
       const contextPath = join(cwd, "CONTEXT.md")
       const docsPath = join(cwd, detected.docsPath)
       const docsReadmePath = join(docsPath, "README.md")
@@ -405,9 +407,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
       const hasAgents = existsSync(agentsPath)
       const hasContext = existsSync(contextPath)
-      const hasPlans = existsSync(sisyphusPlansPath)
-      const hasNotepads = existsSync(sisyphusNotepadsPath)
-      const hasEvidence = existsSync(sisyphusEvidencePath)
+      const hasPlans = existsSync(omoPlansPath)
+      const hasNotepads = existsSync(omoNotepadsPath)
+      const hasEvidence = existsSync(omoEvidencePath)
+      const hasLegacyArtifactRoot = existsSync(legacyArtifactRootPath)
       const hasDocsReadme = existsSync(docsReadmePath)
       const globalNativeAgents = detectNativeAgentFiles("global")
       const globalNativeCommands = detectNativeCommandFiles()
@@ -416,9 +419,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (!localConfigExists) warnings.push(`missing local config: ${localConfigPath}`)
       if (!hasAgents) warnings.push(`missing soul file: ${agentsPath}`)
       if (localConfigExists && !hasContext) warnings.push(`missing project context file: ${contextPath}`)
-      if (!hasPlans) warnings.push(`missing soul directory: ${sisyphusPlansPath}`)
-      if (!hasNotepads) warnings.push(`missing soul directory: ${sisyphusNotepadsPath}`)
-      if (!hasEvidence) warnings.push(`missing soul directory: ${sisyphusEvidencePath}`)
+      if (!hasPlans) warnings.push(`missing project artifact directory: ${omoPlansPath}`)
+      if (!hasNotepads) warnings.push(`missing project artifact directory: ${omoNotepadsPath}`)
+      if (!hasEvidence) warnings.push(`missing project artifact directory: ${omoEvidencePath}`)
+      if (hasLegacyArtifactRoot) warnings.push(`legacy ${LEGACY_PROJECT_ARTIFACT_PATHS.root}/ artifacts detected; run wunderkind migrate to move them into ${PRIMARY_PROJECT_ARTIFACT_PATHS.root}/`)
       if (detected.docsEnabled && !hasDocsReadme) warnings.push(`missing docs README: ${docsReadmePath}`)
       if (detected.globalInstalled === true && !globalNativeAgents.allPresent) {
         warnings.push(`missing native global agent files: ${globalNativeAgents.dir}`)
@@ -472,9 +476,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("cwd:", color.dim(cwd))
       line("AGENTS.md present:", status(hasAgents))
       line("CONTEXT.md present:", status(hasContext))
-      line(".sisyphus/plans present:", status(hasPlans))
-      line(".sisyphus/notepads present:", status(hasNotepads))
-      line(".sisyphus/evidence present:", status(hasEvidence))
+      line(".omo/plans present:", status(hasPlans))
+      line(".omo/notepads present:", status(hasNotepads))
+      line(".omo/evidence present:", status(hasEvidence))
+      line("legacy .sisyphus/ present:", status(hasLegacyArtifactRoot))
       line("global native agents present:", status(globalNativeAgents.allPresent))
       line("global native commands present:", status(globalNativeCommands.allPresent))
       const dreamInstalled = getNativeCommandFilePaths().some((path) => path.endsWith("dream.md") && existsSync(path))

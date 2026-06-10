@@ -342,9 +342,9 @@ function writeProjectHealthFixture(projectPath: string): void {
   writeFileSync(join(projectPath, "package.json"), "{}")
   writeFileSync(join(projectPath, "AGENTS.md"), "# AGENTS\n")
   writeFileSync(join(projectPath, "CONTEXT.md"), "# Context\n")
-  mkdirSync(join(projectPath, ".sisyphus", "plans"), { recursive: true })
-  mkdirSync(join(projectPath, ".sisyphus", "notepads"), { recursive: true })
-  mkdirSync(join(projectPath, ".sisyphus", "evidence"), { recursive: true })
+  mkdirSync(join(projectPath, ".omo", "plans"), { recursive: true })
+  mkdirSync(join(projectPath, ".omo", "notepads"), { recursive: true })
+  mkdirSync(join(projectPath, ".omo", "evidence"), { recursive: true })
   mkdirSync(join(projectPath, ".wunderkind"), { recursive: true })
   writeFileSync(join(projectPath, ".wunderkind", "wunderkind.config.jsonc"), "{}\n")
 }
