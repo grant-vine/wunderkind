@@ -1,6 +1,7 @@
 ---
 description: Regenerate Wunderkind-managed project documentation and refresh the docs index
 agent: product-wunderkind
+subtask: true
 ---
 
 You are coordinating a lightweight Wunderkind documentation refresh/bootstrap workflow for this project.

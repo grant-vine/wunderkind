@@ -77,6 +77,9 @@ Use this contract to choose the right delegation mechanism.
 ### Hard rules for delegation
 
 - Prefer **parallel delegation** when subtasks are independent and touch different concerns.
+- When you launch background work, record the returned background task id (\`bg_...\`) separately from any session id (\`ses_...\`). Do not confuse them.
+- After launching a background task, wait for the upstream completion signal before collecting output. Do not call \`background_output\` immediately after launch.
+- When the runtime signals completion, call \`background_output\` with the **background task id** and synthesize the delegated result before taking the next major step.
 - After delegating research or exploration, **wait for the delegated result and synthesize it**. Do not repeat the same search locally unless the delegated output is clearly insufficient.
 - Avoid unnecessary nested delegation. Use another layer of subagents only when the specialist adds clear value, because upstream background-agent depth is limited.
 - Name the target domain up front in the prompt so the receiving agent can act without re-triaging the same request.

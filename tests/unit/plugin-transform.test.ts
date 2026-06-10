@@ -60,7 +60,7 @@ type TestOutput = {
   system: string[]
 }
 
-type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "experimental.session.compacting"?: (input: unknown, output: { context: string[] }) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 const initPromise = (async () => {
@@ -257,7 +257,23 @@ describe("Wunderkind plugin transform", () => {
     expect(pluginResult).not.toHaveProperty("command.execute.before")
     expect(pluginResult).not.toHaveProperty("chat.headers")
     expect(pluginResult).not.toHaveProperty("shell.env")
-    expect(pluginResult).not.toHaveProperty("experimental.session.compacting")
+    expect(typeof pluginResult["experimental.session.compacting"]).toBe("function")
+  })
+
+  it("preserves background-task continuity in compaction context", async () => {
+    registerConfigManagerMock()
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const hook = pluginResult["experimental.session.compacting"]
+    if (!hook) {
+      throw new Error("Expected experimental.session.compacting hook")
+    }
+
+    const output = { context: [] as string[] }
+    await hook({}, output)
+
+    expect(output.context.join("\n")).toContain("Preserve every active background task id (`bg_...")
+    expect(output.context.join("\n")).toContain("ready to call `background_output`")
   })
 
   it("denies shell-based file mutation for non-fullstack retained agents", async () => {

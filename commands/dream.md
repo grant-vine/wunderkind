@@ -1,6 +1,7 @@
 ---
 description: Wunderkind-native mixed workflow for ideation, SOUL synthesis, and exploration
 agent: product-wunderkind
+subtask: true
 ---
 
 You are coordinating the `/dream` workflow—a Wunderkind-native mixed ideation, SOUL synthesis, and exploration process.

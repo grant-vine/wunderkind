@@ -414,6 +414,7 @@ describe("docs-index plugin command asset", () => {
     const command = readFileSync(new URL("../../commands/docs-index.md", import.meta.url), "utf8")
 
     expect(command).toContain("agent: product-wunderkind")
+    expect(command).toContain("subtask: true")
     expect(command).toContain("/docs-index")
     expect(command).not.toContain("local docs-index planning support")
     expect(command).toContain("refresh/bootstrap")

@@ -135,7 +135,7 @@ function buildCompactionContext(wunderkindConfig: ReturnType<typeof readWunderki
 Preserve any active retained-agent routing decisions, delegated specialists, loaded Wunderkind skills, and unfinished task graph state. If parallel subagents were launched, keep which subtasks are complete, still running, blocked, or waiting for synthesis. Do not collapse delegated findings into generic summaries that lose ownership or next-step clarity.`,
     `## Wunderkind delegation continuity
 
-If the session already delegated research, exploration, or implementation work, preserve the delegated outputs and the synthesis still required. Do not restart the same search loop after compaction unless the preserved output says it was insufficient. Respect upstream background-agent depth limits by favoring continuation of existing delegated work over spawning redundant nested agents.`,
+If the session already delegated research, exploration, or implementation work, preserve the delegated outputs and the synthesis still required. Preserve every active background task id (\`bg_...\`) separately from any agent session id (\`ses_...\`), and keep whether the parent is still waiting for a completion reminder or is ready to call \`background_output\`. Do not restart the same search loop after compaction unless the preserved output says it was insufficient. Respect upstream background-agent depth limits by favoring continuation of existing delegated work over spawning redundant nested agents.`,
     `## Wunderkind mode continuity
 
 Preserve whether caveman mode was enabled for the active chat. If the user explicitly turned terse mode on or off, keep that mode decision across compaction unless the user later changed it.`,
@@ -327,6 +327,7 @@ Legacy delegation shorthand remains valid: Use marketing-wunderkind for GTM, bra
 ### Tool Usage
 
 - Use \`task(...)\` for retained-agent or subagent delegation; always include explicit \`load_skills\` and \`run_in_background\`.
+- For background delegation, keep \`bg_...\` task ids separate from \`ses_...\` session ids, wait for the runtime completion signal, then call \`background_output\` with the background task id.
 - Use \`skill(name="...")\` for shipped skills and sub-skills.
 - Use normal \`Write\`/\`Edit\` for ordinary repo files, docs-output, \`DESIGN.md\`, \`.wunderkind/stitch/\`, and managed \`.sisyphus/\` planning files. Use \`${DURABLE_ARTIFACT_TOOL_NAME}(...)\` only for append-only Wunderkind memory lanes such as \`.sisyphus/notepads/\` and \`.sisyphus/evidence/\`.
 
