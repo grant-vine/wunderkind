@@ -1,0 +1,74 @@
+{
+  "active_plan": "/Users/grantv/Code/wunderkind/.sisyphus/plans/dream-command.md",
+  "started_at": "2026-04-05T19:11:12.569Z",
+  "session_ids": [
+    "ses_2a3e2dd94ffeFLFYYC4L4o0Xpi",
+    "ses_2a0ef0f35ffelf01C813OZk9kj",
+    "ses_2a0eec2e8ffeC6w5bHU3YRWTU6",
+    "ses_2a0ec92a2ffeBu5TGV9OefKKPP",
+    "ses_2a0ec5a72ffeMyShoUu4Q3v9RJ",
+    "ses_2a0ec0427ffemen1B7CItKgt2w",
+    "ses_2a0e25df6ffey84a24E4yvBOo9",
+    "ses_2a0dc7f18ffePBzy9KoOJDxd5P",
+    "ses_2a0dcd292ffej0hmPS61iFETrV",
+    "ses_2a0d9255affeptXEQYWen56aEO",
+    "ses_2a0d994f1ffeEHQ464QPULNJAa",
+    "ses_2a0d9bb64ffe4yg7icJOBFAcnC",
+    "ses_2a0d9567fffe2V2OW4rotOaBdk",
+    "ses_2a0cf2275ffe5pHJUdPWXpeWK6",
+    "ses_2a0cccf4bffePjictcYBGDdnle",
+    "ses_2a0b36a10ffeBUjEgwJyZVAp33",
+    "ses_2a0b36a99ffeTQ123B1EgNGHjt",
+    "ses_2a0b23457ffeoYZRhYbAmgMgng",
+    "ses_2a0b20bf6ffeA820AkJafZmYA0"
+  ],
+  "plan_name": "dream-command",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Lock `/dream` command contract and wording",
+      "session_id": "ses_2a0ef0f35ffelf01C813OZk9kj",
+      "agent": "Sisyphus-Junior",
+      "category": "writing",
+      "updated_at": "2026-04-05T19:15:42.552Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Cover install and upgrade refresh behavior for `dream.md`",
+      "session_id": "ses_2a0ec92a2ffeBu5TGV9OefKKPP",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-05T19:17:37.410Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Decide and encode the doctor filename-diff mechanism inside `doctor.ts`",
+      "session_id": "ses_2a0e25df6ffey84a24E4yvBOo9",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-05T19:32:40.760Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Harden `/dream` command content against scope drift and mixed-workflow ambiguity",
+      "session_id": "ses_2a0dcd292ffej0hmPS61iFETrV",
+      "agent": "Sisyphus-Junior",
+      "category": "writing",
+      "updated_at": "2026-04-05T19:35:22.757Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "Plan Compliance Audit — oracle",
+      "session_id": "ses_2a0cf2275ffe5pHJUdPWXpeWK6",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-05T19:50:24.837Z"
+    }
+  }
+}
