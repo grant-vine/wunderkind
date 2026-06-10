@@ -3,7 +3,7 @@ name: ubiquitous-language
 description: >
   USE FOR: glossary maintenance, shared terminology cleanup, naming alignment,
   canonical terms, alias resolution, domain-language drift, and explicit updates
-  to `.sisyphus/glossary.md`.
+to `.omo/glossary.md`.
 
 ---
 
@@ -17,7 +17,7 @@ Maintain a shared domain glossary so humans and agents keep using the same words
 
 ## Output target
 
-Write or update `.sisyphus/glossary.md`.
+Write or update `.omo/glossary.md`.
 
 ## When to trigger
 
@@ -46,7 +46,7 @@ Write or update `.sisyphus/glossary.md`.
 2. Extract candidate terms and detect collisions or synonym drift.
 3. Choose canonical terms where the evidence is strong.
 4. Mark unresolved ambiguity explicitly instead of forcing false consensus.
-5. Update `.sisyphus/glossary.md` incrementally.
+5. Update `.omo/glossary.md` incrementally.
 
 ## Formatting guidance
 
@@ -66,4 +66,4 @@ Add an `## Open Questions` section when needed.
 
 ## Review gate
 
-This skill is complete only when `.sisyphus/glossary.md` reflects the canonical term decisions and unresolved ambiguities are clearly flagged.
+This skill is complete only when `.omo/glossary.md` reflects the canonical term decisions and unresolved ambiguities are clearly flagged.

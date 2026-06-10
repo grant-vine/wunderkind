@@ -11,10 +11,10 @@ Last refreshed: 2026-05-15T15-07-42Z
 ## Security-relevant product decisions
 
 ### Trust boundary for docs and bootstrap work
-Managed docs, `AGENTS.md`, `CONTEXT.md`, and `.sisyphus/` work should remain inside the current project root. Docs-path validation explicitly rejects parent traversal and unsafe path resolution.
+Managed docs, `AGENTS.md`, `CONTEXT.md`, and `.omo/` work should remain inside the current project root. Docs-path validation explicitly rejects parent traversal and unsafe path resolution.
 
 ### Durable memory lanes stay append-only
-`.sisyphus/notepads/` and `.sisyphus/evidence/` are append-only durable lanes; ordinary docs output belongs in `docs/` and should not be written through the bounded durable artifact writer.
+`.omo/notepads/` and `.omo/evidence/` are append-only durable lanes; ordinary docs output belongs in `docs/` and should not be written through the bounded durable artifact writer.
 
 ### Compatibility guidance should be explicit, not silent
 Canonical `oh-my-openagent` naming is preferred, but transitional compatibility for `oh-my-opencode` remains documented where the repo contract promises it. Security-wise, this reduces hidden state and operator confusion during upgrades.

@@ -76,9 +76,10 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 - **`install`** (`src/cli/cli-installer.ts` + `src/cli/tui-installer.ts`) — Registers the plugin in OpenCode configuration (`opencode.json`). This is a one-time global setup.
 - **`upgrade`** (`src/cli/cli-installer.ts`) — Refreshes Wunderkind-owned native agents and skills for the selected scope, plus global native commands.
+- **`migrate`** (`src/cli/migrate.ts`) — Moves legacy `.sisyphus/` project-working artifacts into `.omo/`, which is now the primary project artifact root.
 - **`gitignore`** (`src/cli/gitignore-manager.ts`) — Adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, `.omo/`, and `.opencode/` to `.gitignore` idempotently.
-- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
-- **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.sisyphus/`, docs output, and shared global native assets intact.
+- **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
+- **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.omo/`, legacy `.sisyphus/`, docs output, and shared global native assets intact.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
 - **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
 
@@ -114,9 +115,9 @@ These strings MUST NOT be identical. If the sentinel or runtime heading matches 
 
 Recommended bootstrap sequence:
 
-1. Run `wunderkind init` to create `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and optional docs scaffolding.
+1. Run `wunderkind init` to create `.wunderkind/`, `AGENTS.md`, `.omo/`, and optional docs scaffolding.
 2. Have an agent populate `AGENTS.md` with project knowledge, conventions, and architecture context.
-3. Systematically explore the repo and append durable findings to `.sisyphus/notepads/` and `.sisyphus/evidence/`.
+3. Systematically explore the repo and append durable findings to `.omo/notepads/` and `.omo/evidence/`.
 4. Use `/docs-index` to refresh or bootstrap the managed docs set when docs output is enabled.
 
 Treat this as the recommended audit/bootstrap workflow when bringing a project up to a high-context Wunderkind baseline.
@@ -249,7 +250,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **Caveman mode is project-configurable and chat-activatable** — `cavemanEnabled` can enable terse default replies per project, while any chat can still activate caveman mode explicitly without persisting it globally.
 - **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke any automated cleanup tool, Python scripts, or external package manager workflows. There is no config key for enabling automated cleanup; any stale config keys from older versions are silently ignored on read.
 - **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
-- **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.sisyphus/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
+- **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.omo/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
 - **Audit-style reviewer freshness rule** — when using Metis, Momus, oracle, or any equivalent critic agent for a review pass, always spawn a **fresh agent/session** for each new round after fixes are made. Never reuse the previous reviewer session — reused sessions narrow their attention to previously reported findings instead of performing a fresh audit.
 
 ---
@@ -296,7 +297,7 @@ All test files must use `new URL("../../", import.meta.url).pathname` to derive 
 | `src/agents/docs-index-plan.ts` | 33 | Invariant guard — keys are sourced from `AGENT_DOCS_CONFIG` so they can never be absent from it |
 | `src/cli/index.ts` | (absent) | Pure Commander.js wiring with `process.exit()` — subprocess-tested via `cli-help-text.test.ts` |
 
-Full details and coverage snapshot: `.sisyphus/notepads/unit-testing/learnings.md`.
+Full details and coverage snapshot: `.omo/notepads/unit-testing/learnings.md`.
 
 
 ## SUPPORTING TOOLS UPGRADE WORKFLOW
@@ -306,7 +307,7 @@ When upgrading Wunderkind against upstream support tooling (`oh-my-openagent`, O
 1. Verify current upstream versions and release notes before touching `package.json`.
 2. Classify changes into: dependency/runtime, naming/config migration, lifecycle UX (`install`/`upgrade`/`doctor`), and prompt/skill opportunity.
 3. Prefer canonical upstream names in new output, while preserving documented legacy compatibility where the repo contract already promises it.
-4. Adapt external workflow ideas into Wunderkind-native artifacts first: `AGENTS.md`, `CONTEXT.md`, `.sisyphus/*`, and docs-output lanes — do not copy external filesystem layouts verbatim unless the repo explicitly adopts them.
+4. Adapt external workflow ideas into Wunderkind-native artifacts first: `AGENTS.md`, `CONTEXT.md`, `.omo/*`, and docs-output lanes — do not copy external filesystem layouts verbatim unless the repo explicitly adopts them.
 5. Ensure `wunderkind upgrade` refreshes all Wunderkind-managed native agents, commands, skills, and their installed-version markers.
 6. Ensure `wunderkind doctor` can detect stale installed native assets and tell the user when an upgrade is needed.
 7. Validate with `tsc --noEmit`, `bun test tests/unit/`, `bun run build`, and CLI help/doctor/upgrade checks before release metadata is touched.

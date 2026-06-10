@@ -25,7 +25,8 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 |---|---|---|
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
-| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`, docs README |
+| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
+| `wunderkind migrate` | Moves legacy project artifacts into the primary OMO layout | `.sisyphus/` -> `.omo/` |
 | `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
@@ -174,7 +175,7 @@ wunderkind init [options]
 Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona. Those SOUL questions are now select-first with an explicit custom-answer fallback, show a compact persona banner before each persona block, and prefill current project-local SOUL answers when you rerun `init` on an already configured project. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
-- `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.sisyphus/`
+- `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.omo/`
 - `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready
 
 If `prdPipelineMode` is absent in an older project config, Wunderkind treats it as `filesystem`.
@@ -187,7 +188,7 @@ If `prdPipelineMode` is absent in an older project config, Wunderkind treats it 
 - `.wunderkind/wunderkind.config.jsonc` — Project-specific configuration
 - `AGENTS.md` — Project knowledge base for agents
 - `CONTEXT.md` — Compact shared context for docs grilling, planning, and future skill compatibility
-- `.sisyphus/` — Directory for agent planning, notepads, and evidence
+- `.omo/` — Primary directory for agent planning, notepads, and evidence
 - `<docsPath>/README.md` — Auto-generated documentation index (if enabled)
 
 ### Documentation History Modes
@@ -294,7 +295,7 @@ wunderkind uninstall --scope=global
 wunderkind uninstall --scope=project
 ```
 
-`wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.sisyphus/`, docs folders).
+`wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.omo/`, legacy `.sisyphus/`, docs folders).
 
 ## Cleanup
 
@@ -304,7 +305,7 @@ Remove Wunderkind from just the current project without touching shared global c
 wunderkind cleanup
 ```
 
-`wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.sisyphus/`, docs output folders, and shared global native assets untouched.
+`wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.omo/`, legacy `.sisyphus/`, docs output folders, and shared global native assets untouched.
 
 ---
 
@@ -315,6 +316,18 @@ When enabled, agents can persist their decisions and strategies to your project'
 1. **Enable** via interactive `wunderkind init`, or non-interactively with `wunderkind init --no-tui --docs-enabled=yes --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
 3. **Refresh or bootstrap** via `/docs-index`. This executable plugin command uses one shared UTC token per run (`YYYY-MM-DDTHH-mm-ssZ`, for example `2026-03-12T18-37-52Z`). In `append-dated`, it updates canonical files with headings like `## Update 2026-03-12T18-37-52Z`. In `new-dated-file`, it writes managed family files like `marketing-strategy--2026-03-12T18-37-52Z.md` beside the canonical file. Existing date-only artifacts are preserved unchanged.
+
+## Legacy `.sisyphus/` Migration
+
+Wunderkind now treats `.omo/` as the primary project-working artifact root.
+
+If an older project still uses `.sisyphus/`, migrate it with:
+
+```bash
+wunderkind migrate
+```
+
+Use `wunderkind migrate --dry-run` to preview the move first.
 
 ---
 
@@ -336,7 +349,7 @@ Wunderkind supports that upstream bootstrap flow in this order:
 
 1. Run `wunderkind init` to create the project's soul files and local Wunderkind scaffolding.
 2. Have an agent populate `AGENTS.md` with project knowledge, conventions, and operating context.
-3. Systematically explore the codebase and capture durable findings in `.sisyphus/` notepads and evidence.
+3. Systematically explore the codebase and capture durable findings in `.omo/` notepads and evidence.
 4. Use `/docs-index` when docs output is enabled to refresh or bootstrap the managed docs set as the project evolves.
 
 Treat this as the recommended audit/bootstrap process for bringing a project up to a high-context Wunderkind baseline.
@@ -348,8 +361,8 @@ Treat this as the recommended audit/bootstrap process for bringing a project up 
 The `/dream` native command is a mixed-domain workflow for ideation, soul synthesis, and project-aware exploration. It is owned by `product-wunderkind` and shipped as a static command asset.
 
 1. **Workflow**: /dream [topic] → ideation → soul synthesis → exploration.
-2. **Context**: Uses project-local SOUL overlays from `.wunderkind/souls/<agent-key>.md`, `AGENTS.md` knowledge, and `.sisyphus/` notepads/evidence for high-fidelity reasoning.
-3. **Output**: Chat-first. Any durable findings or artifacts must be explicitly requested for save (to `.sisyphus/notepads/` or `.sisyphus/evidence/` only).
+2. **Context**: Uses project-local SOUL overlays from `.wunderkind/souls/<agent-key>.md`, `AGENTS.md` knowledge, and `.omo/` notepads/evidence for high-fidelity reasoning.
+3. **Output**: Chat-first. Any durable findings or artifacts must be explicitly requested for save (to `.omo/notepads/` or `.omo/evidence/` only).
 4. **Lifecycle**: Refreshed via `wunderkind install` and `wunderkind upgrade`. Run `wunderkind doctor` to check for stale assets.
 
 ---
@@ -562,7 +575,7 @@ Wunderkind's evolving workflow strategy is informed in part by Matt Pocock's pub
 
 - https://github.com/mattpocock/skills
 
-We plan to adapt selected ideas such as ubiquitous language, structured questioning, deterministic diagnosis, and PRD/planning flows to Wunderkind's filesystem-first `.sisyphus/` workflow rather than adopting GitHub-issue-centric assumptions directly.
+We plan to adapt selected ideas such as ubiquitous language, structured questioning, deterministic diagnosis, and PRD/planning flows to Wunderkind's filesystem-first `.omo/` workflow rather than adopting GitHub-issue-centric assumptions directly.
 
 ---
 

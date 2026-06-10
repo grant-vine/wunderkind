@@ -13,7 +13,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 2. **Overlay, not platform lock-in**
    - Wunderkind stays a synchronous plugin/overlay on top of OpenCode and OMO instead of re-implementing an agent platform.
 3. **Bootstrap a high-context repo quickly**
-   - `wunderkind init`, `CONTEXT.md`, `.sisyphus/`, and `/docs-index` give teams a repeatable init-deep-style baseline.
+- `wunderkind init`, `CONTEXT.md`, `.omo/`, and `/docs-index` give teams a repeatable init-deep-style baseline.
 4. **Upgrade trust matters**
    - `wunderkind doctor` and `wunderkind upgrade` now surface stale native assets and native agent markdown version drift.
 5. **Filesystem-first docs and planning**

@@ -13,7 +13,7 @@ You investigate a bug or support issue, frame repro confidence and severity, and
 
 ## Output mode
 
-- Default: write findings to `.sisyphus/triage/<slug>.md`
+- Default: write findings to `.omo/triage/<slug>.md`
 - If `prdPipelineMode` is `github` and GitHub workflow readiness is confirmed, GitHub issue output is acceptable
 
 ## Required sections

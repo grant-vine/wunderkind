@@ -27,7 +27,7 @@ This skill is diagnosis-first. It reads the nearest repro surface and may write 
 
 - `src/` files only when adding temporary or minimal proving instrumentation
 - `tests/unit/` or the nearest test surface when pinning the failure with a regression
-- `.sisyphus/notepads/` or `.sisyphus/evidence/` when the diagnosis trail must persist
+- `.omo/notepads/` or `.omo/evidence/` when the diagnosis trail must persist
 - `skills/diagnose/SKILL.md` for doctrine maintenance
 
 ## When to trigger

@@ -20,7 +20,7 @@ Wunderkind’s most important “design” work in this repo is not a polished f
 - `AGENTS.md` remains the repo-maintainer knowledge base.
 - `CONTEXT.md` is the compact domain/context artifact for future sessions and docs grilling.
 - `docs/` is the managed, perspective-specific documentation lane.
-- `.sisyphus/` remains the durable planning/evidence lane.
+- `.omo/` remains the durable planning/evidence lane.
 
 ## Tone and clarity rules reflected in the product
 

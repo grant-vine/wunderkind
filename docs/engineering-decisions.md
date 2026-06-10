@@ -29,7 +29,7 @@ This gives both bundle-level and per-agent installed-state visibility.
 Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade) instead of being scattered across prompts.
 
 ### CONTEXT.md is part of project bootstrap
-`wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.sisyphus/`, and optional docs scaffolding.
+`wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
 
 ## Current operational notes
 

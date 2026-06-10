@@ -28,7 +28,7 @@ The frontmatter `description` is the trigger surface for the runtime. Write it t
 
 - Start with `USE FOR:`.
 - Put the highest-signal trigger phrases in the first sentence.
-- Mention concrete repo artifacts when relevant, such as `skills/*/SKILL.md`, `.sisyphus/`, `README.md`, `tests/unit/`, or `src/`.
+- Mention concrete repo artifacts when relevant, such as `skills/*/SKILL.md`, `.omo/`, `README.md`, `tests/unit/`, or `src/`.
 - Prefer explicit task phrases over vague coaching language.
 - Keep it concise enough to scan quickly, but specific enough to disambiguate from adjacent skills.
 
@@ -78,7 +78,7 @@ Typical scope patterns:
 - Main asset: `skills/<skill-name>/SKILL.md`
 - Optional deep references: `skills/<skill-name>/REFERENCE.md`, `skills/<skill-name>/EXAMPLES.md`
 - Optional helper scripts: `skills/<skill-name>/scripts/`
-- Durable project artifacts: `.sisyphus/notepads/`, `.sisyphus/evidence/`, `.sisyphus/triage/`, `.sisyphus/rfcs/`
+- Durable project artifacts: `.omo/notepads/`, `.omo/evidence/`, `.omo/triage/`, `.omo/rfcs/`
 - Published docs surfaces: `README.md`, `AGENTS.md`, or repo docs folders when the skill is documentation-facing
 
 If a skill is analysis-only, say so explicitly. If it writes durable output, name the path pattern.
@@ -166,7 +166,7 @@ Historical `.sisyphus/**` archives are intentionally excluded from this complian
 | `experimentation-analyst` | `product-wunderkind` | revise | Reassign from removed `data-analyst`; center this skill on product experiments and feature readouts, with marketing consulted for campaign analytics. |
 | `grill-me` | `product-wunderkind` | keep | Continues to serve as the ambiguity-collapsing intake skill for product framing. |
 | `docs-with-grill` | `product-wunderkind` | keep | Context-aware documentation grilling that uses literal `CONTEXT.md` plus repo inspection before final docs writing. |
-| `setup-wunderkind-workflow` | `product-wunderkind` | keep | New Wunderkind-native setup hub for issue flow, triage vocabulary, glossary/docs locations, and `.sisyphus/` workflow conventions. |
+| `setup-wunderkind-workflow` | `product-wunderkind` | keep | New Wunderkind-native setup hub for issue flow, triage vocabulary, glossary/docs locations, and `.omo/` workflow conventions. |
 | `improve-codebase-architecture` | `fullstack-wunderkind` | revise | Refresh around seam/depth/locality vocabulary, deletion-test thinking, and RFC-backed structural refactoring. |
 | `oss-licensing-advisor` | `legal-counsel` | keep | Clear legal specialization with no ownership ambiguity. |
 | `pen-tester` | `ciso` | keep | Remains the offensive-security counterpart to broader security analysis. |

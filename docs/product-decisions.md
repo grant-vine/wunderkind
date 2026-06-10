@@ -21,7 +21,7 @@ Docs and current flows should prefer `oh-my-openagent`, while still tolerating l
 `CONTEXT.md` is now a first-class artifact created by `wunderkind init` and consumed by docs + planning flows.
 
 ### 4. Adapt Matt Pocock-style docs grilling into Wunderkind-native lanes
-`docs-with-grill` is the retained-product adaptation of `grill-with-docs`, using `CONTEXT.md`, `AGENTS.md`, and `.sisyphus/` instead of Matt’s repo layout.
+`docs-with-grill` is the retained-product adaptation of `grill-with-docs`, using `CONTEXT.md`, `AGENTS.md`, and `.omo/` instead of Matt’s repo layout.
 
 ### 5. Treat docs refresh as a managed workflow
 `/docs-index` owns docs refresh/bootstrap. Canonical docs filenames come from `AGENT_DOCS_CONFIG`, and history behavior comes from the configured docs mode.

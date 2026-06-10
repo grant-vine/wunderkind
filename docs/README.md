@@ -20,7 +20,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 
 ## Latest documented feature highlights
 
-- `wunderkind init` now maintains **`CONTEXT.md`** alongside `AGENTS.md` and `.sisyphus/`.
+- `wunderkind init` now maintains **`CONTEXT.md`** alongside `AGENTS.md` and `.omo/`.
 - **`docs-with-grill`** is the repo-aware docs grilling skill adapted into Wunderkind’s filesystem-first workflow.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
 - Generated native agents now embed **`wunderkind_version`** in frontmatter.

@@ -26,8 +26,8 @@ technical validation.
 
 - Main asset: `skills/<skill-name>/SKILL.md`
 - Optional references: `skills/<skill-name>/REFERENCE.md`, `skills/<skill-name>/EXAMPLES.md`
-- Supporting evidence: `.sisyphus/evidence/`
-- Durable learnings: `.sisyphus/notepads/`
+- Supporting evidence: `.omo/evidence/`
+- Durable learnings: `.omo/notepads/`
 
 `skills/SKILL-STANDARD.md` is the authoritative skill-writing standard for this repo.
 New and revised skills must follow it: trigger-first descriptions, explicit surviving ownership,
@@ -72,5 +72,5 @@ Do not use this skill for:
 1. Skills are authored in `skills/*/SKILL.md`, not in generated `agents/` output.
 2. Every skill must name its owner, trigger surface, and filesystem scope.
 3. Do not copy external skills verbatim; adapt them to Wunderkind personas and artifacts.
-4. If a workflow produces durable project knowledge, store it in `.sisyphus/`.
+4. If a workflow produces durable project knowledge, store it in `.omo/`.
 5. Keep the main skill tight enough to scan quickly during agent selection.

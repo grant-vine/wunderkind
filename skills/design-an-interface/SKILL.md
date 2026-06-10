@@ -26,8 +26,8 @@ This skill is analysis-first. It reads the current implementation and writes onl
 durable artifact needed for the decision:
 
 - `skills/design-an-interface/SKILL.md` for the doctrine itself
-- `.sisyphus/notepads/` for short-lived exploration notes and tradeoff capture
-- `.sisyphus/rfcs/<slug>.md` for repo-shaping interface decisions
+- `.omo/notepads/` for short-lived exploration notes and tradeoff capture
+- `.omo/rfcs/<slug>.md` for repo-shaping interface decisions
 - implementation task or PR notes when the decision is narrow and immediate
 
 ## When to trigger

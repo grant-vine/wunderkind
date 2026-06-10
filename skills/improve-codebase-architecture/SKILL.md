@@ -21,14 +21,14 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 Read:
 - `AGENTS.md`
-- `.sisyphus/glossary.md` if present
-- `.sisyphus/rfcs/`
+- `.omo/glossary.md` if present
+- `.omo/rfcs/`
 - existing ADR or docs folders relevant to the area
 - the code paths involved in the candidate refactor
 
 Write:
-- `.sisyphus/rfcs/<slug>.md`
-- optionally `.sisyphus/glossary.md` when the architecture discussion depends on a missing canonical term
+- `.omo/rfcs/<slug>.md`
+- optionally `.omo/glossary.md` when the architecture discussion depends on a missing canonical term
 
 ## Architecture language
 
@@ -60,7 +60,7 @@ Use these terms consistently in your analysis:
 
 ## Process
 
-1. Read the project language first: `AGENTS.md`, `.sisyphus/glossary.md`, and any relevant ADR/RFC history.
+1. Read the project language first: `AGENTS.md`, `.omo/glossary.md`, and any relevant ADR/RFC history.
 2. Explore the codebase organically and note where understanding one concept requires bouncing across too many shallow modules.
 3. Apply the **deletion test** to suspected shallow modules: if deleting the module simply moves the same complexity into every caller, it was earning its keep; if complexity vanishes, it was probably a pass-through.
 4. Present a numbered list of deepening opportunities. For each candidate include:
@@ -88,7 +88,7 @@ Use these terms consistently in your analysis:
 1. Ground every recommendation in repo evidence, not generic architecture taste.
 2. Prefer deeper modules and clearer seams over surface-level reshuffling.
 3. Show tradeoffs explicitly using locality, leverage, and testability.
-4. If the conversation depends on a missing domain term, add or update it in `.sisyphus/glossary.md` instead of letting terminology drift.
+4. If the conversation depends on a missing domain term, add or update it in `.omo/glossary.md` instead of letting terminology drift.
 5. Never recommend a rewrite without a staged migration path.
 
 ## Review gate
@@ -96,5 +96,5 @@ Use these terms consistently in your analysis:
 This skill is complete only when:
 - at least one real deepening opportunity is evidenced from the repo
 - the recommendation uses consistent seam/depth/locality language
-- an RFC exists at `.sisyphus/rfcs/<slug>.md`
+- an RFC exists at `.omo/rfcs/<slug>.md`
 - the migration path is incremental and verifiable

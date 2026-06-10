@@ -22,14 +22,14 @@ Read:
 - `CONTEXT.md`
 - `AGENTS.md`
 - `.wunderkind/wunderkind.config.jsonc`
-- `.sisyphus/`
+- `.omo/`
 - docs-output settings if present
 - relevant source files that answer the question more accurately than the user can
 
 Write:
 - `CONTEXT.md`
 - docs-output lanes only when the user explicitly wants docs generated or refreshed
-- `.sisyphus/evidence/*.md` only for hard-to-reverse decisions or reviewable durable proof
+- `.omo/evidence/*.md` only for hard-to-reverse decisions or reviewable durable proof
 
 ## When to trigger
 
@@ -47,7 +47,7 @@ Write:
 
 ## Process
 
-1. Inspect `CONTEXT.md`, `AGENTS.md`, `.sisyphus/`, and the relevant code before asking the user anything.
+1. Inspect `CONTEXT.md`, `AGENTS.md`, `.omo/`, and the relevant code before asking the user anything.
 2. Ask one sharp question at a time only when the repo cannot answer it.
 3. Keep a running picture of: product/domain summary, core workflows, shared language, important constraints, and open questions.
 4. Update `CONTEXT.md` only when the clarified context becomes stable enough to help future work.
@@ -58,7 +58,7 @@ Write:
 1. Repo truth beats user memory when the code clearly answers the question.
 2. `CONTEXT.md` must stay compact — summarize, do not dump transcripts.
 3. Ask one question at a time; do not unload a questionnaire.
-4. Prefer Wunderkind-native outputs (`CONTEXT.md`, docs-output lanes, `.sisyphus/evidence/`) over copied external layouts.
+4. Prefer Wunderkind-native outputs (`CONTEXT.md`, docs-output lanes, `.omo/evidence/`) over copied external layouts.
 5. If the task becomes pure docs drafting, switch to `technical-writer` instead of overextending this skill.
 
 ## Review gate

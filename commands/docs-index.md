@@ -26,7 +26,7 @@ This command is invoked as `/docs-index`.
 - Use canonical filenames from Wunderkind's built-in ownership map. Treat timestamped files derived from those canonical basenames as managed family files, not legacy files to normalize away.
 - Do not let individual agents invent output paths. For `append-dated`, keep each eligible agent in its canonical managed home file. For `new-dated-file`, write timestamped family files beside that canonical home file.
 - Treat the current working directory as the trust boundary. Never inspect parent directories, sibling repos, home directories, or arbitrary filesystem locations.
-- Never glob or search outside the configured docs directory, `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and this shipped `/docs-index` command asset.
+- Never glob or search outside the configured docs directory, `.wunderkind/`, `AGENTS.md`, `.omo/`, and this shipped `/docs-index` command asset.
 - Surface partial failures clearly, but still keep the docs index aligned with the successfully refreshed or created outputs.
 
 ## Notes

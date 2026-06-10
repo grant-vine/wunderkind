@@ -34,8 +34,8 @@ Use this skill when the user has an idea, feature request, plan, or architecture
 
 ## Wunderkind adaptation
 
-- If a PRD or plan file already exists in `.sisyphus/`, interrogate that artifact directly.
-- If a decision is still unresolved, suggest capturing it in `.sisyphus/notepads/` or the active PRD.
+- If a PRD or plan file already exists in `.omo/`, interrogate that artifact directly.
+- If a decision is still unresolved, suggest capturing it in `.omo/notepads/` or the active PRD.
 - Product discovery usually starts here before escalating into PRD, plan, or issue generation.
 
 ## Hard rules

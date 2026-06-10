@@ -27,7 +27,7 @@ This skill reads the changed implementation plus its nearest test surface and ma
 - `tests/unit/` and colocated `*.test.ts` files
 - `src/` files whose public behavior is under test
 - `skills/tdd/SKILL.md` for doctrine maintenance
-- `.sisyphus/notepads/` or `.sisyphus/evidence/` when a test strategy or defect trail needs to persist
+- `.omo/notepads/` or `.omo/evidence/` when a test strategy or defect trail needs to persist
 
 ## Runtime context
 
