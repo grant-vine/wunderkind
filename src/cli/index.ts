@@ -4,11 +4,13 @@ import { createRequire } from "node:module"
 import { runCliInstaller, runCliUpgrade } from "./cli-installer.js"
 import { runDoctorWithOptions } from "./doctor.js"
 import { runInit } from "./init.js"
+import { runProjectArtifactMigration } from "./migrate.js"
 import { runProjectCleanup } from "./cleanup.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import type { DocHistoryMode, InstallArgs, InstallScope } from "./types.js"
+import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 
 const require = createRequire(import.meta.url)
 const pkg = require("../../package.json") as { version: string }
@@ -38,10 +40,11 @@ program
       "Examples:",
       "  bunx @grant-vine/wunderkind install",
       "  bunx @grant-vine/wunderkind install --no-tui",
-      "  bunx @grant-vine/wunderkind install --no-tui \\",
-      "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
-      "  bunx @grant-vine/wunderkind upgrade --scope=global",
-      "  bunx @grant-vine/wunderkind gitignore",
+       "  bunx @grant-vine/wunderkind install --no-tui \\",
+       "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
+       "  bunx @grant-vine/wunderkind upgrade --scope=global",
+       "  bunx @grant-vine/wunderkind migrate",
+       "  bunx @grant-vine/wunderkind gitignore",
     ].join("\n"),
   )
   .version(pkg.version)
@@ -216,7 +219,8 @@ program
     [
       "Initialize Wunderkind in the current project folder.",
       "",
-      "Bootstraps project-local config, optional retained-persona SOUL files, and soul files (.sisyphus, AGENTS.md, docs README).",
+      "Bootstraps project-local config, optional retained-persona SOUL files, and project artifact lanes (.omo/, AGENTS.md, docs README).",
+      "Uses .omo/ as the primary project-working directory while leaving explicit migration from legacy .sisyphus/ to the migrate command.",
       "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
       "Init also configures the PRD/planning workflow mode for this project.",
       "Requires Wunderkind to already be installed via `wunderkind install`.",
@@ -239,7 +243,7 @@ program
       "  bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path=./docs",
       "",
       "PRD workflow modes:",
-      "  - filesystem: writes PRDs/plans/issues into .sisyphus/",
+      "  - filesystem: writes PRDs/plans/issues into .omo/",
       "  - github: expects gh plus a GitHub-backed repo; doctor reports readiness",
     ].join("\n"),
   )
@@ -316,13 +320,37 @@ program
   })
 
 program
+  .command("migrate")
+  .description(
+    [
+      `Migrate legacy ${LEGACY_PROJECT_ARTIFACT_DIR}/ project artifacts into ${PRIMARY_PROJECT_ARTIFACT_DIR}/.`,
+      "",
+      `Uses ${PRIMARY_PROJECT_ARTIFACT_DIR}/ as the primary project-working directory and keeps ${LEGACY_PROJECT_ARTIFACT_DIR}/ as a legacy compatibility root only.`,
+    ].join("\n"),
+  )
+  .option("--dry-run", `Preview ${LEGACY_PROJECT_ARTIFACT_DIR}/ -> ${PRIMARY_PROJECT_ARTIFACT_DIR}/ migration without moving files`)
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Examples:",
+      "  bunx @grant-vine/wunderkind migrate",
+      "  bunx @grant-vine/wunderkind migrate --dry-run",
+    ].join("\n"),
+  )
+  .action(async (opts: { dryRun?: boolean | undefined }) => {
+    const exitCode = await runProjectArtifactMigration({ dryRun: opts.dryRun === true })
+    process.exit(exitCode)
+  })
+
+program
   .command("cleanup")
   .description(
     [
       "Remove Wunderkind project-local registration and state from the current project.",
       "",
       "Removes project-local OpenCode plugin wiring and the .wunderkind/ directory.",
-      "Leaves AGENTS.md, .sisyphus/, docs output, and shared global capabilities untouched.",
+      "Leaves AGENTS.md, .omo/, legacy .sisyphus/, docs output, and shared global capabilities untouched.",
     ].join("\n"),
   )
   .action(async () => {

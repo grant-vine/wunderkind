@@ -72,7 +72,14 @@ describe("CLI help copy", () => {
 
     expect(output).toContain("Remove Wunderkind project-local registration and state from the current project.")
     expect(output).toContain(".wunderkind/")
-    expect(output).toContain("Leaves AGENTS.md, .sisyphus/, docs output")
+    expect(output).toContain("Leaves AGENTS.md, .omo/, legacy .sisyphus/, docs output")
+  })
+
+  it("includes migrate command help text", () => {
+    const output = runCliHelp("migrate", "--help")
+
+    expect(output).toContain("Migrate legacy .sisyphus/ project artifacts into .omo/")
+    expect(output).toContain("--dry-run")
   })
 
   it("includes upgrade command help text", () => {
