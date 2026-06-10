@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.0
+
+- make `.omo/` the primary Wunderkind project artifact root for plans, notepads, evidence, and filesystem-mode workflow guidance
+- add `wunderkind migrate` to move legacy `.sisyphus/` project artifacts into `.omo/` with dry-run and conflict detection support
+- update retained prompts, generated native agents, docs, and skill contracts so `.sisyphus/` is treated as a legacy compatibility path instead of the default workflow root
+
 ## 0.18.2
 
 - republish the 0.18.x release line under another fresh patch tag after the previous retry still used the wrong npm publishing key
