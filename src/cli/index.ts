@@ -172,12 +172,12 @@ program
 program
   .command("gitignore")
   .description(
-    [
-      "Add AI tooling traces to .gitignore in the current directory.",
-      "",
-      "Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/, .opencode/",
-      "Skips entries that are already present. Safe to run multiple times.",
-    ].join("\n"),
+      [
+        "Add AI tooling traces to .gitignore in the current directory.",
+        "",
+        "Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/, .omo/, .opencode/",
+        "Skips entries that are already present. Safe to run multiple times.",
+      ].join("\n"),
   )
   .addHelpText(
     "after",

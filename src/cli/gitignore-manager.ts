@@ -9,6 +9,7 @@ const AI_TRACE_ENTRIES = [
   ".wunderkind/",
   "AGENTS.md",
   ".sisyphus/",
+  ".omo/",
   ".opencode/",
 ] as const
 

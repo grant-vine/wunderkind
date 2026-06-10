@@ -586,7 +586,17 @@ Run this command to ensure `.wunderkind/` and other AI tooling directories are g
 wunderkind gitignore
 ```
 
-This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, `.omo/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+
+### `.omo/` vs `.opencode/`
+
+Wunderkind now treats `.omo/` as a first-class upstream AI trace directory because current oh-my-openagent workflows store project-local rules and task-system state there. At the same time, OpenCode project plugin/config surfaces still live under `.opencode/`.
+
+In practice:
+
+- keep `.omo/` for OMO-managed rules and task artifacts
+- keep `.opencode/` for OpenCode project plugins, commands, skills, and config
+- keep both gitignored unless you intentionally want to version-control a specific upstream workflow surface
 
 ---
 
