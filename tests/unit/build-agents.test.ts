@@ -63,7 +63,7 @@ describe("build-agents script", () => {
     expect(marketing).toContain("edit: deny")
     expect(marketing).toContain("apply_patch: deny")
     expect(marketing).toContain("bounded durable-artifact writer")
-    expect(marketing).toContain(".sisyphus/evidence/")
+    expect(marketing).toContain(".omo/evidence/")
     expect(marketing).not.toContain("append via shell")
     expect(marketing).toContain("task: deny")
     expect(ciso).toContain("# CISO — Soul")

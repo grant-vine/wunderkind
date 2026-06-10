@@ -118,8 +118,8 @@ export const RETAINED_AGENT_SLASH_COMMANDS = {
     commands: [
       {
         command: "/setup-wunderkind-workflow",
-        summary: "Establish the repo-local workflow contract for issue flow, triage vocabulary, glossary/docs locations, and `.sisyphus/` artifact conventions.",
-        details: ["Invoke via `skill(name=\"setup-wunderkind-workflow\")` to adapt Matt-style setup patterns to Wunderkind-native locations such as `AGENTS.md` and `.sisyphus/`."],
+        summary: "Establish the repo-local workflow contract for issue flow, triage vocabulary, glossary/docs locations, and `.omo/` artifact conventions.",
+        details: ["Invoke via `skill(name=\"setup-wunderkind-workflow\")` to adapt Matt-style setup patterns to Wunderkind-native locations such as `AGENTS.md` and `.omo/`."],
       },
       {
         command: "/docs-with-grill <topic>",

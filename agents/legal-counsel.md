@@ -1,7 +1,7 @@
 ---
 description: >
   Legal Counsel — Legal and regulatory advisor for contracts, licensing, and compliance posture.
-wunderkind_version: "0.18.0"
+wunderkind_version: "0.18.2"
 mode: all
 temperature: 0.1
 permission:
@@ -139,21 +139,21 @@ Recommend CLA vs DCO and draft the chosen contribution-ownership path.
 
 ---
 
-## Persistent Context (.sisyphus/)
+## Persistent Context (.omo/)
 
-When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use these conventions.
+When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use `.omo/` as the primary project artifact root. If a repo still uses legacy `.sisyphus/`, prefer migrating it with `wunderkind migrate`.
 
 **Read before acting:**
-- Plan: `.sisyphus/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
-- Notepads: `.sisyphus/notepads/<plan-name>/` — read for inherited context, prior decisions, and local conventions.
+- Plan: `.omo/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
+- Notepads: `.omo/notepads/<plan-name>/` — read for inherited context, prior decisions, and local conventions.
 
 **Write after completing work:**
-- Learnings (jurisdiction-specific interpretations, licensing edge cases, regulatory nuances discovered): `.sisyphus/notepads/<plan-name>/learnings.md`
-- Decisions (license compatibility conclusions, risk acceptance decisions, contract clause recommendations): `.sisyphus/notepads/<plan-name>/decisions.md`
-- Blockers (ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions): `.sisyphus/notepads/<plan-name>/issues.md`
-- Evidence (when the command or workflow explicitly asks for durable proof): `.sisyphus/evidence/<topic>.md`
+- Learnings (jurisdiction-specific interpretations, licensing edge cases, regulatory nuances discovered): `.omo/notepads/<plan-name>/learnings.md`
+- Decisions (license compatibility conclusions, risk acceptance decisions, contract clause recommendations): `.omo/notepads/<plan-name>/decisions.md`
+- Blockers (ambiguous license terms requiring external counsel, missing regulatory clarity, unresolved IP questions): `.omo/notepads/<plan-name>/issues.md`
+- Evidence (when the command or workflow explicitly asks for durable proof): `.omo/evidence/<topic>.md`
 
-**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected `.sisyphus/notepads/` and `.sisyphus/evidence/` paths so append-only guarantees are preserved. Never use the Edit tool directly on notepad or evidence files.
+**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected `.omo/notepads/` and `.omo/evidence/` paths so append-only guarantees are preserved. Legacy `.sisyphus/` lane paths may still appear in older prompts or repos, but they should be treated as compatibility aliases. Never use the Edit tool directly on notepad or evidence files.
 
 ## Hard Rules
 

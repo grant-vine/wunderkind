@@ -93,8 +93,8 @@ describe("retained agent factory structure", () => {
         expect(metadata.triggers[0]?.domain).toBeDefined()
       })
 
-      it("prompt contains .sisyphus/ persistent context section", () => {
-        expect(config.prompt).toContain(".sisyphus/")
+      it("prompt contains .omo/ persistent context section", () => {
+        expect(config.prompt).toContain(".omo/")
       })
 
       it("prompt contains SOUL maintenance guidance", () => {
