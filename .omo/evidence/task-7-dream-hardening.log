@@ -1,0 +1,6 @@
+Task 7 Completion Log: dream.md hardening
+- Hardened commands/dream.md with explicit workflow phases: Ideation, Soul Synthesis, Exploration.
+- Added selective specialist delegation rules.
+- Tightened save constraints: ONLY on request, restricted to .sisyphus/notepads/ and .sisyphus/evidence/.
+- Removed forbidden references (config files, plans directory, etc.).
+- Verified against all positive, negative, and structure assertions using Python QA script.

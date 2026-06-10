@@ -1,0 +1,2 @@
+[2026-04-05] Updated tests/unit/config-manager-coverage.test.ts to assert dream.md is included in native command paths and installed content contains agent: product-wunderkind.
+[2026-04-05] Verified with: bun test tests/unit/config-manager-coverage.test.ts (27 pass, 0 fail).

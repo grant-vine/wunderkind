@@ -1,0 +1,150 @@
+## F3 Manual QA — `/dream` command and doctor capability detection
+
+Date: 2026-04-05
+Repo: /Users/grantv/Code/wunderkind
+
+### Build result
+
+Command: `bun run build`
+
+Result: PASS
+
+Output excerpt:
+```text
+$ tsc && bun run dist/build-agents.js
+Generated agents/marketing-wunderkind.md
+Generated agents/creative-director.md
+Generated agents/product-wunderkind.md
+Generated agents/fullstack-wunderkind.md
+Generated agents/ciso.md
+Generated agents/legal-counsel.md
+
+Generated 6 agent files in /Users/grantv/Code/wunderkind/agents
+```
+
+### Packaged command asset verification
+
+1. `commands/` listing includes `dream.md`
+
+```text
+total 24
+drwxr-xr-x   5 grantv  staff   160 Apr  5 21:14 .
+drwxr-xr-x@ 28 grantv  staff   896 Apr  4 14:17 ..
+-rw-r--r--   1 grantv  staff  3164 Apr  4 10:57 design-md.md
+-rw-r--r--   1 grantv  staff  3070 Mar 20 09:15 docs-index.md
+-rw-r--r--   1 grantv  staff  2731 Apr  5 21:34 dream.md
+```
+
+2. `getPackagedCommandFilePaths()` and `getNativeCommandFilePaths()` inspection confirms packaged `commands/*.md` are included in native command expectations.
+
+3. Compiled CLI verification using `node --input-type=module`:
+
+Command:
+```text
+TMP_HOME=$(mktemp -d) HOME="$TMP_HOME" node --input-type=module -e 'import { getNativeCommandFilePaths } from "./dist/cli/config-manager/index.js"; const paths = getNativeCommandFilePaths(); const hasDream = paths.some((p) => p.endsWith("/dream.md")); console.log(JSON.stringify({ hasDream, paths }, null, 2)); if (!hasDream) process.exit(1);'
+```
+
+Result: PASS
+
+Output excerpt:
+```json
+{
+  "hasDream": true,
+  "paths": [
+    ".../commands/design-md.md",
+    ".../commands/docs-index.md",
+    ".../commands/dream.md",
+    "... 36 more generated retained command paths ..."
+  ]
+}
+```
+
+### `dream.md` contract assertions
+
+Command: Python assertion script from task brief
+
+Result: PASS
+
+Output:
+```text
+dream.md contract: ALL PASS
+```
+
+### Doctor code inspection
+
+Verified in `src/cli/doctor.ts` lines 375-430 and 388-395:
+
+- `getNativeCommandFilePaths` is imported and used
+- standard project health output prints `/dream available:`
+- verbose stale-install warnings compute missing filenames and include `dream.md` when absent
+
+### Disposable sandbox verification
+
+Safety model:
+- Used a temp HOME directory only
+- Did not run `wunderkind install`
+- Did not modify the real `~/.config/opencode/opencode.json`
+
+Sandbox method:
+1. Created temp HOME and temp project with `.wunderkind/`, `.sisyphus/`, `AGENTS.md`, and `package.json`
+2. Wrote temp `HOME/.config/opencode/opencode.json` containing `"plugin": ["@grant-vine/wunderkind"]`
+3. Used compiled config-manager exports to write native agents, commands, and skills into temp HOME
+4. Ran `node /Users/grantv/Code/wunderkind/bin/wunderkind.js doctor` with `cwd` set to the sandbox project
+5. Deleted temp `dream.md` from the temp commands dir and reran `doctor --verbose`
+
+Native asset generation result:
+```json
+{
+  "agentResult": {
+    "success": true,
+    "configPath": "/var/.../home/.config/opencode/agents"
+  },
+  "commandResult": {
+    "success": true,
+    "configPath": "/var/.../home/.config/opencode/commands"
+  },
+  "skillResult": {
+    "success": true,
+    "configPath": "/var/.../home/.config/opencode/skills"
+  },
+  "hasDream": true,
+  "commandCount": 39
+}
+```
+
+Healthy doctor result:
+- exit code: `0`
+- matched line: `- /dream available: ✓ yes`
+
+Stale verbose doctor result (after removing temp `dream.md`):
+- exit code: `0`
+- matched warning: `- missing native command files: dream.md`
+
+Sandbox verdict: PASS
+
+### Targeted test gate
+
+Command: `bun test tests/unit/init-doctor.test.ts`
+
+Result: PASS
+
+Output:
+```text
+bun test v1.3.10 (30e609e0)
+
+ 37 pass
+ 0 fail
+ 139 expect() calls
+Ran 37 tests across 1 file. [53.00ms]
+```
+
+### Overall QA verdict
+
+- Build: PASS
+- `dream.md` packaged command path: PASS
+- `dream.md` contract assertions: PASS
+- `doctor` standard `/dream available:  ✓ yes`: PASS
+- `doctor --verbose` stale warning names `dream.md`: PASS
+- Targeted doctor unit suite: PASS
+
+Final verdict: APPROVE

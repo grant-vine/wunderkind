@@ -1,0 +1,42 @@
+$ bun test tests/unit/init-doctor.test.ts
+bun test v1.3.10 (30e609e0)
+
+tests/unit/init-doctor.test.ts:
+1625 |       mockGetNativeCommandFilePaths.mockImplementation(() => commandPaths)
+1626 | 
+1627 |       try {
+1628 |         const { code, messages } = await captureDoctorOutput()
+1629 |         expect(code).toBe(0)
+1630 |         expect(messages.some((m) => m.includes("/dream") && (m.includes("available") || m.includes("present")))).toBe(true)
+                                                                                                                        ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1630:114)
+(fail) runDoctor > runDoctor /dream availability > shows /dream available line in project health output [3.61ms]
+1660 |       mockGetNativeCommandFilePaths.mockImplementation(() => commandPaths)
+1661 | 
+1662 |       try {
+1663 |         const { code, messages } = await captureDoctorOutput({ verbose: true })
+1664 |         expect(code).toBe(0)
+1665 |         expect(messages.some((m) => m.includes("dream.md"))).toBe(true)
+                                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/Users/grantv/Code/wunderkind/tests/unit/init-doctor.test.ts:1665:62)
+(fail) runDoctor > runDoctor /dream availability > verbose mode names dream.md as missing when native commands are stale [1.51ms]
+
+ 35 pass
+ 2 fail
+ 139 expect() calls
+Ran 37 tests across 1 file. [53.00ms]
+
+Post-test verification:
+- lsp_diagnostics tests/unit/init-doctor.test.ts -> no diagnostics
+- tsc --noEmit -> success
+- bun run build -> success
