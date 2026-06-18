@@ -578,11 +578,11 @@ async function promptSoulAnswer(question: SoulQuestionDefinition, existingValue?
     ? await p.text({
         message: `${question.message} (custom answer)`,
         initialValue: existingValue,
-        validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
+        validate: (value) => (String(value).trim() === "" ? "This answer is required" : undefined),
       })
     : await p.text({
         message: `${question.message} (custom answer)`,
-        validate: (value) => (value.trim() === "" ? "This answer is required" : undefined),
+        validate: (value) => (String(value).trim() === "" ? "This answer is required" : undefined),
       })
   if (p.isCancel(custom)) return null
   return (custom as string).trim()
@@ -806,7 +806,7 @@ export async function runInit(options: InitOptions): Promise<number> {
           placeholder: "./docs",
             initialValue: config.docsPath,
             validate: (v) => {
-              return validateResolvedDocsPath(v, cwd)
+              return validateResolvedDocsPath(String(v), cwd)
             },
           })
         if (p.isCancel(docsPathRaw)) return 1
@@ -915,7 +915,7 @@ export async function runInit(options: InitOptions): Promise<number> {
           message: "DESIGN.md path:",
           initialValue: designPath,
           validate: (value) => {
-            const validation = validateDesignPath(value)
+            const validation = validateDesignPath(String(value))
             return validation.valid ? undefined : validation.error
           },
         })
