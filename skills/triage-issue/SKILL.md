@@ -1,7 +1,7 @@
 ---
 name: triage-issue
 description: >
-  USE FOR: bug triage, issue investigation, support handoff,
+  USE FOR: bug triage, external PR triage, issue investigation, support handoff,
   incident reproduction, defect documentation, issue scoping,
   support-to-engineering transitions, acceptance clarity, backlog-ready issue shaping.
 
@@ -10,6 +10,8 @@ description: >
 # Triage Issue
 
 You investigate a bug or support issue, frame repro confidence and severity, and produce a durable handoff artifact before implementation begins. Engineering owns root-cause diagnosis and fix implementation; product owns intake quality and acceptance clarity.
+
+If the repo treats external pull requests as an intake surface, triage them with the same discipline: verify the claim, identify the affected contract, and write the next-step brief before anyone starts implementation or merge work.
 
 ## Output mode
 
@@ -27,10 +29,12 @@ You investigate a bug or support issue, frame repro confidence and severity, and
 
 ## Workflow
 
-1. Assess and frame repro confidence from available evidence
-2. Frame severity and acceptance criteria from observable behavior
-3. Capture a safe fix direction for engineering handoff
-4. Hand off to fullstack-wunderkind with test-first guidance and clear acceptance criteria
+1. Gather the current issue or PR context, including prior notes, reproduction clues, and the nearest affected code paths.
+2. Check whether the requested behavior already exists or was previously rejected so intake does not create duplicate work.
+3. Assess and frame repro confidence from available evidence, and verify the claim where possible before shaping the handoff.
+4. Frame severity and acceptance criteria from observable behavior.
+5. Capture a safe fix direction for engineering handoff.
+6. Hand off to fullstack-wunderkind with test-first guidance and clear acceptance criteria.
 
 ## Wunderkind ownership
 
@@ -45,3 +49,4 @@ You investigate a bug or support issue, frame repro confidence and severity, and
 2. Record evidence before proposing a fix.
 3. Acceptance criteria must describe observable behavior.
 4. Prefer durable filesystem artifacts over ephemeral chat summaries.
+5. For GitHub-backed triage comments, prepend a clear AI-generated disclaimer before posting user-visible notes.

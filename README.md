@@ -408,7 +408,7 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `agile-pm` | product-wunderkind | Sprint planning, task decomposition |
 | `grill-me` | product-wunderkind | Requirement interrogation & ambiguity collapse |
 | `docs-with-grill` | product-wunderkind | Repo-aware docs grilling with `CONTEXT.md` maintenance |
-| `setup-wunderkind-workflow` | product-wunderkind | Repo-local workflow contract for issue flow, triage vocabulary, glossary/docs paths, and `.sisyphus` conventions |
+| `setup-wunderkind-workflow` | product-wunderkind | Repo-local workflow contract for issue flow, triage vocabulary, glossary/docs paths, and `.omo` conventions |
 | `ubiquitous-language` | product-wunderkind | Glossary maintenance, canonical terminology, and naming alignment |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
 | `triage-issue` | product-wunderkind | Issue intake, repro shaping, acceptance clarity, and backlog-ready handoff |
@@ -575,7 +575,7 @@ Wunderkind's evolving workflow strategy is informed in part by Matt Pocock's pub
 
 - https://github.com/mattpocock/skills
 
-We plan to adapt selected ideas such as ubiquitous language, structured questioning, deterministic diagnosis, and PRD/planning flows to Wunderkind's filesystem-first `.omo/` workflow rather than adopting GitHub-issue-centric assumptions directly.
+We plan to adapt selected ideas such as ubiquitous language, structured questioning, deterministic diagnosis, review/triage loops, and PRD/planning flows to Wunderkind's filesystem-first `.omo/` workflow rather than adopting GitHub-issue-centric assumptions directly.
 
 ---
 

@@ -2,7 +2,7 @@
 name: setup-wunderkind-workflow
 description: >
   USE FOR: repo-local workflow setup, issue flow selection, triage vocabulary,
-  glossary/docs location setup, `.sisyphus` conventions, and adapting
+  glossary/docs location setup, `.omo` conventions, and adapting
   Matt-style setup patterns to Wunderkind-native files like `AGENTS.md` and
 `.omo/*`.
 
