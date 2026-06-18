@@ -36,17 +36,17 @@
     "test:coverage:config-manager": "bun test --coverage tests/unit/config-manager-coverage.test.ts"
   },
   "dependencies": {
-    "@clack/prompts": "^0.9.1",
-    "@opencode-ai/plugin": "1.17.0",
-    "@opencode-ai/sdk": "1.17.0",
+    "@clack/prompts": "^1.5.1",
+    "@opencode-ai/plugin": "1.17.8",
+    "@opencode-ai/sdk": "1.17.8",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
-    "oh-my-openagent": "4.8.1",
+    "oh-my-openagent": "4.11.1",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.3"
+    "@types/node": "^22.19.21",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "oh-my-openagent",
