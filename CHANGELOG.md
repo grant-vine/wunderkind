@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.20.0
+
+- raise the public Node.js runtime floor to `22.12+` (while continuing to support Bun 1+) so Wunderkind can adopt `commander@15`
+- upgrade the CLI dependency surface to `commander@15.0.0`, add an explicit `engines.node >=22.12.0` contract, and align the npm publish workflow to Node 22
+
 ## 0.19.1
 
 - upgrade the direct OpenCode / OMO dependency surface to `@opencode-ai/plugin@1.17.8`, `@opencode-ai/sdk@1.17.8`, `oh-my-openagent@4.11.1`, and `@clack/prompts@1.5.1`
