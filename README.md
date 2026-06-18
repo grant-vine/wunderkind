@@ -617,7 +617,7 @@ In practice:
 
 - [OpenCode](https://opencode.ai)
 - [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
-- Node.js 18+ or Bun 1+
+- Node.js 22.12+ or Bun 1+
 
 ---
 

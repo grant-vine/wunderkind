@@ -239,7 +239,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .sisyphus/, 
 - **JSONC comments lost on opencode config write** — `addPluginToOpenCodeConfig()` uses `JSON.stringify` when writing. If the original was a `.jsonc` file with comments those are lost. The file is always written as `.json`.
 - **Regex in source**: use `\u001b` not `\x1b` in regex literals (both work in tsc, but LSP reports false positives with `\x1b`).
 - **`createRequire`** in `src/cli/index.ts` is the only CommonJS interop usage — used to read `package.json` at runtime. Everything else is pure ESM.
-- **Commander 15 is intentionally deferred** — it now declares `node >=22.12.0`, which conflicts with Wunderkind's current public runtime contract (`Node.js 18+ or Bun 1+`). TypeScript 6 is safe to adopt independently, but a Commander major bump must be coupled to an explicit support-policy decision, README/runtime requirement update, and CI Node-version review.
+- **Commander 15 is now adopted** — Wunderkind's public Node runtime contract is now `Node.js 22.12+ or Bun 1+`, matching Commander 15's engine floor. Keep README requirements, CI Node versions, and any install guidance aligned with that support policy.
 - **`.wunderkind/` dir is gitignored automatically** by both installers (via `addAiTracesToGitignore()`). Per-project config and state are never committed.
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` (not the legacy `config.json`). The config-manager detects both but always writes to `opencode.json`.
