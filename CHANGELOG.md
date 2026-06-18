@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.1
+
+- upgrade the direct OpenCode / OMO dependency surface to `@opencode-ai/plugin@1.17.8`, `@opencode-ai/sdk@1.17.8`, `oh-my-openagent@4.11.1`, and `@clack/prompts@1.5.1`
+- fix `wunderkind init` prompt validators for the stricter Clack 1.5 input contract so build/test runs stay green after the dependency refresh
+- refresh `.omo`-first skill and README guidance, including stronger triage handling for external PR intake and AI-generated GitHub note disclaimers
+
 ## 0.19.0
 
 - make `.omo/` the primary Wunderkind project artifact root for plans, notepads, evidence, and filesystem-mode workflow guidance
