@@ -9,14 +9,14 @@ description: >
 
 # Triage Issue
 
-You investigate a bug or support issue, frame repro confidence and severity, and produce a durable handoff artifact before implementation begins. Engineering owns root-cause diagnosis and fix implementation; product owns intake quality and acceptance clarity.
+You investigate a bug, external PR, or support issue with the upstream review-loop posture: verify the claim, identify the affected contract, classify risk, and produce the next-step brief before implementation begins. Wunderkind keeps this generic triage surface because `product-wunderkind` owns intake quality and acceptance clarity, while `fullstack-wunderkind` owns root-cause diagnosis and fixes.
 
 If the repo treats external pull requests as an intake surface, triage them with the same discipline: verify the claim, identify the affected contract, and write the next-step brief before anyone starts implementation or merge work.
 
 ## Output mode
 
 - Default: write findings to `.omo/triage/<slug>.md`
-- If `prdPipelineMode` is `github` and GitHub workflow readiness is confirmed, GitHub issue output is acceptable
+- If `prdPipelineMode` is `github` and GitHub workflow readiness is confirmed, adapt the upstream issue-comment flow with a clear retained-agent handoff
 
 ## Required sections
 
@@ -42,6 +42,7 @@ If the repo treats external pull requests as an intake surface, triage them with
 
 - `product-wunderkind` owns first-pass triage: intake quality, repro confidence framing, severity classification, acceptance clarity, and backlog-ready handoff
 - `fullstack-wunderkind` owns root-cause diagnosis, red-green coverage, and implementation when needed
+- This skill stops at triage unless the user explicitly asks for implementation; use `tdd` for the red-green repair loop after the handoff is accepted
 
 ## Hard rules
 

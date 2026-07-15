@@ -3,13 +3,13 @@ name: ubiquitous-language
 description: >
   USE FOR: glossary maintenance, shared terminology cleanup, naming alignment,
   canonical terms, alias resolution, domain-language drift, and explicit updates
-to `.omo/glossary.md`.
+  to `.omo/glossary.md`.
 
 ---
 
 # Ubiquitous Language
 
-Maintain a shared domain glossary so humans and agents keep using the same words for the same concepts.
+Maintain a shared domain glossary so humans and agents keep using the same words for the same concepts. Wunderkind imports the upstream domain-modeling vocabulary pattern, then narrows it to product-owned glossary and naming alignment work in `.omo/glossary.md` so it supports PRDs, plans, triage, and architecture discussions without becoming a broad codebase-design workflow.
 
 ## Primary owner
 
@@ -30,6 +30,7 @@ Write or update `.omo/glossary.md`.
 
 - Do not use this as the default repo setup workflow; prefer `setup-wunderkind-workflow` for initial workflow/domain setup.
 - Do not use it when the real need is a broader discovery interview; prefer `grill-me` or `prd-pipeline`.
+- Do not use it for full architecture seam design; prefer `improve-codebase-architecture` when vocabulary changes depend on structural code decisions.
 - Do not hide unresolved ambiguity. Mark it explicitly instead of guessing.
 
 ## What to capture

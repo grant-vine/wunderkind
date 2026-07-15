@@ -9,13 +9,15 @@ description: >
 
 # Code Health
 
-Produce a structured, evidence-based code health audit report with severity-ranked findings. This skill is an analysis and reporting tool — it does not mutate code, create GitHub issues or RFCs, or run automated cleanup tools.
+Produce a structured, evidence-based code health audit report with severity-ranked findings. Wunderkind imports the upstream review/audit posture but narrows it to retained engineering assessment: this skill is analysis and reporting only, so it doesn't mutate code, create GitHub issues or RFCs, or run automated cleanup tools.
 
 ## Primary owner
 
 **Owned by:** wunderkind:fullstack-wunderkind
 
 This skill is owned by `fullstack-wunderkind` as the surviving steward for code quality, TDD, architecture, and engineering methods.
+
+Use this as a review gate before deciding what to fix. Route actual repair through `fullstack-wunderkind`, `tdd`, or `improve-codebase-architecture` after the audit identifies a concrete target.
 
 ## Output target
 

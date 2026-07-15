@@ -9,16 +9,13 @@ description: >
 
 # TDD
 
-Adapted from Matt Pocock's benchmark skill for Wunderkind's Bun + TypeScript strict-mode stack.
+This skill imports the upstream red-green-refactor loop, then narrows it to Wunderkind's Bun + strict TypeScript stack: prove one observable behavior, write the failing regression first, make it pass minimally, and only then refactor. Wunderkind keeps this generic surface because `fullstack-wunderkind` owns verified engineering change and the repo treats Bun tests, TypeScript strictness, and `.omo` evidence as part of the delivery contract.
 
 ## Primary owner
 
 **Owned by:** wunderkind:fullstack-wunderkind
 
-This skill is explicitly owned by `fullstack-wunderkind`.
-
-It carries forward the old QA doctrine, but `fullstack-wunderkind` now owns the execution of
-red-green-refactor loops, regression coverage, and technical defect diagnosis.
+This skill is explicitly owned by `fullstack-wunderkind`, which owns red-green-refactor execution, regression coverage, and technical defect diagnosis under Wunderkind's retained-agent overlay.
 
 ## Filesystem scope
 
@@ -87,7 +84,7 @@ Do not trigger this skill for:
 2. Tests must describe behavior through public interfaces, not private helpers.
 3. Do not weaken types or strictness to make tests easier to write.
 4. Always rerun `bun test tests/unit/` and `npx tsc --noEmit` before declaring green.
-5. If the test reveals a structural boundary problem, hand off to interface or architecture skills instead of papering over it.
+5. If the test reveals a structural boundary problem, hand off to `improve-codebase-architecture` or direct `fullstack-wunderkind` judgement instead of papering over it.
 
 ## Review gate
 

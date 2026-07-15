@@ -9,14 +9,14 @@ description: >
 
 # PRD Pipeline
 
-This skill converts product intent into a durable delivery workflow.
+This skill converts product intent into a durable delivery workflow using the upstream idea-to-spec-to-ticket shape: clarify the idea, write the spec, break it into execution slices, and preserve acceptance checks. Wunderkind keeps the surface because `product-wunderkind` owns the product handoff, while the default output is filesystem-first `.omo` artifacts rather than an upstream GitHub-only issue flow.
 
 ## Workflow modes
 
 Read `prdPipelineMode` from `.wunderkind/wunderkind.config.jsonc`.
 
 - `filesystem` — create artifacts in `.omo/` via Wunderkind's bounded durable-artifact writer
-- `github` — use `gh`-backed GitHub issues/PRD flow only when the repo is GitHub-ready
+- `github` — adapt the upstream issue flow with `gh` only when the repo is GitHub-ready and the project explicitly selected it
 
 If the mode is missing, treat it as `filesystem`.
 
@@ -54,6 +54,7 @@ If the mode is missing, treat it as `filesystem`.
 
 - `product-wunderkind` owns PRD creation, decomposition, and acceptance-criteria/testability review
 - `fullstack-wunderkind` validates implementation sequencing, technical shape, and regression/testing execution needs
+- Upstream-style ticket generation is narrowed here to retained-agent handoff: each issue must name the intended owner, evidence path, and acceptance gate before implementation starts
 
 ## Hard rules
 

@@ -1,41 +1,47 @@
 ---
 name: design-an-interface
 description: >
-  USE FOR: high-complexity API design, module boundary design, interface comparison,
-  design-it-twice exploration, and choosing between competing abstractions before
-  implementation. Use when the shape of an interface is the main engineering risk.
+  DEPRECATED: docs-history and detection-only reference for the retired
+  design-an-interface route. Do not invoke for new work. Use
+  improve-codebase-architecture for structural interface work, direct
+  fullstack-wunderkind routing for narrow engineering judgement, or
+  product/frontend exploration when user workflow or prototype evidence
+  shapes the contract.
 
 ---
 
 # Design an Interface
 
-Adapted from Matt Pocock's benchmark skill for Wunderkind's engineering workflow.
+Deprecated in the upstream convergence release. This file is retained only for migration
+history, replacement guidance, and detection-only diagnostics.
 
 ## Primary owner
 
 **Owned by:** wunderkind:fullstack-wunderkind
 
-This skill is explicitly owned by `fullstack-wunderkind`.
+This deprecated route was previously owned by `fullstack-wunderkind`.
 
-If the design question expands into broader structural friction or RFC-worthy boundary
-changes, hand off to `improve-codebase-architecture` for the longer-form architecture work.
+New interface design work must route to `improve-codebase-architecture` for structural
+friction or RFC-worthy boundary changes, directly to `fullstack-wunderkind` for narrow
+engineering judgement, or through product/frontend exploration when user workflow or
+prototype evidence shapes the contract.
 
 ## Filesystem scope
 
-This skill is analysis-first. It reads the current implementation and writes only the smallest
-durable artifact needed for the decision:
+This file is documentation-only. It must not be used as an execution-time route.
+Historical references may point to:
 
-- `skills/design-an-interface/SKILL.md` for the doctrine itself
+- `skills/design-an-interface/SKILL.md` for the deprecated route reference itself
 - `.omo/notepads/` for short-lived exploration notes and tradeoff capture
 - `.omo/rfcs/<slug>.md` for repo-shaping interface decisions
 - implementation task or PR notes when the decision is narrow and immediate
 
 ## When to trigger
 
-Use this skill only when a high-complexity engineering decision about API shape, module
-boundaries, or abstraction depth will materially affect future implementation.
+Do not trigger this skill for new work. The historical trigger signals below now route to
+`improve-codebase-architecture` or direct `fullstack-wunderkind` judgement.
 
-Typical signals:
+Historical signals:
 
 - an API boundary between modules, services, or adapters needs an intentional contract
 - multiple plausible public interfaces exist and the wrong shape will be costly to unwind
@@ -45,8 +51,7 @@ Typical signals:
 
 ## Anti-triggers
 
-Do NOT invoke for trivial helpers, minor parameter additions, or any task where there is only
-one obvious solution.
+Do NOT invoke this skill. It is deprecated.
 
 Do not trigger this skill for:
 
@@ -56,14 +61,15 @@ Do not trigger this skill for:
 - routine CRUD handlers where the repo already has a clear pattern
 - UI polish decisions that belong to `creative-director`
 - broad architecture audits better handled by `improve-codebase-architecture`
+- execution-time alias routing, fallback routing, or automatic invocation under this deprecated name
 
 ## Process
 
-1. Define the callers, constraints, and public behaviors the interface must support.
-2. Generate at least two genuinely different designs; three is better when the tradeoffs are subtle.
-3. Show a usage example for each design, not just a type signature.
-4. Compare the designs for simplicity, misuse resistance, depth, and future change cost.
-5. Recommend one direction and explain why the rejected options lost.
+1. Stop if this file was selected as an execution route.
+2. Re-route structural design work to `improve-codebase-architecture`.
+3. Re-route narrow implementation judgement to `fullstack-wunderkind`.
+4. Re-route workflow-driven or prototype-led contract shaping to product/frontend exploration.
+5. Keep any remaining reference to this file as migration history or detection-only diagnostics.
 
 ## Evaluation lens
 
@@ -75,17 +81,16 @@ Do not trigger this skill for:
 
 ## Hard rules
 
-1. Produce multiple distinct designs before choosing one.
-2. Evaluate interface quality, not coding speed.
-3. Prefer hard-to-misuse boundaries over clever signatures.
-4. Ground the recommendation in current repo constraints and file layout.
-5. If the problem is bigger than one interface, escalate into architecture work instead of forcing it here.
+1. Do not invoke this route for new work.
+2. Do not preserve execution-time alias behavior for this deprecated skill name.
+3. Keep this file only for migration history, replacement guidance, and detection-only diagnostics.
+4. Route successor work to `improve-codebase-architecture`, direct `fullstack-wunderkind` judgement, or product/frontend exploration when workflow evidence shapes the contract.
 
 ## Review gate
 
-This skill is complete only when:
+This deprecated file is acceptable only when:
 
-1. `fullstack-wunderkind` ownership is explicit and the activation surface is limited to high-complexity engineering decisions.
-2. At least two genuinely different interface designs were compared through usage examples, not just type signatures.
-3. The chosen boundary is grounded in repo-specific callers, constraints, and migration cost.
-4. The durable output path is named clearly when the decision needs to persist beyond the current task.
+1. It is not promoted as a first-class skill route.
+2. It names `improve-codebase-architecture`, direct `fullstack-wunderkind` judgement, and product/frontend exploration as replacements.
+3. Any remaining reference is documentation, routing guidance, or detection-only diagnostics.
+4. No runtime selection, fallback route, or command metadata depends on this deprecated name.

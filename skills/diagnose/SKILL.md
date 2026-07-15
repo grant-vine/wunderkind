@@ -46,7 +46,7 @@ Do not trigger this skill for:
 
 - straightforward fixes where the broken contract and code path are already obvious
 - pure feature work with no defect investigation
-- architecture redesign discussions better served by `design-an-interface` or `improve-codebase-architecture`
+- architecture redesign discussions better served by `improve-codebase-architecture`
 - work that is already in a clear red-green-refactor loop; use `tdd` there instead
 
 ## Process

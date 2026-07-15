@@ -9,13 +9,15 @@ description: >
 
 # Improve Codebase Architecture
 
-Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deeper ones with clearer seams, better locality, and higher leverage.
+Surface architectural friction and propose **deepening opportunities** that turn shallow modules into deeper ones with clearer seams, better locality, and higher leverage. Wunderkind imports upstream codebase-design and seam-depth positioning, then narrows it to `fullstack-wunderkind` owned architecture work with `.omo` RFCs, repo evidence, and visual or workflow review when a proposed interface affects user-facing behavior.
 
 ## Primary owner
 
 **Owned by:** wunderkind:fullstack-wunderkind
 
 `product-wunderkind` may trigger this skill when recurring delivery pain points point to structural causes, but engineering owns the resulting architecture work.
+
+This is the successor route for structural interface design after `design-an-interface` retirement; narrow engineering judgement can still go directly to `fullstack-wunderkind`, and product/frontend exploration should shape contracts driven by workflow or prototype evidence.
 
 ## Filesystem scope
 
@@ -54,7 +56,7 @@ Use these terms consistently in your analysis:
 ## Anti-triggers
 
 - Do not use for a one-file cleanup or tiny bugfix.
-- Do not use when the main risk is API shape exploration only; prefer `design-an-interface` first.
+- Do not split API shape exploration into the deprecated `design-an-interface` route; keep structural interface work here, ask `fullstack-wunderkind` for narrow engineering judgement, or use product/frontend exploration when user workflow or prototype evidence is driving the contract.
 - Do not recommend broad rewrites without a migration path.
 - Do not treat "more layers" as architecture quality. Deeper seams matter more than extra wrappers.
 
@@ -69,9 +71,10 @@ Use these terms consistently in your analysis:
    - proposed seam or deeper module
    - benefits in terms of locality, leverage, and testability
    - migration risk
-5. Ask the user which candidate to explore before locking an interface or migration plan.
-6. For the selected candidate, design at least two plausible approaches before recommending one.
-7. Write an RFC with migration guidance, risks, and verification strategy.
+5. Check whether the proposed seam changes a user-visible workflow, UI contract, or visual affordance. If it does, route that evidence through product/frontend review before locking the architecture.
+6. Ask the user which candidate to explore before locking an interface or migration plan.
+7. For the selected candidate, design at least two plausible approaches before recommending one.
+8. Write an RFC with migration guidance, risks, and verification strategy.
 
 ## RFC sections
 

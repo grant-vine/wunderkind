@@ -130,7 +130,7 @@ A skill is complete only when all of the following are true:
 5. The workflow follows progressive disclosure instead of dumping every detail into one file.
 6. Optional deep assets, if present, are referenced deliberately and not required for basic use.
 7. Hard rules define scope boundaries and failure conditions.
-8. The skill inventory in this file remains accurate after the change.
+8. The bucketed skill inventory in this file remains accurate after the change.
 9. `README.md` and `AGENTS.md` reflect ownership or inventory changes when the public surface changes.
 
 ## Authoring checklist
@@ -155,35 +155,86 @@ Historical `.sisyphus/**` archives are intentionally excluded from this complian
 
 ## Skill inventory
 
-| Skill Name | Current Owner | Disposition | Notes |
+The convergence release classifies every current skill into one bucket. These buckets replace the older loose `keep` and `revise` disposition model.
+
+Bucket counts are frozen by `.omo/contracts/wunderkind-upstream-convergence.jsonc` for this release:
+
+- Promoted retained specialist skills: 19
+- Wunderkind-specific skills: 4
+- Deprecated skills: 1
+- Internal skills: 0
+- Remove-now skills: 0
+
+### Bucket definitions
+
+| Bucket | Meaning | Public behavior |
+|---|---|---|
+| Promoted retained specialist | A current skill that remains user-facing because it strengthens one retained Wunderkind agent's specialist remit. | May appear in public skill listings, routing guidance, and install or upgrade inventory. |
+| Wunderkind-specific | A current skill that exists because of Wunderkind's retained-agent overlay, `.omo` workflow, docs-output flow, or repo-local skill authoring model. | May appear in public listings, but its justification must be tied to Wunderkind-specific workflow. |
+| Deprecated | A current file kept only for migration history, public replacement guidance, or detection-only diagnostics. | Must not be promoted as a first-class route. Must not power execution-time alias behavior. |
+| Internal | A non-promoted skill reserved for implementation internals. | None in this release. Future internal skills must not appear as public routes. |
+| Remove-now | A skill approved for deletion in the current release. | None in this release. No extra skill names may be removed without scope-change approval. |
+
+### Deprecated alias handling
+
+Deprecated aliases and routes are docs, routing-guidance, and detection-only surfaces only.
+
+- Docs may name a deprecated skill to explain history and the replacement route.
+- Routing guidance may say what to use instead.
+- Diagnostics may detect deprecated state to print migration guidance.
+- Runtime selection, command metadata, fallback routing, dual-read behavior, dual-write behavior, and automatic alias execution are forbidden.
+
+`design-an-interface` is deprecated in this release. New interface-design work should route through `improve-codebase-architecture` when the concern is structural, through `fullstack-wunderkind` for narrow engineering judgement, or through product and frontend exploration when the interface is shaped by user workflow or prototype evidence.
+
+### Promoted retained specialist skills
+
+| Skill Name | Current Owner | Wunderkind-specific reason |
+|---|---|---|
+| `agile-pm` | `product-wunderkind` | Keeps sprint planning and task decomposition inside the retained product front door so work can become `.omo` plans, issues, and acceptance gates. |
+| `code-health` | `fullstack-wunderkind` | Keeps engineering hygiene as a read-only specialist audit under the retained CTO persona, with severity-ranked markdown output rather than generic cleanup automation. |
+| `compliance-officer` | `ciso` | Maps privacy, data classification, and regulatory control guidance to the retained security and compliance owner. |
+| `db-architect` | `fullstack-wunderkind` | Keeps database schema, Drizzle, PostgreSQL, Neon, migration, and index decisions under the retained engineering owner. |
+| `diagnose` | `fullstack-wunderkind` | Provides deterministic defect isolation before repair work, aligned with Wunderkind's verification and evidence lanes. |
+| `experimentation-analyst` | `product-wunderkind` | Keeps product experiments, readouts, guardrails, and feature decisions with the retained product owner. |
+| `grill-me` | `product-wunderkind` | Gives the retained product front door a focused way to collapse ambiguity before specs, plans, or issue shaping. |
+| `improve-codebase-architecture` | `fullstack-wunderkind` | Handles structural design, module seams, RFCs, and architecture tradeoffs for the retained engineering owner. |
+| `oss-licensing-advisor` | `legal-counsel` | Keeps open source license compatibility and notice obligations under the retained legal owner. |
+| `pen-tester` | `ciso` | Keeps offensive security testing and exploitability framing under the retained security owner. |
+| `prd-pipeline` | `product-wunderkind` | Connects PRDs, work plans, and issue flow to Wunderkind's filesystem-first `.omo` workflow. |
+| `security-analyst` | `ciso` | Keeps defensive security review, OWASP analysis, and vulnerability assessment under the retained CISO owner. |
+| `social-media-maven` | `marketing-wunderkind` | Keeps channel strategy, content planning, and community growth inside the retained marketing owner. |
+| `tdd` | `fullstack-wunderkind` | Preserves the repo's Bun and strict TypeScript red-green-refactor execution loop under engineering stewardship. |
+| `technical-writer` | `marketing-wunderkind` | Keeps developer docs, launch guides, tutorials, and reference quality under the retained marketing and docs owner. |
+| `triage-issue` | `product-wunderkind` | Keeps support intake, reproduction clarity, acceptance criteria, and backlog handoff under product stewardship. |
+| `ubiquitous-language` | `product-wunderkind` | Keeps glossary, naming, and domain language alignment close to product decisions and `.omo` knowledge lanes. |
+| `vercel-architect` | `fullstack-wunderkind` | Keeps Vercel, Next.js, runtime, and deployment tradeoffs under the retained engineering owner. |
+| `visual-artist` | `creative-director` | Keeps brand, visual language, accessibility, and token decisions under the retained creative owner. |
+
+### Wunderkind-specific skills
+
+| Skill Name | Current Owner | Why it is Wunderkind-specific |
+|---|---|---|
+| `docs-with-grill` | `product-wunderkind` | Exists for repo-aware docs grilling that maintains `CONTEXT.md` and coordinates with Wunderkind's docs-output workflow. |
+| `setup-wunderkind-workflow` | `product-wunderkind` | Defines local `.omo`, triage, glossary, docs, and issue-flow conventions for Wunderkind-enabled projects. |
+| `write-a-skill` | `product-wunderkind` | Authors and adapts skills inside Wunderkind's retained-agent and filesystem-first standard. |
+| `caveman` | `product-wunderkind` | Provides Wunderkind's explicit terse-mode communication contract without changing technical substance. |
+
+### Deprecated skills
+
+| Skill Name | Previous Owner | Replacement route | Allowed remaining references |
 |---|---|---|---|
-| `agile-pm` | `product-wunderkind` | revise | Keep as a product planning skill, but update removed-agent references and align the file to the full trigger/anti-trigger standard. |
-| `compliance-officer` | `ciso` | keep | Still maps directly to security, privacy controls, and regulatory guidance under the retained topology. |
-| `code-health` | `fullstack-wunderkind` | keep | Produces severity-ranked audit reports (coupling, testability, dependency risk) as structured markdown; read-only, no automated cleanup. |
-| `db-architect` | `fullstack-wunderkind` | keep | Remains a distinct engineering specialty with clear database and migration scope. |
-| `diagnose` | `fullstack-wunderkind` | keep | Add as the deterministic bug-isolation workflow before implementation or broad refactor decisions. |
-| `design-an-interface` | `fullstack-wunderkind` | keep | Newly imported and already follows the intended trigger and anti-trigger shape. |
-| `experimentation-analyst` | `product-wunderkind` | revise | Reassign from removed `data-analyst`; center this skill on product experiments and feature readouts, with marketing consulted for campaign analytics. |
-| `grill-me` | `product-wunderkind` | keep | Continues to serve as the ambiguity-collapsing intake skill for product framing. |
-| `docs-with-grill` | `product-wunderkind` | keep | Context-aware documentation grilling that uses literal `CONTEXT.md` plus repo inspection before final docs writing. |
-| `setup-wunderkind-workflow` | `product-wunderkind` | keep | New Wunderkind-native setup hub for issue flow, triage vocabulary, glossary/docs locations, and `.omo/` workflow conventions. |
-| `improve-codebase-architecture` | `fullstack-wunderkind` | revise | Refresh around seam/depth/locality vocabulary, deletion-test thinking, and RFC-backed structural refactoring. |
-| `oss-licensing-advisor` | `legal-counsel` | keep | Clear legal specialization with no ownership ambiguity. |
-| `pen-tester` | `ciso` | keep | Remains the offensive-security counterpart to broader security analysis. |
-| `prd-pipeline` | `product-wunderkind` | keep | Core orchestrator skill for PRD, plan, and delivery flow. |
-| `security-analyst` | `ciso` | keep | Still the general defensive-security analysis skill under `ciso`. |
-| `social-media-maven` | `marketing-wunderkind` | keep | Fits the consolidated marketing remit after brand and devrel absorption. |
-| `tdd` | `fullstack-wunderkind` | revise | Reassign from removed `qa-specialist`; keep as the engineering execution skill for red-green-refactor work. |
-| `technical-writer` | `marketing-wunderkind` | revise | Reassign from removed `devrel-wunderkind`; documentation and developer-facing content now live under marketing stewardship. |
-| `triage-issue` | `product-wunderkind` | revise | Reassign from removed `support-engineer` and `qa-specialist`; product now owns front-door triage while engineering supports implementation. |
-| `ubiquitous-language` | `product-wunderkind` | revise | Narrow to glossary maintenance and naming alignment; do not position it as the primary setup/discovery workflow. |
-| `vercel-architect` | `fullstack-wunderkind` | keep | Remains a focused platform-engineering skill with clear deployment scope. |
-| `visual-artist` | `creative-director` | keep | Still belongs under the retained design and visual-language owner. |
-| `write-a-skill` | `product-wunderkind` | revise | Keep as the practical authoring workflow, but make `skills/SKILL-STANDARD.md` the source of truth it references. |
-| `caveman` | `product-wunderkind` | keep | Opt-in terse communication mode that reduces verbosity without changing technical substance. |
+| `design-an-interface` | `fullstack-wunderkind` | Use `improve-codebase-architecture` for structural interface and module-boundary work; use `fullstack-wunderkind` directly for narrow engineering judgement; use product or frontend exploration when user workflow shapes the contract. | Migration notes, historical docs, public replacement guidance, and detection-only diagnostics. Not execution-time routing. |
+
+### Internal skills
+
+None in this release.
+
+### Remove-now skills
+
+None in this release. No additional skill names may be removed without explicit scope-change approval.
 
 ## Change policy
 
 - Do not hand-edit generated `agents/*.md` output to express skill standards.
 - Update this file whenever a skill is added, reassigned, merged, retired, or materially repurposed.
-- If a future audit decides a skill should merge or retire, record that disposition here before changing the public docs.
+- If a future audit decides a skill should merge, retire, or change bucket, record that bucket change here before changing the public docs.
