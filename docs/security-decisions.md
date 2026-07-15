@@ -1,6 +1,6 @@
 # Security Decisions
 
-Last refreshed: 2026-05-15T15-07-42Z
+Last refreshed: 2026-07-15T11-11-35Z
 
 ## Runtime and compliance context
 
@@ -17,7 +17,7 @@ Managed docs, `AGENTS.md`, `CONTEXT.md`, and `.omo/` work should remain inside t
 `.omo/notepads/` and `.omo/evidence/` are append-only durable lanes; ordinary docs output belongs in `docs/` and should not be written through the bounded durable artifact writer.
 
 ### Compatibility guidance should be explicit, not silent
-Canonical `oh-my-openagent` naming is preferred, but transitional compatibility for `oh-my-opencode` remains documented where the repo contract promises it. Security-wise, this reduces hidden state and operator confusion during upgrades.
+Canonical `oh-my-openagent` naming is the only active path. Legacy `oh-my-opencode` references remain detection-only warning and migration surfaces so operators can diagnose stale installs without believing fallback execution still exists.
 
 ### Dependency-risk posture
 Recent audit work for this repo found that the installed resolved versions are already on patched transitive versions for the reported packages, even though `bun audit` still reports advisories in its output. Treat this as an audit-tool mismatch to keep watching, not as permission to stop reviewing dependency drift.

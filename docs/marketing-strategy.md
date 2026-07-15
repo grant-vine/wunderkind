@@ -1,6 +1,6 @@
 # Marketing Strategy
 
-Last refreshed: 2026-05-15T15-07-42Z
+Last refreshed: 2026-07-15T11-11-35Z
 
 ## Positioning
 
@@ -9,7 +9,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 ## Core narrative pillars
 
 1. **Retained specialist depth, not generic prompting**
-   - Wunderkind ships six opinionated retained agents with explicit role boundaries and owned sub-skills.
+   - Wunderkind ships six opinionated retained agents with explicit role boundaries, 19 promoted retained-specialist skills, and 4 Wunderkind-specific workflow skills.
 2. **Overlay, not platform lock-in**
    - Wunderkind stays a synchronous plugin/overlay on top of OpenCode and OMO instead of re-implementing an agent platform.
 3. **Bootstrap a high-context repo quickly**
@@ -17,7 +17,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 4. **Upgrade trust matters**
    - `wunderkind doctor` and `wunderkind upgrade` now surface stale native assets and native agent markdown version drift.
 5. **Filesystem-first docs and planning**
-   - `docs-with-grill`, `prd-pipeline`, `triage-issue`, and `/docs-index` all reinforce a repo-local, durable workflow.
+   - `docs-with-grill`, `prd-pipeline`, `triage-issue`, and `/docs-index` all reinforce a repo-local, durable workflow. Deprecated skill routes, including `design-an-interface`, stay as replacement guidance only.
 
 ## Priority audiences
 
@@ -35,7 +35,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 ## Messaging updates worth carrying forward
 
 - Prefer **`oh-my-openagent`** naming in current documentation and examples.
-- Keep a short compatibility note for legacy `oh-my-opencode` naming during the transition.
+- Keep any legacy `oh-my-opencode` note explicitly detection-only and migration-focused; do not imply a live compatibility transition.
 - Position `/docs-index` as the managed docs refresh/bootstrap surface and `init-deep` as an upstream workflow concept that Wunderkind supports through local artifacts.
 
 ## Source map

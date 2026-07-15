@@ -1,12 +1,12 @@
 # Documentation Index
 
-Last refreshed: 2026-05-15T15-07-42Z
+Last refreshed: 2026-07-15T11-11-35Z
 History mode: `overwrite`
 Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.17.0**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.20.0**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -21,10 +21,12 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 ## Latest documented feature highlights
 
 - `wunderkind init` now maintains **`CONTEXT.md`** alongside `AGENTS.md` and `.omo/`.
+- The public skill surface is bucketed into **19 promoted retained-specialist skills**, **4 Wunderkind-specific workflow skills**, and **1 deprecated docs-history route**.
 - **`docs-with-grill`** is the repo-aware docs grilling skill adapted into Wunderkind’s filesystem-first workflow.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
 - Generated native agents now embed **`wunderkind_version`** in frontmatter.
-- Install and upgrade guidance now prefer **`oh-my-openagent`** naming while preserving transitional compatibility notes for `oh-my-opencode`.
+- Install and upgrade guidance now use canonical **`oh-my-openagent`** naming only; legacy `oh-my-opencode` references remain detection-only warning/migration notes.
+- The hard-cut migration release keeps `.omo/` as the only active artifact root, leaves `.sisyphus/` as manual migration history only, and keeps `wunderkind migrate` as a fail-hard guidance surface.
 - `/docs-index` is the managed docs refresh/bootstrap command and `init-deep` remains an upstream OMO workflow concept rather than a Wunderkind CLI subcommand.
 
 ## Current project-local bootstrap state
@@ -33,7 +35,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.17.0` and the current skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.20.0` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 
@@ -68,5 +70,5 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 
 ## Notes
 
-- These docs reflect the current repository state after the `v0.17.0` release push.
+- These docs reflect the current repository state after the hard-cut convergence update.
 - `legal-counsel` is not a docs-eligible lane in the current ownership map, so there is no managed `legal-notes.md` file in this directory.

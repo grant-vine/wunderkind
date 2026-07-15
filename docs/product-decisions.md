@@ -1,11 +1,11 @@
 # Product Decisions
 
-Last refreshed: 2026-05-15T15-07-42Z
+Last refreshed: 2026-07-15T11-11-35Z
 
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.17.0`
+- **Current version**: `0.20.0`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -15,24 +15,29 @@ Last refreshed: 2026-05-15T15-07-42Z
 Wunderkind should extend OpenCode/OMO instead of becoming its own runtime system. That means no daemon, queue, scheduler, or MCP lifecycle ownership.
 
 ### 2. Prefer canonical OMO naming
-Docs and current flows should prefer `oh-my-openagent`, while still tolerating legacy `oh-my-opencode` names where the repository contract promises transitional support.
+Docs and current flows should use `oh-my-openagent` as the canonical name. Any legacy `oh-my-opencode` mention is warning-only migration guidance and must not imply active support or fallback execution.
 
 ### 3. Make project context explicit
 `CONTEXT.md` is now a first-class artifact created by `wunderkind init` and consumed by docs + planning flows.
 
-### 4. Adapt Matt Pocock-style docs grilling into Wunderkind-native lanes
+### 4. Keep the public skill surface bucketed
+The frozen convergence inventory exposes 19 promoted retained-specialist skills and 4 Wunderkind-specific workflow skills. `design-an-interface` remains only as deprecated replacement guidance and detection-only history.
+
+### 5. Adapt Matt Pocock-style docs grilling into Wunderkind-native lanes
 `docs-with-grill` is the retained-product adaptation of `grill-with-docs`, using `CONTEXT.md`, `AGENTS.md`, and `.omo/` instead of Matt’s repo layout.
 
-### 5. Treat docs refresh as a managed workflow
+### 6. Treat docs refresh as a managed workflow
 `/docs-index` owns docs refresh/bootstrap. Canonical docs filenames come from `AGENT_DOCS_CONFIG`, and history behavior comes from the configured docs mode.
 
-### 6. Make upgrade drift visible
+### 7. Make upgrade drift visible
 `wunderkind doctor` and `wunderkind upgrade` now expose stale native assets and native agent markdown version drift rather than silently trusting what is installed.
 
 ## Current feature set to highlight
 
 - Six retained specialist agents.
-- 24 shipped skills.
+- 19 promoted retained-specialist skills.
+- 4 Wunderkind-specific workflow skills.
+- 1 deprecated docs-history route with explicit replacement guidance: `design-an-interface` → `improve-codebase-architecture` for structural interface work, direct `fullstack-wunderkind` judgement for narrow engineering decisions, or product/frontend exploration when workflow or prototype evidence shapes the contract.
 - `/docs-index` native command.
 - `/dream` native command.
 - `CONTEXT.md` bootstrap.
@@ -45,7 +50,7 @@ Docs and current flows should prefer `oh-my-openagent`, while still tolerating l
 ## Immediate documentation priorities
 
 - Keep public install/upgrade/doctor docs aligned with current OMO/OpenCode naming.
-- Keep project-local bootstrap artifacts (`AGENTS.md`, `CONTEXT.md`, docs lane, `.sisyphus`) fresh enough that an init-deep style workflow can start from repo truth.
+- Keep project-local bootstrap artifacts (`AGENTS.md`, `CONTEXT.md`, docs lane, `.omo`) fresh enough that an init-deep style workflow can start from repo truth.
 
 ## Source map
 

@@ -1,6 +1,6 @@
 # Wunderkind
 
-Wunderkind — specialist AI agent addon for OpenCode that extends your team with 6 retained specialist agents covering marketing, design, product, engineering, security, and legal.
+Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents covering marketing, design, product, engineering, security, and legal, then anchors their work in `.omo` notepads, evidence, docs output, and lifecycle commands.
 
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
@@ -8,7 +8,14 @@ Wunderkind — specialist AI agent addon for OpenCode that extends your team wit
 > Wunderkind is still pre-1.0. Keep Wunderkind and oh-my-openagent up to date together; older installs are not expected to remain compatible.
 
 > [!WARNING]
-> **Breaking changes in this version.** The automated code-cleanup product surface has been fully removed from the Wunderkind product contract. If you are upgrading from an older version that included this feature, the following surfaces have changed:
+> **Hard-cut migration release.** Older compatibility paths no longer execute. Wunderkind now uses the converged `.omo` and `oh-my-openagent` surface only.
+> - `wunderkind migrate` fails with manual migration guidance. It no longer moves or previews `.sisyphus/` artifacts.
+> - `.sisyphus/` is historical. Move durable artifacts manually into `.omo/notepads/` or `.omo/evidence/`.
+> - `wunderkind gitignore` manages `.wunderkind/`, `AGENTS.md`, `.omo/`, and `.opencode/` only.
+> - Legacy `oh-my-opencode` config files and legacy OpenCode `config.json` / `config.jsonc` files are detected for warnings only. They are not active config sources.
+> - The retired `design-an-interface` skill is documentation and detection-only. Use `improve-codebase-architecture` or route directly to `fullstack-wunderkind` for new work.
+>
+> The automated code-cleanup product surface has also been fully removed from the Wunderkind product contract. If you are upgrading from an older version that included this feature, the following surfaces have changed:
 > - The `init` flag that enabled the cleanup tool no longer exists. Passing it will fail as an unknown flag.
 > - The corresponding config key is no longer written or read. Existing config files that contain it are silently tolerated — the key is ignored on read and will not be written back.
 > - The managed gitignore entry for the cleanup tool's working directory is no longer added by `wunderkind gitignore`.
@@ -26,7 +33,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
 | `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
-| `wunderkind migrate` | Moves legacy project artifacts into the primary OMO layout | `.sisyphus/` -> `.omo/` |
+| `wunderkind migrate` | Removed hard-cut command that prints manual migration guidance and exits non-zero | None |
 | `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
@@ -78,9 +85,7 @@ The TUI will guide you through:
 3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
 4. Optionally initializing the current project immediately.
 
-> Note: upstream now prefers `oh-my-openagent` for plugin entries, OMO config basenames, and public install commands. Legacy `oh-my-opencode` aliases and schema filenames may still appear during the transition.
->
-> Wunderkind now ships both `oh-my-openagent.jsonc` (canonical) and `oh-my-opencode.jsonc` (legacy compatibility) template assets. Prefer the canonical file for new setups.
+> Note: upstream now prefers `oh-my-openagent` for plugin entries, OMO config basenames, and public install commands. Legacy `oh-my-opencode` config files are ignored by the converged Wunderkind flow and are reported only as migration warnings.
 
 ### Non-interactive install
 
@@ -145,6 +150,7 @@ Current upgrade behavior:
 - rewrites Wunderkind-managed native-asset version markers so `doctor` can detect stale installed files
 - embeds a Wunderkind version value in generated native agent markdown so `doctor` can compare installed agent files too
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
+- preserves the hard-cut posture: it does not migrate `.sisyphus/`, does not use legacy `oh-my-opencode` configs, and does not reactivate retired skill aliases
 - supports `--dry-run` and `--refresh-config` for safe testing
 - project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
 
@@ -248,6 +254,7 @@ wunderkind doctor
 - Whether installed native agents/commands/skills look stale and should be refreshed via `wunderkind upgrade`
 - Whether installed native agent markdown versions drift from the current Wunderkind package
 - Location of configuration files
+- Detection-only warnings for ignored legacy `oh-my-opencode`, legacy OpenCode config, and legacy root-level Wunderkind config paths
 - Presence and status of project soul files (in a project context)
 - Current Documentation Output configuration and index status
 
@@ -295,7 +302,7 @@ wunderkind uninstall --scope=global
 wunderkind uninstall --scope=project
 ```
 
-`wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.omo/`, legacy `.sisyphus/`, docs folders).
+`wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.omo/`, docs folders). Historical `.sisyphus/` directories are not managed by uninstall.
 
 ## Cleanup
 
@@ -305,7 +312,7 @@ Remove Wunderkind from just the current project without touching shared global c
 wunderkind cleanup
 ```
 
-`wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.omo/`, legacy `.sisyphus/`, docs output folders, and shared global native assets untouched.
+`wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.omo/`, docs output folders, and shared global native assets untouched. Historical `.sisyphus/` directories are not managed by cleanup.
 
 ---
 
@@ -319,15 +326,15 @@ When enabled, agents can persist their decisions and strategies to your project'
 
 ## Legacy `.sisyphus/` Migration
 
-Wunderkind now treats `.omo/` as the primary project-working artifact root.
+Wunderkind treats `.omo/` as the only active project-working artifact root. `.sisyphus/` is kept in documentation as migration history only and does not describe an active compatibility path.
 
-If an older project still uses `.sisyphus/`, migrate it with:
+If an older project still has `.sisyphus/` content, move the files manually:
 
-```bash
-wunderkind migrate
-```
+1. Move durable notes into `.omo/notepads/`.
+2. Move proof, logs, and run output into `.omo/evidence/`.
+3. Rerun `wunderkind doctor` and resolve any remaining detection-only warnings.
 
-Use `wunderkind migrate --dry-run` to preview the move first.
+`wunderkind migrate` remains present only as a fail-hard guidance surface. Both normal and `--dry-run` invocations exit non-zero and do not move files.
 
 ---
 
@@ -391,7 +398,7 @@ Wunderkind installs native markdown assets into OpenCode's supported directories
 | `ciso` | Security architecture, OWASP, compliance | `unspecified-high` |
 | `legal-counsel` | Legal and regulatory compliance | `writing` |
 
-Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are neutral defaults, while runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`, plus optional project-local SOUL overlays in `.wunderkind/souls/<agent-key>.md`.
+Wunderkind agents are distributed as native OpenCode markdown agents. Their prompts are generated from source and manifest-owned metadata, then runtime behavior is tailored by merged Wunderkind config from `~/.wunderkind/wunderkind.config.jsonc` and `.wunderkind/wunderkind.config.jsonc`, plus optional project-local SOUL overlays in `.wunderkind/souls/<agent-key>.md`.
 
 > **About prompt size:** Wunderkind specialists are intentionally more focused and domain-heavy than many generic assistants. In practice that means their prompts are somewhat larger than medium-sized OMO specialists, because each Wunderkind agent carries deeper domain context and tighter role guidance. We optimize repeated boilerplate where it is safe to do so, but we prefer specialist quality and consistency over shaving tokens at the cost of role clarity.
 
@@ -399,7 +406,9 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 
 ## Sub-skills
 
-Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, and review gates.
+Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, review gates, and the bucketed skill inventory.
+
+The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 19 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only.
 
 | Skill Name | Parent Agent | Domain |
 |---|---|---|
@@ -420,13 +429,18 @@ Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New o
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |
-| `design-an-interface` | fullstack-wunderkind | High-complexity API and abstraction design |
 | `tdd` | fullstack-wunderkind | Red-green-refactor loops for Bun + strict TypeScript |
 | `security-analyst` | ciso | OWASP Top 10, vulnerability assessment |
 | `pen-tester` | ciso | Penetration testing, ASVS, attack simulation |
 | `compliance-officer` | ciso | GDPR, POPIA, data classification |
 | `technical-writer` | marketing-wunderkind | Developer docs, guides, and reference writing |
 | `oss-licensing-advisor` | legal-counsel | Open source license compliance and compatibility |
+
+Deprecated skill routes are not promoted as first-class runtime choices and must not be used as execution-time aliases:
+
+| Deprecated Skill | Replacement Route | Remaining Use |
+|---|---|---|
+| `design-an-interface` | Use `improve-codebase-architecture` for structural interface and module-boundary work; route narrow engineering judgement directly to `fullstack-wunderkind`; use product or frontend exploration when user workflow or prototype evidence shapes the contract. | Migration notes, replacement guidance, and detection-only diagnostics. No execution-time alias routing. |
 
 ---
 
@@ -599,7 +613,9 @@ Run this command to ensure `.wunderkind/` and other AI tooling directories are g
 wunderkind gitignore
 ```
 
-This adds `.wunderkind/`, `AGENTS.md`, `.sisyphus/`, `.omo/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+This adds `.wunderkind/`, `AGENTS.md`, `.omo/`, and `.opencode/` to your `.gitignore` if they aren't already present.
+
+`.sisyphus/` is historical and is not managed by the current gitignore command.
 
 ### `.omo/` vs `.opencode/`
 

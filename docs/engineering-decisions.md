@@ -1,13 +1,13 @@
 # Engineering Decisions
 
-Last refreshed: 2026-05-15T15-07-42Z
+Last refreshed: 2026-07-15T11-11-35Z
 
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
-- **Plugin package**: `@opencode-ai/plugin@1.15.0`
-- **OMO dependency**: `oh-my-openagent@4.1.2`
-- **Current Wunderkind package version**: `0.17.0`
+- **Plugin package**: `@opencode-ai/plugin@1.17.8`
+- **OMO dependency**: `oh-my-openagent@4.11.1`
+- **Current Wunderkind package version**: `0.20.0`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 
 ## Architecture decisions
@@ -26,7 +26,7 @@ Docs output is validated as a relative, project-local path with no parent traver
 This gives both bundle-level and per-agent installed-state visibility.
 
 ### Compatibility logic lives in config-manager/doctor/install surfaces
-Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade) instead of being scattered across prompts.
+Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade), with legacy names limited to detection-only warnings instead of fallback execution.
 
 ### CONTEXT.md is part of project bootstrap
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
@@ -41,8 +41,8 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ## Dependency posture
 
 - Key direct dependencies are current for this upgrade cycle:
-  - `oh-my-openagent@4.1.2`
-  - `@opencode-ai/plugin@1.15.0`
+  - `oh-my-openagent@4.11.1`
+  - `@opencode-ai/plugin@1.17.8`
 - Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
 - Patched transitive overrides currently pin:
   - `fast-uri@3.1.2`

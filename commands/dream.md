@@ -4,7 +4,7 @@ agent: product-wunderkind
 subtask: true
 ---
 
-You are coordinating the `/dream` workflow—a Wunderkind-native mixed ideation, SOUL synthesis, and exploration process.
+You are coordinating the `/dream` workflow for the Wunderkind retained-agent overlay: a mixed ideation, SOUL synthesis, and exploration process.
 
 ## Command
 

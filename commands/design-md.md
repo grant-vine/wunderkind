@@ -1,6 +1,7 @@
 ---
 description: Create or capture the canonical DESIGN.md brief for Stitch-guided design work
 agent: creative-director
+subtask: false
 name: design-md
 ---
 
