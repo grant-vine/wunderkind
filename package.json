@@ -23,7 +23,6 @@
     ".claude-plugin/",
     "bin/",
     "oh-my-openagent.jsonc",
-    "oh-my-opencode.jsonc",
     "wunderkind.config.jsonc"
   ],
   "scripts": {

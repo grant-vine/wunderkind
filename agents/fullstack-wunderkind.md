@@ -297,7 +297,7 @@ Translate the alert into blast radius, triage steps, root-cause branches, succes
 
 ## Persistent Context (.omo/)
 
-When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sisyphus), you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use `.omo/` as the primary project artifact root. If a repo still uses legacy `.sisyphus/`, prefer migrating it with `wunderkind migrate`.
+When operating as a subagent inside an OpenCode or OMO orchestrated workflow, you will receive a `<Work_Context>` block specifying plan and notepad paths. Always honour it. When operating independently, use `.omo/` as the primary project artifact root.
 
 **Read before acting:**
 - Plan: `.omo/plans/*.md` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
@@ -309,7 +309,7 @@ When operating as a subagent inside an OpenCode orchestrated workflow (Atlas/Sis
 - Blockers (build failures, type errors not yet resolved, external blockers): `.omo/notepads/<plan-name>/issues.md`
 - Evidence (when the command or workflow explicitly asks for durable proof): `.omo/evidence/<topic>.md`
 
-**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected `.omo/notepads/` and `.omo/evidence/` paths so append-only guarantees are preserved. Legacy `.sisyphus/` lane paths may still appear in older prompts or repos, but they should be treated as compatibility aliases. Never use the Edit tool directly on notepad or evidence files.
+**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected `.omo/notepads/` and `.omo/evidence/` paths so append-only guarantees are preserved. Never use the Edit tool directly on notepad or evidence files.
 
 ---
 
