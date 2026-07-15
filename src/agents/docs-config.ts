@@ -1,47 +1,25 @@
 import type { DocHistoryMode } from "../cli/types.js"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "./canonical-manifest.js"
 
 export interface AgentDocsConfig {
   canonicalFilename: string
   eligible: boolean
 }
 
-export const DOCS_INDEX_RUNTIME_STATUS = {
-  invocation: "/docs-index",
-  executable: true,
-  reason: "Implemented as a plugin command via commands/docs-index.md and intended for lightweight refresh/bootstrap of managed project docs.",
-} as const
+export const DOCS_INDEX_RUNTIME_STATUS = WUNDERKIND_CANONICAL_MANIFEST.docsOutput.docsIndex
+
+export const AGENT_DOCS_CONFIG: Record<string, AgentDocsConfig> = Object.fromEntries(
+  WUNDERKIND_CANONICAL_MANIFEST.docsOutput.entries.map((entry) => [
+    entry.agentId,
+    {
+      canonicalFilename: entry.canonicalFilename,
+      eligible: entry.eligible,
+    },
+  ]),
+)
 
 export function getDocsEligibleAgentKeys(): string[] {
-  return Object.entries(AGENT_DOCS_CONFIG)
-    .filter(([, config]) => config.eligible)
-    .map(([key]) => key)
-}
-
-export const AGENT_DOCS_CONFIG: Record<string, AgentDocsConfig> = {
-  "marketing-wunderkind": {
-    canonicalFilename: "marketing-strategy.md",
-    eligible: true,
-  },
-  "creative-director": {
-    canonicalFilename: "design-decisions.md",
-    eligible: true,
-  },
-  "product-wunderkind": {
-    canonicalFilename: "product-decisions.md",
-    eligible: true,
-  },
-  "fullstack-wunderkind": {
-    canonicalFilename: "engineering-decisions.md",
-    eligible: true,
-  },
-  ciso: {
-    canonicalFilename: "security-decisions.md",
-    eligible: true,
-  },
-  "legal-counsel": {
-    canonicalFilename: "legal-notes.md",
-    eligible: false,
-  },
+  return WUNDERKIND_CANONICAL_MANIFEST.docsOutput.entries.filter((entry) => entry.eligible).map((entry) => entry.agentId)
 }
 
 export function buildDocsInstruction(

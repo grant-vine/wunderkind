@@ -1,4 +1,5 @@
 import type { AgentFactory } from "./types.js"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "./canonical-manifest.js"
 import { createMarketingWunderkindAgent } from "./marketing-wunderkind.js"
 import { createCreativeDirectorAgent } from "./creative-director.js"
 import { createProductWunderkindAgent } from "./product-wunderkind.js"
@@ -13,45 +14,22 @@ export interface WunderkindAgentDefinition {
   factory: AgentFactory
 }
 
-export const WUNDERKIND_AGENT_DEFINITIONS: readonly WunderkindAgentDefinition[] = [
-  {
-    id: "marketing-wunderkind",
-    roleLabel: "Marketing Wunderkind",
-    summary:
-      "CMO-calibre strategist for brand, community, developer advocacy, docs-led launches, adoption, PR, and go-to-market work.",
-    factory: createMarketingWunderkindAgent,
-  },
-  {
-    id: "creative-director",
-    roleLabel: "Creative Director",
-    summary: "Brand and UI/UX lead for design systems, visuals, and product experience.",
-    factory: createCreativeDirectorAgent,
-  },
-  {
-    id: "product-wunderkind",
-    roleLabel: "Product Wunderkind",
-    summary:
-      "Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.",
-    factory: createProductWunderkindAgent,
-  },
-  {
-    id: "fullstack-wunderkind",
-    roleLabel: "Fullstack Wunderkind",
-    summary: "CTO-calibre engineer for architecture, implementation, and systems tradeoffs.",
-    factory: createFullstackWunderkindAgent,
-  },
-  {
-    id: "ciso",
-    roleLabel: "CISO",
-    summary: "Security and compliance lead for threat modeling, controls, and risk decisions.",
-    factory: createCisoAgent,
-  },
-  {
-    id: "legal-counsel",
-    roleLabel: "Legal Counsel",
-    summary: "Legal and regulatory advisor for contracts, licensing, and compliance posture.",
-    factory: createLegalCounselAgent,
-  },
-] as const
+const AGENT_FACTORIES = {
+  "marketing-wunderkind": createMarketingWunderkindAgent,
+  "creative-director": createCreativeDirectorAgent,
+  "product-wunderkind": createProductWunderkindAgent,
+  "fullstack-wunderkind": createFullstackWunderkindAgent,
+  ciso: createCisoAgent,
+  "legal-counsel": createLegalCounselAgent,
+} as const satisfies Record<(typeof WUNDERKIND_CANONICAL_MANIFEST.agents)[number]["factoryKey"], AgentFactory>
+
+export const WUNDERKIND_AGENT_DEFINITIONS: readonly WunderkindAgentDefinition[] = WUNDERKIND_CANONICAL_MANIFEST.agents.map(
+  (agent) => ({
+    id: agent.id,
+    roleLabel: agent.roleLabel,
+    summary: agent.summary,
+    factory: AGENT_FACTORIES[agent.factoryKey],
+  }),
+)
 
 export const WUNDERKIND_AGENT_IDS = WUNDERKIND_AGENT_DEFINITIONS.map((agent) => agent.id)

@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "./canonical-manifest.js"
 
-export const WUNDERKIND_AGENT_VERSION_FRONTMATTER_KEY = "wunderkind_version"
+export const WUNDERKIND_AGENT_VERSION_FRONTMATTER_KEY = WUNDERKIND_CANONICAL_MANIFEST.package.agentVersionFrontmatterKey
 
 function readJsonVersion(filePath: string): string | null {
   try {
@@ -29,6 +30,10 @@ function readFrontmatterValue(markdown: string, key: string): string | null {
 
 export function readOwnPackageVersion(): string | null {
   return readJsonVersion(fileURLToPath(new URL("../../package.json", import.meta.url)))
+}
+
+export function getCanonicalPackageVersion(): string {
+  return WUNDERKIND_CANONICAL_MANIFEST.package.version
 }
 
 export function readWunderkindAgentMarkdownVersion(filePath: string): string | null {
