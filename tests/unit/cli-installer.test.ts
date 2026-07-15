@@ -71,12 +71,11 @@ function makeOmoInstallReadiness(overrides: Partial<OmoInstallReadiness> = {}): 
     freshnessSummary: {
       state: "not-verified",
       guidance:
-        "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
     },
-    interactiveInstallCommand: "bunx oh-my-opencode install",
-    nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-    guidance:
-      "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
     ...overrides,
   }
 }
@@ -370,7 +369,7 @@ describe("runCliInstaller", () => {
       const code = await runCliInstaller(baseArgs())
       expect(code).toBe(1)
       expect(messages.some((message) => message.includes("oh-my-openagent must already be installed"))).toBe(true)
-      expect(messages.some((message) => message.includes("bunx oh-my-opencode install --no-tui"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx oh-my-openagent install --no-tui"))).toBe(true)
       expect(mockAddPluginToOpenCodeConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.log = origLog
@@ -632,7 +631,7 @@ describe("runCliInstaller", () => {
       makeOmoInstallReadiness({
         staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
         versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
-        dualConfigWarning: "canonical oh-my-openagent.jsonc is being used while legacy config still exists at /tmp/oh-my-opencode.json",
+        dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.json)",
       }),
     )
 
@@ -641,7 +640,7 @@ describe("runCliInstaller", () => {
       expect(code).toBe(0)
       expect(messages.some((m) => m.includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
       expect(messages.some((m) => m.includes("upstream get-local-version reports 3.17.6"))).toBe(true)
-      expect(messages.some((m) => m.includes("legacy config still exists"))).toBe(true)
+      expect(messages.some((m) => m.includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
     } finally {
       console.log = origLog
     }
@@ -721,7 +720,7 @@ describe("runCliUpgrade", () => {
       const code = await runCliUpgrade({ scope: "global" })
       expect(code).toBe(1)
       expect(messages.some((message) => message.includes("oh-my-openagent must already be installed"))).toBe(true)
-      expect(messages.some((message) => message.includes("bunx oh-my-opencode install --no-tui"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx oh-my-openagent install --no-tui"))).toBe(true)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(0)
     } finally {
       console.log = origLog

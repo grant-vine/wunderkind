@@ -190,6 +190,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const projectConfig = readProjectWunderkindConfig()
     const globalOpenCodeResolution = resolveOpenCodeConfigPath("global")
     const projectOpenCodeResolution = resolveOpenCodeConfigPath("project")
+    const legacyOpenCodeWarning =
+      "Legacy OpenCode config.json/config.jsonc was detected but is not used by the converged Wunderkind flow. Move plugin config to opencode.json or opencode.jsonc."
 
     const globalOpenCodePath = detected.globalOpenCodeConfigPath ?? globalOpenCodeResolution.path
     const projectOpenCodePath = detected.projectOpenCodeConfigPath ?? projectOpenCodeResolution.path
@@ -281,6 +283,19 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       warnings.push(omoVersion.dualConfigWarning)
       line("oh-my-openagent warning:", color.yellow(omoVersion.dualConfigWarning))
     }
+    if (globalOpenCodeResolution.ignoredLegacyPath) {
+      const warning = `${legacyOpenCodeWarning} (${globalOpenCodeResolution.ignoredLegacyPath})`
+      warnings.push(warning)
+      line("OpenCode warning:", color.yellow(warning))
+    }
+    if (
+      projectOpenCodeResolution.ignoredLegacyPath
+      && projectOpenCodeResolution.ignoredLegacyPath !== globalOpenCodeResolution.ignoredLegacyPath
+    ) {
+      const warning = `${legacyOpenCodeWarning} (${projectOpenCodeResolution.ignoredLegacyPath})`
+      warnings.push(warning)
+      line("OpenCode warning:", color.yellow(warning))
+    }
 
     const omoFreshness = summarizeOmoFreshness(omoVersion)
     line("oh-my-openagent freshness:", omoFreshness.label)
@@ -297,6 +312,15 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         "project OpenCode config:",
         `${color.dim(projectOpenCodePath)} ${color.dim(`(${projectOpenCodeResolution.source})`)}`,
       )
+      if (globalOpenCodeResolution.ignoredLegacyPath) {
+        line("ignored legacy global OpenCode config:", color.dim(globalOpenCodeResolution.ignoredLegacyPath))
+      }
+      if (
+        projectOpenCodeResolution.ignoredLegacyPath
+        && projectOpenCodeResolution.ignoredLegacyPath !== globalOpenCodeResolution.ignoredLegacyPath
+      ) {
+        line("ignored legacy project OpenCode config:", color.dim(projectOpenCodeResolution.ignoredLegacyPath))
+      }
       const globalNativeAgents = detectNativeAgentFiles("global")
       const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
@@ -422,7 +446,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (!hasPlans) warnings.push(`missing project artifact directory: ${omoPlansPath}`)
       if (!hasNotepads) warnings.push(`missing project artifact directory: ${omoNotepadsPath}`)
       if (!hasEvidence) warnings.push(`missing project artifact directory: ${omoEvidencePath}`)
-      if (hasLegacyArtifactRoot) warnings.push(`legacy ${LEGACY_PROJECT_ARTIFACT_PATHS.root}/ artifacts detected; run wunderkind migrate to move them into ${PRIMARY_PROJECT_ARTIFACT_PATHS.root}/`)
+      if (hasLegacyArtifactRoot) {
+        warnings.push(
+          `legacy ${LEGACY_PROJECT_ARTIFACT_PATHS.root}/ artifacts detected; move anything you still need into ${PRIMARY_PROJECT_ARTIFACT_PATHS.root}/ manually because wunderkind migrate has been removed`,
+        )
+      }
       if (detected.docsEnabled && !hasDocsReadme) warnings.push(`missing docs README: ${docsReadmePath}`)
       if (detected.globalInstalled === true && !globalNativeAgents.allPresent) {
         warnings.push(`missing native global agent files: ${globalNativeAgents.dir}`)

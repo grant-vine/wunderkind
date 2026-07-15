@@ -20,7 +20,7 @@ describe("addAiTracesToGitignore", () => {
       const gitignorePath = join(testRoot, ".gitignore")
 
       expect(result.success).toBe(true)
-      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".omo/", ".opencode/"])
+      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".omo/", ".opencode/"])
       expect(result.alreadyPresent).toEqual([])
       expect(existsSync(gitignorePath)).toBe(true)
 
@@ -28,7 +28,6 @@ describe("addAiTracesToGitignore", () => {
       expect(written).toContain("# AI tooling traces — managed by wunderkind")
       expect(written).toContain(".wunderkind/")
       expect(written).toContain("AGENTS.md")
-      expect(written).toContain(".sisyphus/")
       expect(written).toContain(".omo/")
       expect(written).toContain(".opencode/")
     } finally {
@@ -47,11 +46,10 @@ describe("addAiTracesToGitignore", () => {
       expect(firstResult.success).toBe(true)
       expect(secondResult.success).toBe(true)
       expect(secondResult.added).toEqual([])
-      expect(secondResult.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".omo/", ".opencode/"])
+      expect(secondResult.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md", ".omo/", ".opencode/"])
       expect(written.match(/# AI tooling traces — managed by wunderkind/g)?.length).toBe(1)
       expect(written.match(/\.wunderkind\//g)?.length).toBe(1)
       expect(written.match(/AGENTS\.md/g)?.length).toBe(1)
-      expect(written.match(/\.sisyphus\//g)?.length).toBe(1)
       expect(written.match(/\.omo\//g)?.length).toBe(1)
       expect(written.match(/\.opencode\//g)?.length).toBe(1)
     } finally {
@@ -83,13 +81,13 @@ describe("addAiTracesToGitignore", () => {
       const written = readFileSync(gitignorePath, "utf-8")
 
       expect(result.success).toBe(true)
-      expect(result.added).toEqual([".sisyphus/", ".omo/", ".opencode/"])
+      expect(result.added).toEqual([".omo/", ".opencode/"])
       expect(result.alreadyPresent).toEqual([".wunderkind/", "AGENTS.md"])
       expect(written).toContain("node_modules/")
       expect(written).toContain("dist/")
       expect(written).toContain("coverage/")
       expect(written.match(/# AI tooling traces — managed by wunderkind/g)?.length).toBe(1)
-      expect(written).toContain("# AI tooling traces — managed by wunderkind\n.sisyphus/\n.omo/\n.opencode/\n.wunderkind/\nAGENTS.md")
+      expect(written).toContain("# AI tooling traces — managed by wunderkind\n.omo/\n.opencode/\n.wunderkind/\nAGENTS.md")
     } finally {
       rmSync(testRoot, { recursive: true, force: true })
     }
@@ -106,7 +104,7 @@ describe("addAiTracesToGitignore", () => {
       const written = readFileSync(gitignorePath, "utf-8")
 
       expect(result.success).toBe(true)
-      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".sisyphus/", ".omo/", ".opencode/"])
+      expect(result.added).toEqual([".wunderkind/", "AGENTS.md", ".omo/", ".opencode/"])
       expect(written).toContain("node_modules/\n\n# AI tooling traces — managed by wunderkind")
     } finally {
       rmSync(testRoot, { recursive: true, force: true })

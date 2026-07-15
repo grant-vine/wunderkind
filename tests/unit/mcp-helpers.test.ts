@@ -186,6 +186,22 @@ describe("mcp helpers", () => {
         expect(await helpers.detectStitchMcpPresence(sandbox.projectDir)).toBe("both")
       })
     })
+
+    it("ignores legacy project config.json when detecting Stitch MCP presence", async () => {
+      await withSandbox("detect-ignore-legacy-project-config", async (sandbox, helpers) => {
+        writeJson(join(sandbox.projectDir, "config.json"), {
+          mcp: {
+            "google-stitch": {
+              type: "remote",
+              url: "https://stitch.googleapis.com/mcp",
+              enabled: true,
+            },
+          },
+        })
+
+        expect(await helpers.detectStitchMcpPresence(sandbox.projectDir)).toBe("missing")
+      })
+    })
   })
 
   describe("mergeStitchMcpConfig", () => {

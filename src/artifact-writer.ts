@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs"
 import { dirname, isAbsolute, join, normalize, relative } from "node:path"
-import { isPrimaryAppendOnlyArtifactPath, mapLegacyArtifactPathToPrimary } from "./project-artifacts.js"
+import { assertActiveProjectArtifactPath, isPrimaryAppendOnlyArtifactPath } from "./project-artifacts.js"
 
 export const DURABLE_ARTIFACT_TOOL_NAME = "wunderkind_write_artifact" as const
 
@@ -120,7 +120,8 @@ export function writeDurableArtifact(
   cwd: string,
   _options?: DurableArtifactWriteOptions,
 ): DurableArtifactWriteResult {
-  const normalizedRelativePath = mapLegacyArtifactPathToPrimary(ensureSafeRelativePath(request.relativePath))
+  const normalizedRelativePath = ensureSafeRelativePath(request.relativePath)
+  assertActiveProjectArtifactPath(normalizedRelativePath)
 
   if (!isAllowedArtifactPath(normalizedRelativePath)) {
     throw new Error("durable artifacts must stay inside append-only Wunderkind memory lanes")

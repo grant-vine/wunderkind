@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from "commander"
-import { createRequire } from "node:module"
 import { runCliInstaller, runCliUpgrade } from "./cli-installer.js"
 import { runDoctorWithOptions } from "./doctor.js"
 import { runInit } from "./init.js"
@@ -11,9 +10,7 @@ import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import type { DocHistoryMode, InstallArgs, InstallScope } from "./types.js"
 import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
-
-const require = createRequire(import.meta.url)
-const pkg = require("../../package.json") as { version: string }
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../agents/canonical-manifest.js"
 
 const REGULATION_LIST = "GDPR, POPIA, CCPA, LGPD, HIPAA, PIPEDA, PDPA, APPI, SOC2, ISO27001, or any custom value"
 
@@ -31,7 +28,7 @@ program
   .name("wunderkind")
   .description(
     [
-      "Wunderkind — specialist AI agents for any software product team.",
+      WUNDERKIND_CANONICAL_MANIFEST.package.description,
       "",
       "Adds six retained native OpenCode agents covering",
       "marketing, design, product, engineering, security, and legal — each",
@@ -43,11 +40,10 @@ program
        "  bunx @grant-vine/wunderkind install --no-tui \\",
        "    --region='South Africa' --industry=SaaS --primary-regulation=POPIA",
        "  bunx @grant-vine/wunderkind upgrade --scope=global",
-       "  bunx @grant-vine/wunderkind migrate",
        "  bunx @grant-vine/wunderkind gitignore",
     ].join("\n"),
   )
-  .version(pkg.version)
+  .version(WUNDERKIND_CANONICAL_MANIFEST.package.version)
   .showHelpAfterError()
 
 program
@@ -59,8 +55,7 @@ program
       "Runs the interactive TUI by default. Pass --no-tui for",
       "non-interactive use in CI or scripted environments.",
       "",
-      "Upstream naming note: plugin/config naming now prefers oh-my-openagent,",
-      "while legacy oh-my-opencode basenames still load during the transition.",
+       "Upstream naming note: use oh-my-openagent for plugin entries, config basenames, and install commands.",
     ].join("\n"),
   )
   .option("--no-tui", "Run non-interactive CLI installer with optional baseline default flags")
@@ -146,6 +141,7 @@ program
       "  - refreshes Wunderkind native agents and skills in the requested scope",
       "  - refreshes Wunderkind native commands globally",
       "  - preserves project-local soul/docs settings unless explicit config overrides are passed",
+      "  - keeps hard-cut removals in place: no .sisyphus migration, no legacy oh-my-opencode config use, no retired skill aliases",
       "  - supports --dry-run and --refresh-config for safe testing",
       "  - project upgrades can set --caveman-enabled yes|no; global upgrades keep caveman session-scoped",
     ].join("\n"),
@@ -176,10 +172,11 @@ program
   .command("gitignore")
   .description(
       [
-        "Add AI tooling traces to .gitignore in the current directory.",
-        "",
-        "Adds entries for: .wunderkind/, AGENTS.md, .sisyphus/, .omo/, .opencode/",
-        "Skips entries that are already present. Safe to run multiple times.",
+      "Add AI tooling traces to .gitignore in the current directory.",
+      "",
+      "Adds entries for: .wunderkind/, AGENTS.md, .omo/, .opencode/",
+      "Historical .sisyphus/ directories are not managed by this command.",
+      "Skips entries that are already present. Safe to run multiple times.",
       ].join("\n"),
   )
   .addHelpText(
@@ -220,7 +217,7 @@ program
       "Initialize Wunderkind in the current project folder.",
       "",
       "Bootstraps project-local config, optional retained-persona SOUL files, and project artifact lanes (.omo/, AGENTS.md, docs README).",
-      "Uses .omo/ as the primary project-working directory while leaving explicit migration from legacy .sisyphus/ to the migrate command.",
+      "Uses .omo/ as the primary project-working directory. If legacy .sisyphus/ artifacts still exist, move any needed files into .omo/ manually.",
       "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
       "Init also configures the PRD/planning workflow mode for this project.",
       "Requires Wunderkind to already be installed via `wunderkind install`.",
@@ -323,19 +320,21 @@ program
   .command("migrate")
   .description(
     [
-      `Migrate legacy ${LEGACY_PROJECT_ARTIFACT_DIR}/ project artifacts into ${PRIMARY_PROJECT_ARTIFACT_DIR}/.`,
+      `wunderkind migrate was removed in this hard-cut release.`,
       "",
-      `Uses ${PRIMARY_PROJECT_ARTIFACT_DIR}/ as the primary project-working directory and keeps ${LEGACY_PROJECT_ARTIFACT_DIR}/ as a legacy compatibility root only.`,
+      `Use ${PRIMARY_PROJECT_ARTIFACT_DIR}/ as the primary project-working directory and follow the printed corrective migration guidance for any remaining legacy artifacts.`,
     ].join("\n"),
   )
-  .option("--dry-run", `Preview ${LEGACY_PROJECT_ARTIFACT_DIR}/ -> ${PRIMARY_PROJECT_ARTIFACT_DIR}/ migration without moving files`)
+  .option("--dry-run", "Print the same corrective migration guidance without performing any file moves")
   .addHelpText(
     "after",
     [
       "",
-      "Examples:",
+      "Behavior:",
       "  bunx @grant-vine/wunderkind migrate",
       "  bunx @grant-vine/wunderkind migrate --dry-run",
+      "",
+      `Both forms fail with guidance only. Automated ${LEGACY_PROJECT_ARTIFACT_DIR}/ -> ${PRIMARY_PROJECT_ARTIFACT_DIR}/ moves are no longer supported.`,
     ].join("\n"),
   )
   .action(async (opts: { dryRun?: boolean | undefined }) => {
@@ -350,7 +349,7 @@ program
       "Remove Wunderkind project-local registration and state from the current project.",
       "",
       "Removes project-local OpenCode plugin wiring and the .wunderkind/ directory.",
-      "Leaves AGENTS.md, .omo/, legacy .sisyphus/, docs output, and shared global capabilities untouched.",
+      "Leaves AGENTS.md, .omo/, docs output, and shared global capabilities untouched.",
     ].join("\n"),
   )
   .action(async () => {

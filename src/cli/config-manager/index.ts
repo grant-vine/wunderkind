@@ -4,9 +4,10 @@ import { homedir } from "node:os"
 import { basename, dirname, join, relative } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import { fileURLToPath } from "node:url"
+import { WUNDERKIND_CANONICAL_MANIFEST, type NativeAssetKind } from "../../agents/canonical-manifest.js"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
-import { readOwnPackageVersion, readWunderkindAgentMarkdownVersion } from "../../agents/versioning.js"
+import { getCanonicalPackageVersion, readWunderkindAgentMarkdownVersion } from "../../agents/versioning.js"
 import {
   getGeneratedRetainedNativeCommands,
   renderGeneratedRetainedNativeCommandMarkdown,
@@ -39,13 +40,12 @@ import type {
   TeamCulture,
 } from "../types.js"
 
-const PACKAGE_NAME = "@grant-vine/wunderkind"
-const WUNDERKIND_SCHEMA_URL = "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json"
-const OMO_CANONICAL_PACKAGE_NAME = "oh-my-openagent"
-const OMO_LEGACY_PACKAGE_NAME = "oh-my-opencode"
-const NATIVE_ASSET_VERSION_MARKER_FILENAME = ".wunderkind-version.json"
-
-type NativeAssetKind = "agents" | "commands" | "skills"
+const PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.package.name
+const WUNDERKIND_SCHEMA_URL = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.configSchemaUrl
+const OMO_CANONICAL_PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoCanonicalPackageName
+const NATIVE_ASSET_VERSION_MARKER_FILENAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.markerFilename
+const LEGACY_OMO_CONFIG_WARNING =
+  "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc." as const
 
 function isDesignTool(value: unknown): value is DesignTool {
   return value === "none" || value === "google-stitch"
@@ -123,9 +123,9 @@ function resolveConfigManagerPaths(cwd?: string, home?: string): ConfigManagerPa
     legacyConfigJsonc: join(configDir, "config.jsonc"),
     globalWunderkindDir,
     globalWunderkindConfig: join(globalWunderkindDir, "wunderkind.config.jsonc"),
-    globalOpenCodeAgentsDir: join(configDir, "agents"),
-    globalOpenCodeCommandsDir: join(configDir, "commands"),
-    globalOpenCodeSkillsDir: join(configDir, "skills"),
+    globalOpenCodeAgentsDir: join(configDir, WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.openCodeDirs.agents),
+    globalOpenCodeCommandsDir: join(configDir, WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.openCodeDirs.commands),
+    globalOpenCodeSkillsDir: join(configDir, WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.openCodeDirs.skills),
     globalOpenCodeNodeModules: join(configDir, "node_modules"),
     globalCacheDir: join(resolvedHome, ".cache", "opencode"),
     omoConfigJson: join(configDir, "oh-my-openagent.json"),
@@ -248,7 +248,8 @@ export function getDefaultProjectConfig(): ProjectConfig {
 export function resolveOpenCodeConfigPath(scope: InstallScope): {
   path: string
   format: "json" | "jsonc" | "none"
-  source: "opencode.json" | "opencode.jsonc" | "config.json" | "config.jsonc" | "default"
+  source: "opencode.json" | "opencode.jsonc" | "default"
+  ignoredLegacyPath: string | null
 } {
   const runtimeContext = resolveConfigManagerRuntimeContext()
   const paths = resolveConfigManagerPaths()
@@ -258,30 +259,32 @@ export function resolveOpenCodeConfigPath(scope: InstallScope): {
     const projectJsonc = join(runtimeContext.cwd, "opencode.jsonc")
     const projectLegacyJson = join(runtimeContext.cwd, "config.json")
     const projectLegacyJsonc = join(runtimeContext.cwd, "config.jsonc")
+    const ignoredLegacyPath = existsSync(projectLegacyJson)
+      ? projectLegacyJson
+      : existsSync(projectLegacyJsonc)
+        ? projectLegacyJsonc
+        : null
 
-    if (existsSync(projectJson)) return { path: projectJson, format: "json", source: "opencode.json" }
-    if (existsSync(projectJsonc)) return { path: projectJsonc, format: "jsonc", source: "opencode.jsonc" }
-    if (existsSync(projectLegacyJson)) return { path: projectLegacyJson, format: "json", source: "config.json" }
-    if (existsSync(projectLegacyJsonc)) return { path: projectLegacyJsonc, format: "jsonc", source: "config.jsonc" }
-    return { path: projectJson, format: "none", source: "default" }
+    if (existsSync(projectJson)) return { path: projectJson, format: "json", source: "opencode.json", ignoredLegacyPath }
+    if (existsSync(projectJsonc)) return { path: projectJsonc, format: "jsonc", source: "opencode.jsonc", ignoredLegacyPath }
+    return { path: projectJson, format: "none", source: "default", ignoredLegacyPath }
   }
 
-  if (existsSync(paths.configJson)) return { path: paths.configJson, format: "json", source: "opencode.json" }
-  if (existsSync(paths.configJsonc)) return { path: paths.configJsonc, format: "jsonc", source: "opencode.jsonc" }
-  if (existsSync(paths.legacyConfigJson)) return { path: paths.legacyConfigJson, format: "json", source: "config.json" }
-  if (existsSync(paths.legacyConfigJsonc)) return { path: paths.legacyConfigJsonc, format: "jsonc", source: "config.jsonc" }
-  return { path: paths.configJson, format: "none", source: "default" }
+  const ignoredLegacyPath = existsSync(paths.legacyConfigJson)
+    ? paths.legacyConfigJson
+    : existsSync(paths.legacyConfigJsonc)
+      ? paths.legacyConfigJsonc
+      : null
+
+  if (existsSync(paths.configJson)) return { path: paths.configJson, format: "json", source: "opencode.json", ignoredLegacyPath }
+  if (existsSync(paths.configJsonc)) return { path: paths.configJsonc, format: "jsonc", source: "opencode.jsonc", ignoredLegacyPath }
+  return { path: paths.configJson, format: "none", source: "default", ignoredLegacyPath }
 }
 
 function resolveOmoConfigPath(): {
   path: string | null
   format: "json" | "jsonc" | "none"
-  source:
-    | "oh-my-openagent.json"
-    | "oh-my-openagent.jsonc"
-    | "oh-my-opencode.json"
-    | "oh-my-opencode.jsonc"
-    | "default"
+  source: "oh-my-openagent.json" | "oh-my-openagent.jsonc" | "default"
   legacyPath: string | null
 } {
   const paths = resolveConfigManagerPaths()
@@ -302,14 +305,8 @@ function resolveOmoConfigPath(): {
   if (canonicalJsoncExists) {
     return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc", legacyPath }
   }
-  if (legacyJsonExists) {
-    return { path: paths.omoLegacyConfigJson, format: "json", source: "oh-my-opencode.json", legacyPath: null }
-  }
-  if (legacyJsoncExists) {
-    return { path: paths.omoLegacyConfigJsonc, format: "jsonc", source: "oh-my-opencode.jsonc", legacyPath: null }
-  }
 
-  return { path: null, format: "none", source: "default", legacyPath: null }
+  return { path: null, format: "none", source: "default", legacyPath }
 }
 
 function parseConfig(path: string): OpenCodeConfig | null {
@@ -395,7 +392,7 @@ function detectOmoFreshnessInfo(cwd: string): OmoFreshnessInfo {
     renderedOutput: null,
   }
 
-  const jsonResult = spawnSync("bunx", ["oh-my-opencode", "get-local-version", "--json", "--directory", cwd], {
+  const jsonResult = spawnSync("bunx", ["oh-my-openagent", "get-local-version", "--json", "--directory", cwd], {
     encoding: "utf8",
     timeout: 750,
     maxBuffer: 1024 * 32,
@@ -414,7 +411,7 @@ function detectOmoFreshnessInfo(cwd: string): OmoFreshnessInfo {
     }
   }
 
-  const textResult = spawnSync("bunx", ["oh-my-opencode", "get-local-version", "--directory", cwd], {
+  const textResult = spawnSync("bunx", ["oh-my-openagent", "get-local-version", "--directory", cwd], {
     encoding: "utf8",
     timeout: 750,
     maxBuffer: 1024 * 32,
@@ -488,9 +485,7 @@ function detectLoadedPackageSources(packageName: string): {
   }
 }
 
-function getOmoLoadedPackageInfo(options: {
-  preferredPackageName: string | null
-}): {
+function getOmoLoadedPackageInfo(): {
   loaded: { version: string | null; packagePath: string | null }
   loadedSources: {
     global: { version: string | null; packagePath: string | null }
@@ -498,24 +493,16 @@ function getOmoLoadedPackageInfo(options: {
   }
   packageNameUsed: string | null
 } {
-  const candidateNames = [
-    options.preferredPackageName,
-    OMO_CANONICAL_PACKAGE_NAME,
-    OMO_LEGACY_PACKAGE_NAME,
-  ].filter((value, index, array): value is string => value !== null && array.indexOf(value) === index)
+  const loaded = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
+  const loadedSources = detectLoadedPackageSources(OMO_CANONICAL_PACKAGE_NAME)
+  const hasLoadedPackage = loaded.version !== null || loaded.packagePath !== null
+  const hasSources = loadedSources.global.packagePath !== null || loadedSources.cache.packagePath !== null
 
-  for (const packageName of candidateNames) {
-    const loaded = detectLoadedPackageVersion(packageName)
-    const loadedSources = detectLoadedPackageSources(packageName)
-    const hasLoadedPackage = loaded.version !== null || loaded.packagePath !== null
-    const hasSources = loadedSources.global.packagePath !== null || loadedSources.cache.packagePath !== null
-
-    if (hasLoadedPackage || hasSources) {
-      return {
-        loaded,
-        loadedSources,
-        packageNameUsed: packageName,
-      }
+  if (hasLoadedPackage || hasSources) {
+    return {
+      loaded,
+      loadedSources,
+      packageNameUsed: OMO_CANONICAL_PACKAGE_NAME,
     }
   }
 
@@ -576,7 +563,7 @@ export function detectPluginVersionInfo(packageName: string): PluginVersionInfo 
 
   return {
     packageName,
-    currentVersion: packageName === PACKAGE_NAME ? readOwnPackageVersion() : null,
+    currentVersion: packageName === PACKAGE_NAME ? getCanonicalPackageVersion() : null,
     registeredEntry,
     registeredVersion: normalizeDependencyVersion(registeredEntry),
     loadedVersion: loaded.version,
@@ -602,21 +589,13 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
   const plugins = omoPlugins.length > 0 ? omoPlugins : openCodePlugins
 
   const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
-  const registeredLegacyEntry = findPluginEntry(plugins, OMO_LEGACY_PACKAGE_NAME)
-  const registeredEntry = registeredCanonicalEntry ?? registeredLegacyEntry
-  const preferredPackageName = registeredCanonicalEntry
-    ? OMO_CANONICAL_PACKAGE_NAME
-    : registeredLegacyEntry
-      ? OMO_LEGACY_PACKAGE_NAME
-      : null
-
-  const packageInfo = getOmoLoadedPackageInfo({ preferredPackageName })
+  const packageInfo = getOmoLoadedPackageInfo()
   const staleOverrideWarning = buildStaleOverrideWarning({
     packageName: packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME,
     globalVersion: packageInfo.loadedSources.global.version,
     cacheVersion: packageInfo.loadedSources.cache.version,
   })
-  const freshness = registeredEntry !== null
+  const freshness = registeredCanonicalEntry !== null
     ? detectOmoFreshnessInfo(resolveConfigManagerRuntimeContext().cwd)
     : null
   const currentVersion = freshness?.currentVersion ?? null
@@ -626,22 +605,21 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     compareVersions(currentVersion, packageInfo.loaded.version) !== 0
       ? `upstream get-local-version reports ${currentVersion} but the loaded ${packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME} package is ${packageInfo.loaded.version}`
       : null
-  const dualConfigWarning =
-    omoConfigResolution.legacyPath !== null && configPath !== null
-      ? `canonical ${omoConfigResolution.source} is being used while legacy config still exists at ${omoConfigResolution.legacyPath}`
-      : null
+  const dualConfigWarning = omoConfigResolution.legacyPath !== null
+    ? `${LEGACY_OMO_CONFIG_WARNING} (${omoConfigResolution.legacyPath})`
+    : null
 
   return {
     packageName: OMO_CANONICAL_PACKAGE_NAME,
     currentVersion,
-    registeredEntry,
-    registeredVersion: normalizeDependencyVersion(registeredEntry),
+    registeredEntry: registeredCanonicalEntry,
+    registeredVersion: normalizeDependencyVersion(registeredCanonicalEntry),
     loadedVersion: packageInfo.loaded.version,
     configPath,
     configSource: omoConfigResolution.source,
     legacyConfigPath: omoConfigResolution.legacyPath,
     loadedPackagePath: packageInfo.loaded.packagePath,
-    registered: registeredEntry !== null,
+    registered: registeredCanonicalEntry !== null,
     loadedSources: packageInfo.loadedSources,
     staleOverrideWarning,
     versionSkewWarning,
@@ -669,8 +647,7 @@ export function detectOmoInstallReadiness(): OmoInstallReadiness {
     freshnessSummary,
     interactiveInstallCommand: "bunx oh-my-openagent install",
     nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
-    guidance:
-      "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+    guidance: versionInfo.dualConfigWarning ?? "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
   }
 }
 
@@ -680,8 +657,7 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
   if (!versionInfo.registered) {
     return {
       state: "not-detected",
-      guidance:
-        "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
+      guidance: "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install`.",
     }
   }
 
@@ -1115,7 +1091,6 @@ export function detectCurrentConfig(): DetectedConfig {
   const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
-  const legacyGlobalProject = coerceProjectConfig(globalConfig ?? {})
 
   return {
     isInstalled: true,
@@ -1130,25 +1105,21 @@ export function detectCurrentConfig(): DetectedConfig {
     industry: projectGlobalSafe.industry ?? globalSafe?.industry ?? defaults.industry,
     primaryRegulation: projectGlobalSafe.primaryRegulation ?? globalSafe?.primaryRegulation ?? defaults.primaryRegulation,
     secondaryRegulation: projectGlobalSafe.secondaryRegulation ?? globalSafe?.secondaryRegulation ?? defaults.secondaryRegulation,
-    teamCulture: projectLocal?.teamCulture ?? legacyGlobalProject.teamCulture ?? defaults.teamCulture,
-    orgStructure: projectLocal?.orgStructure ?? legacyGlobalProject.orgStructure ?? defaults.orgStructure,
-    cisoPersonality: projectLocal?.cisoPersonality ?? legacyGlobalProject.cisoPersonality ?? defaults.cisoPersonality,
-    ctoPersonality: projectLocal?.ctoPersonality ?? legacyGlobalProject.ctoPersonality ?? defaults.ctoPersonality,
-    cmoPersonality: projectLocal?.cmoPersonality ?? legacyGlobalProject.cmoPersonality ?? defaults.cmoPersonality,
-    productPersonality: projectLocal?.productPersonality ?? legacyGlobalProject.productPersonality ?? defaults.productPersonality,
-    creativePersonality: projectLocal?.creativePersonality ?? legacyGlobalProject.creativePersonality ?? defaults.creativePersonality,
-    legalPersonality: projectLocal?.legalPersonality ?? legacyGlobalProject.legalPersonality ?? defaults.legalPersonality,
-    docsEnabled: projectLocal?.docsEnabled ?? legacyGlobalProject.docsEnabled ?? defaults.docsEnabled,
-    docsPath: projectLocal?.docsPath ?? legacyGlobalProject.docsPath ?? defaults.docsPath,
-    docHistoryMode: projectLocal?.docHistoryMode ?? legacyGlobalProject.docHistoryMode ?? defaults.docHistoryMode,
-    prdPipelineMode: projectLocal?.prdPipelineMode ?? legacyGlobalProject.prdPipelineMode ?? defaults.prdPipelineMode,
-    designTool: projectLocal?.designTool ?? legacyGlobalProject.designTool ?? defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
-    designPath: projectLocal?.designPath ?? legacyGlobalProject.designPath ?? defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
-    designMcpOwnership:
-      projectLocal?.designMcpOwnership ??
-      legacyGlobalProject.designMcpOwnership ??
-      defaults.designMcpOwnership ??
-      DEFAULT_PROJECT_CONFIG.designMcpOwnership,
+    teamCulture: projectLocal?.teamCulture ?? defaults.teamCulture,
+    orgStructure: projectLocal?.orgStructure ?? defaults.orgStructure,
+    cisoPersonality: projectLocal?.cisoPersonality ?? defaults.cisoPersonality,
+    ctoPersonality: projectLocal?.ctoPersonality ?? defaults.ctoPersonality,
+    cmoPersonality: projectLocal?.cmoPersonality ?? defaults.cmoPersonality,
+    productPersonality: projectLocal?.productPersonality ?? defaults.productPersonality,
+    creativePersonality: projectLocal?.creativePersonality ?? defaults.creativePersonality,
+    legalPersonality: projectLocal?.legalPersonality ?? defaults.legalPersonality,
+    docsEnabled: projectLocal?.docsEnabled ?? defaults.docsEnabled,
+    docsPath: projectLocal?.docsPath ?? defaults.docsPath,
+    docHistoryMode: projectLocal?.docHistoryMode ?? defaults.docHistoryMode,
+    prdPipelineMode: projectLocal?.prdPipelineMode ?? defaults.prdPipelineMode,
+    designTool: projectLocal?.designTool ?? defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
+    designPath: projectLocal?.designPath ?? defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
+    designMcpOwnership: projectLocal?.designMcpOwnership ?? defaults.designMcpOwnership ?? DEFAULT_PROJECT_CONFIG.designMcpOwnership,
   }
 }
 
@@ -1268,15 +1239,13 @@ export function getNativeAgentFilePaths(scope: InstallScope): string[] {
 }
 
 function getPackagedCommandFilePaths(): string[] {
-  const commandsDir = fileURLToPath(new URL("../../../commands", import.meta.url))
-  if (!existsSync(commandsDir)) return []
-  return readdirSync(commandsDir)
-    .filter((entry) => entry.endsWith(".md"))
-    .map((entry) => join(commandsDir, entry))
+  return WUNDERKIND_CANONICAL_MANIFEST.commands.static
+    .map((command) => fileURLToPath(new URL(`../../../${command.sourcePath}`, import.meta.url)))
+    .filter((filePath) => existsSync(filePath))
 }
 
 function getPackagedCommandNames(): string[] {
-  return getPackagedCommandFilePaths().map((source) => basename(source, ".md"))
+  return WUNDERKIND_CANONICAL_MANIFEST.commands.static.map((command) => command.name)
 }
 
 function getGeneratedRetainedNativeCommandNames(): string[] {
@@ -1322,11 +1291,36 @@ function collectFilesRecursively(rootDir: string): string[] {
 }
 
 function getPackagedSkillDirectories(): string[] {
-  const skillsDir = fileURLToPath(new URL("../../../skills", import.meta.url))
-  if (!existsSync(skillsDir)) return []
-  return readdirSync(skillsDir)
-    .map((entry) => join(skillsDir, entry))
-    .filter((entry) => statSync(entry).isDirectory())
+  return WUNDERKIND_CANONICAL_MANIFEST.skills
+    .filter((skill) => skill.bucket === "promoted" || skill.bucket === "wunderkind-specific")
+    .map((skill) => fileURLToPath(new URL(`../../../${skill.sourcePath}`, import.meta.url)))
+    .map((filePath) => dirname(filePath))
+    .filter((dirPath, index, array) => array.indexOf(dirPath) === index)
+    .filter((dirPath) => existsSync(dirPath) && statSync(dirPath).isDirectory())
+}
+
+function getBlockedPackagedSkillIds(): string[] {
+  return WUNDERKIND_CANONICAL_MANIFEST.skills
+    .filter((skill) => skill.bucket !== "promoted" && skill.bucket !== "wunderkind-specific")
+    .map((skill) => skill.id)
+}
+
+function getBlockedNativeSkillDirectories(): string[] {
+  const dir = getNativeSkillsDir()
+  return getBlockedPackagedSkillIds().map((id) => join(dir, id))
+}
+
+function removeBlockedNativeSkillDirectories(): boolean {
+  let changed = false
+
+  for (const skillDir of getBlockedNativeSkillDirectories()) {
+    if (existsSync(skillDir)) {
+      rmSync(skillDir, { recursive: true, force: true })
+      changed = true
+    }
+  }
+
+  return changed
 }
 
 export function getNativeCommandFilePaths(): string[] {
@@ -1357,7 +1351,7 @@ function writeNativeAssetVersionMarker(targetDir: string, kind: NativeAssetKind)
   const payload = {
     package: PACKAGE_NAME,
     kind,
-    version: readOwnPackageVersion(),
+    version: getCanonicalPackageVersion(),
     writtenAt: new Date().toISOString(),
   }
 
@@ -1394,7 +1388,7 @@ export function detectNativeAssetVersion(kind: NativeAssetKind): {
   const dirPresent = existsSync(dir)
   const markerPresent = existsSync(markerPath)
   const installedVersion = markerPresent ? readNativeAssetVersionMarker(markerPath).version : null
-  const currentVersion = readOwnPackageVersion()
+  const currentVersion = getCanonicalPackageVersion()
   const needsUpgrade =
     dirPresent &&
     currentVersion !== null &&
@@ -1427,7 +1421,7 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
 } {
   void scope
 
-  const currentVersion = readOwnPackageVersion()
+  const currentVersion = getCanonicalPackageVersion()
   const agents = WUNDERKIND_AGENT_DEFINITIONS.map((definition) => {
     const filePath = join(getNativeAgentDir(), `${definition.id}.md`)
     const filePresent = existsSync(filePath)
@@ -1520,6 +1514,7 @@ export function writeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   const sourceRoot = fileURLToPath(new URL("../../../skills", import.meta.url))
 
   try {
+    removeBlockedNativeSkillDirectories()
     const sourceFiles = skillDirs.flatMap((skillDir) => collectFilesRecursively(skillDir))
     copyFileSet(sourceFiles, sourceRoot, targetDir)
     writeNativeAssetVersionMarker(targetDir, "skills")
@@ -1551,13 +1546,20 @@ export function detectNativeCommandFiles(): { dir: string; presentCount: number;
   return { dir, presentCount, totalCount, allPresent: presentCount === totalCount }
 }
 
-export function detectNativeSkillFiles(scope: InstallScope): { dir: string; presentCount: number; totalCount: number; allPresent: boolean } {
+export function detectNativeSkillFiles(scope: InstallScope): {
+  dir: string
+  presentCount: number
+  totalCount: number
+  allPresent: boolean
+  staleBlockedCount: number
+} {
   void scope
   const dir = getNativeSkillsDir()
   const presentCount = getNativeSkillDirectories(scope).filter((dirPath) => existsSync(dirPath)).length
   const totalCount = getPackagedSkillDirectories().length
+  const staleBlockedCount = getBlockedNativeSkillDirectories().filter((dirPath) => existsSync(dirPath)).length
 
-  return { dir, presentCount, totalCount, allPresent: presentCount === totalCount }
+  return { dir, presentCount, totalCount, allPresent: presentCount === totalCount && staleBlockedCount === 0, staleBlockedCount }
 }
 
 export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
@@ -1632,6 +1634,10 @@ export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
         rmSync(skillDir, { recursive: true, force: true })
         changed = true
       }
+    }
+
+    if (removeBlockedNativeSkillDirectories()) {
+      changed = true
     }
 
     if (existsSync(markerPath)) {

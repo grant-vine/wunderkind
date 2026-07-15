@@ -25,13 +25,9 @@ function trimOneTrailingSlash(value: string): string {
 function resolveProjectOpenCodeConfigPath(projectPath: string): string {
   const projectJson = join(projectPath, "opencode.json")
   const projectJsonc = join(projectPath, "opencode.jsonc")
-  const projectLegacyJson = join(projectPath, "config.json")
-  const projectLegacyJsonc = join(projectPath, "config.jsonc")
 
   if (existsSync(projectJson)) return projectJson
   if (existsSync(projectJsonc)) return projectJsonc
-  if (existsSync(projectLegacyJson)) return projectLegacyJson
-  if (existsSync(projectLegacyJsonc)) return projectLegacyJsonc
   return projectJson
 }
 

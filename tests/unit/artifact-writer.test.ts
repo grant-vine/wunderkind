@@ -100,14 +100,19 @@ describe("artifact-writer", () => {
     }
   })
 
-  it("maps legacy .sisyphus lanes into .omo before writing", () => {
-    const sandbox = createSandbox("legacy-redirect")
+  it("rejects legacy .sisyphus durable artifact paths", () => {
+    const sandbox = createSandbox("legacy-reject")
 
     try {
-      writeDurableArtifact({ relativePath: ".sisyphus/notepads/runtime/learnings.md", content: "Entry\n" }, sandbox)
-
-      expect(readFileSync(join(sandbox, ".omo/notepads/runtime/learnings.md"), "utf-8")).toBe("Entry\n")
-      expect(existsSync(join(sandbox, ".sisyphus/notepads/runtime/learnings.md"))).toBe(false)
+      try {
+        writeDurableArtifact({ relativePath: ".sisyphus/notepads/runtime/learnings.md", content: "Entry\n" }, sandbox)
+        throw new Error("Expected legacy artifact path rejection")
+      } catch (error) {
+        expect(error instanceof Error ? error.message : String(error)).toBe(
+          ".sisyphus/ is no longer an active Wunderkind artifact root. Move durable project artifacts into .omo/ and use .omo/notepads/ or .omo/evidence/.",
+        )
+      }
+      expect(existsSync(join(sandbox, ".omo/notepads/runtime/learnings.md"))).toBe(false)
     } finally {
       rmSync(sandbox, { recursive: true, force: true })
     }

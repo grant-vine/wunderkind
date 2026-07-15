@@ -35,12 +35,11 @@ const mockDetectOmoInstallReadiness = mock<() => OmoInstallReadiness>(() => ({
   freshnessSummary: {
     state: "not-verified",
     guidance:
-      "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+      "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
   },
-  interactiveInstallCommand: "bunx oh-my-opencode install",
-  nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-  guidance:
-    "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+  interactiveInstallCommand: "bunx oh-my-openagent install",
+  nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+  guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
 }))
 const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
@@ -279,12 +278,11 @@ describe("runTuiInstaller init handoff", () => {
       freshnessSummary: {
         state: "not-verified",
         guidance:
-          "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+          "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
       },
-      interactiveInstallCommand: "bunx oh-my-opencode install",
-      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-      guidance:
-        "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
     }))
     mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockDetectLegacyConfig.mockImplementation(() => false)
@@ -530,12 +528,11 @@ describe("runTuiInstaller init handoff", () => {
           freshnessSummary: {
             state: "not-detected",
             guidance:
-              "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
+                "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install`.",
           },
-          interactiveInstallCommand: "bunx oh-my-opencode install",
-          nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-          guidance:
-            "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+          interactiveInstallCommand: "bunx oh-my-openagent install",
+          nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+          guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
         }
       }
 
@@ -553,12 +550,11 @@ describe("runTuiInstaller init handoff", () => {
         freshnessSummary: {
           state: "not-verified",
           guidance:
-            "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+            "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
         },
-        interactiveInstallCommand: "bunx oh-my-opencode install",
-        nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-        guidance:
-          "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+        interactiveInstallCommand: "bunx oh-my-openagent install",
+        nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+          guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
       }
     })
 
@@ -589,12 +585,11 @@ describe("runTuiInstaller init handoff", () => {
       freshnessSummary: {
         state: "not-detected",
         guidance:
-          "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
+              "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install`.",
       },
-      interactiveInstallCommand: "bunx oh-my-opencode install",
-      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-      guidance:
-        "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
     }))
     mockSpawnSync.mockImplementation(() => ({ status: 1, stdout: "", stderr: "missing" }))
 
@@ -607,7 +602,7 @@ describe("runTuiInstaller init handoff", () => {
     try {
       const code = await runTuiInstaller("global")
       expect(code).toBe(1)
-      expect(errors.some((message) => message.includes("bunx oh-my-opencode install"))).toBe(true)
+      expect(errors.some((message) => message.includes("bunx oh-my-openagent install"))).toBe(true)
       expect(mockAddPluginToOpenCodeConfig).toHaveBeenCalledTimes(0)
     } finally {
       console.error = originalError
@@ -747,24 +742,23 @@ describe("runTuiInstaller init handoff", () => {
       legacyConfigPath: "/tmp/oh-my-opencode.jsonc",
       staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
       versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
-      dualConfigWarning: "canonical oh-my-openagent.jsonc is being used while legacy config still exists at /tmp/oh-my-opencode.jsonc",
+      dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.jsonc)",
       freshness: null,
       freshnessSummary: {
         state: "version-skew",
         guidance:
           "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-openagent install`, then restart OpenCode so the active plugin matches upstream.",
       },
-      interactiveInstallCommand: "bunx oh-my-opencode install",
-      nonTuiInstallCommand: "bunx oh-my-opencode install --no-tui --claude=yes --gemini=no --copilot=yes",
-      guidance:
-        "upstream now prefers oh-my-openagent for plugin entries, config basenames, and install commands. Legacy oh-my-opencode aliases and schema filenames may still appear during the transition.",
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
     }))
 
     const code = await runTuiInstaller("global")
     expect(code).toBe(0)
     expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
     expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("upstream get-local-version reports 3.17.6"))).toBe(true)
-    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("legacy config still exists"))).toBe(true)
+    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
   })
 
 

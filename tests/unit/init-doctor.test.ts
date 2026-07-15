@@ -188,12 +188,80 @@ const configManagerMockFactory = () => ({
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
   detectNativeCommandFiles: mockDetectNativeCommandFiles,
   detectNativeSkillFiles: mockDetectNativeSkillFiles,
+  detectOmoInstallReadiness: () => {
+    const versionInfo = mockDetectOmoVersionInfo()
+    let freshnessSummary: { state: string; guidance: string }
+
+      if (!versionInfo.registered) {
+        freshnessSummary = {
+          state: "not-detected",
+          guidance: "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install`.",
+        }
+    } else if (versionInfo.staleOverrideWarning) {
+      freshnessSummary = {
+        state: "stale-override",
+        guidance: "A stale global oh-my-openagent install is likely overriding a newer cache copy — refresh the global install and restart OpenCode.",
+      }
+    } else if (versionInfo.versionSkewWarning) {
+      freshnessSummary = {
+        state: "version-skew",
+        guidance: "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-openagent install`, then restart OpenCode so the active plugin matches upstream.",
+      }
+      } else if (versionInfo.dualConfigWarning) {
+        freshnessSummary = {
+          state: "not-verified",
+          guidance: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc.",
+        }
+    } else if (!versionInfo.freshness || versionInfo.freshness.status === "unknown" || versionInfo.freshness.status === "error") {
+      freshnessSummary = {
+        state: "not-verified",
+        guidance: "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
+      }
+    } else if (versionInfo.freshness.status === "up-to-date") {
+      freshnessSummary = {
+        state: "up-to-date",
+        guidance: "oh-my-openagent is already up to date.",
+      }
+    } else if (versionInfo.freshness.status === "outdated") {
+      freshnessSummary = {
+        state: "update-available",
+        guidance: versionInfo.freshness.renderedOutput ?? "An oh-my-openagent plugin/config update is available — run `bunx oh-my-openagent get-local-version` for the recommended command.",
+      }
+    } else if (versionInfo.freshness.status === "local-dev") {
+      freshnessSummary = {
+        state: "local-dev",
+        guidance: "oh-my-openagent is running in local development mode — upstream update checks are informational only.",
+      }
+    } else {
+      freshnessSummary = {
+        state: "pinned",
+        guidance: "oh-my-openagent is pinned, so automatic upgrade advice is intentionally suppressed upstream.",
+      }
+    }
+
+    return {
+      installed: versionInfo.registered,
+      registered: versionInfo.registered,
+      loadedVersion: versionInfo.loadedVersion,
+      configPath: versionInfo.configPath,
+      configSource: versionInfo.configSource,
+      legacyConfigPath: versionInfo.legacyConfigPath,
+      staleOverrideWarning: versionInfo.staleOverrideWarning,
+      versionSkewWarning: versionInfo.versionSkewWarning,
+      dualConfigWarning: versionInfo.dualConfigWarning,
+      freshness: versionInfo.freshness,
+      freshnessSummary,
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
+    }
+  },
   detectOmoVersionInfo: mockDetectOmoVersionInfo,
   summarizeOmoFreshness: (versionInfo: PluginVersionInfo) => {
     if (!versionInfo.registered) {
       return {
         state: "not-detected" as const,
-        guidance: "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install` (the legacy `oh-my-opencode` alias may still work upstream during transition).",
+        guidance: "oh-my-openagent plugin/config naming was not detected — run `bunx oh-my-openagent install`.",
       }
     }
 
@@ -214,14 +282,14 @@ const configManagerMockFactory = () => ({
     if (versionInfo.dualConfigWarning) {
       return {
         state: "not-verified" as const,
-        guidance: "Canonical oh-my-openagent config is active, but a legacy oh-my-opencode config file is still present — remove the legacy file to avoid confusion during the naming transition.",
+        guidance: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc.",
       }
     }
 
     if (!versionInfo.freshness || versionInfo.freshness.status === "unknown" || versionInfo.freshness.status === "error") {
       return {
         state: "not-verified" as const,
-        guidance: "Latest oh-my-openagent plugin/config naming freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice while the package/CLI still use oh-my-opencode.",
+        guidance: "Latest oh-my-openagent freshness could not be verified — use `bunx oh-my-openagent get-local-version` for upstream update advice.",
       }
     }
 
@@ -252,6 +320,7 @@ const configManagerMockFactory = () => ({
     }
   },
   detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
+  getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
   getNativeCommandFilePaths: mockGetNativeCommandFilePaths,
   readWunderkindConfig: mockReadWunderkindConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
@@ -875,7 +944,7 @@ describe("runDoctor", () => {
     expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=global"))).toBe(true)
     expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
     expect(messages.some((m) => m.includes("native agent markdown versions:") && m.includes("up to date"))).toBe(true)
-    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("oh-my-openagent plugin/config naming"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("Latest oh-my-openagent freshness could not be verified"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-openagent"))).toBe(true)
   })
 
@@ -952,7 +1021,7 @@ describe("runDoctor", () => {
         status: "outdated",
         currentVersion: "3.12.2",
         latestVersion: "3.13.1",
-        renderedOutput: "Run: cd ~/.config/opencode && bun update oh-my-opencode",
+        renderedOutput: "Run: cd ~/.config/opencode && bun update oh-my-openagent",
       }),
     }))
 
@@ -960,7 +1029,7 @@ describe("runDoctor", () => {
 
     expect(code).toBe(0)
     expect(messages.some((m) => m.includes("oh-my-openagent freshness:") && m.includes("update available"))).toBe(true)
-    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bun update oh-my-opencode"))).toBe(true)
+    expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bun update oh-my-openagent"))).toBe(true)
   })
 
   it("surfaces OMO version skew when upstream current version and loaded package disagree", async () => {
@@ -1041,7 +1110,7 @@ describe("runDoctor", () => {
       },
       staleOverrideWarning: null,
       versionSkewWarning: null,
-      dualConfigWarning: "canonical oh-my-openagent.jsonc is being used while legacy config still exists at /tmp/oh-my-opencode.json",
+      dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.json)",
       freshness: createOmoFreshness({
         status: "up-to-date",
         currentVersion: "3.17.6",
@@ -1052,7 +1121,7 @@ describe("runDoctor", () => {
     const { code, messages } = await captureDoctorOutput({ verbose: true })
 
     expect(code).toBe(0)
-    expect(messages.some((m) => m.includes("oh-my-openagent warning:") && m.includes("legacy config still exists"))).toBe(true)
+    expect(messages.some((m) => m.includes("oh-my-openagent warning:") && m.includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
     expect(messages.some((m) => m.includes("oh-my-openagent config source:") && m.includes("oh-my-openagent.jsonc"))).toBe(true)
     expect(messages.some((m) => m.includes("oh-my-openagent legacy config:") && m.includes("/tmp/oh-my-opencode.json"))).toBe(true)
   })

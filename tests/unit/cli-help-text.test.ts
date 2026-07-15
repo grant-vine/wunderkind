@@ -55,7 +55,7 @@ describe("CLI help copy", () => {
     expect(output).toContain("non-interactive use in CI or scripted environments")
     expect(output).toContain("optional baseline default flags")
     expect(output).toContain("oh-my-openagent")
-    expect(output).toContain("oh-my-opencode")
+    expect(output).not.toContain("oh-my-opencode")
   })
 
   it("includes uninstall command help text", () => {
@@ -72,14 +72,14 @@ describe("CLI help copy", () => {
 
     expect(output).toContain("Remove Wunderkind project-local registration and state from the current project.")
     expect(output).toContain(".wunderkind/")
-    expect(output).toContain("Leaves AGENTS.md, .omo/, legacy .sisyphus/, docs output")
+    expect(output).toContain("Leaves AGENTS.md, .omo/, docs output")
   })
 
   it("includes migrate command help text", () => {
     const output = runCliHelp("migrate", "--help")
 
-    expect(output).toContain("Migrate legacy .sisyphus/ project artifacts into .omo/")
-    expect(output).toContain("--dry-run")
+    expect(output).toContain("wunderkind migrate was removed in this hard-cut release")
+    expect(output).toContain("corrective migration guidance")
   })
 
   it("includes upgrade command help text", () => {

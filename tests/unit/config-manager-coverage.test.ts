@@ -1,7 +1,8 @@
 import { describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, join } from "node:path"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
 import { collectGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
 
 type ConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
@@ -104,11 +105,13 @@ describe("config-manager coverage", () => {
         path: join(firstSandbox.projectDir, "opencode.json"),
         format: "none",
         source: "default",
+        ignoredLegacyPath: null,
       })
       expect(mod.resolveOpenCodeConfigPath("global")).toEqual({
         path: join(firstSandbox.homeDir, ".config", "opencode", "opencode.json"),
         format: "none",
         source: "default",
+        ignoredLegacyPath: null,
       })
       expect(mod.getNativeAgentDir()).toBe(join(firstSandbox.homeDir, ".config", "opencode", "agents"))
       expect(mod.getNativeCommandsDir()).toBe(join(firstSandbox.homeDir, ".config", "opencode", "commands"))
@@ -122,11 +125,13 @@ describe("config-manager coverage", () => {
         path: join(secondSandbox.projectDir, "opencode.json"),
         format: "none",
         source: "default",
+        ignoredLegacyPath: null,
       })
       expect(mod.resolveOpenCodeConfigPath("global")).toEqual({
         path: join(secondSandbox.homeDir, ".config", "opencode", "opencode.json"),
         format: "none",
         source: "default",
+        ignoredLegacyPath: null,
       })
       expect(mod.getNativeAgentDir()).toBe(join(secondSandbox.homeDir, ".config", "opencode", "agents"))
       expect(mod.getNativeCommandsDir()).toBe(join(secondSandbox.homeDir, ".config", "opencode", "commands"))
@@ -152,10 +157,12 @@ describe("config-manager coverage", () => {
       expect(mod.resolveOpenCodeConfigPath("project").source).toBe("default")
 
       writeFileSync(paths[3]!, "{}")
-      expect(mod.resolveOpenCodeConfigPath("project").source).toBe("config.jsonc")
+      expect(mod.resolveOpenCodeConfigPath("project").source).toBe("default")
+      expect(mod.resolveOpenCodeConfigPath("project").ignoredLegacyPath).toBe(paths[3]!)
 
       writeFileSync(paths[2]!, "{}")
-      expect(mod.resolveOpenCodeConfigPath("project").source).toBe("config.json")
+      expect(mod.resolveOpenCodeConfigPath("project").source).toBe("default")
+      expect(mod.resolveOpenCodeConfigPath("project").ignoredLegacyPath).toBe(paths[2]!)
 
       writeFileSync(paths[1]!, "{}")
       expect(mod.resolveOpenCodeConfigPath("project").source).toBe("opencode.jsonc")
@@ -179,10 +186,12 @@ describe("config-manager coverage", () => {
       expect(mod.resolveOpenCodeConfigPath("global").source).toBe("default")
 
       writeFileSync(paths[3]!, "{}")
-      expect(mod.resolveOpenCodeConfigPath("global").source).toBe("config.jsonc")
+      expect(mod.resolveOpenCodeConfigPath("global").source).toBe("default")
+      expect(mod.resolveOpenCodeConfigPath("global").ignoredLegacyPath).toBe(paths[3]!)
 
       writeFileSync(paths[2]!, "{}")
-      expect(mod.resolveOpenCodeConfigPath("global").source).toBe("config.json")
+      expect(mod.resolveOpenCodeConfigPath("global").source).toBe("default")
+      expect(mod.resolveOpenCodeConfigPath("global").ignoredLegacyPath).toBe(paths[2]!)
 
       writeFileSync(paths[1]!, "{}")
       expect(mod.resolveOpenCodeConfigPath("global").source).toBe("opencode.jsonc")
@@ -192,7 +201,7 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("prefers canonical OMO config basenames with legacy fallback", async () => {
+  it("ignores legacy OMO config basenames until a canonical config exists", async () => {
     await withSandbox("omo-config-precedence", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
       writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@3.12.2"] }))
@@ -203,11 +212,13 @@ describe("config-manager coverage", () => {
       const legacyJsonc = join(sandbox.globalConfigDir, "oh-my-opencode.jsonc")
 
       writeFileSync(legacyJsonc, JSON.stringify({ agents: {} }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJsonc)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(null)
+      expect(mod.detectOmoVersionInfo().legacyConfigPath).toBe(legacyJsonc)
       expect(mod.detectOmoVersionInfo().registeredEntry).toBe("oh-my-openagent@3.12.2")
 
       writeFileSync(legacyJson, JSON.stringify({ agents: {} }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(legacyJson)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(null)
+      expect(mod.detectOmoVersionInfo().legacyConfigPath).toBe(legacyJson)
 
       writeFileSync(canonicalJsonc, JSON.stringify({ agents: {} }))
       expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJsonc)
@@ -232,7 +243,7 @@ describe("config-manager coverage", () => {
       expect(info.configPath).toBe(canonicalJsonc)
       expect(info.configSource).toBe("oh-my-openagent.jsonc")
       expect(info.legacyConfigPath).toBe(legacyJson)
-      expect(info.dualConfigWarning).toContain("canonical oh-my-openagent.jsonc is being used")
+      expect(info.dualConfigWarning).toContain("Legacy oh-my-opencode config was detected but is not used")
       expect(info.dualConfigWarning).toContain(legacyJson)
     })
   })
@@ -347,7 +358,9 @@ describe("config-manager coverage", () => {
   "region": "Global Region",
   "industry": "Global Industry",
   "primaryRegulation": "GDPR",
-  "teamCulture": "formal-strict"
+  "teamCulture": "formal-strict",
+  "docsEnabled": false,
+  "docsPath": "./global-docs"
 }`,
       )
       mkdirSync(join(sandbox.projectDir, ".wunderkind"), { recursive: true })
@@ -370,7 +383,8 @@ describe("config-manager coverage", () => {
       expect(detected.industry).toBe("Global Industry")
       expect(detected.primaryRegulation).toBe("GDPR")
       expect(detected.secondaryRegulation).toBe("POPIA")
-      expect(detected.teamCulture).toBe("formal-strict")
+      expect(detected.legacyGlobalProjectFields).toEqual(["teamCulture", "docsEnabled", "docsPath"])
+      expect(detected.teamCulture).toBe("pragmatic-balanced")
       expect(detected.docsEnabled).toBe(true)
       expect(detected.docsPath).toBe("./project-docs")
     })
@@ -441,8 +455,8 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("falls back to the legacy oh-my-opencode package when canonical OMO is absent", async () => {
-    await withSandbox("omo-legacy-fallback", async (sandbox, mod) => {
+  it("ignores legacy oh-my-opencode registrations and packages", async () => {
+    await withSandbox("omo-legacy-ignored", async (sandbox, mod) => {
       const legacyPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
 
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
@@ -452,17 +466,17 @@ describe("config-manager coverage", () => {
 
       const versionInfo = mod.detectOmoVersionInfo()
       expect(versionInfo.packageName).toBe("oh-my-openagent")
-      expect(versionInfo.registered).toBe(true)
-      expect(versionInfo.registeredEntry).toBe("oh-my-opencode@3.12.2")
-      expect(versionInfo.registeredVersion).toBe("3.12.2")
-      expect(versionInfo.loadedVersion).toBe("3.12.2")
-      expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
+      expect(versionInfo.registered).toBe(false)
+      expect(versionInfo.registeredEntry).toBe(null)
+      expect(versionInfo.registeredVersion).toBe(null)
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
       expect(versionInfo.configPath).toBe(null)
     })
   })
 
-  it("prefers the registered legacy OMO package when both canonical and legacy copies exist", async () => {
-    await withSandbox("omo-registered-legacy-preferred", async (sandbox, mod) => {
+  it("does not let a legacy OMO registration override the canonical package copy", async () => {
+    await withSandbox("omo-registered-legacy-ignored", async (sandbox, mod) => {
       const canonicalPackagePath = join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent", "package.json")
       const legacyPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
 
@@ -474,9 +488,10 @@ describe("config-manager coverage", () => {
       writeFileSync(legacyPackagePath, JSON.stringify({ version: "3.17.6" }))
 
       const versionInfo = mod.detectOmoVersionInfo()
-      expect(versionInfo.registeredEntry).toBe("oh-my-opencode@3.17.6")
-      expect(versionInfo.loadedVersion).toBe("3.17.6")
-      expect(versionInfo.loadedPackagePath).toBe(legacyPackagePath)
+      expect(versionInfo.registeredEntry).toBe(null)
+      expect(versionInfo.registered).toBe(false)
+      expect(versionInfo.loadedVersion).toBe("3.15.3")
+      expect(versionInfo.loadedPackagePath).toBe(canonicalPackagePath)
     })
   })
 
@@ -524,7 +539,7 @@ describe("config-manager coverage", () => {
         spawnSync: ((command: string, args: string[]) => {
           if (
             command === "bunx" &&
-            args[0] === "oh-my-opencode" &&
+            args[0] === "oh-my-openagent" &&
             args[1] === "get-local-version" &&
             args[2] === "--json"
           ) {
@@ -570,7 +585,7 @@ describe("config-manager coverage", () => {
 
       mock.module("node:child_process", () => ({
         spawnSync: ((command: string, args: string[]) => {
-          if (command === "bunx" && args[0] === "oh-my-opencode" && args[1] === "get-local-version") {
+          if (command === "bunx" && args[0] === "oh-my-openagent" && args[1] === "get-local-version") {
             return {
               status: 0,
               stdout: "not-json",
@@ -587,8 +602,8 @@ describe("config-manager coverage", () => {
         freshMod.__setConfigManagerPathOverrideForTests({ cwd: sandbox.projectDir, home: sandbox.homeDir })
         const info = freshMod.detectOmoVersionInfo()
         expect(info.freshness?.status).toBe("unknown")
-        expect(info.freshness?.currentVersion).toBeNull()
-        expect(info.currentVersion).toBeNull()
+        expect(info.freshness?.currentVersion).toBe(null)
+        expect(info.currentVersion).toBe(null)
         expect(info.freshness?.latestVersion).toBe(null)
       } finally {
         mock.module("node:child_process", () => ({ spawnSync: originalSpawnSync }))
@@ -704,6 +719,56 @@ describe("config-manager coverage", () => {
 
       expect(duplicateError).toBe('Duplicate retained slash command name "shared" declared by "alpha" and "beta"')
 
+    })
+  })
+
+  it("writeNativeSkillFiles exposes only manifest-promoted public skills and excludes deprecated routes", async () => {
+    await withSandbox("native-skill-public-surface", async (_sandbox, mod) => {
+      const staleBlockedDir = join(mod.getNativeSkillsDir(), "design-an-interface")
+      const userSkillDir = join(mod.getNativeSkillsDir(), "user-private-skill")
+
+      mkdirSync(staleBlockedDir, { recursive: true })
+      mkdirSync(userSkillDir, { recursive: true })
+      writeFileSync(join(staleBlockedDir, "SKILL.md"), "# Retired packaged skill\n")
+      writeFileSync(join(userSkillDir, "SKILL.md"), "# User skill\n")
+
+      const staleStatus = mod.detectNativeSkillFiles("global")
+      expect(staleStatus.presentCount).toBe(0)
+      expect(staleStatus.allPresent).toBe(false)
+
+      const writeResult = mod.writeNativeSkillFiles("global")
+      expect(writeResult.success).toBe(true)
+
+      const installableSkills = WUNDERKIND_CANONICAL_MANIFEST.skills.filter(
+        (skill) => skill.bucket === "promoted" || skill.bucket === "wunderkind-specific",
+      )
+      const blockedSkills = WUNDERKIND_CANONICAL_MANIFEST.skills.filter(
+        (skill) => skill.bucket !== "promoted" && skill.bucket !== "wunderkind-specific",
+      )
+
+      expect(blockedSkills.map((skill) => skill.id)).toContain("design-an-interface")
+      expect(mod.getNativeSkillDirectories("global").map((dirPath) => basename(dirPath)).sort()).toEqual(
+        installableSkills.map((skill) => skill.id).sort(),
+      )
+
+      for (const skill of installableSkills) {
+        expect(existsSync(join(mod.getNativeSkillsDir(), skill.id, "SKILL.md"))).toBe(true)
+      }
+
+      for (const skill of blockedSkills) {
+        expect(existsSync(join(mod.getNativeSkillsDir(), skill.id))).toBe(false)
+      }
+
+      expect(existsSync(userSkillDir)).toBe(true)
+
+      mkdirSync(staleBlockedDir, { recursive: true })
+      writeFileSync(join(staleBlockedDir, "SKILL.md"), "# Retired packaged skill\n")
+
+      const removeResult = mod.removeNativeSkillFiles("global")
+      expect(removeResult.success).toBe(true)
+      expect(removeResult.changed).toBe(true)
+      expect(existsSync(staleBlockedDir)).toBe(false)
+      expect(existsSync(userSkillDir)).toBe(true)
     })
   })
 
