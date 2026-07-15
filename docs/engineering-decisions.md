@@ -7,7 +7,7 @@ Last refreshed: 2026-07-15T11-11-35Z
 - **Language/runtime**: TypeScript + Bun + ESM
 - **Plugin package**: `@opencode-ai/plugin@1.17.8`
 - **OMO dependency**: `oh-my-openagent@4.11.1`
-- **Current Wunderkind package version**: `0.20.0`
+- **Current Wunderkind package version**: `0.20.1`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 
 ## Architecture decisions
