@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.1
+
+- complete the upstream-convergence release by centralizing native asset metadata behind a canonical manifest and regenerating the retained native agent surface from that contract
+- enforce the hard-cut migration posture in runtime behavior: `.omo/` is the only active project artifact root, `wunderkind migrate` is fail-hard guidance only, and legacy `oh-my-opencode` paths remain detection-only warnings instead of active fallbacks
+- shrink and rebucket the public skill surface to 19 promoted retained-specialist skills, 4 Wunderkind-specific workflow skills, and 1 deprecated docs-history route (`design-an-interface`)
+- make `wunderkind upgrade` prune retired Wunderkind-owned packaged skill directories during refresh so deprecated skills do not survive on disk as active native routes
+- make `wunderkind doctor` the clean operator handoff surface by surfacing stale native assets, stale generated agent versions, and the exact package-refresh plus lifecycle-upgrade commands to run
+- add convergence-critical regression coverage and ship the release with final F1/F2/F3/F4 review gates approved
+
 ## 0.20.0
 
 - raise the public Node.js runtime floor to `22.12+` (while continuing to support Bun 1+) so Wunderkind can adopt `commander@15`

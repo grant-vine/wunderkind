@@ -24,6 +24,32 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.20.1
+
+Wunderkind `0.20.1` is the first release that packages the full upstream-convergence pass behind a clean patch tag.
+
+- native agents, commands, skills, version markers, and generated agent frontmatter now derive from one canonical manifest source
+- `wunderkind upgrade` prunes retired Wunderkind-owned packaged skill directories during refresh, so deprecated routes like `design-an-interface` do not survive on disk as active native skills
+- `wunderkind doctor` now works as the operator handoff surface for this release: it reports stale native assets, stale generated native agent versions, and the exact package-refresh plus lifecycle-upgrade commands to run
+- the hard-cut migration posture is now fully enforced in runtime behavior, docs, and regression tests
+
+### Clean upgrade path for existing installs
+
+If you are upgrading an existing deployment, use this order:
+
+1. Refresh the installed package in the relevant config directory:
+   - global install: `cd ~/.config/opencode && bun install @grant-vine/wunderkind`
+   - project install: `cd <project> && bun install @grant-vine/wunderkind`
+2. Refresh native assets:
+   - global install: `wunderkind upgrade --scope=global`
+   - project install: `wunderkind upgrade --scope=project`
+   - both scopes: `wunderkind upgrade --scope=project && wunderkind upgrade --scope=global`
+3. Verify the install with `wunderkind doctor --verbose`
+
+`wunderkind doctor` prints both the lifecycle command and the package-refresh command for the detected install scope, so operators do not have to reconstruct the upgrade sequence manually.
+
+---
+
 ## CLI
 
 Wunderkind provides a tiered CLI for installation, project setup, and health checks.
@@ -147,6 +173,7 @@ wunderkind upgrade --scope=project --caveman-enabled=yes
 Current upgrade behavior:
 - refreshes Wunderkind native agents and native skills in the requested scope
 - refreshes Wunderkind's shipped native command assets globally (e.g. `/docs-index`, `/dream`)
+- prunes retired Wunderkind-owned packaged skill directories during refresh so deprecated routes do not remain active on disk
 - rewrites Wunderkind-managed native-asset version markers so `doctor` can detect stale installed files
 - embeds a Wunderkind version value in generated native agent markdown so `doctor` can compare installed agent files too
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
@@ -155,6 +182,15 @@ Current upgrade behavior:
 - project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
 
 Older installs require `wunderkind upgrade` to receive the `/dream` command. `wunderkind doctor` will surface missing or stale command assets.
+
+### What `doctor` tells operators
+
+`wunderkind doctor` is the clean post-upgrade verification surface for this release. It reports:
+
+- whether native agents, commands, and skills are stale relative to the currently installed Wunderkind package
+- whether generated native agent markdown versions drift from the current package version
+- the recommended `wunderkind upgrade --scope=...` lifecycle command for the detected install scope
+- the direct package refresh command (`bun install @grant-vine/wunderkind`) for the detected global and/or project install location
 
 This keeps the lifecycle concept explicit without overloading `install`.
 
