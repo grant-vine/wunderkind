@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { homedir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
@@ -20,6 +20,7 @@ import {
   resolveOpenCodeConfigPath,
   summarizeOmoFreshness as summarizeOmoFreshnessInfo,
 } from "./config-manager/index.js"
+import { getGitHubIssuesWorkflowStateDir } from "./github-issues-mapping.js"
 import { isProjectContext } from "./init.js"
 import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
 import { detectStitchMcpPresence, type StitchPresence } from "./mcp-helpers.js"
@@ -403,6 +404,17 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       } else {
         line("gh auth verified:", color.dim("not checked"))
       }
+
+      const workflowStateDir = getGitHubIssuesWorkflowStateDir(cwd)
+      const workflowStateCount = existsSync(workflowStateDir)
+        ? readdirSync(workflowStateDir).filter((entry) => entry.endsWith(".json")).length
+        : 0
+      line("workflow sync command:", color.dim("wunderkind workflow-sync --plan <path> [--apply]"))
+      line("token audit command:", color.dim("wunderkind token-audit --surface agents --format table"))
+      line(
+        "github workflow state dir:",
+        `${color.dim(workflowStateDir)} ${color.dim(`(${workflowStateCount} tracked workflow${workflowStateCount === 1 ? "" : "s"})`)}`,
+      )
     }
 
     if (inProject) {

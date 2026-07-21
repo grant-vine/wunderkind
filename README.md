@@ -24,14 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.20.1
+## What's new in 0.21.0
 
-Wunderkind `0.20.1` is the first release that packages the full upstream-convergence pass behind a clean patch tag.
+Wunderkind `0.21.0` adds explicit GitHub workflow projection plus deterministic prompt-surface reporting as first-class CLI surfaces.
 
-- native agents, commands, skills, version markers, and generated agent frontmatter now derive from one canonical manifest source
-- `wunderkind upgrade` prunes retired Wunderkind-owned packaged skill directories during refresh, so deprecated routes like `design-an-interface` do not survive on disk as active native skills
-- `wunderkind doctor` now works as the operator handoff surface for this release: it reports stale native assets, stale generated native agent versions, and the exact package-refresh plus lifecycle-upgrade commands to run
-- the hard-cut migration posture is now fully enforced in runtime behavior, docs, and regression tests
+- add `wunderkind workflow-sync` with direct-child `.omo/plans/*.md` support, dry-run by default, explicit `--apply`, and fail-closed local/remote drift handling for GitHub Issues sync
+- add `wunderkind token-audit` as a read-only reporting command for deterministic `bytes`, `lines`, and `files` metrics across Wunderkind-owned prompt surfaces
+- ship `/workflow-sync` and `/token-audit` as native command assets and wire their install/help/doctor/init surfaces into the maintained CLI contract
+- expand regression coverage around workflow state identity, bulk sync preflight, token-audit rendering, and shipped command asset exposure
 
 ### Clean upgrade path for existing installs
 
@@ -59,6 +59,8 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
 | `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
+| `wunderkind workflow-sync` | Explicitly projects a local `.omo` plan into GitHub Issues | GitHub Issues + `.wunderkind/workflows/github-issues/` |
+| `wunderkind token-audit` | Reports deterministic prompt-surface size metrics for Wunderkind-owned assets | None |
 | `wunderkind migrate` | Removed hard-cut command that prints manual migration guidance and exits non-zero | None |
 | `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
@@ -218,9 +220,47 @@ Interactive `wunderkind init` always asks for team culture, org structure, and d
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.omo/`
-- `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready
+- `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready; use `wunderkind workflow-sync` for explicit GitHub Issues projection
 
 If `prdPipelineMode` is absent in an older project config, Wunderkind treats it as `filesystem`.
+
+`init` remains advisory only for GitHub mode. It does not create issues or sync state automatically.
+
+## Workflow Sync
+
+Use `wunderkind workflow-sync` when `prdPipelineMode` is `github` and you want to project a local `.omo` workflow plan into GitHub Issues.
+
+```bash
+wunderkind workflow-sync --plan ./.omo/plans/my-plan.md
+wunderkind workflow-sync --plan ./.omo/plans/my-plan.md --apply
+wunderkind workflow-sync --all
+wunderkind workflow-sync --all --apply
+```
+
+- provide exactly one of `--plan <path>` or `--all`
+- default mode is **dry-run**; it reports what would be created or updated
+- `--apply` is required before Wunderkind writes GitHub Issues or local workflow state
+- local workflow state remains authoritative
+- machine-local sync state is stored under `.wunderkind/workflows/github-issues/`
+- v1 fails closed on missing local bindings or detected drift instead of blindly recreating issues
+
+## Token Audit
+
+Use `wunderkind token-audit` to inspect deterministic prompt-surface size metrics for Wunderkind-owned assets.
+
+```bash
+wunderkind token-audit
+wunderkind token-audit --surface commands --format json
+```
+
+- default surface is `agents`
+- supported surfaces are `agents`, `commands`, `skills`, and `all`
+- supported formats are `table` and `json`
+- v1 is read-only and reporting-only
+- metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
+- it does **not** claim model-specific token truth or perform prompt compaction
+
+This is intentionally separate from `wunderkind migrate`. `migrate` remains legacy `.sisyphus/` guidance only.
 
 ### Caveman Mode
 
@@ -302,6 +342,7 @@ wunderkind doctor
 - Full path resolution for global and project OpenCode configs
 - Active region, industry, and regulation baseline with source markers
 - PRD workflow mode and GitHub-readiness signals
+- workflow-sync guidance and tracked GitHub workflow state directory
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
 

@@ -981,6 +981,8 @@ export async function runInit(options: InitOptions): Promise<number> {
       } else if (githubReadiness.authCheckAttempted && !githubReadiness.authVerified) {
         console.log("Warning: GitHub PRD mode selected, but `gh auth status` could not verify GitHub readiness. You may need to authenticate before using GitHub-backed workflows.")
       }
+
+      console.log("Next step: use `wunderkind workflow-sync --plan ./.omo/plans/<plan>.md` or `wunderkind workflow-sync --all` for explicit GitHub Issues sync. Add `--apply` only when the dry-run output looks correct.")
     }
 
     if (config.docsEnabled) {

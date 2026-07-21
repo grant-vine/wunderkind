@@ -672,6 +672,7 @@ describe("runInit non-interactive branching", () => {
       expect(writtenConfig.prdPipelineMode).toBe("github")
       expect(messages.some((message) => message.includes("no GitHub remote was detected"))).toBe(true)
       expect(messages.some((message) => message.includes("`gh` is not installed"))).toBe(true)
+      expect(messages.some((message) => message.includes("wunderkind workflow-sync --plan"))).toBe(true)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog

@@ -824,6 +824,8 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Workflow Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("PRD pipeline mode:") && m.includes("filesystem"))).toBe(true)
       expect(messages.some((m) => m.includes("GitHub remote detected:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("workflow sync command:") && m.includes("wunderkind workflow-sync --plan <path> [--apply]"))).toBe(true)
+      expect(messages.some((m) => m.includes("token audit command:") && m.includes("wunderkind token-audit --surface agents --format table"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
