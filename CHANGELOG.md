@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0
+
+- add `wunderkind workflow-sync` for explicit GitHub Issues projection from local `.omo` plans, including `--all`, dry-run by default, and fail-closed local/remote drift handling
+- add `wunderkind token-audit` as a read-only CLI surface for deterministic prompt-surface `bytes`, `lines`, and `files` reporting across Wunderkind-owned assets
+- ship `/workflow-sync` and `/token-audit` as native command assets and wire them through CLI help, doctor/init guidance, install coverage, and manifest-driven asset exposure
+- preserve synced workflow identity across heading slug changes and preflight remote drift before any apply mutations, including `--all --apply`
+
 ## 0.20.1
 
 - complete the upstream-convergence release by centralizing native asset metadata behind a canonical manifest and regenerating the retained native agent surface from that contract

@@ -71,7 +71,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-  version: "0.20.1",
+  version: "0.21.0",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -364,6 +364,22 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
         summary: "Create or capture the canonical DESIGN.md brief for Stitch-guided design work",
         subtask: false,
         sourcePath: "commands/design-md.md",
+      },
+      {
+        name: "workflow-sync",
+        command: "/workflow-sync",
+        ownerAgentId: "product-wunderkind",
+        summary: "Analyze or apply a GitHub Issues sync for a local .omo workflow plan",
+        subtask: true,
+        sourcePath: "commands/workflow-sync.md",
+      },
+      {
+        name: "token-audit",
+        command: "/token-audit",
+        ownerAgentId: "fullstack-wunderkind",
+        summary: "Report deterministic prompt-surface size metrics for Wunderkind-owned assets",
+        subtask: true,
+        sourcePath: "commands/token-audit.md",
       },
     ],
     generated: [
