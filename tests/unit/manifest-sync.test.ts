@@ -65,6 +65,8 @@ describe("manifest version sync", () => {
 describe("design-md command asset", () => {
   const commandFile = new URL("../../commands/design-md.md", import.meta.url)
   const docsIndexFile = new URL("../../commands/docs-index.md", import.meta.url)
+  const workflowSyncFile = new URL("../../commands/workflow-sync.md", import.meta.url)
+  const tokenAuditFile = new URL("../../commands/token-audit.md", import.meta.url)
 
   it("exists as a file", () => {
     expect(statSync(commandFile).isFile()).toBe(true)
@@ -76,9 +78,11 @@ describe("design-md command asset", () => {
     }
 
     expect(Array.isArray(packageJson.files)).toBe(true)
-    expect(packageJson.files).toContain("commands/")
-    expect(statSync(commandFile).isFile()).toBe(true)
-    expect(statSync(docsIndexFile).isFile()).toBe(true)
+      expect(packageJson.files).toContain("commands/")
+      expect(statSync(commandFile).isFile()).toBe(true)
+      expect(statSync(docsIndexFile).isFile()).toBe(true)
+      expect(statSync(workflowSyncFile).isFile()).toBe(true)
+      expect(statSync(tokenAuditFile).isFile()).toBe(true)
   })
 
   it("declares the creative-director owner in frontmatter", () => {
@@ -117,5 +121,24 @@ describe("design-md command asset", () => {
 
     expect(docsIndexBody).toContain("/docs-index")
     expect(docsIndexBody).toContain("agent: product-wunderkind")
+  })
+
+  it("ships workflow-sync as a product-owned static command asset", () => {
+    const workflowSyncBody = readText(workflowSyncFile)
+
+    expect(workflowSyncBody).toContain("agent: product-wunderkind")
+    expect(workflowSyncBody).toContain("name: workflow-sync")
+    expect(workflowSyncBody).toContain("`wunderkind workflow-sync --plan <path> [--apply]`")
+    expect(workflowSyncBody).toContain("`wunderkind workflow-sync --all [--apply]`")
+    expect(workflowSyncBody).toContain(".wunderkind/workflows/github-issues/")
+  })
+
+  it("ships token-audit as a fullstack-owned static command asset", () => {
+    const tokenAuditBody = readText(tokenAuditFile)
+
+    expect(tokenAuditBody).toContain("agent: fullstack-wunderkind")
+    expect(tokenAuditBody).toContain("name: token-audit")
+    expect(tokenAuditBody).toContain("`wunderkind token-audit [--surface <surface>] [--format <format>]`")
+    expect(tokenAuditBody).toContain("bytes, lines, and file counts")
   })
 })

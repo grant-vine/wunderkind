@@ -695,6 +695,8 @@ describe("config-manager coverage", () => {
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("threat-model.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("prd.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("dream.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("workflow-sync.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("token-audit.md"))).toBe(true)
 
       const threatModelContent = readFileSync(join(mod.getNativeCommandsDir(), "threat-model.md"), "utf-8")
       expect(threatModelContent).toContain("agent: ciso")
@@ -702,6 +704,15 @@ describe("config-manager coverage", () => {
 
       const dreamContent = readFileSync(join(mod.getNativeCommandsDir(), "dream.md"), "utf-8")
       expect(dreamContent).toContain("agent: product-wunderkind")
+
+      const workflowSyncContent = readFileSync(join(mod.getNativeCommandsDir(), "workflow-sync.md"), "utf-8")
+      expect(workflowSyncContent).toContain("name: workflow-sync")
+      expect(workflowSyncContent).toContain("wunderkind workflow-sync --plan <path> [--apply]")
+      expect(workflowSyncContent).toContain("wunderkind workflow-sync --all [--apply]")
+
+      const tokenAuditContent = readFileSync(join(mod.getNativeCommandsDir(), "token-audit.md"), "utf-8")
+      expect(tokenAuditContent).toContain("name: token-audit")
+      expect(tokenAuditContent).toContain("wunderkind token-audit [--surface <surface>] [--format <format>]")
 
       let duplicateError: string | null = null
       try {
@@ -912,16 +923,22 @@ describe("config-manager coverage", () => {
       const threatModelPath = join(commandDir, "threat-model.md")
       const prdPath = join(commandDir, "prd.md")
       const dreamPath = join(commandDir, "dream.md")
+      const workflowSyncPath = join(commandDir, "workflow-sync.md")
+      const tokenAuditPath = join(commandDir, "token-audit.md")
       expect(existsSync(commandDir)).toBe(true)
       expect(existsSync(docsIndexPath)).toBe(true)
       expect(existsSync(designMdPath)).toBe(true)
       expect(existsSync(threatModelPath)).toBe(true)
       expect(existsSync(prdPath)).toBe(true)
       expect(existsSync(dreamPath)).toBe(true)
+      expect(existsSync(workflowSyncPath)).toBe(true)
+      expect(existsSync(tokenAuditPath)).toBe(true)
       expect(readFileSync(docsIndexPath, "utf-8")).toContain("/docs-index")
       expect(readFileSync(dreamPath, "utf-8")).toContain("agent: product-wunderkind")
       expect(readFileSync(threatModelPath, "utf-8")).toContain("name: threat-model")
       expect(readFileSync(prdPath, "utf-8")).toContain("name: prd")
+      expect(readFileSync(workflowSyncPath, "utf-8")).toContain("name: workflow-sync")
+      expect(readFileSync(tokenAuditPath, "utf-8")).toContain("name: token-audit")
 
       const skillResult = mod.writeNativeSkillFiles("project")
       expect(skillResult.success).toBe(true)
