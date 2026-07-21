@@ -2,9 +2,11 @@
 import { Command } from "commander"
 import { runCliInstaller, runCliUpgrade } from "./cli-installer.js"
 import { runDoctorWithOptions } from "./doctor.js"
+import { runWorkflowSync } from "./github-issues-sync.js"
 import { runInit } from "./init.js"
 import { runProjectArtifactMigration } from "./migrate.js"
 import { runProjectCleanup } from "./cleanup.js"
+import { runTokenAudit } from "./token-audit.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
@@ -313,6 +315,93 @@ program
     if (cavemanEnabled !== undefined) initOptions.cavemanEnabled = cavemanEnabled
 
     const exitCode = await runInit(initOptions)
+    process.exit(exitCode)
+  })
+
+program
+  .command("workflow-sync")
+  .description(
+    [
+      "Synchronize a local .omo workflow plan into GitHub Issues.",
+      "",
+      "Dry-run by default. Pass --apply to create or update GitHub Issues and persist local workflow state.",
+    ].join("\n"),
+  )
+  .option("--plan <path>", "Path to the local .omo workflow plan to synchronize")
+  .option("--all", "Synchronize every direct-child .omo/plans/*.md workflow plan in lexicographic order")
+  .option("--apply", "Create or update GitHub Issues and write local workflow state")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Examples:",
+      "  bunx @grant-vine/wunderkind workflow-sync --plan ./.omo/plans/my-plan.md",
+      "  bunx @grant-vine/wunderkind workflow-sync --plan ./.omo/plans/my-plan.md --apply",
+      "  bunx @grant-vine/wunderkind workflow-sync --all",
+      "  bunx @grant-vine/wunderkind workflow-sync --all --apply",
+      "",
+      "Behavior:",
+      "  - provide exactly one of --plan <path> or --all",
+      "  - intended for projects using the GitHub PRD workflow mode and requires GitHub readiness",
+      "  - keeps local workflow state authoritative",
+      "  - stores machine-local sync state under .wunderkind/workflows/github-issues/",
+      "  - refuses blind recreation when local or remote drift is detected",
+    ].join("\n"),
+  )
+  .action(async (opts: { plan?: string | undefined; all?: boolean | undefined; apply?: boolean | undefined }) => {
+    const workflowSyncOptions: { plan?: string; all?: boolean; apply: boolean } = {
+      apply: opts.apply === true,
+      ...(opts.plan !== undefined ? { plan: opts.plan } : {}),
+      ...(opts.all === true ? { all: true } : {}),
+    }
+
+    const exitCode = await runWorkflowSync(workflowSyncOptions)
+    process.exit(exitCode)
+  })
+
+program
+  .command("token-audit")
+  .description(
+    [
+      "Report deterministic prompt-surface size metrics for Wunderkind-owned assets.",
+      "",
+      "Read-only by design. Reports bytes, lines, and file counts from source-owned renderers and shipped markdown assets.",
+    ].join("\n"),
+  )
+  .option("--surface <surface>", "Surface to audit: agents, commands, skills, or all", "agents")
+  .option("--format <format>", "Output format: table or json", "table")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Examples:",
+      "  bunx @grant-vine/wunderkind token-audit",
+      "  bunx @grant-vine/wunderkind token-audit --surface commands --format json",
+      "",
+      "Behavior:",
+      "  - reads source-owned renderers and shipped markdown assets only",
+      "  - does not mutate prompts, native assets, or project files",
+      "  - reports deterministic bytes, lines, and file counts rather than model-specific token truth",
+    ].join("\n"),
+  )
+  .action(async (opts: { surface?: string | undefined; format?: string | undefined }) => {
+    const surface = opts.surface ?? "agents"
+    const format = opts.format ?? "table"
+
+    if (surface !== "agents" && surface !== "commands" && surface !== "skills" && surface !== "all") {
+      console.error(`Error: --surface must be "agents", "commands", "skills", or "all", got: "${surface}"`)
+      process.exit(1)
+    }
+
+    if (format !== "table" && format !== "json") {
+      console.error(`Error: --format must be "table" or "json", got: "${format}"`)
+      process.exit(1)
+    }
+
+    const exitCode = await runTokenAudit({
+      surface,
+      format,
+    })
     process.exit(exitCode)
   })
 

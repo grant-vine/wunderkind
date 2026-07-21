@@ -96,6 +96,26 @@ describe("CLI help copy", () => {
     expect(output).toContain("Enable verbose diagnostic output")
   })
 
+  it("includes workflow-sync command help text", () => {
+    const output = runCliHelp("workflow-sync", "--help")
+
+    expect(output).toContain("Synchronize a local .omo workflow plan into GitHub Issues")
+    expect(output).toContain("--plan <path>")
+    expect(output).toContain("--all")
+    expect(output).toContain("--apply")
+    expect(output).toContain(".wunderkind/workflows/github-issues/")
+    expect(output).not.toContain("requires prdPipelineMode=github")
+  })
+
+  it("includes token-audit command help text", () => {
+    const output = runCliHelp("token-audit", "--help")
+
+    expect(output).toContain("Report deterministic prompt-surface size metrics")
+    expect(output).toContain("--surface <surface>")
+    expect(output).toContain("--format <format>")
+    expect(output).toContain("bytes, lines, and file counts")
+  })
+
   it("includes install guidance for OMO version-skew recovery in doctor behavior", () => {
     const output = runCliHelp("doctor", "--help")
 
