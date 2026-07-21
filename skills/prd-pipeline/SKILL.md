@@ -16,7 +16,7 @@ This skill converts product intent into a durable delivery workflow using the up
 Read `prdPipelineMode` from `.wunderkind/wunderkind.config.jsonc`.
 
 - `filesystem` — create artifacts in `.omo/` via Wunderkind's bounded durable-artifact writer
-- `github` — adapt the upstream issue flow with `gh` only when the repo is GitHub-ready and the project explicitly selected it
+- `github` — adapt the upstream issue flow with `gh` only when the repo is GitHub-ready and the project explicitly selected it; use `wunderkind workflow-sync` as the explicit GitHub Issues projection surface
 
 If the mode is missing, treat it as `filesystem`.
 
@@ -29,6 +29,10 @@ If the mode is missing, treat it as `filesystem`.
 ## GitHub mode targets
 
 - Use `gh` commands only if GitHub workflow readiness has been confirmed by the current environment.
+- GitHub Issues are the v1 backend.
+- The local `.omo` plan remains authoritative; GitHub is a projected execution backend, not the source of truth.
+- Machine-local workflow state lives under `.wunderkind/workflows/github-issues/`.
+- Run `wunderkind workflow-sync --plan <path>` for dry-run analysis, then re-run with `--apply` to mutate GitHub.
 - If readiness is unclear, stop and tell the user exactly what is missing.
 
 ## Stages
@@ -62,3 +66,4 @@ If the mode is missing, treat it as `filesystem`.
 2. Every artifact should be durable and readable without hidden tool state.
 3. Plans should describe behavior and sequencing, not fragile implementation trivia.
 4. Every issue/work item needs a clear outcome and acceptance criteria.
+5. In GitHub mode, do not post issues directly from a skill in v1; route through `wunderkind workflow-sync` so sync stays explicit and auditable.

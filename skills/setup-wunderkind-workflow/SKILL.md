@@ -61,6 +61,11 @@ Walk these one at a time, not all at once:
 4. Show the user the draft workflow contract before writing.
 5. Write the agreed contract into Wunderkind-native locations.
 
+If the workflow backend is GitHub-backed, make the explicit sync contract clear:
+- `.omo/` remains the local human workflow source of truth
+- `wunderkind workflow-sync` is the only v1 mutation surface for GitHub Issues
+- `.wunderkind/workflows/github-issues/` stores machine-local bindings and must stay gitignored
+
 ## Required outputs
 
 ### `AGENTS.md`

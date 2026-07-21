@@ -16,7 +16,7 @@ If the repo treats external pull requests as an intake surface, triage them with
 ## Output mode
 
 - Default: write findings to `.omo/triage/<slug>.md`
-- If `prdPipelineMode` is `github` and GitHub workflow readiness is confirmed, adapt the upstream issue-comment flow with a clear retained-agent handoff
+- If `prdPipelineMode` is `github` and GitHub workflow readiness is confirmed, shape the handoff for GitHub Issues but keep mutation explicit through `wunderkind workflow-sync`
 
 ## Required sections
 
@@ -51,3 +51,4 @@ If the repo treats external pull requests as an intake surface, triage them with
 3. Acceptance criteria must describe observable behavior.
 4. Prefer durable filesystem artifacts over ephemeral chat summaries.
 5. For GitHub-backed triage comments, prepend a clear AI-generated disclaimer before posting user-visible notes.
+6. In v1, skills must not mutate GitHub Issues directly; prepare the local handoff and route the actual projection through `wunderkind workflow-sync`.
