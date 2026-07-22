@@ -92,16 +92,89 @@ describe("runTokenAudit", () => {
     expect(parsed.groups).toEqual([
       {
         name: "commands-static",
+        layerId: "static-commands-static",
+        ownership: "wunderkind-owned",
+        collectionMode: "static-owned",
         files: staticCommands.length,
         bytes: expectedStaticBytes,
         lines: expectedStaticLines,
       },
       {
         name: "commands-generated",
+        layerId: "static-commands-generated",
+        ownership: "wunderkind-owned",
+        collectionMode: "static-owned",
         files: generatedCommands.length,
         bytes: expectedGeneratedBytes,
         lines: expectedGeneratedLines,
       },
+    ])
+  })
+
+  it("emits deterministic layered JSON for the all surface while keeping static-only surfaces separate", async () => {
+    const logs: string[] = []
+    const repeatLogs: string[] = []
+
+    const exitCode = await runTokenAudit({
+      cwd: PROJECT_ROOT,
+      surface: "all",
+      format: "json",
+      writeStdout: (line) => logs.push(line),
+      writeStderr: () => {},
+    })
+
+    const repeatExitCode = await runTokenAudit({
+      cwd: PROJECT_ROOT,
+      surface: "all",
+      format: "json",
+      writeStdout: (line) => repeatLogs.push(line),
+      writeStderr: () => {},
+    })
+
+    expect(exitCode).toBe(0)
+    expect(repeatExitCode).toBe(0)
+    expect(logs).toEqual(repeatLogs)
+
+    const parsed = JSON.parse(logs[0] ?? "{}") as {
+      readonly surface: string
+      readonly groups: readonly {
+        readonly name: string
+        readonly ownership: string
+        readonly collectionMode: string
+      }[]
+      readonly entries: readonly {
+        readonly group: string
+      }[]
+      readonly contract: {
+        readonly runtimeFixtureIds: readonly string[]
+      }
+    }
+
+    expect(parsed.surface).toBe("all")
+    expect(parsed.groups.map((group) => group.name)).toEqual([
+      "agents",
+      "commands-static",
+      "commands-generated",
+      "skills",
+      "runtime-docs-output",
+      "runtime-context",
+      "runtime-native-agents",
+      "compaction-continuity",
+    ])
+    expect(parsed.groups.filter((group) => /runtime|compaction/.test(group.name)).every((group) => group.ownership === "runtime-owned")).toBe(true)
+    expect(parsed.groups.filter((group) => /runtime|compaction/.test(group.name)).every((group) => group.collectionMode !== "static-owned")).toBe(true)
+    expect(parsed.entries.some((entry) => entry.group === "runtime-soul-overlay")).toBe(false)
+    expect(parsed.contract.runtimeFixtureIds).toEqual([
+      "fixture-default-no-config",
+      "fixture-docs-valid",
+      "fixture-docs-invalid-reserved",
+      "fixture-docs-invalid-absolute",
+      "fixture-docs-invalid-parent-traversal",
+      "fixture-docs-invalid-project-root",
+      "fixture-docs-invalid-symlink",
+      "fixture-runtime-context",
+      "fixture-runtime-context-github",
+      "fixture-caveman-enabled",
     ])
   })
 })

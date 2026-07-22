@@ -9,6 +9,8 @@ const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file:/
 const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?docs-injection=${Date.now()}`, `file://${PROJECT_ROOT}`).href
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
+const RUNTIME_CONTEXT_SENTINEL = "<!-- wunderkind:runtime-context-start -->"
+const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
 
@@ -64,6 +66,10 @@ function hasDocsSection(system: string[]): boolean {
 
 function countSentinel(system: string[]): number {
   return system.reduce((count, entry) => count + (entry.includes(DOCS_OUTPUT_SENTINEL) ? 1 : 0), 0)
+}
+
+function countSystemEntriesWithMarker(system: string[], marker: string): number {
+  return system.reduce((count, entry) => count + (entry.includes(marker) ? 1 : 0), 0)
 }
 
 type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void> }> }
@@ -160,6 +166,33 @@ describe("runtime docs-output system injection", () => {
 
     expect(countSentinel(output.system)).toBe(1)
     expect(output.system.filter((entry) => entry.includes("## Documentation Output")).length).toBe(1)
+  })
+
+  it("does not duplicate resolved runtime context when transform runs twice", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      region: "Project Region",
+      industry: "SaaS",
+      primaryRegulation: "POPIA",
+      teamCulture: "pragmatic-balanced",
+      orgStructure: "flat",
+    }))
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+    await cachedTransform!({}, output)
+
+    expect(countSystemEntriesWithMarker(output.system, RUNTIME_CONTEXT_SENTINEL)).toBe(1)
+    expect(output.system.filter((entry) => entry.includes("## Wunderkind Resolved Runtime Context")).length).toBe(1)
+  })
+
+  it("does not duplicate native agent routing guidance when transform runs twice", async () => {
+    const output: TestOutput = { system: [] }
+
+    await cachedTransform!({}, output)
+    await cachedTransform!({}, output)
+
+    expect(countSystemEntriesWithMarker(output.system, NATIVE_AGENTS_SENTINEL)).toBe(1)
+    expect(output.system.filter((entry) => entry.includes("## Wunderkind Native Agents")).length).toBe(1)
   })
 
   it("injects a docs-output warning when docsPath conflicts with reserved DESIGN.md", async () => {

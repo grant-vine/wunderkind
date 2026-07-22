@@ -24,7 +24,7 @@ function writeLine(writer: OutputWriter | undefined, value: string): void {
 export async function runTokenAudit(options: TokenAuditOptions): Promise<number> {
   const surface = options.surface ?? "agents"
   const format = options.format ?? "table"
-  const report = collectTokenAuditReport(surface)
+  const report = await collectTokenAuditReport(surface)
 
   if (format === "json") {
     writeLine(options.writeStdout, JSON.stringify(report))
