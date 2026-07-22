@@ -24,11 +24,12 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.21.0
+## What's new in 0.22.0
 
-Wunderkind `0.21.0` adds explicit GitHub workflow projection plus deterministic prompt-surface reporting as first-class CLI surfaces.
+Wunderkind `0.22.0` aligns to `oh-my-openagent` `4.19.0` plus OpenCode plugin/SDK `1.18.4`, adds explicit GitHub workflow projection, adds a guarded team-mode entry flow, and exposes deterministic prompt-surface reporting as first-class CLI surfaces.
 
 - add `wunderkind workflow-sync` with direct-child `.omo/plans/*.md` support, dry-run by default, explicit `--apply`, and fail-closed local/remote drift handling for GitHub Issues sync
+- add `wunderkind team-bootstrap` plus `/wunderkind-team` for upstream-compatible team-mode setup; when `team_mode.enabled` is disabled, the canonical spec is missing, or team tools are unavailable, `/wunderkind-team` falls back explicitly to solo `product-wunderkind` orchestration
 - add `wunderkind token-audit` as a read-only reporting command for deterministic `bytes`, `lines`, and `files` metrics across Wunderkind-owned prompt surfaces
 - ship `/workflow-sync` and `/token-audit` as native command assets and wire their install/help/doctor/init surfaces into the maintained CLI contract
 - expand regression coverage around workflow state identity, bulk sync preflight, token-audit rendering, and shipped command asset exposure
@@ -59,6 +60,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 | `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
 | `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
+| `wunderkind team-bootstrap` | Creates the canonical Wunderkind upstream team spec | `.omo/teams/<name>/config.json` |
 | `wunderkind workflow-sync` | Explicitly projects a local `.omo` plan into GitHub Issues | GitHub Issues + `.wunderkind/workflows/github-issues/` |
 | `wunderkind token-audit` | Reports deterministic prompt-surface size metrics for Wunderkind-owned assets | None |
 | `wunderkind migrate` | Removed hard-cut command that prints manual migration guidance and exits non-zero | None |
@@ -244,6 +246,22 @@ wunderkind workflow-sync --all --apply
 - machine-local sync state is stored under `.wunderkind/workflows/github-issues/`
 - v1 fails closed on missing local bindings or detected drift instead of blindly recreating issues
 
+## Wunderkind Team Mode
+
+Use `wunderkind team-bootstrap` to create the canonical upstream-shaped team spec consumed by `/wunderkind-team`.
+
+```bash
+wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief
+wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief
+wunderkind team-bootstrap --scope=project --dry-run
+```
+
+- project scope writes `<project>/.omo/teams/wunderkind-daily-brief/config.json`
+- user scope writes `~/.omo/teams/wunderkind-daily-brief/config.json`
+- `/wunderkind-team` checks only canonical `oh-my-openagent.jsonc` / `oh-my-openagent.json` config paths and the upstream `team_mode.enabled` key
+- the command starts with `What do you want to do today?`
+- fallback behavior is explicit: disabled team mode, a missing team spec, or unavailable team tools continues as solo `product-wunderkind` orchestration instead of inventing unsupported retained-agent team members
+
 ## Token Audit
 
 Use `wunderkind token-audit` to inspect deterministic prompt-surface size metrics for Wunderkind-owned assets.
@@ -257,6 +275,7 @@ wunderkind token-audit --surface commands --format json
 - supported surfaces are `agents`, `commands`, `skills`, and `all`
 - supported formats are `table` and `json`
 - v1 is read-only and reporting-only
+- prompt-runtime v1 is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -437,6 +456,12 @@ Wunderkind supports that upstream bootstrap flow in this order:
 4. Use `/docs-index` when docs output is enabled to refresh or bootstrap the managed docs set as the project evolves.
 
 Treat this as the recommended audit/bootstrap process for bringing a project up to a high-context Wunderkind baseline.
+
+## Upstream Goal, Ultrawork, and local-model notes
+
+Current oh-my-openagent releases use **Goal** for active continuation/goal behavior; older **Ralph Loop** wording is historical migration context only. **Ultrawork** remains an active upstream workflow concept for complex `ulw` / `ultrawork` runs, so do not treat Goal as an Ultrawork replacement.
+
+When troubleshooting upstream orchestration, keep the Senpi task docs separate from OpenCode/OMO team-mode behavior: Senpi `task` / `team_wait` semantics are useful context, but Wunderkind’s OpenCode-facing team work should follow the OpenCode/OMO team model. For Ollama or other local-model setups that use tool-calling agents, document the upstream limitation clearly and set `stream: false`; streaming remains safe only for non-tool local-model use.
 
 ---
 

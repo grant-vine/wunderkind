@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.20.1  
+**Package:** `@grant-vine/wunderkind` v0.21.0  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that acts as a retained-agent overlay for OpenCode. It injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal), keeps `product-wunderkind` as the default front door, and anchors workflow state in `.omo`, docs output, and lifecycle commands instead of acting as a generic skills marketplace.
@@ -81,6 +81,8 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 - **`init`** (`src/cli/init.ts`) — Project-level bootstrap. Creates or updates soul files (`.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`), initializes the Documentation Output folder if enabled, defaults docs history mode to `append-dated`, and sets the PRD pipeline mode for the project. Re-running init hydrates current project-local SOUL answers.
 - **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.omo/`, docs output, and shared global native assets intact. Historical `.sisyphus/` directories are not managed.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
+- **`team-bootstrap`** (`src/cli/team-bootstrap.ts`) — Explicitly creates upstream-compatible Wunderkind `.omo/teams/<name>/config.json` specs for `/wunderkind-team`; ordinary lifecycle commands do not mutate team specs.
+- **`token-audit`** (`src/cli/token-audit.ts`) — Read-only prompt-runtime reporting surface. Contract is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
 
 ---
@@ -204,6 +206,8 @@ node bin/wunderkind.js install --help
 node bin/wunderkind.js upgrade --help
 node bin/wunderkind.js uninstall --help
 node bin/wunderkind.js doctor --verbose
+node bin/wunderkind.js team-bootstrap --scope=project --dry-run
+node bin/wunderkind.js token-audit --surface all --format json
 
 # Non-interactive install — global scope (default)
 node bin/wunderkind.js install --no-tui --scope=global
@@ -246,6 +250,8 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **oh-my-openagent must be installed before wunderkind** — upstream uses `oh-my-openagent` for plugin entries, config basenames, and public install commands. Wunderkind centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead. Legacy `oh-my-opencode` config files are ignored with a migration warning only.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — canonical `oh-my-openagent.{json,jsonc}` files are the active config sources. Legacy `oh-my-opencode.{json,jsonc}` files are ignored except for detection-only migration warnings.
+- **Upstream alignment targets are frozen for this wave** — `oh-my-openagent` `4.19.0`, OpenCode host `1.18.4`, and `@opencode-ai/plugin` / `@opencode-ai/sdk` `1.18.4`. Goal replaces active terminology where Ralph Loop wording is historical only, while Ultrawork remains active.
+- **Team-mode entry stays upstream-compatible** — `/wunderkind-team` checks canonical `oh-my-openagent` config paths and `team_mode.enabled`; missing/disabled/unavailable states fall back to solo `product-wunderkind` orchestration instead of unsupported retained-agent team members.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.
 - **Caveman mode is project-configurable and chat-activatable** — `cavemanEnabled` can enable terse default replies per project, while any chat can still activate caveman mode explicitly without persisting it globally.
