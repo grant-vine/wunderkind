@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.0
+
+- align Wunderkind to `oh-my-openagent@4.19.0` plus OpenCode plugin/SDK `1.18.4`, including Goal terminology, preserved Ultrawork guidance, and the final operator-facing compatibility contract
+- add upstream-compatible Wunderkind team mode via `wunderkind team-bootstrap` and `/wunderkind-team`, including canonical `team_mode.enabled` detection and explicit fallback to solo `product-wunderkind`
+- add audit-only prompt-runtime reporting with deterministic layered `token-audit --surface all` output and no live prompt packing, no model-token truth claims, and no OpenToken adoption
+
 ## 0.21.0
 
 - add `wunderkind workflow-sync` for explicit GitHub Issues projection from local `.omo` plans, including `--all`, dry-run by default, and fail-closed local/remote drift handling
