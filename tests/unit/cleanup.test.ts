@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { DetectedConfig } from "../../src/cli/types.js"
@@ -48,6 +48,7 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockReadWunderkindConfig = mock(() => null)
 const mockReadWunderkindConfigForScope = mock(() => null)
 const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock(() => null)
@@ -63,9 +64,42 @@ const configManagerMockFactory = () => ({
     authVerified: false,
     authCheckAttempted: false,
   }),
+  detectNativeAgentMarkdownVersions: () => ({
+    currentVersion: null,
+    agents: [],
+    staleAgentIds: [],
+    missingVersionAgentIds: [],
+    allCurrent: true,
+  }),
+  detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({
+    kind,
+    dir: "/tmp",
+    dirPresent: false,
+    markerPath: "/tmp/.wunderkind-version.json",
+    markerPresent: false,
+    installedVersion: null,
+    currentVersion: null,
+    needsUpgrade: false,
+  }),
   detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectOmoInstallReadiness: () => ({
+    installed: false,
+    registered: false,
+    loadedVersion: null,
+    configPath: null,
+    configSource: null,
+    legacyConfigPath: null,
+    staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
+    freshness: null,
+    freshnessSummary: { state: "not-verified", guidance: "mock guidance" },
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance: "mock guidance",
+  }),
   detectOmoVersionInfo: () => ({
     packageName: "oh-my-openagent",
     currentVersion: null,
@@ -93,15 +127,19 @@ const configManagerMockFactory = () => ({
     registered: false,
     staleOverrideWarning: null,
   }),
+  summarizeOmoFreshness: () => ({ state: "not-verified", guidance: "mock guidance" }),
   getNativeCommandFilePaths: () => [],
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
+  resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+  writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
   getDefaultGlobalConfig: () => ({
@@ -153,6 +191,38 @@ describe("runProjectCleanup", () => {
       expect(existsSync(wunderkindDir)).toBe(false)
       expect(messages.some((message) => message.includes("Removed project plugin registration"))).toBe(true)
       expect(messages.some((message) => message.includes("Removed project Wunderkind state"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("preserves project .omo team specs while removing only project-local Wunderkind state", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-cleanup-"))
+    const wunderkindDir = join(tempProject, ".wunderkind")
+    const teamConfigPath = join(tempProject, ".omo", "teams", "wunderkind-daily-brief", "config.json")
+    const originalTeamConfig = '{"name":"wunderkind-daily-brief","marker":"cleanup-preserve"}\n'
+
+    mkdirSync(join(wunderkindDir, "souls"), { recursive: true })
+    mkdirSync(join(tempProject, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+    writeFileSync(join(wunderkindDir, "wunderkind.config.jsonc"), "{}\n")
+    writeFileSync(join(wunderkindDir, "souls", "product-wunderkind.md"), "test\n")
+    writeFileSync(teamConfigPath, originalTeamConfig)
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runProjectCleanup()
+      expect(code).toBe(0)
+      expect(existsSync(wunderkindDir)).toBe(false)
+      expect(existsSync(teamConfigPath)).toBe(true)
+      expect(readFileSync(teamConfigPath, "utf-8")).toBe(originalTeamConfig)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog

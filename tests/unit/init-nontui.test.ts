@@ -56,6 +56,10 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/mock-agents", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/mock-commands", changed: true }))
+const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/mock-skills", changed: true }))
+const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
 const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
@@ -87,12 +91,17 @@ const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  detectNativeAgentMarkdownVersions: () => ({ currentVersion: null, agents: [], staleAgentIds: [], missingVersionAgentIds: [], allCurrent: true }),
   detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({ kind, dir: "/tmp", dirPresent: false, markerPath: "/tmp/.wunderkind-version.json", markerPresent: false, installedVersion: null, currentVersion: null, needsUpgrade: false }),
   readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  removeNativeAgentFiles: mockRemoveNativeAgentFiles,
+  removeNativeCommandFiles: mockRemoveNativeCommandFiles,
+  removeNativeSkillFiles: mockRemoveNativeSkillFiles,
+  removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
@@ -128,8 +137,27 @@ const configManagerMockFactory = () => ({
     registered: false,
     staleOverrideWarning: null,
   }),
+  detectOmoInstallReadiness: () => ({
+    installed: false,
+    registered: false,
+    loadedVersion: null,
+    configPath: null,
+    configSource: null,
+    legacyConfigPath: null,
+    staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
+    freshness: null,
+    freshnessSummary: { state: "not-verified", guidance: "mock guidance" },
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance: "mock guidance",
+  }),
+  summarizeOmoFreshness: () => ({ state: "not-verified", guidance: "mock guidance" }),
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
   getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+  resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+  writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
 })
 
@@ -207,6 +235,35 @@ describe("runInit non-interactive branching", () => {
       expect(writtenConfig.designTool).toBe("google-stitch")
       expect(writtenConfig.designPath).toBe("./DESIGN.md")
       expect(writtenConfig.designMcpOwnership).toBe("wunderkind-managed")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("does not create or rewrite .omo team specs during non-interactive init", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-nontui-"))
+    const teamConfigPath = join(tempProject, ".omo", "teams", "wunderkind-daily-brief", "config.json")
+    const originalTeamConfig = '{"name":"wunderkind-daily-brief","marker":"keep-me"}\n'
+
+    mkdirSync(join(tempProject, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    writeFileSync(teamConfigPath, originalTeamConfig)
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runInit({ noTui: true })
+
+      expect(code).toBe(0)
+      expect(existsSync(teamConfigPath)).toBe(true)
+      expect(readFileSync(teamConfigPath, "utf-8")).toBe(originalTeamConfig)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog

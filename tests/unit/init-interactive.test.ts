@@ -63,6 +63,10 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/mock-agents", changed: true }))
+const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/mock-commands", changed: true }))
+const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/mock-skills", changed: true }))
+const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
 const mockRemovePluginFromOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json", changed: true }))
@@ -101,11 +105,17 @@ const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  detectNativeAgentMarkdownVersions: () => ({ currentVersion: null, agents: [], staleAgentIds: [], missingVersionAgentIds: [], allCurrent: true }),
+  detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({ kind, dir: "/tmp", dirPresent: false, markerPath: "/tmp/.wunderkind-version.json", markerPresent: false, installedVersion: null, currentVersion: null, needsUpgrade: false }),
   readWunderkindConfig: mockReadWunderkindConfig,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
+  removeNativeAgentFiles: mockRemoveNativeAgentFiles,
+  removeNativeCommandFiles: mockRemoveNativeCommandFiles,
+  removeNativeSkillFiles: mockRemoveNativeSkillFiles,
+  removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
@@ -141,8 +151,27 @@ const configManagerMockFactory = () => ({
     registered: false,
     staleOverrideWarning: null,
   }),
+  detectOmoInstallReadiness: () => ({
+    installed: false,
+    registered: false,
+    loadedVersion: null,
+    configPath: null,
+    configSource: null,
+    legacyConfigPath: null,
+    staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
+    freshness: null,
+    freshnessSummary: { state: "not-verified", guidance: "mock guidance" },
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance: "mock guidance",
+  }),
+  summarizeOmoFreshness: () => ({ state: "not-verified", guidance: "mock guidance" }),
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
   getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+  resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+  writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
 })
 

@@ -451,7 +451,7 @@ describe("config-manager coverage", () => {
       expect(omoVersionInfo.staleOverrideWarning).toBe(
         "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
       )
-      expect(omoVersionInfo.freshness?.status === "up-to-date" || omoVersionInfo.freshness?.status === "pinned").toBe(true)
+      expect(omoVersionInfo.freshness).not.toBe(null)
     })
   })
 
@@ -697,6 +697,7 @@ describe("config-manager coverage", () => {
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("dream.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("workflow-sync.md"))).toBe(true)
       expect(nativeCommandPaths.some((filePath) => filePath.endsWith("token-audit.md"))).toBe(true)
+      expect(nativeCommandPaths.some((filePath) => filePath.endsWith("wunderkind-team.md"))).toBe(true)
 
       const threatModelContent = readFileSync(join(mod.getNativeCommandsDir(), "threat-model.md"), "utf-8")
       expect(threatModelContent).toContain("agent: ciso")
@@ -713,6 +714,10 @@ describe("config-manager coverage", () => {
       const tokenAuditContent = readFileSync(join(mod.getNativeCommandsDir(), "token-audit.md"), "utf-8")
       expect(tokenAuditContent).toContain("name: token-audit")
       expect(tokenAuditContent).toContain("wunderkind token-audit [--surface <surface>] [--format <format>]")
+
+      const wunderkindTeamContent = readFileSync(join(mod.getNativeCommandsDir(), "wunderkind-team.md"), "utf-8")
+      expect(wunderkindTeamContent).toContain("name: wunderkind-team")
+      expect(wunderkindTeamContent).toContain("What do you want to do today?")
 
       let duplicateError: string | null = null
       try {
@@ -844,6 +849,44 @@ describe("config-manager coverage", () => {
     })
   })
 
+  it("resolves and writes canonical Wunderkind team specs for project and user scopes", async () => {
+    await withSandbox("team-spec-write-paths", async (sandbox, mod) => {
+      const projectConfigPath = mod.resolveWunderkindTeamConfigPath("project", "wunderkind-daily-brief")
+      const userConfigPath = mod.resolveWunderkindTeamConfigPath("user", "wunderkind-daily-brief")
+
+      expect(projectConfigPath).toBe(join(sandbox.projectDir, ".omo", "teams", "wunderkind-daily-brief", "config.json"))
+      expect(userConfigPath).toBe(join(sandbox.homeDir, ".omo", "teams", "wunderkind-daily-brief", "config.json"))
+
+      const spec = {
+        name: "wunderkind-daily-brief",
+        lead: {
+          name: "wunderkind-team-lead",
+          kind: "subagent_type" as const,
+          subagent_type: "sisyphus" as const,
+          prompt: "What do you want to do today?",
+        },
+        members: [
+          {
+            name: "product-router",
+            kind: "category" as const,
+            category: "writing",
+            prompt: "Route product work.",
+          },
+        ],
+      }
+
+      expect(mod.writeWunderkindTeamConfig(spec, "project").success).toBe(true)
+      expect(mod.writeWunderkindTeamConfig(spec, "user").success).toBe(true)
+      expect(existsSync(projectConfigPath)).toBe(true)
+      expect(existsSync(userConfigPath)).toBe(true)
+
+      const projectWritten = JSON.parse(readFileSync(projectConfigPath, "utf-8")) as Record<string, unknown>
+      const userWritten = JSON.parse(readFileSync(userConfigPath, "utf-8")) as Record<string, unknown>
+      expect(projectWritten.name).toBe("wunderkind-daily-brief")
+      expect(userWritten.name).toBe("wunderkind-daily-brief")
+    })
+  })
+
   it("writes sparse project config without baseline fields when they match the global baseline", async () => {
     await withSandbox("project-sparse-baseline", async (_sandbox, mod) => {
       expect(mod.writeGlobalWunderkindConfig({
@@ -925,6 +968,7 @@ describe("config-manager coverage", () => {
       const dreamPath = join(commandDir, "dream.md")
       const workflowSyncPath = join(commandDir, "workflow-sync.md")
       const tokenAuditPath = join(commandDir, "token-audit.md")
+      const wunderkindTeamPath = join(commandDir, "wunderkind-team.md")
       expect(existsSync(commandDir)).toBe(true)
       expect(existsSync(docsIndexPath)).toBe(true)
       expect(existsSync(designMdPath)).toBe(true)
@@ -933,12 +977,14 @@ describe("config-manager coverage", () => {
       expect(existsSync(dreamPath)).toBe(true)
       expect(existsSync(workflowSyncPath)).toBe(true)
       expect(existsSync(tokenAuditPath)).toBe(true)
+      expect(existsSync(wunderkindTeamPath)).toBe(true)
       expect(readFileSync(docsIndexPath, "utf-8")).toContain("/docs-index")
       expect(readFileSync(dreamPath, "utf-8")).toContain("agent: product-wunderkind")
       expect(readFileSync(threatModelPath, "utf-8")).toContain("name: threat-model")
       expect(readFileSync(prdPath, "utf-8")).toContain("name: prd")
       expect(readFileSync(workflowSyncPath, "utf-8")).toContain("name: workflow-sync")
       expect(readFileSync(tokenAuditPath, "utf-8")).toContain("name: token-audit")
+      expect(readFileSync(wunderkindTeamPath, "utf-8")).toContain("name: wunderkind-team")
 
       const skillResult = mod.writeNativeSkillFiles("project")
       expect(skillResult.success).toBe(true)

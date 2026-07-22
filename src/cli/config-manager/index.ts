@@ -37,6 +37,7 @@ import type {
   ProjectConfig,
   ProductPersonality,
   PrdPipelineMode,
+  TeamBootstrapScope,
   TeamCulture,
 } from "../types.js"
 
@@ -85,6 +86,24 @@ interface ConfigManagerPaths {
 interface ConfigManagerPathOverride {
   cwd?: string
   home?: string
+}
+
+export type WunderkindTeamMemberKind = "category" | "subagent_type"
+export type WunderkindTeamSubagentType = "sisyphus" | "atlas" | "sisyphus-junior" | "hephaestus"
+
+export interface WunderkindTeamMemberSpec {
+  readonly name: string
+  readonly kind: WunderkindTeamMemberKind
+  readonly category?: string
+  readonly subagent_type?: WunderkindTeamSubagentType
+  readonly prompt?: string
+}
+
+export interface WunderkindTeamSpec {
+  readonly name: string
+  readonly description?: string
+  readonly lead: WunderkindTeamMemberSpec
+  readonly members: readonly WunderkindTeamMemberSpec[]
 }
 
 const CONFIG_MANAGER_PATH_OVERRIDE_KEY = Symbol.for("wunderkind.configManagerPathOverride")
@@ -243,6 +262,28 @@ export function getDefaultGlobalConfig(): GlobalConfig {
 
 export function getDefaultProjectConfig(): ProjectConfig {
   return { ...DEFAULT_PROJECT_CONFIG }
+}
+
+export function resolveWunderkindTeamConfigPath(scope: TeamBootstrapScope, teamName: string): string {
+  const runtimeContext = resolveConfigManagerRuntimeContext()
+  const teamRoot = scope === "project"
+    ? join(runtimeContext.cwd, ".omo", "teams")
+    : join(runtimeContext.home, ".omo", "teams")
+
+  return join(teamRoot, teamName, "config.json")
+}
+
+export function writeWunderkindTeamConfig(spec: WunderkindTeamSpec, scope: TeamBootstrapScope): ConfigMergeResult {
+  const configPath = resolveWunderkindTeamConfigPath(scope, spec.name)
+  const configDir = dirname(configPath)
+
+  try {
+    mkdirSync(configDir, { recursive: true })
+    writeFileSync(configPath, `${JSON.stringify(spec, null, 2)}\n`)
+    return { success: true, configPath }
+  } catch (err) {
+    return { success: false, configPath, error: String(err) }
+  }
 }
 
 export function resolveOpenCodeConfigPath(scope: InstallScope): {

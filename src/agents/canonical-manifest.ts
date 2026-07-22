@@ -71,7 +71,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-  version: "0.21.0",
+  version: "0.22.0",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -187,7 +187,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       id: "compliance-officer",
       bucket: "promoted",
       ownerAgentId: "ciso",
-      description: "USE FOR: GDPR, POPIA, CCPA, CPRA, PIPEDA, LGPD, PDPA, APP, data protection, privacy compliance, data classification, consent management, data subject rights, right to erasure, right to access, data retention, data minimisation, purpose limitation, breach notification, 72 hour notification, data processing agreements, DPA, privacy impact assessment, DPIA, privacy by design, data residency, cross-border data transfer, SCCs, standard contractual clauses, adequacy decisions, data processor, data controller, legitimate interest, lawful basis, sensitive personal information, special categories, SOC2 Type II, ISO 27001, compliance audit, compliance assessment, compliance gap, regulatory requirements, privacy policy, terms of service, cookie consent, data inventory, data mapping, records of processing activities, ROPA, opt-out, do not sell, consumer privacy rights, personal information protection, data localisation.",
+      description: "USE FOR: GDPR, POPIA, CCPA, CPRA, PIPEDA, LGPD, PDPA, APP, data protection, privacy compliance, data classification, consent management, data subject rights, breach notification, DPIA, data retention, cross-border transfer, ROPA, privacy policy, compliance gap assessment, and regulatory response planning.",
       sourcePath: "skills/compliance-officer/SKILL.md",
     },
     {
@@ -251,7 +251,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       id: "pen-tester",
       bucket: "promoted",
       ownerAgentId: "ciso",
-      description: "USE FOR: penetration testing, pen test, attack simulation, ethical hacking, OWASP ASVS, Application Security Verification Standard, auth flow testing, JWT attack, JWT algorithm confusion, force browsing, broken access control testing, privilege escalation testing, session hijacking, CSRF testing, XSS testing, injection testing, API fuzzing, authentication bypass, authorisation bypass, IDOR exploitation, parameter tampering, business logic testing, rate limit bypass, security regression testing, attacker mindset, red team, vulnerability proof of concept, security testing, active testing, dynamic analysis, DAST.",
+      description: "USE FOR: penetration testing, pen test, attack simulation, ethical hacking, OWASP ASVS, auth flow testing, JWT attack, force browsing, IDOR exploitation, privilege escalation, session hijacking, CSRF/XSS/injection testing, business logic testing, rate limit bypass, DAST, and vulnerability proof of concept.",
       sourcePath: "skills/pen-tester/SKILL.md",
     },
     {
@@ -265,7 +265,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       id: "security-analyst",
       bucket: "promoted",
       ownerAgentId: "ciso",
-      description: "USE FOR: OWASP Top 10, vulnerability assessment, security code review, auth testing, IDOR, broken access control, injection vulnerabilities, XSS, CSRF, security misconfigurations, sensitive data exposure, insecure design, software component vulnerabilities, authentication failures, cryptographic failures, server-side request forgery, SSRF, security logging and monitoring failures, security analysis, static analysis, dependency audit, CVE research, attack surface analysis, input validation review, output encoding, SQL injection, NoSQL injection, command injection, path traversal, file upload vulnerabilities, JWT vulnerabilities, OAuth vulnerabilities, API security, REST security, GraphQL security.",
+      description: "USE FOR: OWASP Top 10, vulnerability assessment, security code review, auth testing, broken access control, injection, XSS, CSRF, SSRF, dependency audit, CVE research, attack surface analysis, API security, and detailed defensive security review.",
       sourcePath: "skills/security-analyst/SKILL.md",
     },
     {
@@ -279,7 +279,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       id: "social-media-maven",
       bucket: "promoted",
       ownerAgentId: "marketing-wunderkind",
-      description: "USE FOR: social media strategy, content calendar, content planning, hashtag research, platform strategy, engagement audit, content audit, Lighthouse audit of social pages, campaign planning, engagement strategy, TikTok, Instagram, LinkedIn, X/Twitter, Facebook, WhatsApp, WeChat, platform mix, posting cadence, social analytics, community engagement, social ROI, follower growth, reach, impressions, engagement rate, social listening, trend research, competitor social audit.",
+      description: "USE FOR: social media strategy, content calendar, content planning, hashtag research, platform strategy, engagement audit, content audit, social landing-page audit, campaign planning, community growth, platform mix, posting cadence, and social ROI.",
       sourcePath: "skills/social-media-maven/SKILL.md",
     },
     {
@@ -314,7 +314,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       id: "vercel-architect",
       bucket: "promoted",
       ownerAgentId: "fullstack-wunderkind",
-      description: "USE FOR: Vercel deployment, Next.js App Router, Edge Runtime, ISR/SSR/SSG, bundle analysis, performance optimisation, Neon DB branching, preview URLs, edge vs Node runtime decisions, Lighthouse CI, Core Web Vitals, validate page, serverless functions.",
+      description: "USE FOR: Vercel deployment, Next.js App Router, Edge Runtime, ISR/SSR/SSG, bundle analysis, performance optimisation, Neon DB branching, preview URLs, edge vs Node runtime decisions, Lighthouse CI, Core Web Vitals, and serverless route architecture.",
       sourcePath: "skills/vercel-architect/SKILL.md",
     },
     {
@@ -380,6 +380,14 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
         summary: "Report deterministic prompt-surface size metrics for Wunderkind-owned assets",
         subtask: true,
         sourcePath: "commands/token-audit.md",
+      },
+      {
+        name: "wunderkind-team",
+        command: "/wunderkind-team",
+        ownerAgentId: "product-wunderkind",
+        summary: "Launch the Wunderkind team-mode entry flow or fall back cleanly to solo product orchestration",
+        subtask: true,
+        sourcePath: "commands/wunderkind-team.md",
       },
     ],
     generated: [

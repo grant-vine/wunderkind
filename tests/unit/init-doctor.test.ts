@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
@@ -52,6 +52,12 @@ const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tm
 const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
 const mockReadWunderkindConfigForScope = mock<() => Partial<InstallConfig> | null>(() => null)
 const mockDetectLegacyConfig = mock(() => false)
+const mockResolveWunderkindTeamConfigPath = mock((scope: "project" | "user", teamName: string) =>
+  scope === "project"
+    ? `${process.cwd()}/.omo/teams/${teamName}/config.json`
+    : `${process.env.HOME ?? "/tmp"}/.omo/teams/${teamName}/config.json`,
+)
+const mockWriteWunderkindTeamConfig = mock(() => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }))
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
 const mockDetectNativeAgentFiles = mock((scope: "global" | "project") => ({
   dir: scope === "global" ? "/tmp/global-agents" : `${process.cwd()}/.opencode/agents`,
@@ -63,14 +69,15 @@ const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/t
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
 const mockDetectNativeCommandFiles = mock(() => ({
   dir: "/tmp/global-commands",
-  presentCount: 38,
-  totalCount: 38,
+  presentCount: 39,
+  totalCount: 39,
   allPresent: true,
 }))
 const mockGetNativeCommandFilePaths = mock<() => string[]>(() => [
   "/tmp/global-commands/docs-index.md",
   "/tmp/global-commands/design-md.md",
   "/tmp/global-commands/dream.md",
+  "/tmp/global-commands/wunderkind-team.md",
 ])
 const mockDetectNativeSkillFiles = mock((scope: "global" | "project") => ({
   dir: scope === "global" ? "/tmp/global-skills" : `${process.cwd()}/.opencode/skills`,
@@ -326,12 +333,14 @@ const configManagerMockFactory = () => ({
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
+  resolveWunderkindTeamConfigPath: mockResolveWunderkindTeamConfigPath,
   removePluginFromOpenCodeConfig: mockRemovePluginFromOpenCodeConfig,
   removeNativeAgentFiles: mockRemoveNativeAgentFiles,
   removeNativeCommandFiles: mockRemoveNativeCommandFiles,
   removeNativeSkillFiles: mockRemoveNativeSkillFiles,
   removeGlobalWunderkindConfig: mockRemoveGlobalWunderkindConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
+  writeWunderkindTeamConfig: mockWriteWunderkindTeamConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
@@ -362,6 +371,17 @@ let runDoctor: () => Promise<number>
 let runDoctorWithOptions: (options: { verbose?: boolean }) => Promise<number>
 let isProjectContext: (cwd: string) => boolean
 let runInit: (options: { noTui: boolean }) => Promise<number>
+let resolveWunderkindTeamEntryState: (options?: {
+  cwd?: string
+  homeDir?: string
+  teamName?: string
+}) => {
+  status: "team-ready" | "team-mode-disabled" | "team-spec-missing"
+  activeConfigPath: string | null
+  availableTeamSpecPath: string | null
+  availableTeamSpecScope: "project" | "user" | null
+  teamModeEnabled: boolean
+}
 
 beforeEach(async () => {
   if (runDoctor !== undefined) {
@@ -374,6 +394,8 @@ beforeEach(async () => {
   const initMod = await import(new URL("src/cli/init.ts", `file://${PROJECT_ROOT}`).href)
   isProjectContext = initMod.isProjectContext
   runInit = initMod.runInit
+  const teamEntryMod = await import(new URL("src/cli/team-mode-entry.ts", `file://${PROJECT_ROOT}`).href)
+  resolveWunderkindTeamEntryState = teamEntryMod.resolveWunderkindTeamEntryState
 })
 
 function silenceConsole(): () => void {
@@ -685,6 +707,33 @@ describe("runDoctor", () => {
     }
   })
 
+  it("does not mutate project .omo team specs while running read-only diagnostics", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-team-"))
+    const teamConfigPath = join(tempProject, ".omo", "teams", "wunderkind-daily-brief", "config.json")
+    const originalTeamConfig = '{"name":"wunderkind-daily-brief","marker":"doctor-read-only"}\n'
+
+    mkdirSync(join(tempProject, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+    writeFileSync(join(tempProject, "package.json"), "{}\n")
+    writeFileSync(teamConfigPath, originalTeamConfig)
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runDoctorWithOptions({ verbose: true })
+      expect(code).toBe(0)
+      expect(readFileSync(teamConfigPath, "utf-8")).toBe(originalTeamConfig)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
   it("warns when a stale global OMO install likely overrides a newer cache version", async () => {
     const messages: string[] = []
     const originalLog = console.log
@@ -874,7 +923,7 @@ describe("runDoctor", () => {
     mockDetectNativeCommandFiles.mockImplementation(() => ({
       dir: "/tmp/global-commands",
       presentCount: 0,
-      totalCount: 38,
+      totalCount: 39,
       allPresent: false,
     }))
     mockDetectNativeSkillFiles.mockImplementation((scope: "global" | "project") => ({
@@ -1850,7 +1899,7 @@ describe("runDoctor", () => {
     }
   })
 
-  describe("runDoctor /dream availability", () => {
+describe("runDoctor /dream availability", () => {
     it("shows /dream available line in project health output", async () => {
       const originalCwd = process.cwd()
       const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-dream-line-"))
@@ -1957,5 +2006,107 @@ describe("runDoctor", () => {
         rmSync(tempProject, { recursive: true, force: true })
       }
     })
+  })
+})
+
+describe("wunderkind team entry detection", () => {
+  it("treats project oh-my-openagent.jsonc as the canonical enabled source when a project spec exists", () => {
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-team-entry-project-jsonc-"))
+    const tempHome = mkdtempSync(join(tmpdir(), "wk-team-entry-home-jsonc-"))
+
+    try {
+      mkdirSync(join(tempProject, ".opencode"), { recursive: true })
+      mkdirSync(join(tempProject, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+      writeFileSync(join(tempProject, ".opencode", "oh-my-openagent.jsonc"), '{"team_mode":{"enabled":true}}\n')
+      writeFileSync(join(tempProject, ".omo", "teams", "wunderkind-daily-brief", "config.json"), "{}\n")
+
+      const state = resolveWunderkindTeamEntryState({ cwd: tempProject, homeDir: tempHome })
+
+      expect(state.status).toBe("team-ready")
+      expect(state.teamModeEnabled).toBe(true)
+      expect(state.activeConfigPath).toBe(join(tempProject, ".opencode", "oh-my-openagent.jsonc"))
+      expect(state.availableTeamSpecScope).toBe("project")
+    } finally {
+      rmSync(tempProject, { recursive: true, force: true })
+      rmSync(tempHome, { recursive: true, force: true })
+    }
+  })
+
+  it("treats project oh-my-openagent.json as authoritative when it disables team mode", () => {
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-team-entry-project-json-"))
+    const tempHome = mkdtempSync(join(tmpdir(), "wk-team-entry-home-json-"))
+
+    try {
+      mkdirSync(join(tempProject, ".opencode"), { recursive: true })
+      mkdirSync(join(tempHome, ".config", "opencode"), { recursive: true })
+      mkdirSync(join(tempHome, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+      writeFileSync(join(tempProject, ".opencode", "oh-my-openagent.json"), '{"team_mode":{"enabled":false}}\n')
+      writeFileSync(join(tempHome, ".config", "opencode", "oh-my-openagent.jsonc"), '{"team_mode":{"enabled":true}}\n')
+      writeFileSync(join(tempHome, ".omo", "teams", "wunderkind-daily-brief", "config.json"), "{}\n")
+
+      const state = resolveWunderkindTeamEntryState({ cwd: tempProject, homeDir: tempHome })
+
+      expect(state.status).toBe("team-mode-disabled")
+      expect(state.teamModeEnabled).toBe(false)
+      expect(state.activeConfigPath).toBe(join(tempProject, ".opencode", "oh-my-openagent.json"))
+      expect(state.availableTeamSpecPath).toBe(join(tempHome, ".omo", "teams", "wunderkind-daily-brief", "config.json"))
+    } finally {
+      rmSync(tempProject, { recursive: true, force: true })
+      rmSync(tempHome, { recursive: true, force: true })
+    }
+  })
+
+  it("reports missing team spec when global oh-my-openagent.json enables team mode without a spec", () => {
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-team-entry-global-json-project-"))
+    const tempHome = mkdtempSync(join(tmpdir(), "wk-team-entry-global-json-home-"))
+
+    try {
+      mkdirSync(join(tempHome, ".config", "opencode"), { recursive: true })
+      writeFileSync(join(tempHome, ".config", "opencode", "oh-my-openagent.json"), '{"team_mode":{"enabled":true}}\n')
+
+      const state = resolveWunderkindTeamEntryState({ cwd: tempProject, homeDir: tempHome })
+
+      expect(state.status).toBe("team-spec-missing")
+      expect(state.teamModeEnabled).toBe(true)
+      expect(state.activeConfigPath).toBe(join(tempHome, ".config", "opencode", "oh-my-openagent.json"))
+      expect(state.availableTeamSpecPath).toBe(null)
+    } finally {
+      rmSync(tempProject, { recursive: true, force: true })
+      rmSync(tempHome, { recursive: true, force: true })
+    }
+  })
+
+  it("surfaces global oh-my-openagent.jsonc plus a user-scoped team spec in doctor output", async () => {
+    const originalCwd = process.cwd()
+    const originalHome = process.env.HOME
+    const originalUserProfile = process.env.USERPROFILE
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-team-ready-project-"))
+    const tempHome = mkdtempSync(join(tmpdir(), "wk-doctor-team-ready-home-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+    process.env.HOME = tempHome
+    process.env.USERPROFILE = tempHome
+
+    try {
+      mkdirSync(join(tempHome, ".config", "opencode"), { recursive: true })
+      mkdirSync(join(tempHome, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+      writeFileSync(join(tempHome, ".config", "opencode", "oh-my-openagent.jsonc"), '{"team_mode":{"enabled":true}}\n')
+      writeFileSync(join(tempHome, ".omo", "teams", "wunderkind-daily-brief", "config.json"), "{}\n")
+
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("/wunderkind-team readiness:") && m.includes("team-ready"))).toBe(true)
+      expect(messages.some((m) => m.includes("/wunderkind-team config:") && m.includes("team_mode.enabled"))).toBe(true)
+      expect(messages.some((m) => m.includes("/wunderkind-team selected spec:") && m.includes("config.json"))).toBe(true)
+      expect(messages.some((m) => m.includes("team bootstrap command:") && m.includes("wunderkind team-bootstrap --scope=project"))).toBe(true)
+      expect(messages.some((m) => m.includes("token audit contract:") && m.includes("audit-only") && m.includes("no live prompt packing") && m.includes("no model-token truth claims"))).toBe(true)
+      expect(messages.some((m) => m.includes("/wunderkind-team fallback:") && m.includes("solo product-wunderkind orchestration"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      process.env.HOME = originalHome
+      process.env.USERPROFILE = originalUserProfile
+      rmSync(tempProject, { recursive: true, force: true })
+      rmSync(tempHome, { recursive: true, force: true })
+    }
   })
 })

@@ -87,6 +87,7 @@ const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 const mockDetectLegacyConfig = mock(() => false)
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/fake/opencode.json" }))
 const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+const mockWriteWunderkindTeamConfig = mock(() => ({ success: true, configPath: "/fake/.omo/teams/wunderkind-daily-brief/config.json" }))
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
@@ -116,6 +117,7 @@ const configManagerMockFactory = () => ({
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
+  writeWunderkindTeamConfig: mockWriteWunderkindTeamConfig,
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
@@ -136,6 +138,8 @@ const configManagerMockFactory = () => ({
     authVerified: false,
     authCheckAttempted: false,
   }),
+  detectNativeAgentMarkdownVersions: () => ({ currentVersion: null, agents: [], staleAgentIds: [], missingVersionAgentIds: [], allCurrent: true }),
+  detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({ kind, dir: "/tmp", dirPresent: false, markerPath: "/tmp/.wunderkind-version.json", markerPresent: false, installedVersion: null, currentVersion: null, needsUpgrade: false }),
   detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
@@ -167,6 +171,8 @@ const configManagerMockFactory = () => ({
     registered: false,
     staleOverrideWarning: null,
   }),
+  readWunderkindConfig: () => null,
+  summarizeOmoFreshness: () => ({ state: "not-verified", guidance: "mock guidance" }),
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
 })
 
@@ -314,6 +320,7 @@ describe("runCliInstaller", () => {
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
+    mockWriteWunderkindTeamConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
     mockWriteNativeCommandFiles.mockClear()
     mockWriteNativeSkillFiles.mockClear()
@@ -330,6 +337,7 @@ describe("runCliInstaller", () => {
     mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+    mockWriteWunderkindTeamConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.omo/teams/wunderkind-daily-brief/config.json" }))
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
@@ -414,6 +422,7 @@ describe("runCliInstaller", () => {
       }))
       expect(code).toBe(0)
       expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(1)
+      expect(mockWriteWunderkindTeamConfig).toHaveBeenCalledTimes(0)
     } finally {
       restore()
     }
@@ -654,6 +663,7 @@ describe("runCliUpgrade", () => {
     mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
+    mockWriteWunderkindTeamConfig.mockClear()
     mockWriteNativeAgentFiles.mockClear()
     mockWriteNativeCommandFiles.mockClear()
     mockWriteNativeSkillFiles.mockClear()
@@ -678,6 +688,7 @@ describe("runCliUpgrade", () => {
         : null,
     )
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
+    mockWriteWunderkindTeamConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.omo/teams/wunderkind-daily-brief/config.json" }))
     mockWriteNativeAgentFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-agents" }))
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-commands" }))
     mockWriteNativeSkillFiles.mockImplementation(() => ({ success: true, configPath: "/tmp/global-skills" }))
@@ -734,6 +745,7 @@ describe("runCliUpgrade", () => {
       const code = await runCliUpgrade({ scope: "global" })
       expect(code).toBe(0)
       expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(0)
+      expect(mockWriteWunderkindTeamConfig).toHaveBeenCalledTimes(0)
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)

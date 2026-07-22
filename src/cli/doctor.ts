@@ -25,6 +25,7 @@ import { isProjectContext } from "./init.js"
 import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
 import { detectStitchMcpPresence, type StitchPresence } from "./mcp-helpers.js"
 import { PERSONALITY_META } from "./personality-meta.js"
+import { resolveWunderkindTeamEntryState } from "./team-mode-entry.js"
 
 export interface DoctorOptions {
   verbose?: boolean
@@ -44,6 +45,17 @@ function section(title: string): void {
 
 function line(label: string, value: string): void {
   console.log(`${color.dim("- ")}${color.bold(label)} ${value}`)
+}
+
+function renderTeamEntryStatusLabel(statusValue: ReturnType<typeof resolveWunderkindTeamEntryState>["status"]): string {
+  switch (statusValue) {
+    case "team-ready":
+      return color.green("team-ready")
+    case "team-spec-missing":
+      return color.yellow("fallback to solo product-wunderkind (missing team spec)")
+    default:
+      return color.dim("fallback to solo product-wunderkind (team mode disabled)")
+  }
 }
 
 function summarizeOmoFreshness(omoVersion: ReturnType<typeof detectOmoVersionInfo>): { label: string; guidance: string } {
@@ -410,7 +422,9 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         ? readdirSync(workflowStateDir).filter((entry) => entry.endsWith(".json")).length
         : 0
       line("workflow sync command:", color.dim("wunderkind workflow-sync --plan <path> [--apply]"))
+      line("team bootstrap command:", color.dim("wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"))
       line("token audit command:", color.dim("wunderkind token-audit --surface agents --format table"))
+      line("token audit contract:", color.dim("audit-only; no live prompt packing; no model-token truth claims"))
       line(
         "github workflow state dir:",
         `${color.dim(workflowStateDir)} ${color.dim(`(${workflowStateCount} tracked workflow${workflowStateCount === 1 ? "" : "s"})`)}`,
@@ -440,6 +454,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const stitchInUse = designTool === "google-stitch" && stitchConfigured
       const projectStitchEntry = getStitchEntry(projectOpenCodePath)
       const globalStitchEntry = getStitchEntry(globalOpenCodePath)
+      const teamEntryState = resolveWunderkindTeamEntryState({ cwd })
 
       const hasAgents = existsSync(agentsPath)
       const hasContext = existsSync(contextPath)
@@ -524,6 +539,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("global native commands present:", status(globalNativeCommands.allPresent))
       const dreamInstalled = getNativeCommandFilePaths().some((path) => path.endsWith("dream.md") && existsSync(path))
       line("/dream available:", status(dreamInstalled))
+      line("/wunderkind-team readiness:", renderTeamEntryStatusLabel(teamEntryState.status))
       line("global native skills present:", status(globalNativeSkills.allPresent))
 
       if (options.verbose) {
@@ -534,6 +550,34 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         line("docs-output path:", color.cyan(projectConfig?.docsPath ?? detected.docsPath))
         line("docs-output history mode:", color.cyan(projectConfig?.docHistoryMode ?? detected.docHistoryMode))
         line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
+        line(
+          "/wunderkind-team config:",
+          teamEntryState.activeConfigPath === null
+            ? color.dim("canonical oh-my-openagent team mode config not found")
+            : `${status(teamEntryState.teamModeEnabled)} ${color.dim(teamEntryState.activeConfigPath)} ${color.dim(`(${teamEntryState.activeConfigScope}/${teamEntryState.activeConfigFormat}, key: team_mode.enabled)`)}`,
+        )
+        line(
+          "/wunderkind-team project spec:",
+          `${status(existsSync(teamEntryState.projectTeamSpecPath))} ${color.dim(teamEntryState.projectTeamSpecPath)}`,
+        )
+        line(
+          "/wunderkind-team user spec:",
+          `${status(existsSync(teamEntryState.userTeamSpecPath))} ${color.dim(teamEntryState.userTeamSpecPath)}`,
+        )
+        line(
+          "/wunderkind-team selected spec:",
+          teamEntryState.availableTeamSpecPath === null
+            ? color.dim("missing team spec")
+            : `${color.cyan(teamEntryState.availableTeamSpecScope ?? "unknown")} ${color.dim(teamEntryState.availableTeamSpecPath)}`,
+        )
+        line(
+          "/wunderkind-team bootstrap:",
+          color.dim("wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"),
+        )
+        line(
+          "/wunderkind-team fallback:",
+          color.dim("disabled team mode or missing team spec falls back to solo product-wunderkind orchestration"),
+        )
 
         section("Design Workflow")
         line("design tool:", color.cyan(designTool))

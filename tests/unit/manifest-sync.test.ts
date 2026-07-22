@@ -65,8 +65,10 @@ describe("manifest version sync", () => {
 describe("design-md command asset", () => {
   const commandFile = new URL("../../commands/design-md.md", import.meta.url)
   const docsIndexFile = new URL("../../commands/docs-index.md", import.meta.url)
+  const docsReadmeFile = new URL("../../docs/README.md", import.meta.url)
   const workflowSyncFile = new URL("../../commands/workflow-sync.md", import.meta.url)
   const tokenAuditFile = new URL("../../commands/token-audit.md", import.meta.url)
+  const wunderkindTeamFile = new URL("../../commands/wunderkind-team.md", import.meta.url)
 
   it("exists as a file", () => {
     expect(statSync(commandFile).isFile()).toBe(true)
@@ -83,6 +85,7 @@ describe("design-md command asset", () => {
       expect(statSync(docsIndexFile).isFile()).toBe(true)
       expect(statSync(workflowSyncFile).isFile()).toBe(true)
       expect(statSync(tokenAuditFile).isFile()).toBe(true)
+      expect(statSync(wunderkindTeamFile).isFile()).toBe(true)
   })
 
   it("declares the creative-director owner in frontmatter", () => {
@@ -140,5 +143,28 @@ describe("design-md command asset", () => {
     expect(tokenAuditBody).toContain("name: token-audit")
     expect(tokenAuditBody).toContain("`wunderkind token-audit [--surface <surface>] [--format <format>]`")
     expect(tokenAuditBody).toContain("bytes, lines, and file counts")
+    expect(tokenAuditBody).toContain("audit-only")
+    expect(tokenAuditBody).toContain("no live prompt packing")
+    expect(tokenAuditBody).toContain("no model-token truth claims")
+  })
+
+  it("keeps the docs index aligned with the final OpenCode release reference", () => {
+    const docsReadmeBody = readText(docsReadmeFile)
+
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.4")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.4")
+  })
+
+  it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {
+    const wunderkindTeamBody = readText(wunderkindTeamFile)
+
+    expect(wunderkindTeamBody).toContain("agent: product-wunderkind")
+    expect(wunderkindTeamBody).toContain("name: wunderkind-team")
+    expect(wunderkindTeamBody).toContain("What do you want to do today?")
+    expect(wunderkindTeamBody).toContain("team_mode.enabled")
+    expect(wunderkindTeamBody).toContain("oh-my-openagent.jsonc")
+    expect(wunderkindTeamBody).toContain("oh-my-openagent.json")
+    expect(wunderkindTeamBody).toContain("missing team spec")
+    expect(wunderkindTeamBody).toContain("solo `product-wunderkind` orchestration")
   })
 })

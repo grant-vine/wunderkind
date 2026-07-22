@@ -1,6 +1,7 @@
 export type BooleanArg = "no" | "yes"
 export type InstallScope = "global" | "project"
 export type InstallRegistrationScope = InstallScope | "both" | "none"
+export type TeamBootstrapScope = "project" | "user"
 export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "overwrite-archive"
 export type PrdPipelineMode = "filesystem" | "github"
 export type DesignTool = "none" | "google-stitch"

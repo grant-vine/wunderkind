@@ -114,6 +114,22 @@ describe("CLI help copy", () => {
     expect(output).toContain("--surface <surface>")
     expect(output).toContain("--format <format>")
     expect(output).toContain("bytes, lines, and file counts")
+    expect(output).toContain("audit-only")
+    expect(output).toContain("no live prompt packing")
+    expect(output).toContain("no model-token truth claims")
+  })
+
+  it("includes team-bootstrap command help text", () => {
+    const output = runCliHelp("team-bootstrap", "--help")
+
+    expect(output).toContain("Create the canonical Wunderkind upstream team spec")
+    expect(output).toContain("--scope <scope>")
+    expect(output).toContain("project scope writes to <project>/.omo/teams/{name}/config.json")
+    expect(output).toContain("user scope writes to ~/.omo/teams/{name}/config.json")
+    expect(output).toContain("What do you want to do today?")
+    expect(output).toContain("/wunderkind-team")
+    expect(output).toContain("team_mode.enabled")
+    expect(output).toContain("oh-my-openagent.jsonc/.json")
   })
 
   it("includes install guidance for OMO version-skew recovery in doctor behavior", () => {

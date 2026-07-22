@@ -64,6 +64,7 @@ const mockWriteWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp
 const mockWriteNativeAgentFiles = mock(() => ({ success: true, configPath: "/tmp/global-agents" }))
 const mockWriteNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/global-commands" }))
 const mockWriteNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/global-skills" }))
+const mockReadWunderkindConfig = mock(() => null)
 const mockReadWunderkindConfigForScope = mock(() => null)
 const mockReadGlobalWunderkindConfig = mock(() => null)
 const mockReadProjectWunderkindConfig = mock(() => null)
@@ -79,9 +80,42 @@ const configManagerMockFactory = () => ({
     authVerified: false,
     authCheckAttempted: false,
   }),
+  detectNativeAgentMarkdownVersions: () => ({
+    currentVersion: null,
+    agents: [],
+    staleAgentIds: [],
+    missingVersionAgentIds: [],
+    allCurrent: true,
+  }),
+  detectNativeAssetVersion: (kind: "agents" | "commands" | "skills") => ({
+    kind,
+    dir: "/tmp",
+    dirPresent: false,
+    markerPath: "/tmp/.wunderkind-version.json",
+    markerPresent: false,
+    installedVersion: null,
+    currentVersion: null,
+    needsUpgrade: false,
+  }),
   detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
   detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
+  detectOmoInstallReadiness: () => ({
+    installed: false,
+    registered: false,
+    loadedVersion: null,
+    configPath: null,
+    configSource: null,
+    legacyConfigPath: null,
+    staleOverrideWarning: null,
+    versionSkewWarning: null,
+    dualConfigWarning: null,
+    freshness: null,
+    freshnessSummary: { state: "not-verified", guidance: "mock guidance" },
+    interactiveInstallCommand: "bunx oh-my-openagent install",
+    nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+    guidance: "mock guidance",
+  }),
   detectOmoVersionInfo: () => ({
     packageName: "oh-my-openagent",
     currentVersion: null,
@@ -109,8 +143,10 @@ const configManagerMockFactory = () => ({
     registered: false,
     staleOverrideWarning: null,
   }),
+  summarizeOmoFreshness: () => ({ state: "not-verified", guidance: "mock guidance" }),
   getNativeCommandFilePaths: () => [],
   getProjectOverrideMarker: () => ({ marker: "○" as const, sourceLabel: "inherited default" as const }),
+  readWunderkindConfig: mockReadWunderkindConfig,
   readWunderkindConfigForScope: mockReadWunderkindConfigForScope,
   readGlobalWunderkindConfig: mockReadGlobalWunderkindConfig,
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
@@ -123,6 +159,8 @@ const configManagerMockFactory = () => ({
   writeNativeAgentFiles: mockWriteNativeAgentFiles,
   writeNativeCommandFiles: mockWriteNativeCommandFiles,
   writeNativeSkillFiles: mockWriteNativeSkillFiles,
+  resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+  writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   resolveOpenCodeConfigPath: () => ({ path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }),
   getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
 })
@@ -232,6 +270,30 @@ describe("runUninstall", () => {
     } finally {
       console.log = originalLog
       console.error = originalError
+    }
+  })
+
+  it("preserves user-scoped .omo team specs during global uninstall", async () => {
+    const originalLog = console.log
+    const originalError = console.error
+    const tempHome = mkdtempSync(join(tmpdir(), "wk-uninstall-home-"))
+    const userTeamConfigPath = join(tempHome, ".omo", "teams", "wunderkind-daily-brief", "config.json")
+    const originalTeamConfig = '{"name":"wunderkind-daily-brief","marker":"uninstall-preserve"}\n'
+
+    mkdirSync(join(tempHome, ".omo", "teams", "wunderkind-daily-brief"), { recursive: true })
+    writeFileSync(userTeamConfigPath, originalTeamConfig)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runUninstall({ scope: "global" })
+      expect(code).toBe(0)
+      expect(readFileSync(userTeamConfigPath, "utf-8")).toBe(originalTeamConfig)
+      expect(mockRemoveGlobalWunderkindConfig).toHaveBeenCalledTimes(1)
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempHome, { recursive: true, force: true })
     }
   })
 

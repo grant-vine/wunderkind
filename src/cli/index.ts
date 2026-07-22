@@ -6,11 +6,12 @@ import { runWorkflowSync } from "./github-issues-sync.js"
 import { runInit } from "./init.js"
 import { runProjectArtifactMigration } from "./migrate.js"
 import { runProjectCleanup } from "./cleanup.js"
+import { DEFAULT_WUNDERKIND_TEAM_NAME, runTeamBootstrap } from "./team-bootstrap.js"
 import { runTokenAudit } from "./token-audit.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
-import type { DocHistoryMode, InstallArgs, InstallScope } from "./types.js"
+import type { DocHistoryMode, InstallArgs, InstallScope, TeamBootstrapScope } from "./types.js"
 import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 import { WUNDERKIND_CANONICAL_MANIFEST } from "../agents/canonical-manifest.js"
 
@@ -319,6 +320,50 @@ program
   })
 
 program
+  .command("team-bootstrap")
+  .description(
+    [
+      "Create the canonical Wunderkind upstream team spec in project or user scope.",
+      "",
+      "This is the explicit bootstrap flow for .omo/teams state. Install, init, upgrade, cleanup, and uninstall do not create or mutate team specs automatically.",
+    ].join("\n"),
+  )
+  .option("--scope <scope>", "Bootstrap scope: project or user", "project")
+  .option("--name <name>", "Team spec name", DEFAULT_WUNDERKIND_TEAM_NAME)
+  .option("--dry-run", "Show the target path and team members without writing files")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Examples:",
+      `  bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=${DEFAULT_WUNDERKIND_TEAM_NAME}`,
+      `  bunx @grant-vine/wunderkind team-bootstrap --scope=user --name=${DEFAULT_WUNDERKIND_TEAM_NAME}`,
+      `  bunx @grant-vine/wunderkind team-bootstrap --scope=project --dry-run`,
+      "",
+      "Behavior:",
+      "  - project scope writes to <project>/.omo/teams/{name}/config.json",
+      "  - user scope writes to ~/.omo/teams/{name}/config.json",
+      "  - writes canonical upstream-compatible member kinds only",
+      '  - preserves the frozen intake opener: "What do you want to do today?"',
+      "  - creates the canonical team spec consumed by /wunderkind-team when upstream team mode is enabled",
+      "  - /wunderkind-team checks only oh-my-openagent.jsonc/.json and the upstream team_mode.enabled key before deciding whether to fall back",
+    ].join("\n"),
+  )
+  .action(async (opts: { scope?: string | undefined; name?: string | undefined; dryRun?: boolean | undefined }) => {
+    if (opts.scope !== undefined && opts.scope !== "project" && opts.scope !== "user") {
+      console.error(`Error: --scope must be "project" or "user", got: "${opts.scope}"`)
+      process.exit(1)
+    }
+
+    const exitCode = await runTeamBootstrap({
+      scope: (opts.scope as TeamBootstrapScope | undefined) ?? "project",
+      name: opts.name ?? DEFAULT_WUNDERKIND_TEAM_NAME,
+      dryRun: opts.dryRun === true,
+    })
+    process.exit(exitCode)
+  })
+
+program
   .command("workflow-sync")
   .description(
     [
@@ -381,6 +426,7 @@ program
       "Behavior:",
       "  - reads source-owned renderers and shipped markdown assets only",
       "  - does not mutate prompts, native assets, or project files",
+      "  - prompt-runtime v1 is audit-only: no live prompt packing and no model-token truth claims",
       "  - reports deterministic bytes, lines, and file counts rather than model-specific token truth",
     ].join("\n"),
   )
