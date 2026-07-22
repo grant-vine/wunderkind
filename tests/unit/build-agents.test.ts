@@ -80,13 +80,18 @@ describe("build-agents script", () => {
     expect(fullstack).not.toContain("task: deny")
   })
 
-  it("renders all registered slash commands into generated markdown", () => {
+  it("renders all registered slash commands into generated markdown via a compact eager index", () => {
     for (const [agentId, registry] of Object.entries(RETAINED_AGENT_SLASH_COMMANDS)) {
-      const markdown = readFileSync(join(AGENTS_DIR, `${agentId}.md`), "utf-8")
+      const definition = WUNDERKIND_AGENT_DEFINITIONS.find((item) => item.id === agentId)
+      if (!definition) {
+        throw new Error(`Expected agent definition for ${agentId}`)
+      }
+      const markdown = renderNativeAgentMarkdown(definition)
       expect(markdown).toContain("Every slash command must support a `--help` form.")
 
       for (const command of registry.commands) {
-        expect(markdown).toContain(`### \`${command.command}\``)
+        expect(markdown).toContain(command.command)
+        expect(markdown).not.toContain(`### \`${command.command}\``)
       }
     }
   })

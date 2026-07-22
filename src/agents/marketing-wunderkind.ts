@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildRetainedAgentPrompt, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -59,15 +59,11 @@ export function createMarketingWunderkindAgent(model: string): AgentConfig {
     model,
     temperature: 0.3,
     ...restrictions,
-    prompt: `# Marketing Wunderkind — Soul
-
-You are the **Marketing Wunderkind**. Before acting, read the resolved runtime context for \`cmoPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
-
-${soulMaintenanceSection}
-
----
-
-# Marketing Wunderkind
+    prompt: buildRetainedAgentPrompt({
+      soulTitle: "Marketing Wunderkind",
+      personalityKey: "cmoPersonality",
+      soulMaintenanceSection,
+      sections: [`# Marketing Wunderkind
 
 You are the **Marketing Wunderkind** - the consolidated growth and communications specialist for Wunderkind. You own brand, growth, PR, community, developer advocacy, and docs-led adoption as one connected system.
 
@@ -142,11 +138,8 @@ Your north star: **make the right audience care, convert, and succeed.**
 
 ${slashCommandsSection}
 
----
-
-${persistentContextSection}
-
----`,
+${persistentContextSection}`],
+    }),
   }
 }
 

@@ -1,5 +1,19 @@
 import type { SlashCommandRegistry } from "./slash-commands.js"
 
+export function buildRetainedAgentPrompt(options: {
+  soulTitle: string
+  personalityKey: string
+  soulMaintenanceSection: string
+  sections: readonly string[]
+}): string {
+  return [
+    `# ${options.soulTitle} — Soul`,
+    `Before acting, read the resolved runtime context for \`${options.personalityKey}\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.`,
+    options.soulMaintenanceSection,
+    ...options.sections,
+  ].join("\n\n---\n\n")
+}
+
 export function buildPersistentContextSection(options: {
   learnings: string
   decisions: string
@@ -7,7 +21,7 @@ export function buildPersistentContextSection(options: {
 }): string {
   return `## Persistent Context (.omo/)
 
-When operating as a subagent inside an OpenCode or OMO orchestrated workflow, you will receive a \`<Work_Context>\` block specifying plan and notepad paths. Always honour it. When operating independently, use \`.omo/\` as the primary project artifact root.
+When operating as a subagent inside an OpenCode or OMO workflow, you may receive a \`<Work_Context>\` block with plan and notepad paths. Always honour it. Otherwise, use \`.omo/\` as the primary project artifact root.
 
 **Read before acting:**
 - Plan: \`.omo/plans/*.md\` — READ ONLY. Never modify. Never mark checkboxes. The orchestrator manages the plan.
@@ -19,7 +33,7 @@ When operating as a subagent inside an OpenCode or OMO orchestrated workflow, yo
 - Blockers (${options.blockers}): \`.omo/notepads/<plan-name>/issues.md\`
 - Evidence (when the command or workflow explicitly asks for durable proof): \`.omo/evidence/<topic>.md\`
 
-**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected \`.omo/notepads/\` and \`.omo/evidence/\` paths so append-only guarantees are preserved. Never use the Edit tool directly on notepad or evidence files.`
+**APPEND ONLY** — never overwrite notepad or evidence files. Use normal Write/Edit for ordinary repo files. Use Wunderkind's bounded durable-artifact writer only for protected \`.omo/notepads/\` and \`.omo/evidence/\` paths. Never use Edit directly on notepad or evidence files.`
 }
 
 export function buildSoulMaintenanceSection(): string {
@@ -38,24 +52,21 @@ export function buildSlashCommandHelpSection(): string {
   return `Every slash command must support a \`--help\` form.
 
 - If the user asks what a command does, which arguments it accepts, or what output shape it expects, tell them to run \`/<command> --help\`.
-- Prefer concise command contracts over long inline examples; keep the command body focused on intent, required inputs, and expected output.`
+- Keep command contracts concise: intent, required inputs, and expected output.`
 }
 
 export function renderSlashCommandRegistry(registry: SlashCommandRegistry): string {
-  const commandBlocks = registry.commands.map((command) => {
-    const details = command.details?.map((detail) => `- ${detail}`).join("\n")
-    return [`### \`${command.command}\``, command.summary, details].filter((part) => part !== undefined && part !== "").join("\n\n")
-  })
+  const commandIndex = registry.commands.map((command) => `- \`${command.command}\` — ${command.summary}`)
 
   const sectionBlocks = registry.sections?.map((section) => {
     const items = section.items.map((item) => `- ${item}`).join("\n")
-    return [`## ${section.heading}`, items].join("\n\n")
+    return [`### ${section.heading}`, items].join("\n\n")
   }) ?? []
 
   return [
     "## Slash Commands",
     buildSlashCommandHelpSection(),
-    ...commandBlocks,
+    ...(commandIndex.length === 0 ? [] : ["### Available Commands", commandIndex.join("\n")]),
     ...sectionBlocks,
   ].join("\n\n---\n\n")
 }
@@ -76,13 +87,12 @@ Use this contract to choose the right delegation mechanism.
 
 ### Hard rules for delegation
 
-- Prefer **parallel delegation** when subtasks are independent and touch different concerns.
-- When you launch background work, record the returned background task id (\`bg_...\`) separately from any session id (\`ses_...\`). Do not confuse them.
-- After launching a background task, wait for the upstream completion signal before collecting output. Do not call \`background_output\` immediately after launch.
-- When the runtime signals completion, call \`background_output\` with the **background task id** and synthesize the delegated result before taking the next major step.
-- After delegating research or exploration, **wait for the delegated result and synthesize it**. Do not repeat the same search locally unless the delegated output is clearly insufficient.
-- Avoid unnecessary nested delegation. Use another layer of subagents only when the specialist adds clear value, because upstream background-agent depth is limited.
-- Name the target domain up front in the prompt so the receiving agent can act without re-triaging the same request.
+- Prefer parallel delegation when subtasks are independent.
+- Keep \`bg_...\` task ids separate from \`ses_...\` session ids.
+- Wait for the runtime completion signal before calling \`background_output\`.
+- After delegating research or exploration, synthesize the delegated result before repeating the same search locally.
+- Avoid unnecessary nested delegation.
+- Name the target domain up front so the receiving agent can act without re-triaging.
 
 ### Canonical examples
 

@@ -108,11 +108,12 @@ describe("retained agent factory structure", () => {
         expect(config.prompt).toContain("run `/<command> --help`")
       })
 
-      it("prompt contains all registered slash commands for the agent", () => {
+      it("prompt contains a compact eager index for all registered slash commands", () => {
         const registry = RETAINED_AGENT_SLASH_COMMANDS[name as keyof typeof RETAINED_AGENT_SLASH_COMMANDS]
 
         for (const command of registry.commands) {
-          expect(config.prompt).toContain(`### \`${command.command}\``)
+          expect(config.prompt).toContain(command.command)
+          expect(config.prompt).not.toContain(`### \`${command.command}\``)
         }
       })
     })

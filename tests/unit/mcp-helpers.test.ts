@@ -282,6 +282,20 @@ describe("mcp helpers", () => {
       })
     })
 
+    it("replaces a non-string schema value with the canonical OpenCode schema", async () => {
+      await withSandbox("merge-repair-invalid-schema", async (sandbox, helpers) => {
+        writeJson(sandbox.projectOpenCodePath, {
+          $schema: true,
+          plugin: ["@grant-vine/wunderkind"],
+        })
+
+        await helpers.mergeStitchMcpConfig(sandbox.projectDir)
+
+        const config = readJson(sandbox.projectOpenCodePath)
+        expect(config.$schema).toBe("https://opencode.ai/config.json")
+      })
+    })
+
     it("does not overwrite a non-drifted existing Stitch entry", async () => {
       await withSandbox("merge-keep-existing", async (sandbox, helpers) => {
         writeJson(sandbox.projectOpenCodePath, {

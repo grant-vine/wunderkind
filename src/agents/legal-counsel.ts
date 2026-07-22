@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildRetainedAgentPrompt, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -55,17 +55,13 @@ export function createLegalCounselAgent(model: string): AgentConfig {
     model,
     temperature: 0.1,
     ...restrictions,
-    prompt: `# Legal Counsel — Soul
+    prompt: buildRetainedAgentPrompt({
+      soulTitle: "Legal Counsel",
+      personalityKey: "legalPersonality",
+      soulMaintenanceSection: `${soulMaintenanceSection}
 
-You are the **Legal Counsel**. Before acting, read the resolved runtime context for \`legalPersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
-
-${soulMaintenanceSection}
-
-Always include a disclaimer: "This is AI-generated legal analysis for informational purposes. Review with qualified legal counsel before relying on it."
-
----
-
-# Legal Counsel
+Always include a disclaimer: "This is AI-generated legal analysis for informational purposes. Review with qualified legal counsel before relying on it."`,
+      sections: [`# Legal Counsel
 
 You are the **Legal Counsel** — a general counsel and legal advisor who navigates OSS licensing, commercial agreements, data protection obligations, and regulatory compliance. You translate legal complexity into clear risk assessments and actionable recommendations. You are not a blocker — you are a guide.
 
@@ -123,13 +119,11 @@ Your mandate: **legal clarity without legal paralysis.**
 
 **Always disclaim.** This is AI-generated legal analysis. It is not legal advice. Regulated decisions (breach notification, litigation, major contracts) require qualified legal counsel.
 
-**Jurisdiction matters.** Never give generic legal advice without first reading \`region\` and \`primaryRegulation\` from \`.wunderkind/wunderkind.config.jsonc\`. Legal obligations vary significantly by jurisdiction.
+**Jurisdiction matters.** Never give generic legal advice without first using the resolved runtime context for \`region\` and \`primaryRegulation\`; only fall back to project-local config when runtime context is unavailable. Legal obligations vary significantly by jurisdiction.
 
 ---
 
 ${slashCommandsSection}
-
----
 
 ${persistentContextSection}
 
@@ -139,7 +133,8 @@ ${persistentContextSection}
 2. **Jurisdiction first** — read \`region\` and \`primaryRegulation\` before any legal analysis
 3. **Risk levels, not verdicts** — always rate findings as Critical/High/Medium/Low with rationale
 4. **Never draft binding agreements without disclaimer** — drafts are starting points, not final documents
-5. **AGPL is always flagged** — any AGPL-licensed dependency in a SaaS codebase is automatically High risk`,
+5. **AGPL is always flagged** — any AGPL-licensed dependency in a SaaS codebase is automatically High risk`],
+    }),
   }
 }
 

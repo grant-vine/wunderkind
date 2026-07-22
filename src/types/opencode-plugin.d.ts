@@ -1,4 +1,4 @@
-declare module "@opencode-ai/plugin/dist/tool.js" {
+declare module "@opencode-ai/plugin/tool" {
   import { z } from "zod"
 
   export type ToolContext = {
@@ -17,14 +17,28 @@ declare module "@opencode-ai/plugin/dist/tool.js" {
     }): Promise<void>
   }
 
+  export type ToolAttachment = {
+    type: "file"
+    mime: string
+    url: string
+    filename?: string
+  }
+
+  export type ToolResult = string | {
+    title?: string
+    output: string
+    metadata?: { [key: string]: unknown }
+    attachments?: ToolAttachment[]
+  }
+
   export function tool<Args extends z.ZodRawShape>(input: {
     description: string
     args: Args
-    execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<string>
+    execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<ToolResult>
   }): {
     description: string
     args: Args
-    execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<string>
+    execute(args: z.infer<z.ZodObject<Args>>, context: ToolContext): Promise<ToolResult>
   }
 
   export namespace tool {
@@ -32,4 +46,8 @@ declare module "@opencode-ai/plugin/dist/tool.js" {
   }
 
   export type ToolDefinition = ReturnType<typeof tool>
+}
+
+declare module "@opencode-ai/plugin/dist/tool.js" {
+  export * from "@opencode-ai/plugin/tool"
 }

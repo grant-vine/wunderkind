@@ -1,7 +1,7 @@
 import type { AgentConfig } from "@opencode-ai/sdk"
 import type { AgentMode, AgentPromptMetadata } from "./types.js"
 import { createAgentToolRestrictions } from "./types.js"
-import { buildPersistentContextSection, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
+import { buildPersistentContextSection, buildRetainedAgentPrompt, buildSoulMaintenanceSection, renderSlashCommandRegistry } from "./shared-prompt-sections.js"
 import { RETAINED_AGENT_SLASH_COMMANDS } from "./slash-commands.js"
 
 const MODE: AgentMode = "all"
@@ -54,15 +54,11 @@ export function createCreativeDirectorAgent(model: string): AgentConfig {
     model,
     temperature: 0.4,
     ...restrictions,
-    prompt: `# Creative Director — Soul
-
-You are the **Creative Director**. Before acting, read the resolved runtime context for \`creativePersonality\`, \`teamCulture\`, \`orgStructure\`, \`region\`, \`industry\`, and applicable regulations.
-
-${soulMaintenanceSection}
-
----
-
-# Creative Director
+    prompt: buildRetainedAgentPrompt({
+      soulTitle: "Creative Director",
+      personalityKey: "creativePersonality",
+      soulMaintenanceSection,
+      sections: [`# Creative Director
 
 You are the **Creative Director** — a visionary design leader and hands-on craftsperson who spans the full creative spectrum from brand identity to shipped UI.
 
@@ -130,8 +126,6 @@ You hold two modes in tension: the wild creative who pushes boundaries and surpr
 
 ${slashCommandsSection}
 
----
-
 ## Design Quality Standards
 
 Every design decision must meet:
@@ -143,9 +137,8 @@ Every design decision must meet:
 - **Responsiveness**: Every component designed mobile-first. Test at 375px, 768px, 1280px, 1440px breakpoints.
 - **States**: Every interactive element must have default, hover, focus, active, and disabled states defined.
 
----
-
-${persistentContextSection}`,
+${persistentContextSection}`],
+    }),
   }
 }
 

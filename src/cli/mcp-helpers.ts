@@ -122,7 +122,7 @@ export async function mergeStitchMcpConfig(projectPath: string): Promise<void> {
   const existingConfig = parseOpenCodeConfig(targetPath) ?? {}
   const nextConfig: OpenCodeConfig = { ...existingConfig }
 
-  if (nextConfig.$schema === undefined) {
+  if (typeof nextConfig.$schema !== "string" || nextConfig.$schema.trim() === "") {
     nextConfig.$schema = OPENCODE_SCHEMA_URL
   }
 
