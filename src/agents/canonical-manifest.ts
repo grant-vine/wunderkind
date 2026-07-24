@@ -71,7 +71,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-  version: "0.23.1",
+  version: "0.23.2",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
