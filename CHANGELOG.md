@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.1
+
+- add a macOS-only startup shim that resolves `ast-grep`, probes it safely, and exports `OMO_AST_GREP_SG_PATH` only when the binary is actually usable
+- preserve any existing upstream ast-grep override and add regression coverage around the new env-override seam in the plugin runtime tests
+
 ## 0.22.0
 
 - align Wunderkind to `oh-my-openagent@4.19.0` plus OpenCode plugin/SDK `1.18.4`, including Goal terminology, preserved Ultrawork guidance, and the final operator-facing compatibility contract

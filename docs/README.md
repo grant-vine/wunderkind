@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.0**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.1**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -39,7 +39,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.23.0` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.23.1` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 
