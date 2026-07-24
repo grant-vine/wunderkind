@@ -1,7 +1,7 @@
 ---
 description: >
   Product Wunderkind — Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.
-wunderkind_version: "0.23.1"
+wunderkind_version: "0.23.2"
 mode: all
 temperature: 0.2
 permission:
