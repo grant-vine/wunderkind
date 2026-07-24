@@ -14,6 +14,7 @@ import {
   detectNativeAssetVersion,
   detectNativeAgentMarkdownVersions,
   detectWunderkindVersionInfo,
+  getPromptOptimizationHookBudgetBasis,
   getNativeCommandFilePaths,
   getProjectOverrideMarker,
   readProjectWunderkindConfig,
@@ -25,6 +26,7 @@ import { isProjectContext } from "./init.js"
 import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
 import { detectStitchMcpPresence, type StitchPresence } from "./mcp-helpers.js"
 import { PERSONALITY_META } from "./personality-meta.js"
+import { PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS } from "./prompt-runtime-contract.js"
 import { resolveWunderkindTeamEntryState } from "./team-mode-entry.js"
 
 export interface DoctorOptions {
@@ -406,6 +408,35 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
       section("Workflow Configuration")
       line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
+      const promptOptimizationEnabled = detected.promptOptimizationEnabled ?? false
+      const promptOptimizationMode = detected.promptOptimizationMode ?? "off"
+      const promptOptimizationTokenBudget = projectConfig?.promptOptimizationTokenBudget ?? detected.promptOptimizationTokenBudget
+      const promptOptimizationByteBudget = projectConfig?.promptOptimizationByteBudget ?? detected.promptOptimizationByteBudget
+      line("prompt optimization enabled:", status(promptOptimizationEnabled))
+      line("prompt optimization mode:", color.cyan(promptOptimizationMode))
+      line("prompt optimization engine:", color.dim("supplementary, config-driven, and separate from token-audit"))
+      line(
+        "prompt optimization token budget:",
+        promptOptimizationTokenBudget === undefined ? color.dim("(not set)") : color.cyan(String(promptOptimizationTokenBudget)),
+      )
+      line(
+        "prompt optimization byte budget:",
+        promptOptimizationByteBudget === undefined ? color.dim("(not set)") : color.cyan(String(promptOptimizationByteBudget)),
+      )
+        line(
+          "prompt optimization hook budget basis:",
+          color.cyan(
+            getPromptOptimizationHookBudgetBasis({
+              promptOptimizationByteBudget,
+            }),
+          ),
+        )
+        line(
+          "prompt optimization count states:",
+          color.dim(
+            PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS.map((state) => `${state.state} (${state.label})`).join(", "),
+          ),
+        )
 
       const githubReadiness = detectGitHubWorkflowReadiness(cwd)
       line("git repository:", status(githubReadiness.isGitRepo))

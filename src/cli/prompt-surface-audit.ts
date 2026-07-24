@@ -236,6 +236,8 @@ export function renderTokenAuditTable(report: TokenAuditReport): readonly string
     `Files: ${report.totals.files}`,
     `Bytes: ${report.totals.bytes}`,
     `Lines: ${report.totals.lines}`,
+    "Prompt optimization count states:",
+    ...report.contract.supplementaryOptimization.countStates.map((state) => `- ${state.state}: ${state.label}`),
   ]
 
   for (const group of report.groups) {

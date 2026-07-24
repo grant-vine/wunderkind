@@ -42,7 +42,11 @@
         "designTool": { "enum": ["none", "google-stitch"] },
         "designPath": { "type": "string" },
         "designMcpOwnership": { "enum": ["none", "wunderkind-managed", "reused-project", "reused-global"] },
-        "cavemanEnabled": { "type": "boolean", "description": "Enable project-default caveman mode for terse, high-signal replies when value is preserved." }
+        "cavemanEnabled": { "type": "boolean", "description": "Enable project-default caveman mode for terse, high-signal replies when value is preserved." },
+        "promptOptimizationEnabled": { "type": "boolean" },
+        "promptOptimizationMode": { "enum": ["off", "advisory", "active"] },
+        "promptOptimizationTokenBudget": { "type": "integer", "minimum": 1 },
+        "promptOptimizationByteBudget": { "type": "integer", "minimum": 1 }
       },
       "required": [
         "$schema",

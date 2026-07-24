@@ -1,7 +1,10 @@
 export type PromptSurfaceOwnership = "wunderkind-owned" | "runtime-owned" | "user-authored-excluded"
 export type PromptSurfaceCollectionMode = "static-owned" | "runtime-fixture" | "compaction-fixture"
+export const PROMPT_OPTIMIZATION_MODES = ["off", "advisory", "active"] as const
 
 export const PROMPT_RUNTIME_AUDIT_MODE = "audit-only-v1" as const
+export const PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT_MODE =
+  "supplementary-prompt-optimization-v1" as const
 export const PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS = [
   "fixture-default-no-config",
   "fixture-docs-valid",
@@ -15,7 +18,17 @@ export const PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS = [
   "fixture-caveman-enabled",
 ] as const
 
-export type PromptRuntimeFixtureId = (typeof PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS)[number]
+export const PROMPT_OPTIMIZATION_HELPER_FIXTURE_IDS = [
+  "fixture-runtime-soul-overlay",
+  "fixture-runtime-active-trim",
+] as const
+
+export type PromptRuntimeFixtureId =
+  | (typeof PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS)[number]
+  | (typeof PROMPT_OPTIMIZATION_HELPER_FIXTURE_IDS)[number]
+export type PromptOptimizationMode = (typeof PROMPT_OPTIMIZATION_MODES)[number]
+export type PromptOptimizationEnabledInput = boolean | "omitted"
+export type PromptOptimizationModeInput = PromptOptimizationMode | "omitted"
 
 export interface PromptSurfaceLayerDefinition {
   readonly id: string
@@ -27,12 +40,62 @@ export interface PromptSurfaceLayerDefinition {
   readonly fixtureIds: readonly PromptRuntimeFixtureId[]
 }
 
+export interface PromptOptimizationModeMatrixRow {
+  readonly enabledInput: PromptOptimizationEnabledInput
+  readonly modeInput: PromptOptimizationModeInput
+  readonly resolvedEnabled: boolean
+  readonly resolvedMode: PromptOptimizationMode
+}
+
+export interface PromptOptimizationSupplementaryContract {
+  readonly contractMode: typeof PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT_MODE
+  readonly defaultEnabled: false
+  readonly defaultMode: "off"
+  readonly countStates: readonly PromptOptimizationCountStateDefinition[]
+  readonly modeMatrix: readonly PromptOptimizationModeMatrixRow[]
+}
+
+export interface PromptOptimizationCountStateDefinition {
+  readonly state: "exact-local" | "provider-api-only" | "unsupported"
+  readonly label: string
+}
+
 export interface PromptRuntimeContract {
   readonly auditMode: typeof PROMPT_RUNTIME_AUDIT_MODE
   readonly livePromptMutation: false
   readonly modelTokenTruthClaims: false
+  readonly supplementaryOptimization: PromptOptimizationSupplementaryContract
   readonly runtimeFixtureIds: readonly PromptRuntimeFixtureId[]
   readonly layers: readonly PromptSurfaceLayerDefinition[]
+}
+
+export const PROMPT_OPTIMIZATION_MODE_MATRIX = [
+  { enabledInput: "omitted", modeInput: "omitted", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: "omitted", modeInput: "off", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: "omitted", modeInput: "advisory", resolvedEnabled: true, resolvedMode: "advisory" },
+  { enabledInput: "omitted", modeInput: "active", resolvedEnabled: true, resolvedMode: "active" },
+  { enabledInput: true, modeInput: "omitted", resolvedEnabled: true, resolvedMode: "advisory" },
+  { enabledInput: true, modeInput: "off", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: true, modeInput: "advisory", resolvedEnabled: true, resolvedMode: "advisory" },
+  { enabledInput: true, modeInput: "active", resolvedEnabled: true, resolvedMode: "active" },
+  { enabledInput: false, modeInput: "omitted", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: false, modeInput: "off", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: false, modeInput: "advisory", resolvedEnabled: false, resolvedMode: "off" },
+  { enabledInput: false, modeInput: "active", resolvedEnabled: false, resolvedMode: "off" },
+] as const satisfies readonly PromptOptimizationModeMatrixRow[]
+
+export const PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS = [
+  { state: "exact-local", label: "supported OpenAI model map" },
+  { state: "provider-api-only", label: "unmapped OpenAI aliases" },
+  { state: "unsupported", label: "non-OpenAI providers" },
+] as const satisfies readonly PromptOptimizationCountStateDefinition[]
+
+export const PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT: PromptOptimizationSupplementaryContract = {
+  contractMode: PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT_MODE,
+  defaultEnabled: false,
+  defaultMode: "off",
+  countStates: PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS,
+  modeMatrix: PROMPT_OPTIMIZATION_MODE_MATRIX,
 }
 
 export const PROMPT_SURFACE_LAYER_DEFINITIONS = [
@@ -118,7 +181,7 @@ export const PROMPT_SURFACE_LAYER_DEFINITIONS = [
     ownership: "user-authored-excluded",
     collectionMode: "runtime-fixture",
     includedInTotals: false,
-    fixtureIds: [],
+    fixtureIds: ["fixture-runtime-soul-overlay"],
   },
   {
     id: "compaction-continuity",
@@ -137,6 +200,7 @@ export const PROMPT_RUNTIME_CONTRACT: PromptRuntimeContract = {
   auditMode: PROMPT_RUNTIME_AUDIT_MODE,
   livePromptMutation: false,
   modelTokenTruthClaims: false,
+  supplementaryOptimization: PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT,
   runtimeFixtureIds: PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS,
   layers: PROMPT_SURFACE_LAYER_DEFINITIONS,
 }

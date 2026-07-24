@@ -8,6 +8,32 @@ import { readWunderkindConfig } from "./cli/config-manager/index.js"
 export const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 export const RUNTIME_CONTEXT_SENTINEL = "<!-- wunderkind:runtime-context-start -->"
 export const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
+export const COMPACTION_CONTINUITY_FLOOR_TEXT =
+  "Compaction continuity preserved. Earlier compaction context was removed only for byte budget."
+
+export type PromptOptimizationRuntimeSectionId =
+  | "runtime-docs-output"
+  | "runtime-context"
+  | "runtime-native-agents"
+  | "compaction-continuity"
+
+export interface PromptOptimizationRuntimeSection {
+  readonly id: PromptOptimizationRuntimeSectionId
+  readonly content: string
+}
+
+export interface PromptOptimizationRuntimeTrimResult {
+  readonly sections: readonly PromptOptimizationRuntimeSection[]
+  readonly trimApplied: boolean
+  readonly trimExhausted: boolean
+  readonly trimmedSections: readonly PromptOptimizationRuntimeSectionId[]
+}
+
+const ACTIVE_RUNTIME_TRIM_ORDER = [
+  "runtime-native-agents",
+  "runtime-docs-output",
+  "compaction-continuity",
+] as const satisfies readonly PromptOptimizationRuntimeSectionId[]
 
 const SOUL_HEADING_MARKERS = [
   { heading: "# Product Wunderkind", agentKey: "product-wunderkind" },
@@ -17,6 +43,94 @@ const SOUL_HEADING_MARKERS = [
   { heading: "# CISO", agentKey: "ciso" },
   { heading: "# Legal Counsel", agentKey: "legal-counsel" },
 ] as const
+
+function joinRuntimeSections(sections: readonly PromptOptimizationRuntimeSection[]): string {
+  return sections
+    .map((section) => section.content)
+    .filter((content) => content !== "")
+    .join("\n")
+}
+
+function getTrimmedSectionContent(sectionId: PromptOptimizationRuntimeSectionId): string | null {
+  switch (sectionId) {
+    case "runtime-native-agents":
+    case "runtime-docs-output":
+      return ""
+    case "compaction-continuity":
+      return COMPACTION_CONTINUITY_FLOOR_TEXT
+    case "runtime-context":
+      return null
+  }
+}
+
+function getActiveRuntimePromptOptimizationByteBudget(
+  wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
+): number | null {
+  if (wunderkindConfig?.promptOptimizationEnabled === false) {
+    return null
+  }
+
+  if (wunderkindConfig?.promptOptimizationMode !== "active") {
+    return null
+  }
+
+  return typeof wunderkindConfig.promptOptimizationByteBudget === "number"
+    ? wunderkindConfig.promptOptimizationByteBudget
+    : null
+}
+
+export function trimPromptOptimizationRuntimeSections(
+  sections: readonly PromptOptimizationRuntimeSection[],
+  byteBudget: number,
+): PromptOptimizationRuntimeTrimResult {
+  const trimmedSections = sections.map((section) => ({ ...section }))
+  const appliedSectionIds: PromptOptimizationRuntimeSectionId[] = []
+
+  if (Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8") <= byteBudget) {
+    return {
+      sections: trimmedSections,
+      trimApplied: false,
+      trimExhausted: false,
+      trimmedSections: [],
+    }
+  }
+
+  for (const sectionId of ACTIVE_RUNTIME_TRIM_ORDER) {
+    if (Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8") <= byteBudget) {
+      break
+    }
+
+    const sectionIndex = trimmedSections.findIndex((section) => section.id === sectionId)
+    if (sectionIndex === -1) {
+      continue
+    }
+
+    const replacementContent = getTrimmedSectionContent(sectionId)
+    if (replacementContent === null) {
+      continue
+    }
+
+    const section = trimmedSections[sectionIndex]
+    if (!section || section.content === replacementContent) {
+      continue
+    }
+
+    trimmedSections[sectionIndex] = {
+      ...section,
+      content: replacementContent,
+    }
+    appliedSectionIds.push(sectionId)
+  }
+
+  const remainingBytes = Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8")
+
+  return {
+    sections: trimmedSections,
+    trimApplied: appliedSectionIds.length > 0,
+    trimExhausted: appliedSectionIds.length > 0 && remainingBytes > byteBudget,
+    trimmedSections: appliedSectionIds,
+  }
+}
 
 function isReservedDocsPath(path: string): boolean {
   const normalized = path.replaceAll("\\", "/").replace(/^\.\//, "")
@@ -129,7 +243,26 @@ The project is using github PRD/workflow mode. Preserve any active GitHub issue,
     }
   }
 
-  return context
+  const activeByteBudget = getActiveRuntimePromptOptimizationByteBudget(wunderkindConfig)
+  if (activeByteBudget === null) {
+    return context
+  }
+
+  const trimResult = trimPromptOptimizationRuntimeSections(
+    [{ id: "compaction-continuity", content: context.join("\n") }],
+    activeByteBudget,
+  )
+
+  if (!trimResult.trimApplied) {
+    return context
+  }
+
+  const trimmedCompactionSection = trimResult.sections[0]
+  if (!trimmedCompactionSection || trimmedCompactionSection.content === "") {
+    return []
+  }
+
+  return [trimmedCompactionSection.content]
 }
 
 export function applyWunderkindSystemTransform(options: {
@@ -143,6 +276,10 @@ export function applyWunderkindSystemTransform(options: {
   const hasRuntimeContextSentinel = existingSystemContent.includes(RUNTIME_CONTEXT_SENTINEL)
   const hasNativeAgentsSentinel = existingSystemContent.includes(NATIVE_AGENTS_SENTINEL)
   const wunderkindConfig = options.wunderkindConfig
+  let docsOutputSection: string | null = null
+  let runtimeContextSection: string | null = null
+  let soulOverlaySection: string | null = null
+  let nativeAgentsSection: string | null = null
 
   if (wunderkindConfig?.docsEnabled === true && !hasDocsOutputSentinel) {
     const docsPath = wunderkindConfig.docsPath ?? "./docs"
@@ -152,7 +289,7 @@ export function applyWunderkindSystemTransform(options: {
       ? `\n\n### Docs Output Warning\n\n${docsOutputRuntimeState.warning}\n`
       : ""
 
-    options.system.push(`
+    docsOutputSection = `
 ${DOCS_OUTPUT_SENTINEL}
 ## Documentation Output
 
@@ -175,11 +312,11 @@ ${docsPathWarning}
 
 Eligible Wunderkind docs targets:
 ${docsOutputRuntimeState.docsTargets}
-`.trim())
+ `.trim()
   }
 
   if (wunderkindConfig && !hasRuntimeContextSentinel) {
-    options.system.push(`
+    runtimeContextSection = `
 ${RUNTIME_CONTEXT_SENTINEL}
 ## Wunderkind Resolved Runtime Context
 
@@ -193,7 +330,7 @@ Use this resolved Wunderkind configuration as the authoritative runtime context 
 - org structure: ${wunderkindConfig.orgStructure ?? "flat"}
 
 If a prompt references .wunderkind/wunderkind.config.jsonc for baseline or personality context, use the resolved values above first.
-`.trim())
+ `.trim()
   }
 
   const activeSoulAgent = detectActiveSoulAgent(options.system)
@@ -204,20 +341,20 @@ If a prompt references .wunderkind/wunderkind.config.jsonc for baseline or perso
     if (!hasSoulSentinel) {
       const soulOverlay = readSoulOverlay(activeSoulAgent, cwd)
       if (soulOverlay) {
-        options.system.push(`
+        soulOverlaySection = `
 ${soulSentinel}
 ## Wunderkind SOUL Overlay
 
 Use this project-local SOUL overlay as additive guidance for the active persona. It refines the neutral base prompt with project-specific customization and durable learned context. If it conflicts with an explicit user instruction, follow the user.
 
 ${soulOverlay}
-`.trim())
+ `.trim()
       }
     }
   }
 
   if (!hasNativeAgentsSentinel) {
-    options.system.push(`
+    nativeAgentsSection = `
 ${NATIVE_AGENTS_SENTINEL}
 ## Wunderkind Native Agents
 
@@ -266,6 +403,41 @@ ${wunderkindConfig?.cavemanEnabled === true
 
 Global and project-local Wunderkind config are merged at runtime.
 Treat the resolved runtime context above as the source of truth for region, industry, regulations, team culture, org structure, and personality guidance.
-`.split("\u0000").join("").trim())
+ `.split("\u0000").join("").trim()
+  }
+
+  const activeByteBudget = getActiveRuntimePromptOptimizationByteBudget(wunderkindConfig)
+  if (activeByteBudget === null) {
+    if (docsOutputSection) options.system.push(docsOutputSection)
+    if (runtimeContextSection) options.system.push(runtimeContextSection)
+    if (soulOverlaySection) options.system.push(soulOverlaySection)
+    if (nativeAgentsSection) options.system.push(nativeAgentsSection)
+    return
+  }
+
+  const trimResult = trimPromptOptimizationRuntimeSections(
+    [
+      ...(docsOutputSection ? [{ id: "runtime-docs-output" as const, content: docsOutputSection }] : []),
+      ...(runtimeContextSection ? [{ id: "runtime-context" as const, content: runtimeContextSection }] : []),
+      ...(nativeAgentsSection ? [{ id: "runtime-native-agents" as const, content: nativeAgentsSection }] : []),
+    ],
+    activeByteBudget,
+  )
+
+  const trimmedDocsOutputSection = trimResult.sections.find((section) => section.id === "runtime-docs-output")
+  const trimmedRuntimeContextSection = trimResult.sections.find((section) => section.id === "runtime-context")
+  const trimmedNativeAgentsSection = trimResult.sections.find((section) => section.id === "runtime-native-agents")
+
+  if (trimmedDocsOutputSection && trimmedDocsOutputSection.content !== "") {
+    options.system.push(trimmedDocsOutputSection.content)
+  }
+  if (trimmedRuntimeContextSection && trimmedRuntimeContextSection.content !== "") {
+    options.system.push(trimmedRuntimeContextSection.content)
+  }
+  if (soulOverlaySection) {
+    options.system.push(soulOverlaySection)
+  }
+  if (trimmedNativeAgentsSection && trimmedNativeAgentsSection.content !== "") {
+    options.system.push(trimmedNativeAgentsSection.content)
   }
 }

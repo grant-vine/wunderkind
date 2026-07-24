@@ -33,6 +33,7 @@ import type {
   BaselineConfigKey,
   OmoInstallReadiness,
   OmoFreshnessSummary,
+  PromptOptimizationMode,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
@@ -59,6 +60,79 @@ function isDesignMcpOwnership(value: unknown): value is DesignMcpOwnership {
     value === "reused-project" ||
     value === "reused-global"
   )
+}
+
+function isPromptOptimizationMode(value: unknown): value is PromptOptimizationMode {
+  return value === "off" || value === "advisory" || value === "active"
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+}
+
+function resolvePromptOptimizationState(input: {
+  promptOptimizationEnabled: boolean | undefined
+  promptOptimizationMode: PromptOptimizationMode | undefined
+}): { enabled: boolean; mode: PromptOptimizationMode } {
+  const { promptOptimizationEnabled, promptOptimizationMode } = input
+
+  if (promptOptimizationEnabled === false) {
+    return { enabled: false, mode: "off" }
+  }
+
+  if (promptOptimizationEnabled === true) {
+    if (promptOptimizationMode === undefined) {
+      return { enabled: true, mode: "advisory" }
+    }
+
+    return promptOptimizationMode === "off"
+      ? { enabled: false, mode: "off" }
+      : { enabled: true, mode: promptOptimizationMode }
+  }
+
+  if (promptOptimizationMode === undefined || promptOptimizationMode === "off") {
+    return { enabled: false, mode: "off" }
+  }
+
+  return { enabled: true, mode: promptOptimizationMode }
+}
+
+function getValidatedPromptOptimizationBudgets(config: Partial<ProjectConfig>): {
+  promptOptimizationTokenBudget?: number
+  promptOptimizationByteBudget?: number
+} {
+  const budgets: {
+    promptOptimizationTokenBudget?: number
+    promptOptimizationByteBudget?: number
+  } = {}
+
+  if (isPositiveInteger(config.promptOptimizationTokenBudget)) {
+    budgets.promptOptimizationTokenBudget = config.promptOptimizationTokenBudget
+  }
+
+  if (isPositiveInteger(config.promptOptimizationByteBudget)) {
+    budgets.promptOptimizationByteBudget = config.promptOptimizationByteBudget
+  }
+
+  return budgets
+}
+
+function validatePromptOptimizationConfig(config: Partial<ProjectConfig>): string | null {
+  if (config.promptOptimizationTokenBudget !== undefined && !isPositiveInteger(config.promptOptimizationTokenBudget)) {
+    return "promptOptimizationTokenBudget must be a positive integer"
+  }
+
+  if (config.promptOptimizationByteBudget !== undefined && !isPositiveInteger(config.promptOptimizationByteBudget)) {
+    return "promptOptimizationByteBudget must be a positive integer"
+  }
+
+  return null
+}
+
+export function getPromptOptimizationHookBudgetBasis(input: {
+  promptOptimizationByteBudget: number | undefined
+}): "configured-bytes" | "budget-unavailable" {
+  return isPositiveInteger(input.promptOptimizationByteBudget) ? "configured-bytes" : "budget-unavailable"
 }
 
 interface ConfigManagerPaths {
@@ -199,6 +273,10 @@ const PROJECT_CONFIG_KEYS = [
   "designPath",
   "designMcpOwnership",
   "cavemanEnabled",
+  "promptOptimizationEnabled",
+  "promptOptimizationMode",
+  "promptOptimizationTokenBudget",
+  "promptOptimizationByteBudget",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -857,6 +935,18 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (typeof source["designPath"] === "string") result.designPath = source["designPath"]
   if (isDesignMcpOwnership(source["designMcpOwnership"])) result.designMcpOwnership = source["designMcpOwnership"]
   if (typeof source["cavemanEnabled"] === "boolean") result.cavemanEnabled = source["cavemanEnabled"]
+  if (typeof source["promptOptimizationEnabled"] === "boolean") {
+    result.promptOptimizationEnabled = source["promptOptimizationEnabled"]
+  }
+  if (isPromptOptimizationMode(source["promptOptimizationMode"])) {
+    result.promptOptimizationMode = source["promptOptimizationMode"]
+  }
+  if (isPositiveInteger(source["promptOptimizationTokenBudget"])) {
+    result.promptOptimizationTokenBudget = source["promptOptimizationTokenBudget"]
+  }
+  if (isPositiveInteger(source["promptOptimizationByteBudget"])) {
+    result.promptOptimizationByteBudget = source["promptOptimizationByteBudget"]
+  }
 
   return result
 }
@@ -969,6 +1059,16 @@ function renderGlobalWunderkindConfig(config: GlobalConfig): string {
 }
 
 function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalConfig>, baseline: GlobalConfig): string {
+  const resolvedPromptOptimization = resolvePromptOptimizationState({
+    promptOptimizationEnabled: config.promptOptimizationEnabled,
+    promptOptimizationMode: config.promptOptimizationMode,
+  })
+  const promptOptimizationBudgets = getValidatedPromptOptimizationBudgets(config)
+  const omitPromptOptimizationFields =
+    resolvedPromptOptimization.enabled === false &&
+    resolvedPromptOptimization.mode === "off" &&
+    promptOptimizationBudgets.promptOptimizationTokenBudget === undefined &&
+    promptOptimizationBudgets.promptOptimizationByteBudget === undefined
   const lines = [
     `// Wunderkind project configuration — edit these values to tailor agents to this project`,
     `{`,
@@ -1035,6 +1135,31 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     `  // PRD pipeline mode: "filesystem" | "github"`,
     `  "prdPipelineMode": ${JSON.stringify(config.prdPipelineMode ?? "filesystem")},`,
     ``,
+  )
+
+  if (!omitPromptOptimizationFields) {
+    lines.push(`  // Supplementary prompt optimization engine settings`)
+
+    if (config.promptOptimizationEnabled !== undefined) {
+      lines.push(`  "promptOptimizationEnabled": ${JSON.stringify(config.promptOptimizationEnabled)},`)
+    }
+
+    if (config.promptOptimizationMode !== undefined) {
+      lines.push(`  "promptOptimizationMode": ${JSON.stringify(config.promptOptimizationMode)},`)
+    }
+
+    if (promptOptimizationBudgets.promptOptimizationTokenBudget !== undefined) {
+      lines.push(`  "promptOptimizationTokenBudget": ${JSON.stringify(promptOptimizationBudgets.promptOptimizationTokenBudget)},`)
+    }
+
+    if (promptOptimizationBudgets.promptOptimizationByteBudget !== undefined) {
+      lines.push(`  "promptOptimizationByteBudget": ${JSON.stringify(promptOptimizationBudgets.promptOptimizationByteBudget)},`)
+    }
+
+    lines.push(``)
+  }
+
+  lines.push(
     `  // Communication mode`,
     `  // Enable project-default caveman mode for terse, high-signal replies when compression preserves full value`,
     `  "cavemanEnabled": ${JSON.stringify(config.cavemanEnabled ?? false)},`,
@@ -1071,6 +1196,11 @@ export function writeProjectWunderkindConfig(config: ProjectConfig & Partial<Glo
   const paths = resolveConfigManagerPaths()
   const setupError = ensureConfigDir(paths.wunderkindDir, paths.wunderkindConfig)
   if (setupError) return setupError
+
+  const promptOptimizationValidationError = validatePromptOptimizationConfig(config)
+  if (promptOptimizationValidationError !== null) {
+    return { success: false, configPath: paths.wunderkindConfig, error: promptOptimizationValidationError }
+  }
 
   try {
     const baseline = {
@@ -1132,6 +1262,10 @@ export function detectCurrentConfig(): DetectedConfig {
   const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
+  const resolvedPromptOptimization = resolvePromptOptimizationState({
+    promptOptimizationEnabled: projectLocal?.promptOptimizationEnabled,
+    promptOptimizationMode: projectLocal?.promptOptimizationMode,
+  })
 
   return {
     isInstalled: true,
@@ -1161,6 +1295,15 @@ export function detectCurrentConfig(): DetectedConfig {
     designTool: projectLocal?.designTool ?? defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
     designPath: projectLocal?.designPath ?? defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
     designMcpOwnership: projectLocal?.designMcpOwnership ?? defaults.designMcpOwnership ?? DEFAULT_PROJECT_CONFIG.designMcpOwnership,
+    cavemanEnabled: projectLocal?.cavemanEnabled ?? defaults.cavemanEnabled ?? false,
+    promptOptimizationEnabled: resolvedPromptOptimization.enabled,
+    promptOptimizationMode: resolvedPromptOptimization.mode,
+    ...(projectLocal?.promptOptimizationTokenBudget !== undefined
+      ? { promptOptimizationTokenBudget: projectLocal.promptOptimizationTokenBudget }
+      : {}),
+    ...(projectLocal?.promptOptimizationByteBudget !== undefined
+      ? { promptOptimizationByteBudget: projectLocal.promptOptimizationByteBudget }
+      : {}),
   }
 }
 

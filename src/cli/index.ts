@@ -11,11 +11,15 @@ import { runTokenAudit } from "./token-audit.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
+import { PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS } from "./prompt-runtime-contract.js"
 import type { DocHistoryMode, InstallArgs, InstallScope, TeamBootstrapScope } from "./types.js"
 import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 import { WUNDERKIND_CANONICAL_MANIFEST } from "../agents/canonical-manifest.js"
 
 const REGULATION_LIST = "GDPR, POPIA, CCPA, LGPD, HIPAA, PIPEDA, PDPA, APPI, SOC2, ISO27001, or any custom value"
+const PROMPT_OPTIMIZATION_COUNT_STATE_HELP_TEXT = PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS.map(
+  (state) => `${state.state} (${state.label})`,
+).join(", ")
 
 function parseYesNoOption(flagName: string, value: string): boolean {
   const normalized = value.trim().toLowerCase()
@@ -36,6 +40,9 @@ program
       "Adds six retained native OpenCode agents covering",
       "marketing, design, product, engineering, security, and legal — each",
       "guided by your region, industry, and data-protection defaults when configured.",
+      "",
+      "Also includes a supplementary, config-driven prompt optimization engine",
+      "surfaced through config and doctor only in phase 1 — no public optimize command.",
       "",
       "Examples:",
       "  bunx @grant-vine/wunderkind install",
@@ -427,6 +434,9 @@ program
       "  - reads source-owned renderers and shipped markdown assets only",
       "  - does not mutate prompts, native assets, or project files",
       "  - prompt-runtime v1 is audit-only: no live prompt packing and no model-token truth claims",
+      "  - the supplementary prompt optimization engine stays config-driven and separate from this audit-only report",
+      `  - supplementary prompt optimization count states stay frozen: ${PROMPT_OPTIMIZATION_COUNT_STATE_HELP_TEXT}`,
+      "  - phase-1 hook-effective budget basis stays configured-bytes or budget-unavailable only",
       "  - reports deterministic bytes, lines, and file counts rather than model-specific token truth",
     ].join("\n"),
   )

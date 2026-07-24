@@ -640,12 +640,33 @@ export async function runInit(options: InitOptions): Promise<number> {
     const soulAnswers = new Map<SoulPersonaDefinition["agentKey"], SoulCustomizationAnswers>()
     const existingSoulAnswers = readExistingSoulAnswers(cwd)
     const persisted = readWunderkindConfig()
+    const hasPersistedPromptOptimizationFields =
+      persisted !== null &&
+      (
+        "promptOptimizationEnabled" in persisted ||
+        "promptOptimizationMode" in persisted ||
+        "promptOptimizationTokenBudget" in persisted ||
+        "promptOptimizationByteBudget" in persisted
+      )
     let designTool: DesignTool = persisted?.designTool ?? detected.designTool
     let designPath = normalizeDesignPath(options.designPath ?? persisted?.designPath ?? detected.designPath)
     let designMcpOwnership: DesignMcpOwnership = persisted?.designMcpOwnership ?? detected.designMcpOwnership
     let shouldMergeStitchProjectConfig = false
     let stitchSecretValue: string | null = null
     let shouldBootstrapDesignFile = false
+
+    const promptOptimizationEnabled = hasPersistedPromptOptimizationFields
+      ? persisted?.promptOptimizationEnabled
+      : detected.promptOptimizationEnabled
+    const promptOptimizationMode = hasPersistedPromptOptimizationFields
+      ? persisted?.promptOptimizationMode
+      : detected.promptOptimizationMode
+    const promptOptimizationTokenBudget = hasPersistedPromptOptimizationFields
+      ? persisted?.promptOptimizationTokenBudget
+      : detected.promptOptimizationTokenBudget
+    const promptOptimizationByteBudget = hasPersistedPromptOptimizationFields
+      ? persisted?.promptOptimizationByteBudget
+      : detected.promptOptimizationByteBudget
 
     const config: InstallConfig = {
       region: persisted?.region ?? detected.region,
@@ -668,6 +689,10 @@ export async function runInit(options: InitOptions): Promise<number> {
       designPath: persisted?.designPath ?? detected.designPath,
       designMcpOwnership: persisted?.designMcpOwnership ?? detected.designMcpOwnership,
       cavemanEnabled: options.cavemanEnabled ?? persisted?.cavemanEnabled ?? detected.cavemanEnabled ?? false,
+      ...(promptOptimizationEnabled !== undefined ? { promptOptimizationEnabled } : {}),
+      ...(promptOptimizationMode !== undefined ? { promptOptimizationMode } : {}),
+      ...(promptOptimizationTokenBudget !== undefined ? { promptOptimizationTokenBudget } : {}),
+      ...(promptOptimizationByteBudget !== undefined ? { promptOptimizationByteBudget } : {}),
     }
 
     if (!noTui) {

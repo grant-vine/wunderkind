@@ -6,6 +6,7 @@ export type DocHistoryMode = "overwrite" | "append-dated" | "new-dated-file" | "
 export type PrdPipelineMode = "filesystem" | "github"
 export type DesignTool = "none" | "google-stitch"
 export type DesignMcpOwnership = "none" | "wunderkind-managed" | "reused-project" | "reused-global"
+export type PromptOptimizationMode = "off" | "advisory" | "active"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -40,6 +41,10 @@ export interface ProjectConfig {
   designPath: string
   designMcpOwnership: DesignMcpOwnership
   cavemanEnabled?: boolean
+  promptOptimizationEnabled?: boolean | undefined
+  promptOptimizationMode?: PromptOptimizationMode | undefined
+  promptOptimizationTokenBudget?: number | undefined
+  promptOptimizationByteBudget?: number | undefined
 }
 
 export interface InstallArgs {
@@ -105,6 +110,10 @@ export interface DetectedConfig {
   designPath: string
   designMcpOwnership: DesignMcpOwnership
   cavemanEnabled?: boolean
+  promptOptimizationEnabled?: boolean | undefined
+  promptOptimizationMode?: PromptOptimizationMode | undefined
+  promptOptimizationTokenBudget?: number | undefined
+  promptOptimizationByteBudget?: number | undefined
 }
 
 export type OmoFreshnessStatus = "up-to-date" | "outdated" | "local-dev" | "pinned" | "error" | "unknown"
