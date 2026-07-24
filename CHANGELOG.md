@@ -6,6 +6,12 @@
 - add upstream-compatible Wunderkind team mode via `wunderkind team-bootstrap` and `/wunderkind-team`, including canonical `team_mode.enabled` detection and explicit fallback to solo `product-wunderkind`
 - add audit-only prompt-runtime reporting with deterministic layered `token-audit --surface all` output and no live prompt packing, no model-token truth claims, and no OpenToken adoption
 
+## 0.23.0
+
+- add a supplementary, config-driven prompt optimization engine that stays default-off, truth-bounded, and separate from `wunderkind token-audit`
+- expose prompt-optimization mode and budget visibility through config, CLI help, and `wunderkind doctor` without adding a public optimize command
+- freeze phase-1 truth to the supported OpenAI model map, preserve audit-only `token-audit`, and add regression coverage around counting, advisory mode, fallback behavior, and runtime trim guards
+
 ## 0.21.0
 
 - add `wunderkind workflow-sync` for explicit GitHub Issues projection from local `.omo` plans, including `--all`, dry-run by default, and fail-closed local/remote drift handling
