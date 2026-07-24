@@ -24,15 +24,15 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.22.0
+## What's new in 0.23.0
 
-Wunderkind `0.22.0` aligns to `oh-my-openagent` `4.19.0` plus OpenCode plugin/SDK `1.18.4`, adds explicit GitHub workflow projection, adds a guarded team-mode entry flow, and exposes deterministic prompt-surface reporting as first-class CLI surfaces.
+Wunderkind `0.23.0` keeps the `oh-my-openagent` `4.19.0` plus OpenCode plugin/SDK `1.18.4` alignment, preserves `token-audit` as an audit-only reporting surface, and adds a bounded prompt-optimization engine that is config-driven, switchable, and default-off.
 
-- add `wunderkind workflow-sync` with direct-child `.omo/plans/*.md` support, dry-run by default, explicit `--apply`, and fail-closed local/remote drift handling for GitHub Issues sync
-- add `wunderkind team-bootstrap` plus `/wunderkind-team` for upstream-compatible team-mode setup; when `team_mode.enabled` is disabled, the canonical spec is missing, or team tools are unavailable, `/wunderkind-team` falls back explicitly to solo `product-wunderkind` orchestration
-- add `wunderkind token-audit` as a read-only reporting command for deterministic `bytes`, `lines`, and `files` metrics across Wunderkind-owned prompt surfaces
-- ship `/workflow-sync` and `/token-audit` as native command assets and wire their install/help/doctor/init surfaces into the maintained CLI contract
-- expand regression coverage around workflow state identity, bulk sync preflight, token-audit rendering, and shipped command asset exposure
+- keep `wunderkind token-audit` audit-only: no live prompt packing, no model-token truth claims, and no public optimize command
+- add a supplementary prompt-optimization engine with explicit `off`, `advisory`, and `active` modes wired through config, doctor, and help surfaces
+- freeze phase-1 exact model-token truth to the supported OpenAI model map while falling back cleanly to configured byte budgets elsewhere
+- constrain live trimming to the runtime-native-agent and runtime-docs-output sections instead of mutating SOUL overlays, user prompts, or static/generated assets
+- expand regression coverage around counting, advisory mode, fallback behavior, overlay guards, and runtime compaction seams
 
 ### Clean upgrade path for existing installs
 
@@ -276,6 +276,7 @@ wunderkind token-audit --surface commands --format json
 - supported formats are `table` and `json`
 - v1 is read-only and reporting-only
 - prompt-runtime v1 is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency
+- any supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit` and surfaces through config and doctor rather than a new public optimize command
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -606,10 +607,27 @@ Edit the global file to change region/industry/regulation defaults after install
   // PRD / planning workflow mode
   "prdPipelineMode": "filesystem",
 
+  // Prompt optimization engine (optional; omit all four keys to keep the engine fully off)
+  "promptOptimizationEnabled": false,
+  // Mode: "off" | "advisory" | "active"
+  "promptOptimizationMode": "off",
+  // Optional token budget used only for supported exact OpenAI model counting
+  "promptOptimizationTokenBudget": 120000,
+  // Optional byte budget fallback for unsupported or unset model IDs
+  "promptOptimizationByteBudget": 500000,
+
   // Enable project-default caveman mode for terse, high-signal replies when value is preserved
   "cavemanEnabled": false
 }
 ```
+
+Prompt optimization is intentionally supplementary in this release. It is **default-off**, never replaces `wunderkind token-audit`, and does not introduce a new public optimize command.
+
+- `off` keeps runtime trimming disabled and should usually be represented by omitting the optimization keys entirely.
+- `advisory` computes/report budgets without mutating the live prompt.
+- `active` allows bounded runtime trimming of the supported runtime sections only.
+- `promptOptimizationTokenBudget` is meaningful only when the current model is inside the supported exact OpenAI map.
+- `promptOptimizationByteBudget` is the explicit fallback for unsupported or unset models when operators still want bounded runtime behavior.
 
 ---
 
