@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.2
+
+- align Wunderkind's direct upstream dependency pin to `oh-my-openagent@4.19.1`
+- keep the macOS `OMO_AST_GREP_SG_PATH` compatibility shim because the upstream `4.19.1` patch does not change the ast-grep warning behavior
+
 ## 0.23.1
 
 - add a macOS-only startup shim that resolves `ast-grep`, probes it safely, and exports `OMO_AST_GREP_SG_PATH` only when the binary is actually usable

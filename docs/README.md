@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.1**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.2**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -26,7 +26,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
 - Generated native agents now embed **`wunderkind_version`** in frontmatter.
 - Install and upgrade guidance now use canonical **`oh-my-openagent`** naming only; legacy `oh-my-opencode` references remain detection-only warning/migration notes.
-- The upstream alignment target is `oh-my-openagent` `4.19.0` with OpenCode plugin/SDK `1.18.4`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
+- The upstream alignment target is `oh-my-openagent` `4.19.1` with OpenCode plugin/SDK `1.18.4`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit`, stays default-off, and does not add a public optimize command in this phase.
@@ -39,7 +39,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.23.1` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.23.2` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 

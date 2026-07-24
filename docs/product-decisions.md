@@ -5,7 +5,7 @@ Last refreshed: 2026-07-15T11-11-35Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.23.1`
+- **Current version**: `0.23.2`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -39,7 +39,7 @@ Active upstream continuation/goal behavior should use Goal terminology. Ralph Lo
 Senpi task/orchestration docs are valid upstream context, but Wunderkind’s OpenCode-facing team-mode work should follow the OpenCode/OMO team model. Operator-facing local-model guidance that mentions Ollama tool-using agents must include the upstream `stream: false` workaround instead of promising streaming tool-call support.
 
 ### 10. Freeze the upstream-alignment targets for this wave
-The current alignment target is `oh-my-openagent` `4.19.0` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.4`. Docs/help/doctor surfaces should cite those targets when explaining this wave's compatibility contract.
+The current alignment target is `oh-my-openagent` `4.19.1` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.4`. Docs/help/doctor surfaces should cite those targets when explaining this wave's compatibility contract.
 
 ### 11. Keep team-mode explicit and fallback-safe
 Wunderkind team mode is a thin upstream-compatible layer: `wunderkind team-bootstrap` writes canonical `.omo/teams/<name>/config.json` specs, `/wunderkind-team` checks canonical `oh-my-openagent` config paths plus `team_mode.enabled`, and disabled or missing-spec states fall back to solo `product-wunderkind` orchestration.

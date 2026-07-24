@@ -24,15 +24,15 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.23.1
+## What's new in 0.23.2
 
-Wunderkind `0.23.1` keeps the `oh-my-openagent` `4.19.0` plus OpenCode plugin/SDK `1.18.4` alignment, preserves `token-audit` as an audit-only reporting surface, and adds a macOS ast-grep compatibility shim so upstream ast-grep-backed workflows can find a valid binary without patching dependencies.
+Wunderkind `0.23.2` keeps the `oh-my-openagent` `4.19.1` plus OpenCode plugin/SDK `1.18.4` alignment, preserves `token-audit` as an audit-only reporting surface, and retains the macOS ast-grep compatibility shim because the upstream `4.19.1` patch does not change the warning behavior.
 
 - keep `wunderkind token-audit` audit-only: no live prompt packing, no model-token truth claims, and no public optimize command
 - preserve the supplementary prompt-optimization engine introduced in `0.23.0`, including bounded runtime trimming for supported sections only
-- add a macOS-only startup shim that resolves `ast-grep`, verifies it with `--version`, and sets `OMO_AST_GREP_SG_PATH` only when the binary is usable
+- bump Wunderkind's direct `oh-my-openagent` dependency to `4.19.1`
+- keep the macOS-only `OMO_AST_GREP_SG_PATH` startup shim because upstream `4.19.1` does not supersede the local ast-grep mitigation
 - preserve any operator-provided `OMO_AST_GREP_SG_PATH` override instead of clobbering upstream configuration
-- expand regression coverage around the ast-grep override seam in the plugin runtime tests
 
 ### Clean upgrade path for existing installs
 
