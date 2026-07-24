@@ -1,8 +1,79 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { tool } from "@opencode-ai/plugin/tool"
+import { spawnSync } from "node:child_process"
 import { DURABLE_ARTIFACT_TOOL_NAME, writeDurableArtifact } from "./artifact-writer.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
 import { applyWunderkindSystemTransform, buildCompactionContext } from "./runtime-prompt-sections.js"
+
+const OMO_AST_GREP_SG_PATH_ENV_KEY = "OMO_AST_GREP_SG_PATH"
+
+export interface AstGrepEnvOverrideResult {
+  readonly applied: boolean
+  readonly reason: "not-darwin" | "already-set" | "which-failed" | "version-probe-failed" | "configured"
+  readonly binaryPath: string | null
+}
+
+function resolveAstGrepBinaryPath(): string | null {
+  const result = spawnSync("which", ["ast-grep"], {
+    encoding: "utf8",
+    timeout: 1500,
+    maxBuffer: 1024 * 32,
+  })
+
+  if (result.error || result.status !== 0) {
+    return null
+  }
+
+  const binaryPath = result.stdout.trim()
+  return binaryPath === "" ? null : binaryPath
+}
+
+function supportsAstGrepVersionProbe(binaryPath: string): boolean {
+  const result = spawnSync(binaryPath, ["--version"], {
+    encoding: "utf8",
+    timeout: 1500,
+    maxBuffer: 1024 * 32,
+  })
+
+  if (result.error || result.status !== 0) {
+    return false
+  }
+
+  return `${result.stdout}${result.stderr}`.toLowerCase().includes("ast-grep")
+}
+
+export function applyAstGrepMacOsEnvOverride(input?: {
+  readonly platform?: NodeJS.Platform
+  readonly env?: NodeJS.ProcessEnv
+  readonly resolveBinaryPath?: () => string | null
+  readonly supportsVersionProbe?: (binaryPath: string) => boolean
+}): AstGrepEnvOverrideResult {
+  const platform = input?.platform ?? process.platform
+  if (platform !== "darwin") {
+    return { applied: false, reason: "not-darwin", binaryPath: null }
+  }
+
+  const env = input?.env ?? process.env
+  const existingValue = env[OMO_AST_GREP_SG_PATH_ENV_KEY]
+  if (typeof existingValue === "string" && existingValue.trim() !== "") {
+    return { applied: false, reason: "already-set", binaryPath: existingValue }
+  }
+
+  const resolveBinaryPath = input?.resolveBinaryPath ?? resolveAstGrepBinaryPath
+  const supportsVersionProbe = input?.supportsVersionProbe ?? supportsAstGrepVersionProbe
+
+  const binaryPath = resolveBinaryPath()
+  if (binaryPath === null) {
+    return { applied: false, reason: "which-failed", binaryPath: null }
+  }
+
+  if (!supportsVersionProbe(binaryPath)) {
+    return { applied: false, reason: "version-probe-failed", binaryPath }
+  }
+
+  env[OMO_AST_GREP_SG_PATH_ENV_KEY] = binaryPath
+  return { applied: true, reason: "configured", binaryPath }
+}
 
 const NON_FULLSTACK_RETAINED_AGENTS = new Set([
   "marketing-wunderkind",
@@ -50,6 +121,8 @@ function shouldDenyShellMutation(pattern: string | string[] | undefined, metadat
 }
 
 const WunderkindPlugin: Plugin = async (_input) => {
+  applyAstGrepMacOsEnvOverride()
+
   return {
     tool: {
       [DURABLE_ARTIFACT_TOOL_NAME]: tool({
