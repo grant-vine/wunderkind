@@ -106,6 +106,50 @@ describe("Wunderkind plugin transform", () => {
     mockReadWunderkindConfig.mockClear()
     mockReadWunderkindConfig.mockImplementation(() => null)
     process.chdir(ORIGINAL_CWD)
+    delete process.env["OMO_AST_GREP_SG_PATH"]
+  })
+
+  it("prefers ast-grep via the upstream env override seam on macOS when unset", async () => {
+    registerConfigManagerMock()
+
+    const mod = (await import(new URL(`src/index.ts?ast-grep-env=${Date.now()}`, `file://${PROJECT_ROOT}`).href)) as PluginModule & {
+      applyAstGrepMacOsEnvOverride: typeof import("../../src/index.js").applyAstGrepMacOsEnvOverride
+    }
+
+    const env: NodeJS.ProcessEnv = {}
+    const result = mod.applyAstGrepMacOsEnvOverride({
+      platform: "darwin",
+      env,
+      resolveBinaryPath: () => "/opt/homebrew/bin/ast-grep",
+      supportsVersionProbe: (binaryPath) => binaryPath === "/opt/homebrew/bin/ast-grep",
+    })
+
+    expect(result).toEqual({
+      applied: true,
+      reason: "configured",
+      binaryPath: "/opt/homebrew/bin/ast-grep",
+    })
+    expect(env["OMO_AST_GREP_SG_PATH"]).toBe("/opt/homebrew/bin/ast-grep")
+  })
+
+  it("preserves an existing ast-grep override env var", async () => {
+    registerConfigManagerMock()
+    const env: NodeJS.ProcessEnv = {
+      OMO_AST_GREP_SG_PATH: "/custom/ast-grep",
+    }
+
+    const mod = (await import(new URL(`src/index.ts?ast-grep-existing=${Date.now()}`, `file://${PROJECT_ROOT}`).href)) as PluginModule & {
+      applyAstGrepMacOsEnvOverride: typeof import("../../src/index.js").applyAstGrepMacOsEnvOverride
+    }
+
+    const result = mod.applyAstGrepMacOsEnvOverride({ platform: "darwin", env })
+
+    expect(result).toEqual({
+      applied: false,
+      reason: "already-set",
+      binaryPath: "/custom/ast-grep",
+    })
+    expect(env["OMO_AST_GREP_SG_PATH"]).toBe("/custom/ast-grep")
   })
 
   it("always injects the native agent catalog and delegation rules", async () => {
