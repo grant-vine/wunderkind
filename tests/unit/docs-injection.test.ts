@@ -18,6 +18,22 @@ function registerConfigManagerMock(): void {
   const factory = () => ({
     readWunderkindConfig: mockReadWunderkindConfig,
     detectCurrentConfig: () => ({ isInstalled: false }),
+    detectOmoInstallReadiness: () => ({
+      installed: false,
+      registered: false,
+      loadedVersion: null,
+      configPath: null,
+      configSource: null,
+      legacyConfigPath: null,
+      staleOverrideWarning: null,
+      versionSkewWarning: null,
+      dualConfigWarning: null,
+      freshness: null,
+      freshnessSummary: { state: "not-detected", guidance: "mock guidance" },
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "mock guidance",
+    }),
     detectGitHubWorkflowReadiness: () => ({
       isGitRepo: false,
       hasGitHubRemote: false,
@@ -37,8 +53,14 @@ function registerConfigManagerMock(): void {
     detectLegacyConfig: () => false,
     addPluginToOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json" }),
     getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+    getPromptOptimizationHookBudgetBasis: ({ promptOptimizationByteBudget }: { promptOptimizationByteBudget?: number }) =>
+      typeof promptOptimizationByteBudget === "number" && Number.isSafeInteger(promptOptimizationByteBudget) && promptOptimizationByteBudget > 0
+        ? "configured-bytes"
+        : "budget-unavailable",
     readWunderkindConfigForScope: () => null,
     detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
+    detectNativeAgentMarkdownVersions: () => ({ allCurrent: true, staleAgentIds: [], currentVersion: null }),
+    detectNativeAssetVersion: () => ({ kind: "agents", installedVersion: null, currentVersion: null, needsUpgrade: false }),
     detectNativeCommandFiles: () => ({ dir: "/tmp/mock-commands", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeSkillFiles: () => ({ dir: "/tmp/mock-skills", presentCount: 0, totalCount: 0, allPresent: false }),
     getNativeCommandFilePaths: () => [],
@@ -48,6 +70,8 @@ function registerConfigManagerMock(): void {
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
     readProjectWunderkindConfig: () => null,
     resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
+    resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+    writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   })
 
   mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, factory)
@@ -106,6 +130,34 @@ describe("runtime docs-output system injection", () => {
 
     expect(hasDocsSection(output.system)).toBe(false)
     expect(countSentinel(output.system)).toBe(0)
+  })
+
+  it("under active mode trims only runtime-owned injected seams and keeps existing surface bytes stable", async () => {
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      region: "Project Region",
+      industry: "SaaS",
+      primaryRegulation: "POPIA",
+      teamCulture: "pragmatic-balanced",
+      orgStructure: "flat",
+      docsEnabled: true,
+      docsPath: "./docs/output",
+      docHistoryMode: "append-dated",
+      promptOptimizationEnabled: true,
+      promptOptimizationMode: "active",
+      promptOptimizationByteBudget: 1200,
+    }))
+    const existingSurface = "# Existing System Surface\nPreserve me exactly."
+    const output: TestOutput = { system: [existingSurface] }
+
+    await cachedTransform!({}, output)
+
+    expect(output.system[0]).toBe(existingSurface)
+    expect(output.system.some((entry) => entry.includes("## Wunderkind Resolved Runtime Context"))).toBe(true)
+    expect(output.system.some((entry) => entry.includes(RUNTIME_CONTEXT_SENTINEL))).toBe(true)
+    expect(output.system.some((entry) => entry.includes("## Documentation Output"))).toBe(false)
+    expect(output.system.some((entry) => entry.includes(DOCS_OUTPUT_SENTINEL))).toBe(false)
+    expect(output.system.some((entry) => entry.includes("## Wunderkind Native Agents"))).toBe(false)
+    expect(output.system.some((entry) => entry.includes(NATIVE_AGENTS_SENTINEL))).toBe(false)
   })
 
   it("injects docs section with UTC timestamp contract and history mode semantics", async () => {

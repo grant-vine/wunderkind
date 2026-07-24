@@ -38,6 +38,10 @@ describe("CLI help copy", () => {
 
     expect(output).toContain("Adds six retained native OpenCode agents covering")
     expect(output).toContain("marketing, design, product, engineering, security, and legal")
+    expect(output).toContain("supplementary, config-driven prompt optimization engine")
+    expect(output).toContain("no public optimize command")
+    expect(output).not.toContain("  optimize")
+    expect(output).not.toContain("  prompt-optimization")
   })
 
   it("does not run install implicitly on bare invocation", () => {
@@ -117,6 +121,13 @@ describe("CLI help copy", () => {
     expect(output).toContain("audit-only")
     expect(output).toContain("no live prompt packing")
     expect(output).toContain("no model-token truth claims")
+    expect(output).toContain("config-driven and separate from this audit-only report")
+    expect(output).toContain("exact-local")
+    expect(output).toContain("provider-api-only")
+    expect(output).toContain("unsupported")
+    expect(output).toContain("configured-bytes")
+    expect(output).toContain("budget-unavailable")
+    expect(output).not.toContain("exact-openai-tokens")
   })
 
   it("includes team-bootstrap command help text", () => {

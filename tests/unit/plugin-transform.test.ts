@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
+import { spawnSync } from "node:child_process"
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import type { ProjectConfig } from "../../src/cli/types.js"
+import type { InstallConfig } from "../../src/cli/types.js"
 import { createProductWunderkindAgent } from "../../src/agents/index.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
@@ -10,14 +11,32 @@ const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file:/
 const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
 const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?plugin-transform=${Date.now()}`, `file://${PROJECT_ROOT}`).href
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
+const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
 const ORIGINAL_CWD = process.cwd()
+const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
 
-const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
+const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
 
 function registerConfigManagerMock(): void {
   const factory = () => ({
     readWunderkindConfig: mockReadWunderkindConfig,
     detectCurrentConfig: () => ({ isInstalled: false }),
+    detectOmoInstallReadiness: () => ({
+      installed: false,
+      registered: false,
+      loadedVersion: null,
+      configPath: null,
+      configSource: null,
+      legacyConfigPath: null,
+      staleOverrideWarning: null,
+      versionSkewWarning: null,
+      dualConfigWarning: null,
+      freshness: null,
+      freshnessSummary: { state: "not-detected", guidance: "mock guidance" },
+      interactiveInstallCommand: "bunx oh-my-openagent install",
+      nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
+      guidance: "mock guidance",
+    }),
     detectGitHubWorkflowReadiness: () => ({
       isGitRepo: false,
       hasGitHubRemote: false,
@@ -37,6 +56,10 @@ function registerConfigManagerMock(): void {
     detectLegacyConfig: () => false,
     addPluginToOpenCodeConfig: () => ({ success: true, configPath: "/tmp/mock-opencode.json" }),
     getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
+    getPromptOptimizationHookBudgetBasis: ({ promptOptimizationByteBudget }: { promptOptimizationByteBudget?: number }) =>
+      typeof promptOptimizationByteBudget === "number" && Number.isSafeInteger(promptOptimizationByteBudget) && promptOptimizationByteBudget > 0
+        ? "configured-bytes"
+        : "budget-unavailable",
     readWunderkindConfigForScope: () => null,
     detectNativeAgentFiles: () => ({ dir: "/tmp/mock-agents", presentCount: 0, totalCount: 0, allPresent: false }),
     detectNativeAgentMarkdownVersions: () => ({ allCurrent: true, staleAgentIds: [], currentVersion: null }),
@@ -50,6 +73,8 @@ function registerConfigManagerMock(): void {
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
     readProjectWunderkindConfig: () => null,
     resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
+    resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
+    writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
   })
 
   mock.module(`${PROJECT_ROOT}src/cli/config-manager/index.js`, factory)
@@ -276,6 +301,66 @@ describe("Wunderkind plugin transform", () => {
 
     expect(output.context.join("\n")).toContain("Preserve every active background task id (`bg_...")
     expect(output.context.join("\n")).toContain("ready to call `background_output`")
+  })
+
+  it("keeps active mode default-safe when no byte budget is configured", async () => {
+    registerConfigManagerMock()
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationEnabled: true,
+      promptOptimizationMode: "active",
+    }))
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const transform = pluginResult["experimental.chat.system.transform"]
+    if (!transform) {
+      throw new Error("Expected experimental.chat.system.transform to exist")
+    }
+
+    const output: TestOutput = { system: [] }
+
+    await transform({}, output)
+
+    expect(output.system.some((entry) => entry.includes("## Wunderkind Native Agents"))).toBe(true)
+    expect(output.system.some((entry) => entry.includes(NATIVE_AGENTS_SENTINEL))).toBe(true)
+  })
+
+  it("preserves the continuity floor text when active compaction trimming exhausts earlier content", async () => {
+    registerConfigManagerMock()
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationEnabled: true,
+      promptOptimizationMode: "active",
+      promptOptimizationByteBudget: 1,
+    }))
+    const mod = (await import(new URL("src/index.ts", `file://${PROJECT_ROOT}`).href)) as PluginModule
+    const pluginResult = await mod.default({})
+    const hook = pluginResult["experimental.session.compacting"]
+    if (!hook) {
+      throw new Error("Expected experimental.session.compacting hook")
+    }
+
+    const output = { context: [] as string[] }
+    await hook({}, output)
+
+    expect(output.context).toEqual([
+      "Compaction continuity preserved. Earlier compaction context was removed only for byte budget.",
+    ])
+  })
+
+  it("produces the frozen active runtime fixture result at the 1200-byte budget", () => {
+    const helperRun = spawnSync(process.execPath, [HELPER_PATH.pathname], {
+      env: {
+        ...process.env,
+        WUNDERKIND_TEST_ENGINE: "active",
+        WUNDERKIND_TEST_FIXTURE: "fixture-runtime-active-trim",
+        WUNDERKIND_TEST_BYTE_BUDGET: "1200",
+      },
+      encoding: "utf8",
+    })
+
+    expect(helperRun.status).toBe(0)
+    expect(helperRun.stdout.trim()).toBe(
+      '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"configured-bytes","trimApplied":true,"trimExhausted":false,"trimmedSections":["runtime-native-agents","runtime-docs-output"]}',
+    )
   })
 
   it("denies shell-based file mutation for non-fullstack retained agents", async () => {

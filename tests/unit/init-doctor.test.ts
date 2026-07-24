@@ -327,6 +327,10 @@ const configManagerMockFactory = () => ({
     }
   },
   detectWunderkindVersionInfo: mockDetectWunderkindVersionInfo,
+  getPromptOptimizationHookBudgetBasis: ({ promptOptimizationByteBudget }: { promptOptimizationByteBudget?: number }) =>
+    typeof promptOptimizationByteBudget === "number" && Number.isSafeInteger(promptOptimizationByteBudget) && promptOptimizationByteBudget > 0
+      ? "configured-bytes"
+      : "budget-unavailable",
   getDefaultGlobalConfig: () => ({ region: "Global", industry: "", primaryRegulation: "", secondaryRegulation: "" }),
   getNativeCommandFilePaths: mockGetNativeCommandFilePaths,
   readWunderkindConfig: mockReadWunderkindConfig,
@@ -553,6 +557,44 @@ describe("runInit", () => {
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      restore()
+    }
+  })
+
+  it("passes persisted prompt optimization config through init without widening the scope", async () => {
+    const restore = silenceConsole()
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-prompt-optimization-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "global",
+        projectInstalled: false,
+        globalInstalled: true,
+        registrationScope: "global",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+      }),
+    )
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationMode: "advisory",
+      promptOptimizationTokenBudget: 4096,
+      promptOptimizationByteBudget: 8192,
+    }))
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(0)
+      const [writtenConfig, writtenScope] = mockWriteWunderkindConfig.mock.calls[0] ?? []
+      expect(writtenScope).toBe("project")
+      expect(writtenConfig).toHaveProperty("promptOptimizationMode", "advisory")
+      expect(writtenConfig).toHaveProperty("promptOptimizationTokenBudget", 4096)
+      expect(writtenConfig).toHaveProperty("promptOptimizationByteBudget", 8192)
     } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
@@ -879,6 +921,82 @@ describe("runDoctor", () => {
       console.log = originalLog
       console.error = originalError
     }
+  })
+
+  it("surfaces prompt optimization engine state with configured-bytes as the phase-1 hook budget basis", async () => {
+    mockReadProjectWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationEnabled: true,
+      promptOptimizationMode: "active",
+      promptOptimizationByteBudget: 8192,
+    }))
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "active",
+        promptOptimizationByteBudget: 8192,
+      }),
+    )
+
+    const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("prompt optimization mode:") && m.includes("active"))).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization enabled:") && m.includes("✓ yes"))).toBe(true)
+    expect(
+      messages.some(
+        (m) =>
+          m.includes("prompt optimization engine:") &&
+          m.includes("supplementary") &&
+          m.includes("config-driven") &&
+          m.includes("token-audit"),
+      ),
+    ).toBe(true)
+    expect(
+      messages.some(
+        (m) =>
+          m.includes("prompt optimization count states:") &&
+          m.includes("exact-local") &&
+          m.includes("provider-api-only") &&
+          m.includes("unsupported"),
+      ),
+    ).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("configured-bytes"))).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("exact-openai-tokens"))).toBe(false)
+  })
+
+  it("keeps doctor on budget-unavailable when only a token budget is configured in phase 1", async () => {
+    mockReadProjectWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationMode: "advisory",
+      promptOptimizationTokenBudget: 4096,
+    }))
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "advisory",
+        promptOptimizationTokenBudget: 4096,
+      }),
+    )
+
+    const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("prompt optimization mode:") && m.includes("advisory"))).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("budget-unavailable"))).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("exact-openai-tokens"))).toBe(false)
   })
 
   it("warns when global install exists but native global agents are absent", async () => {

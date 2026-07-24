@@ -9,6 +9,12 @@ import { RETAINED_AGENT_SLASH_COMMANDS, renderGeneratedRetainedNativeCommandMark
 const AGENTS_DIR = fileURLToPath(new URL("../../agents/", import.meta.url))
 const PACKAGE_JSON_PATH = fileURLToPath(new URL("../../package.json", import.meta.url))
 const PACKAGE_VERSION = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf-8")).version as string
+const RUNTIME_SENTINELS = [
+  "<!-- wunderkind:docs-output-start -->",
+  "<!-- wunderkind:runtime-context-start -->",
+  "<!-- wunderkind:native-agents-start -->",
+  "<!-- wunderkind:soul-runtime-start:",
+] as const
 
 describe("build-agents script", () => {
   it("regenerates every shipped agent markdown file from the manifest", async () => {
@@ -100,6 +106,24 @@ describe("build-agents script", () => {
     for (const command of getGeneratedRetainedNativeCommands()) {
       const markdown = renderGeneratedRetainedNativeCommandMarkdown(command)
       expect(markdown).toContain("subtask: true")
+    }
+  })
+
+  it("keeps generated agent and retained command markdown free of runtime-owned sentinels", () => {
+    for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
+      const markdown = renderNativeAgentMarkdown(definition)
+
+      for (const sentinel of RUNTIME_SENTINELS) {
+        expect(markdown).not.toContain(sentinel)
+      }
+    }
+
+    for (const command of getGeneratedRetainedNativeCommands()) {
+      const markdown = renderGeneratedRetainedNativeCommandMarkdown(command)
+
+      for (const sentinel of RUNTIME_SENTINELS) {
+        expect(markdown).not.toContain(sentinel)
+      }
     }
   })
 

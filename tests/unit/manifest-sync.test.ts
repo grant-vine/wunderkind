@@ -143,9 +143,24 @@ describe("design-md command asset", () => {
     expect(tokenAuditBody).toContain("name: token-audit")
     expect(tokenAuditBody).toContain("`wunderkind token-audit [--surface <surface>] [--format <format>]`")
     expect(tokenAuditBody).toContain("bytes, lines, and file counts")
-    expect(tokenAuditBody).toContain("audit-only")
+    expect(tokenAuditBody).toContain("audit-only prompt-surface report")
     expect(tokenAuditBody).toContain("no live prompt packing")
     expect(tokenAuditBody).toContain("no model-token truth claims")
+    expect(tokenAuditBody).toContain("supplementary prompt optimization engine")
+    expect(tokenAuditBody).toContain("config-driven")
+  })
+
+  it("keeps README and docs wording aligned around audit-only token-audit versus the supplementary engine", () => {
+    const readmeBody = readText(new URL("../../README.md", import.meta.url))
+    const docsReadmeBody = readText(docsReadmeFile)
+
+    expect(readmeBody).toContain("supplementary, config-driven prompt optimization engine")
+    expect(readmeBody).toContain("no public optimize command")
+    expect(readmeBody).toContain("separate from `wunderkind token-audit`")
+
+    expect(docsReadmeBody).toContain("supplementary, config-driven prompt optimization engine")
+    expect(docsReadmeBody).toContain("token-audit")
+    expect(docsReadmeBody).toContain("audit-only")
   })
 
   it("keeps the docs index aligned with the final OpenCode release reference", () => {

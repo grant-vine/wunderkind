@@ -312,6 +312,119 @@ describe("config-manager coverage", () => {
     })
   })
 
+  it("threads prompt optimization config through readers and resolves detected mode semantics", async () => {
+    await withSandbox("prompt-optimization-layered-config", async (sandbox, mod) => {
+      expect(
+        mod.writeGlobalWunderkindConfig({
+          region: "Global Region",
+          industry: "SaaS",
+          primaryRegulation: "GDPR",
+          secondaryRegulation: "",
+        }).success,
+      ).toBe(true)
+
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+
+      expect(
+        mod.writeProjectWunderkindConfig({
+          ...mod.getDefaultProjectConfig(),
+          promptOptimizationMode: "advisory",
+          promptOptimizationTokenBudget: 4096,
+          promptOptimizationByteBudget: 8192,
+        }).success,
+      ).toBe(true)
+
+      const merged = mod.readWunderkindConfig()
+      expect(merged?.promptOptimizationMode).toBe("advisory")
+      expect(merged?.promptOptimizationTokenBudget).toBe(4096)
+      expect(merged?.promptOptimizationByteBudget).toBe(8192)
+      expect(merged).not.toHaveProperty("promptOptimizationEnabled")
+
+      const projectOnly = mod.readProjectWunderkindConfig()
+      expect(projectOnly?.promptOptimizationMode).toBe("advisory")
+      expect(projectOnly?.promptOptimizationTokenBudget).toBe(4096)
+      expect(projectOnly?.promptOptimizationByteBudget).toBe(8192)
+      expect(projectOnly).not.toHaveProperty("promptOptimizationEnabled")
+
+      const scoped = mod.readWunderkindConfigForScope("project")
+      expect(scoped?.promptOptimizationMode).toBe("advisory")
+      expect(scoped?.promptOptimizationTokenBudget).toBe(4096)
+      expect(scoped?.promptOptimizationByteBudget).toBe(8192)
+
+      const detected = mod.detectCurrentConfig()
+      expect(detected.promptOptimizationEnabled).toBe(true)
+      expect(detected.promptOptimizationMode).toBe("advisory")
+      expect(detected.promptOptimizationTokenBudget).toBe(4096)
+      expect(detected.promptOptimizationByteBudget).toBe(8192)
+
+      writeFileSync(
+        sandbox.projectConfigPath,
+        `{
+  "promptOptimizationEnabled": false,
+  "promptOptimizationMode": "active"
+}`,
+      )
+
+      const disabledDetected = mod.detectCurrentConfig()
+      expect(disabledDetected.promptOptimizationEnabled).toBe(false)
+      expect(disabledDetected.promptOptimizationMode).toBe("off")
+    })
+  })
+
+  it("rejects non-positive prompt optimization budgets deterministically", async () => {
+    await withSandbox("prompt-optimization-invalid-budget", async (_sandbox, mod) => {
+      const result = mod.writeWunderkindConfig(
+        {
+          ...mod.getDefaultInstallConfig(),
+          promptOptimizationMode: "active",
+          promptOptimizationTokenBudget: 0,
+        },
+        "project",
+      )
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain("promptOptimizationTokenBudget")
+      expect(result.error).toContain("positive integer")
+    })
+  })
+
+  it("keeps prompt optimization fields sparse when the resolved engine state is fully off with no budgets", async () => {
+    await withSandbox("prompt-optimization-sparse-off", async (_sandbox, mod) => {
+      const result = mod.writeWunderkindConfig(
+        {
+          ...mod.getDefaultInstallConfig(),
+          promptOptimizationEnabled: false,
+          promptOptimizationMode: "off",
+        },
+        "project",
+      )
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(result.configPath, "utf-8")
+      expect(written).not.toContain('"promptOptimizationEnabled"')
+      expect(written).not.toContain('"promptOptimizationMode"')
+      expect(written).not.toContain('"promptOptimizationTokenBudget"')
+      expect(written).not.toContain('"promptOptimizationByteBudget"')
+    })
+  })
+
+  it("locks the schema to positive-integer prompt optimization budgets", async () => {
+    const schema = JSON.parse(
+      readFileSync(join(PROJECT_ROOT, "schemas", "wunderkind.config.schema.json"), "utf-8"),
+    ) as {
+      oneOf?: Array<{ properties?: Record<string, unknown> }>
+    }
+
+    const projectSchema = schema.oneOf?.[1]
+    expect(projectSchema).toBeDefined()
+
+    const properties = projectSchema?.properties as Record<string, Record<string, unknown>> | undefined
+    expect(properties?.promptOptimizationEnabled).toEqual({ type: "boolean" })
+    expect(properties?.promptOptimizationMode).toEqual({ enum: ["off", "advisory", "active"] })
+    expect(properties?.promptOptimizationTokenBudget).toEqual({ type: "integer", minimum: 1 })
+    expect(properties?.promptOptimizationByteBudget).toEqual({ type: "integer", minimum: 1 })
+  })
+
   it("returns null when neither global nor project config exists", async () => {
     await withSandbox("read-null-no-config", async (_sandbox, mod) => {
       expect(mod.readWunderkindConfig()).toBe(null)

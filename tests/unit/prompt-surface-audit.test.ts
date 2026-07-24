@@ -29,6 +29,97 @@ describe("prompt runtime audit contract", () => {
     expect(soulOverlayLayer).toBeDefined()
     expect(soulOverlayLayer?.ownership).toBe("user-authored-excluded")
     expect(soulOverlayLayer?.includedInTotals).toBe(false)
+    expect(soulOverlayLayer?.fixtureIds).toEqual(["fixture-runtime-soul-overlay"])
+  })
+
+  it("publishes a separate supplementary optimization contract with the frozen mode matrix", () => {
+    const contract = getPromptRuntimeContract()
+    const supplementaryOptimization = Reflect.get(contract, "supplementaryOptimization")
+
+    expect(supplementaryOptimization).toEqual({
+      contractMode: "supplementary-prompt-optimization-v1",
+      defaultEnabled: false,
+      defaultMode: "off",
+      countStates: [
+        { state: "exact-local", label: "supported OpenAI model map" },
+        { state: "provider-api-only", label: "unmapped OpenAI aliases" },
+        { state: "unsupported", label: "non-OpenAI providers" },
+      ],
+      modeMatrix: [
+        {
+          enabledInput: "omitted",
+          modeInput: "omitted",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: "omitted",
+          modeInput: "off",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: "omitted",
+          modeInput: "advisory",
+          resolvedEnabled: true,
+          resolvedMode: "advisory",
+        },
+        {
+          enabledInput: "omitted",
+          modeInput: "active",
+          resolvedEnabled: true,
+          resolvedMode: "active",
+        },
+        {
+          enabledInput: true,
+          modeInput: "omitted",
+          resolvedEnabled: true,
+          resolvedMode: "advisory",
+        },
+        {
+          enabledInput: true,
+          modeInput: "off",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: true,
+          modeInput: "advisory",
+          resolvedEnabled: true,
+          resolvedMode: "advisory",
+        },
+        {
+          enabledInput: true,
+          modeInput: "active",
+          resolvedEnabled: true,
+          resolvedMode: "active",
+        },
+        {
+          enabledInput: false,
+          modeInput: "omitted",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: false,
+          modeInput: "off",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: false,
+          modeInput: "advisory",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+        {
+          enabledInput: false,
+          modeInput: "active",
+          resolvedEnabled: false,
+          resolvedMode: "off",
+        },
+      ],
+    })
   })
 
   it("adds canonical runtime and compaction groups only to all-surface reporting", async () => {

@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs"
 
 type PluginPackageJson = {
   readonly exports?: Record<string, unknown>
+  readonly bin?: Record<string, string>
+  readonly scripts?: Record<string, string>
 }
 
 describe("OpenCode plugin compatibility shim", () => {
@@ -15,5 +17,19 @@ describe("OpenCode plugin compatibility shim", () => {
     expect(pluginPackage.exports?.["./tool"]).toBeDefined()
     expect(shim).toContain('declare module "@opencode-ai/plugin/tool"')
     expect(shim).toContain("export type ToolResult = string | {")
+  })
+
+  it("keeps prompt optimization overlay-only without a daemon or secondary runtime entrypoint", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    ) as PluginPackageJson
+
+    expect(packageJson.bin).toEqual({ wunderkind: "bin/wunderkind.js" })
+    expect(Object.keys(packageJson.exports ?? {})).toEqual(["."])
+    expect(
+      Object.keys(packageJson.scripts ?? {}).some((name) =>
+        ["start", "serve", "daemon", "worker", "queue", "scheduler"].includes(name),
+      ),
+    ).toBe(false)
   })
 })

@@ -146,11 +146,61 @@ describe("runTokenAudit", () => {
         readonly group: string
       }[]
       readonly contract: {
+        readonly auditMode: string
+        readonly livePromptMutation: boolean
+        readonly modelTokenTruthClaims: boolean
+        readonly supplementaryOptimization: {
+          readonly contractMode: string
+          readonly defaultEnabled: boolean
+          readonly defaultMode: string
+          readonly modeMatrix: readonly {
+            readonly enabledInput: boolean | "omitted"
+            readonly modeInput: string
+            readonly resolvedEnabled: boolean
+            readonly resolvedMode: string
+          }[]
+        }
         readonly runtimeFixtureIds: readonly string[]
       }
     }
 
     expect(parsed.surface).toBe("all")
+    expect(parsed.contract.auditMode).toBe("audit-only-v1")
+    expect(parsed.contract.livePromptMutation).toBe(false)
+    expect(parsed.contract.modelTokenTruthClaims).toBe(false)
+    expect(parsed.contract.supplementaryOptimization.contractMode).toBe(
+      "supplementary-prompt-optimization-v1",
+    )
+    expect(parsed.contract.supplementaryOptimization.defaultEnabled).toBe(false)
+    expect(parsed.contract.supplementaryOptimization.defaultMode).toBe("off")
+    expect(parsed.contract.supplementaryOptimization.modeMatrix).toHaveLength(12)
+    expect(
+      parsed.contract.supplementaryOptimization.modeMatrix.some(
+        (row) =>
+          row.enabledInput === "omitted" &&
+          row.modeInput === "advisory" &&
+          row.resolvedEnabled === true &&
+          row.resolvedMode === "advisory",
+      ),
+    ).toBe(true)
+    expect(
+      parsed.contract.supplementaryOptimization.modeMatrix.some(
+        (row) =>
+          row.enabledInput === true &&
+          row.modeInput === "off" &&
+          row.resolvedEnabled === false &&
+          row.resolvedMode === "off",
+      ),
+    ).toBe(true)
+    expect(
+      parsed.contract.supplementaryOptimization.modeMatrix.some(
+        (row) =>
+          row.enabledInput === false &&
+          row.modeInput === "active" &&
+          row.resolvedEnabled === false &&
+          row.resolvedMode === "off",
+      ),
+    ).toBe(true)
     expect(parsed.groups.map((group) => group.name)).toEqual([
       "agents",
       "commands-static",
