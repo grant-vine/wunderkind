@@ -14,6 +14,7 @@ import {
   applyWunderkindSystemTransform,
   buildCompactionContextResult,
 } from "./runtime-prompt-sections.js"
+import { buildV4UserPromptOptimizationSurface } from "./runtime-user-prompt-optimization.js"
 
 const OMO_AST_GREP_SG_PATH_ENV_KEY = "OMO_AST_GREP_SG_PATH"
 
@@ -228,9 +229,14 @@ const WunderkindPlugin: Plugin = async (_input) => {
     },
     "experimental.chat.system.transform": async (_input, output) => {
       const wunderkindConfig = readWunderkindConfig()
+      const v4UserPromptOptimizationSurface = buildV4UserPromptOptimizationSurface(_input, {
+        promptOptimizationEnabled: wunderkindConfig?.promptOptimizationEnabled,
+        promptOptimizationMode: wunderkindConfig?.promptOptimizationMode,
+      })
       const transformResult = applyWunderkindSystemTransform({
         system: output.system,
         wunderkindConfig,
+        v4UserPromptOptimizationSurface,
       })
 
       const runtimeReport = buildPromptOptimizationRuntimeReport({
@@ -240,6 +246,9 @@ const WunderkindPlugin: Plugin = async (_input) => {
         content: transformResult.eligibleSections.map((section) => section.content).join("\n"),
         eligibleSections: transformResult.eligibleSections,
         trimResult: transformResult.trimResult,
+        v4PassthroughReason: v4UserPromptOptimizationSurface.latestUserMessagePassthroughReason,
+        v4UserPromptOptimizationMeasurement:
+          v4UserPromptOptimizationSurface.latestUserMessageOptimizationMeasurement ?? undefined,
         promptOptimizationTokenBudget: wunderkindConfig?.promptOptimizationTokenBudget,
         promptOptimizationByteBudget: wunderkindConfig?.promptOptimizationByteBudget,
       })

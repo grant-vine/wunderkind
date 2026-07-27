@@ -4,6 +4,10 @@ import { AGENT_DOCS_CONFIG } from "./agents/docs-config.js"
 import { DURABLE_ARTIFACT_TOOL_NAME } from "./artifact-writer.js"
 import { resolveProjectLocalDocsPath } from "./cli/docs-output-helper.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
+import {
+  createEmptyV4UserPromptOptimizationSurface,
+  type V4UserPromptOptimizationSurface,
+} from "./runtime-user-prompt-optimization.js"
 
 export const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 export const RUNTIME_CONTEXT_SENTINEL = "<!-- wunderkind:runtime-context-start -->"
@@ -39,6 +43,10 @@ export interface PromptOptimizationRuntimeTrimResult {
 export interface PromptOptimizationRuntimeEvaluation {
   readonly eligibleSections: readonly PromptOptimizationRuntimeSection[]
   readonly trimResult: PromptOptimizationRuntimeTrimResult
+}
+
+export interface PromptOptimizationSystemTransformEvaluation extends PromptOptimizationRuntimeEvaluation {
+  readonly v4UserPromptOptimizationSurface: V4UserPromptOptimizationSurface
 }
 
 export interface PromptOptimizationCompactionContextBuildResult extends PromptOptimizationRuntimeEvaluation {
@@ -345,13 +353,16 @@ export function applyWunderkindSystemTransform(options: {
   system: string[]
   wunderkindConfig: ReturnType<typeof readWunderkindConfig>
   cwd?: string
-}): PromptOptimizationRuntimeEvaluation {
+  v4UserPromptOptimizationSurface?: V4UserPromptOptimizationSurface
+}): PromptOptimizationSystemTransformEvaluation {
   const cwd = options.cwd ?? process.cwd()
   const existingSystemContent = options.system.join("")
   const hasDocsOutputSentinel = existingSystemContent.includes(DOCS_OUTPUT_SENTINEL)
   const hasRuntimeContextSentinel = existingSystemContent.includes(RUNTIME_CONTEXT_SENTINEL)
   const hasNativeAgentsSentinel = existingSystemContent.includes(NATIVE_AGENTS_SENTINEL)
   const wunderkindConfig = options.wunderkindConfig
+  const v4UserPromptOptimizationSurface =
+    options.v4UserPromptOptimizationSurface ?? createEmptyV4UserPromptOptimizationSurface()
   let docsOutputSection: string | null = null
   let runtimeContextSection: string | null = null
   let soulOverlaySection: string | null = null
@@ -495,6 +506,7 @@ Treat the resolved runtime context above as the source of truth for region, indu
     if (soulOverlaySection) options.system.push(soulOverlaySection)
     if (nativeAgentsSection) options.system.push(nativeAgentsSection)
     return {
+      v4UserPromptOptimizationSurface,
       eligibleSections,
       trimResult: createUntrimmedRuntimeResult(eligibleSections),
     }
@@ -520,6 +532,7 @@ Treat the resolved runtime context above as the source of truth for region, indu
   }
 
   return {
+    v4UserPromptOptimizationSurface,
     eligibleSections,
     trimResult,
   }

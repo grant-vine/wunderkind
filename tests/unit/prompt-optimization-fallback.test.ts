@@ -3,16 +3,23 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { buildPromptOptimizationRuntimePublicPayload } from "../../src/cli/prompt-optimization-runtime-public-payload.js"
 import { getPromptOptimizationRuntimeReportContract } from "../../src/cli/prompt-runtime-contract.js"
+import type { PromptOptimizationRuntimeReport } from "../../src/cli/prompt-optimization-runtime-reporting.js"
 import { getPromptOptimizationRuntimePublicModelId } from "../../src/cli/prompt-optimization-runtime-reporting.js"
 import { runTokenAudit } from "../../src/cli/token-audit.js"
 
-const PROJECT_ROOT = fileURLToPath(new URL("../../", import.meta.url))
-const CONFIG_MANAGER_MODULE_URL = new URL(
-  `../../src/cli/config-manager/index.ts?prompt-optimization-fallback=${Date.now()}`,
-  import.meta.url,
-).href
+const V4_PASSTHROUGH_REASONS = [
+  "v4-low-confidence-no-allowlist-match",
+  "v4-low-confidence-mixed-immutable-content",
+  "v4-safety-code-block",
+  "v4-safety-command-or-path",
+  "v4-safety-explicit-requirement",
+  "v4-safety-compliance-legal-security",
+  "v4-safety-quoted-user-text",
+] as const
 
+const PROJECT_ROOT = fileURLToPath(new URL("../../", import.meta.url))
 interface ReportingModeProbeResult {
   readonly offResultSuccess: boolean
   readonly offFileContainsReportingMode: boolean
@@ -35,61 +42,63 @@ async function runReportingModeProbe(testName: string): Promise<ReportingModePro
   const projectDir = join(rootDir, "project")
   const projectConfigPath = join(projectDir, ".wunderkind", "wunderkind.config.jsonc")
   const projectOpenCodePath = join(projectDir, "opencode.json")
-  const probeResultPath = join(rootDir, "probe-result.json")
 
   mkdirSync(homeDir, { recursive: true })
   mkdirSync(projectDir, { recursive: true })
   writeFileSync(projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
 
-  const script = `
-import { readFileSync, writeFileSync } from "node:fs"
+  try {
+    const configManager = await import(
+      `${PROJECT_ROOT}src/cli/config-manager/index.ts?prompt-optimization-fallback=${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    )
 
-const configManager = await import(${JSON.stringify(CONFIG_MANAGER_MODULE_URL)})
-configManager.__setConfigManagerPathOverrideForTests({
-  cwd: ${JSON.stringify(projectDir)},
-  home: ${JSON.stringify(homeDir)},
-})
+    configManager.__setConfigManagerPathOverrideForTests({
+      cwd: projectDir,
+      home: homeDir,
+    })
 
-try {
-  const offResult = configManager.writeProjectWunderkindConfig({
-    ...configManager.getDefaultProjectConfig(),
-    promptOptimizationReportingMode: "off",
-  })
-  const offFileContainsReportingMode = offResult.success
-    ? readFileSync(offResult.configPath, "utf8").includes('"promptOptimizationReportingMode"')
-    : false
+    try {
+      const offResult = configManager.writeProjectWunderkindConfig({
+        ...configManager.getDefaultProjectConfig(),
+        promptOptimizationReportingMode: "off",
+      })
+      const offFileContainsReportingMode = offResult.success
+        ? readFileSync(offResult.configPath, "utf8").includes('"promptOptimizationReportingMode"')
+        : false
 
-  const persistResult = configManager.writeProjectWunderkindConfig({
-    ...configManager.getDefaultProjectConfig(),
-    promptOptimizationReportingMode: "persist",
-  })
-  const persistRendered = persistResult.success
-    ? readFileSync(persistResult.configPath, "utf8")
-    : ""
-  const persistFileContainsPersist = persistResult.success
-    ? persistRendered.includes('"promptOptimizationReportingMode": "persist"')
-    : false
-  const persistFileMentionsRedactedRuntimeReports = persistResult.success
-    ? persistRendered.includes("sanitized/redacted latest-report artifacts or summaries")
-    : false
-  const persistFileMentionsAuditOnlyTokenAudit = persistResult.success
-    ? persistRendered.includes("audit-only token-audit surface")
-    : false
-  const persistedReadReportingMode = configManager.readProjectWunderkindConfig()?.promptOptimizationReportingMode ?? null
-  const persistedDetectedReportingMode = configManager.detectCurrentConfig().promptOptimizationReportingMode ?? null
+      const persistResult = configManager.writeProjectWunderkindConfig({
+        ...configManager.getDefaultProjectConfig(),
+        promptOptimizationReportingMode: "persist",
+      })
+      const persistRendered = persistResult.success ? readFileSync(persistResult.configPath, "utf8") : ""
+      const persistFileContainsPersist = persistResult.success
+        ? persistRendered.includes('"promptOptimizationReportingMode": "persist"')
+        : false
+      const persistFileMentionsRedactedRuntimeReports = persistResult.success
+        ? persistRendered.includes("sanitized/redacted latest-report artifacts or summaries")
+        : false
+      const persistFileMentionsAuditOnlyTokenAudit = persistResult.success
+        ? persistRendered.includes("audit-only token-audit surface")
+        : false
+      const persistedReadReportingMode =
+        configManager.readProjectWunderkindConfig()?.promptOptimizationReportingMode ?? null
+      const persistedDetectedReportingMode =
+        configManager.detectCurrentConfig().promptOptimizationReportingMode ?? null
 
-  const malformedWriterInput = JSON.parse(JSON.stringify({
-    ...configManager.getDefaultProjectConfig(),
-    promptOptimizationReportingMode: "loud",
-  }))
-  const malformedWriteResult = configManager.writeProjectWunderkindConfig(malformedWriterInput)
-  const malformedFileContainsLoud = persistResult.success
-    ? readFileSync(persistResult.configPath, "utf8").includes('"promptOptimizationReportingMode": "loud"')
-    : false
+      const malformedWriterInput = JSON.parse(
+        JSON.stringify({
+          ...configManager.getDefaultProjectConfig(),
+          promptOptimizationReportingMode: "loud",
+        }),
+      )
+      const malformedWriteResult = configManager.writeProjectWunderkindConfig(malformedWriterInput)
+      const malformedFileContainsLoud = persistResult.success
+        ? readFileSync(persistResult.configPath, "utf8").includes('"promptOptimizationReportingMode": "loud"')
+        : false
 
-  writeFileSync(
-    ${JSON.stringify(projectConfigPath)},
-    ${JSON.stringify(`{
+      writeFileSync(
+        projectConfigPath,
+        `{
   "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   "teamCulture": "pragmatic-balanced",
   "orgStructure": "flat",
@@ -103,48 +112,27 @@ try {
   "docsPath": "./docs",
   "docHistoryMode": "append-dated",
   "promptOptimizationReportingMode": "loud"
-}`)},
-  )
+}`,
+      )
 
-  writeFileSync(${JSON.stringify(probeResultPath)}, JSON.stringify({
-    offResultSuccess: offResult.success,
-    offFileContainsReportingMode,
-    persistResultSuccess: persistResult.success,
-    persistFileContainsPersist,
-    persistFileMentionsRedactedRuntimeReports,
-    persistFileMentionsAuditOnlyTokenAudit,
-    persistedReadReportingMode,
-    persistedDetectedReportingMode,
-    malformedWriteSuccess: malformedWriteResult.success,
-    malformedWriteError: malformedWriteResult.success ? null : malformedWriteResult.error ?? null,
-    malformedFileContainsLoud,
-    malformedReadReportingMode: configManager.readProjectWunderkindConfig()?.promptOptimizationReportingMode ?? null,
-    malformedDetectedReportingMode: configManager.detectCurrentConfig().promptOptimizationReportingMode ?? null,
-  }))
-} finally {
-  configManager.__resetConfigManagerPathOverrideForTests()
-}
-`
-
-  try {
-    const result = Bun.spawnSync(["bun", "-e", script], {
-      cwd: projectDir,
-      env: process.env,
-      stderr: "pipe",
-      stdout: "pipe",
-    })
-    const stdout = result.stdout.toString()
-    const stderr = result.stderr.toString()
-
-    if (result.exitCode !== 0) {
-      throw new Error(stderr || stdout || "config-manager probe failed")
+      return {
+        offResultSuccess: offResult.success,
+        offFileContainsReportingMode,
+        persistResultSuccess: persistResult.success,
+        persistFileContainsPersist,
+        persistFileMentionsRedactedRuntimeReports,
+        persistFileMentionsAuditOnlyTokenAudit,
+        persistedReadReportingMode,
+        persistedDetectedReportingMode,
+        malformedWriteSuccess: malformedWriteResult.success,
+        malformedWriteError: malformedWriteResult.success ? null : malformedWriteResult.error ?? null,
+        malformedFileContainsLoud,
+        malformedReadReportingMode: configManager.readProjectWunderkindConfig()?.promptOptimizationReportingMode ?? null,
+        malformedDetectedReportingMode: configManager.detectCurrentConfig().promptOptimizationReportingMode ?? null,
+      }
+    } finally {
+      configManager.__resetConfigManagerPathOverrideForTests()
     }
-
-    if (!Bun.file(probeResultPath).exists()) {
-      throw new Error(stderr || stdout || `config-manager probe did not write ${probeResultPath}`)
-    }
-
-    return JSON.parse(readFileSync(probeResultPath, "utf8")) as ReportingModeProbeResult
   } finally {
     rmSync(rootDir, { recursive: true, force: true })
   }
@@ -330,6 +318,37 @@ describe("prompt optimization fallback policy", () => {
     expect(getPromptOptimizationRuntimePublicModelId("abcdefgh.ijklmnop.qrstuvwx")).toBe("***")
     expect(getPromptOptimizationRuntimePublicModelId("https://user:pass@example.com/model")).toBe("***")
     expect(getPromptOptimizationRuntimePublicModelId("-----BEGIN TEST PRIVATE KEY-----")).toBe("***")
+  })
+
+  it("keeps every closed V4 passthrough reason on the runtime report only and out of summary metadata under every key", () => {
+    for (const reason of V4_PASSTHROUGH_REASONS) {
+      const report: PromptOptimizationRuntimeReport = {
+        hookPath: "experimental.chat.system.transform",
+        modelId: "gpt-4.1",
+        promptOptimizationMode: "active",
+        countState: "exact-local",
+        budgetBasis: "exact-openai-tokens",
+        budgetLimit: 120000,
+        trimBasis: "configured-bytes",
+        trimBudgetLimit: 1200,
+        eligibleSections: ["runtime-native-agents"],
+        beforeBytes: 1800,
+        afterBytes: 1800,
+        savedBytes: 0,
+        trimApplied: false,
+        trimExhausted: false,
+        trimmedSections: [],
+        noTrimReason: reason,
+        exactTokenDelta: null,
+      }
+
+      const payload = buildPromptOptimizationRuntimePublicPayload(report)
+
+      expect(payload.report.noTrimReason).toBe(reason)
+      expect(payload.summaryMetadata).not.toHaveProperty("noTrimReason")
+      expect(payload.summaryMetadata).not.toHaveProperty("passthroughReason")
+      expect(JSON.stringify(payload.summaryMetadata)).not.toContain(reason)
+    }
   })
 
   it("keeps reporting mode sparse by default, rejects malformed writer input, and excludes malformed persisted values from config detection", async () => {

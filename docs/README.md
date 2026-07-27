@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.5**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.24.0**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -30,9 +30,12 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit`, stays default-off, and does not add a public optimize command in this phase.
+- V4 safe user-prompt optimization is latest-user-message-only in enabled contexts. It excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content.
+- V4 preserves immutable content byte-exact, including code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples.
+- V4 fail-closes with whole-message passthrough for low-confidence or safety-risk cases, with passthrough reason visibility limited to runtime reports and not summary metadata guidance.
 - `promptOptimizationReportingMode` now documents the opt-in separate runtime-report surface (`off`, `persist`, `summary`), where sanitized/redacted latest-report artifacts or summaries back `system-transform.latest.json` and `session-compacting.latest.json`, and `doctor --verbose` exposes existence/status rather than claiming runtime savings.
-- This repo currently keeps a **project-local** prompt optimization override enabled: `active` mode, `summary` reporting, `120000` token budget, and `500000` byte budget. That is local repo state, not the published product default.
-- The latest local runtime reports currently show **no trim** at the configured `500000`-byte budget (`5920` bytes on system transform and `1679` bytes on session compaction before/after).
+- This repo currently keeps a **project-local** prompt optimization override enabled: `active` mode, `summary` reporting, `120000` token budget, and `1200` byte budget. That is local repo state for this explicitly enabled repo context, not the published product default.
+- `doctor --verbose` is the operator surface for current runtime-report posture and latest-artifact presence in this repo; that repo-local override must not be read as proof of a global always-on product posture.
 - The hard-cut migration release keeps `.omo/` as the only active artifact root, leaves `.sisyphus/` as manual migration history only, and keeps `wunderkind migrate` as a fail-hard guidance surface.
 - `/docs-index` is the managed docs refresh/bootstrap command and `init-deep` remains an upstream OMO workflow concept rather than a Wunderkind CLI subcommand.
 
@@ -43,7 +46,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docHistoryMode` remains `overwrite` for this repo.
 - Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.23.5` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.24.0` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 

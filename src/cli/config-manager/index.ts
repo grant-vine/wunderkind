@@ -1181,11 +1181,12 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     ``,
   )
 
-  if (!omitPromptOptimizationFields) {
-    lines.push(
-      `  // Supplementary prompt optimization engine settings`,
-      `  // promptOptimizationReportingMode controls sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface, not the audit-only token-audit surface`,
-    )
+    if (!omitPromptOptimizationFields) {
+      lines.push(
+        `  // Supplementary prompt optimization engine settings`,
+        `  // Omit these keys to keep the shipped product posture default-off; set them only for explicitly enabled project-local runtime contexts`,
+        `  // promptOptimizationReportingMode controls sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface, not the audit-only token-audit surface`,
+      )
 
     if (config.promptOptimizationEnabled !== undefined) {
       lines.push(`  "promptOptimizationEnabled": ${JSON.stringify(config.promptOptimizationEnabled)},`)

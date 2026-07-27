@@ -24,6 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.24.0
+
+Wunderkind `0.24.0` is a V4 safe user-prompt optimization release. It keeps `token-audit` audit-only and product-default-off prompt optimization intact while adding the conservative latest-user-message-only V4 path, measured runtime-report savings, and fail-closed passthrough coverage for risky or immutable user-authored content.
+
+- add V4 latest-user-message-only prompt optimization with immutable byte-exact exclusions and whole-message passthrough for low-confidence or safety-risk cases
+- keep passthrough reason visibility on the separate runtime-report surface only, never in summary metadata or `token-audit`
+- extend fixtures, runtime evidence helpers, doctor/help/docs wording, and regression coverage around the new V4 boundary while preserving the audit-only `token-audit` contract
+
 ## What's new in 0.23.8
 
 Wunderkind `0.23.8` is a PATH-supportability patch. It keeps the bunx-first operator story intact while making direct `wunderkind ...` invocation explicitly diagnosable across help text, install messaging, `doctor`, and README guidance.
@@ -326,6 +334,9 @@ bunx @grant-vine/wunderkind token-audit --surface commands --format json
 - `persist` keeps sanitized/redacted latest-report artifacts or summaries on that separate runtime-report surface at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - the separate prompt-optimization runtime-report surface is scalar-first: every current emitted public field is safe scalar/enum/id except `modelId`, which is the only unconstrained public string carrier in the frozen V3 contract
 - V3 freezes omission-before-mask precedence for that runtime-report surface: keep fields omitted or scalar-only when possible, preserve ordinary safe-literal `modelId` values, and replace a secret-bearing public `modelId` with `***` when it matches the frozen rule set (`sk-`, `ghp_`, `github_pat_`, `xoxb-`, `xoxp-`, `Bearer `, JWT-shape, credentialed URL authority, or PEM/private-key sentinels)
+- V4 safe user-prompt optimization, when enabled by config, is latest-user-message-only; retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content are excluded
+- V4 preserves immutable content byte-exact: code blocks, URLs, file paths, commands, explicit constraints and requirements, compliance/legal/security wording, and quoted user text or examples
+- V4 fails closed with whole-message passthrough for low-confidence or safety-risk cases; passthrough reason codes are visible only on the runtime-report path and are not summary metadata guidance
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -333,7 +344,7 @@ This is intentionally separate from `wunderkind migrate`. `migrate` remains lega
 
 ### Supplementary prompt optimization
 
-The prompt-optimization engine is a separate, config-driven runtime surface. It is intentionally supplementary to `wunderkind token-audit`, remains default-off, and does not introduce a public `optimize` command.
+The prompt-optimization engine is a separate, config-driven runtime surface. It is intentionally supplementary to `wunderkind token-audit`, remains product-default-off, and does not introduce a public `optimize` command.
 
 - `off` disables runtime trimming.
 - `advisory` measures budget pressure and emits reports without mutating the live prompt.
@@ -341,6 +352,9 @@ The prompt-optimization engine is a separate, config-driven runtime surface. It 
 - reporting modes are `off`, `persist`, and `summary`
 - `persist` and `summary` write sanitized latest-report artifacts to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - `summary` also emits sanitized summary metadata, while `doctor --verbose` stays conservative and reports posture plus artifact existence rather than claiming runtime savings
+- V4 safe latest-user-message-only optimization is available only in enabled contexts and never rewrites retained history, earlier user messages, SOUL overlays, or transcript-wide compaction content
+- V4 may optimize only allowlisted ordinary natural-language filler or repetitive prose outside immutable spans; immutable spans stay byte-exact
+- V4 passthrough reasons are runtime-report-only, not summary metadata, and risky messages pass through as a whole unchanged
 
 Supported counting/report behavior in this release:
 
@@ -356,10 +370,11 @@ What can trim and what is preserved:
 - `runtime-context` is preserved and is not replaced with an empty stub when over budget
 - the compaction hook collapses to the continuity floor text `Compaction continuity preserved. Earlier compaction context was removed only for byte budget.` when byte pressure requires it
 - project-local SOUL overlays are intentionally outside this trim set and still flow through separately
+- the latest user-authored message is the only user-authored content eligible for V4 optimization, and only when prompt optimization is enabled for that context
 
 Measured repo-backed examples:
 
-- the current project-local latest reports in this repo show no trim at the configured `500000`-byte budget: `system-transform.latest.json` records `5920` bytes before and after, and `session-compacting.latest.json` records `1679` bytes before and after
+- this repo's current project-local override is configured with a `1200`-byte budget; latest runtime reports remain local posture evidence only and `doctor --verbose` reports artifact existence rather than claiming proven savings
 - the frozen `1200`-byte active fixture used in unit coverage trims the combined runtime fixture from `6606` bytes to `1116` bytes (`savedBytes: 5490`) and trims `runtime-native-agents` plus `runtime-docs-output`
 - the exact-local `gpt-4.1` runtime-report path is also test-covered: the same `1200`-byte trim stays byte-budget-driven while emitting supplemental exact token deltas for the saved prompt size
 
@@ -710,11 +725,14 @@ Edit the global file to change region/industry/regulation defaults after install
 }
 ```
 
-Prompt optimization is intentionally supplementary in this release. It is **default-off**, never replaces `wunderkind token-audit`, and does not introduce a new public optimize command.
+Prompt optimization is intentionally supplementary in this release. It is **product-default-off**, never replaces `wunderkind token-audit`, and does not introduce a new public optimize command.
 
 - `off` keeps runtime trimming disabled and should usually be represented by omitting the optimization keys entirely.
 - `advisory` computes/report budgets without mutating the live prompt.
 - `active` allows bounded runtime trimming of the supported runtime sections only.
+- V4 extends enabled contexts with safe latest-user-message optimization only. It excludes retained history, earlier user-authored messages, SOUL overlays, and transcript-wide compaction content.
+- V4 preserves code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples byte-exact.
+- V4 fail-closes with whole-message passthrough when immutable or low-confidence safety rules require it. Passthrough reason codes stay on runtime reports only and must not be treated as summary metadata guidance.
 - `promptOptimizationReportingMode` accepts `off`, `persist`, and `summary` on the separate runtime-report surface.
 - `persist` writes sanitized/redacted latest-report artifacts or summaries to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
 - that runtime-report surface uses the frozen V3 scalar-first public contract: every current emitted field is safe scalar/enum/id except `modelId`, and secret-bearing `modelId` values must surface as `***` rather than cleartext when the public payload is emitted.

@@ -6,6 +6,7 @@ import {
   getRuntimeSectionGroup,
 } from "../../src/cli/prompt-runtime-fixtures.js"
 import { getPromptRuntimeContract } from "../../src/cli/prompt-surface-audit.js"
+import { buildV4UserPromptOptimizationSurface } from "../../src/runtime-user-prompt-optimization.js"
 
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
 const SOUL_BOUNDARY_HELPER_PATH = new URL("./helpers/run-runtime-soul-boundary-fixture.mjs", import.meta.url)
@@ -154,6 +155,40 @@ describe("prompt optimization overlay guard", () => {
     expect(typeof parsed.savedBytes).toBe("number")
     expect(parsed.beforeBytes).toBeGreaterThan(parsed.afterBytes ?? Number.POSITIVE_INFINITY)
     expect(parsed.savedBytes).toBe((parsed.beforeBytes ?? 0) - (parsed.afterBytes ?? 0))
+  })
+
+  it("keeps runtime-owned sections, compaction context, and soul overlays outside the V4 latest-user seam", () => {
+    const fixture = captureCanonicalRuntimeFixture("fixture-runtime-soul-overlay")
+    const runtimeOwnedTrimSurfaces = collectPromptOptimizationEligibleSections(fixture).map(
+      (section) => section.content,
+    )
+    const soulOverlays = fixture.sections.filter((section) => getRuntimeSectionGroup(section) === "runtime-soul-overlay")
+    const surface = buildV4UserPromptOptimizationSurface({
+      messages: [
+        { role: "user", content: "Earlier user history should stay excluded" },
+        { role: "assistant", content: "Assistant acknowledgement" },
+        { role: "user", content: "Latest user seam candidate" },
+      ],
+      retainedHistory: ["Retained history block"],
+      transcriptWideCompaction: fixture.compactionContext,
+      soulOverlays,
+      runtimeOwnedTrimSurfaces,
+    })
+
+    expect(surface.latestUserMessage).toBe("Latest user seam candidate")
+    expect(surface.earlierUserMessages).toEqual(["Earlier user history should stay excluded"])
+    expect(surface.retainedHistory).toEqual(["Retained history block"])
+    expect(surface.transcriptWideCompaction.join("\n")).toContain(
+      "Preserve every active background task id",
+    )
+    expect(surface.soulOverlays.join("\n")).toContain("## Wunderkind SOUL Overlay")
+    expect(surface.runtimeOwnedTrimSurfaces.join("\n")).toContain("## Wunderkind Resolved Runtime Context")
+    expect(surface.runtimeOwnedTrimSurfaces.join("\n")).not.toContain(
+      "Latest user seam candidate",
+    )
+    expect(surface.latestUserMessage).not.toContain("Preserve every active background task id")
+    expect(surface.latestUserMessage).not.toContain("## Wunderkind SOUL Overlay")
+    expect(surface.latestUserMessage).not.toContain("## Wunderkind Resolved Runtime Context")
   })
 
   it("keeps soul-overlay advisory helper output deterministic when parent env leaks runtime-report vars", () => {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.24.0
+
+- add V4 safe user-prompt optimization for enabled contexts, limited to the latest user-authored message with immutable byte-exact exclusions and whole-message fail-closed passthrough
+- add measured runtime-report savings, dedicated V4 fixture helpers, and final regression/manual QA coverage while preserving audit-only `token-audit` and no public optimize command
+- refresh README, docs, CLI help, doctor, and maintainer context around the product-default-off V4 boundary and this repo's local `1200`-byte posture
+
 ## 0.23.8
 
 - add PATH-supportability diagnostics so `doctor`, installer messaging, and CLI help report whether direct `wunderkind` invocation is currently available

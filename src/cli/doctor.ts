@@ -426,7 +426,21 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("prompt optimization enabled:", status(promptOptimizationEnabled))
       line("prompt optimization mode:", color.cyan(promptOptimizationMode))
       line("prompt optimization reporting mode:", color.cyan(promptOptimizationReportingMode))
-      line("prompt optimization engine:", color.dim("supplementary, config-driven, and separate from token-audit"))
+      line("prompt optimization engine:", color.dim("supplementary, product-default-off, config-driven, and separate from token-audit"))
+      line(
+        "V4 user prompt boundary:",
+        color.dim(
+          "enabled-context only; latest-user-message-only; excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content",
+        ),
+      )
+      line(
+        "V4 immutable exclusions:",
+        color.dim("code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text remain byte-exact"),
+      )
+      line(
+        "V4 passthrough reasons:",
+        color.dim("whole-message passthrough on safety risk or low confidence; reason visibility is runtime-report-only, not summary metadata guidance"),
+      )
       line(
         "prompt optimization runtime reporting:",
         color.dim(
@@ -479,7 +493,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("workflow sync command:", color.dim("bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]"))
       line("team bootstrap command:", color.dim("bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"))
       line("token audit command:", color.dim("bunx @grant-vine/wunderkind token-audit --surface agents --format table"))
-      line("token audit contract:", color.dim("audit-only; no live prompt packing; no model-token truth claims"))
+      line("token audit contract:", color.dim("audit-only; no live prompt packing; no model-token truth claims; no OpenToken dependency"))
       line(
         "github workflow state dir:",
         `${color.dim(workflowStateDir)} ${color.dim(`(${workflowStateCount} tracked workflow${workflowStateCount === 1 ? "" : "s"})`)}`,

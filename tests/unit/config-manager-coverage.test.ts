@@ -334,6 +334,10 @@ describe("config-manager coverage", () => {
         }).success,
       ).toBe(true)
 
+      const writtenProjectConfig = readFileSync(sandbox.projectConfigPath, "utf-8")
+      expect(writtenProjectConfig).toContain("shipped product posture default-off")
+      expect(writtenProjectConfig).toContain("explicitly enabled project-local runtime contexts")
+
       const merged = mod.readWunderkindConfig()
       expect(merged?.promptOptimizationMode).toBe("advisory")
       expect(merged?.promptOptimizationTokenBudget).toBe(4096)
@@ -368,6 +372,19 @@ describe("config-manager coverage", () => {
       const disabledDetected = mod.detectCurrentConfig()
       expect(disabledDetected.promptOptimizationEnabled).toBe(false)
       expect(disabledDetected.promptOptimizationMode).toBe("off")
+    })
+  })
+
+  it("keeps detected prompt optimization default-off when no repo-local override exists", async () => {
+    await withSandbox("prompt-optimization-default-off", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+
+      const detected = mod.detectCurrentConfig()
+      expect(detected.promptOptimizationEnabled).toBe(false)
+      expect(detected.promptOptimizationMode).toBe("off")
+      expect(detected).not.toHaveProperty("promptOptimizationReportingMode")
+      expect(detected).not.toHaveProperty("promptOptimizationTokenBudget")
+      expect(detected).not.toHaveProperty("promptOptimizationByteBudget")
     })
   })
 
@@ -446,7 +463,7 @@ describe("config-manager coverage", () => {
           if (command === "wunderkind" && args[0] === "--version") {
             return {
               status: 0,
-              stdout: "0.23.8\n",
+              stdout: "0.24.0\n",
               stderr: "",
             }
           }

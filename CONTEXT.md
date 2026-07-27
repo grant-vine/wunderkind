@@ -26,6 +26,7 @@ This repository is the source for **Wunderkind**, an OpenCode/oh-my-openagent pl
 - **Native assets**: generated or shipped agent, command, and skill files installed into OpenCode-recognized directories.
 - **Docs-with-grill**: the Wunderkind-native repo-aware docs grilling skill adapted from Matt Pocock's `grill-with-docs` idea.
 - **Prompt optimization runtime report**: the separate, supplementary reporting surface for live prompt optimization behavior; distinct from the audit-only `token-audit` command.
+- **V4 safe latest-user-message optimization**: an enabled-context-only prompt optimization path that may touch only the latest user-authored message, preserves immutable content byte-exact, and fail-closes with whole-message passthrough.
 
 ## Important constraints
 - Wunderkind must remain a **zero-daemon synchronous overlay**; no scheduler, no queue, no MCP lifecycle ownership.
@@ -33,11 +34,13 @@ This repository is the source for **Wunderkind**, an OpenCode/oh-my-openagent pl
 - Generated `agents/*.md` are build artifacts; `skills/` are source.
 - Docs output must stay project-local and respect the configured docs path/history mode.
 - The public product contract keeps prompt optimization **supplementary and default-off**; this repo's active/summary optimization settings are a local project override, not a product default.
+- `token-audit` remains audit-only with no live prompt packing, no model-token truth claims, no OpenToken dependency, and no public optimize command.
+- V4 excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content. Its passthrough reasons are runtime-report-only and not summary metadata guidance.
 - Current resolved runtime context for this repo: region `Project Region`, industry `SaaS`, primary regulation `POPIA`, team culture `pragmatic-balanced`, org structure `flat`.
 
 ## Current repo-local operational posture
 - Docs output is enabled at `./docs` with `docHistoryMode: overwrite`.
-- The project-local prompt optimization override is enabled with `promptOptimizationMode: active`, `promptOptimizationReportingMode: summary`, `promptOptimizationTokenBudget: 120000`, and `promptOptimizationByteBudget: 500000`.
+- The project-local prompt optimization override is enabled with `promptOptimizationMode: active`, `promptOptimizationReportingMode: summary`, `promptOptimizationTokenBudget: 120000`, and `promptOptimizationByteBudget: 1200`.
 - Current latest-only runtime-report artifacts live at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
 
 ## Open questions

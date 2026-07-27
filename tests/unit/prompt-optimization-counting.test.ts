@@ -5,10 +5,24 @@ import {
 } from "../../src/cli/prompt-runtime-fixtures.js"
 import {
   OPENAI_EXACT_LOCAL_MODEL_IDS,
+  buildPromptOptimizationRuntimeReport,
   countPromptOptimizationTokens,
 } from "../../src/cli/prompt-optimization-runtime-reporting.js"
+import type { PromptOptimizationRuntimeTrimResult } from "../../src/runtime-prompt-sections.js"
 
 const FROZEN_EXACT_LOCAL_MODEL_IDS = ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"] as const
+
+const EMPTY_TRIM_RESULT: PromptOptimizationRuntimeTrimResult = {
+  sections: [],
+  trimBasis: "configured-bytes",
+  eligibleSections: [],
+  beforeBytes: 0,
+  afterBytes: 0,
+  savedBytes: 0,
+  trimApplied: false,
+  trimExhausted: false,
+  trimmedSections: [],
+}
 
 describe("prompt optimization token counting", () => {
   it("keeps the frozen supported OpenAI model map in the runtime-reporting seam as the single exact-local source of truth", () => {
@@ -52,5 +66,79 @@ describe("prompt optimization token counting", () => {
       countState: "unsupported",
       tokenCount: null,
     })
+  })
+
+  it("reports measured V4 byte savings for unsupported models without fabricating exact token deltas", () => {
+    const report = buildPromptOptimizationRuntimeReport({
+      hookPath: "experimental.chat.system.transform",
+      modelId: "claude-3-5-sonnet",
+      promptOptimizationMode: "active",
+      content: "",
+      trimResult: EMPTY_TRIM_RESULT,
+      promptOptimizationByteBudget: 120000,
+      v4UserPromptOptimizationMeasurement: {
+        beforeMessage:
+          "Please keep the diagnosis short and actionable. Please keep the diagnosis short and actionable.\n",
+        afterMessage: "Please keep the diagnosis short and actionable.\n",
+        beforeBytes: 89,
+        afterBytes: 45,
+        savedBytes: 44,
+        trimApplied: true,
+      },
+    })
+
+    expect(report.beforeBytes).toBe(89)
+    expect(report.afterBytes).toBe(45)
+    expect(report.savedBytes).toBe(44)
+    expect(report.trimApplied).toBe(true)
+    expect(report.exactTokenDelta).toBe(null)
+  })
+
+  it("does not fabricate V4 savings for passthrough or no-op measurements", () => {
+    const passthroughReport = buildPromptOptimizationRuntimeReport({
+      hookPath: "experimental.chat.system.transform",
+      modelId: "gpt-4.1",
+      promptOptimizationMode: "active",
+      content: "",
+      trimResult: EMPTY_TRIM_RESULT,
+      promptOptimizationByteBudget: 120000,
+      v4PassthroughReason: "v4-safety-command-or-path",
+      v4UserPromptOptimizationMeasurement: {
+        beforeMessage: "$ bun test tests/unit/plugin-transform.test.ts\n",
+        afterMessage: "$ bun test tests/unit/plugin-transform.test.ts\n",
+        beforeBytes: 45,
+        afterBytes: 45,
+        savedBytes: 0,
+        trimApplied: false,
+      },
+    })
+    const noOpReport = buildPromptOptimizationRuntimeReport({
+      hookPath: "experimental.chat.system.transform",
+      modelId: "gpt-4.1",
+      promptOptimizationMode: "active",
+      content: "",
+      trimResult: EMPTY_TRIM_RESULT,
+      promptOptimizationByteBudget: 120000,
+      v4UserPromptOptimizationMeasurement: {
+        beforeMessage: "Please keep the diagnosis short and useful.\n",
+        afterMessage: "Please keep the diagnosis short and useful.\n",
+        beforeBytes: 44,
+        afterBytes: 44,
+        savedBytes: 0,
+        trimApplied: false,
+      },
+    })
+
+    expect(passthroughReport.savedBytes).toBe(0)
+    expect(passthroughReport.beforeBytes).toBe(passthroughReport.afterBytes)
+    expect(passthroughReport.trimApplied).toBe(false)
+    expect(passthroughReport.noTrimReason).toBe("v4-safety-command-or-path")
+    expect(passthroughReport.exactTokenDelta?.savedTokens ?? 0).toBe(0)
+
+    expect(noOpReport.savedBytes).toBe(0)
+    expect(noOpReport.beforeBytes).toBe(noOpReport.afterBytes)
+    expect(noOpReport.trimApplied).toBe(false)
+    expect(noOpReport.noTrimReason).toBe("within-trim-budget")
+    expect(noOpReport.exactTokenDelta?.savedTokens ?? 0).toBe(0)
   })
 })

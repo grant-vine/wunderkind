@@ -11,6 +11,7 @@ import {
   buildPromptOptimizationRuntimeReport,
   measurePromptOptimizationBudgetPressure,
 } from "../../src/cli/prompt-optimization-runtime-reporting.js"
+import { analyzeV4UserPromptMutability } from "../../src/runtime-user-prompt-optimization.js"
 
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
 const DUMP_HELPER_PATH = new URL("./helpers/dump-runtime-fixtures.mjs", import.meta.url)
@@ -112,6 +113,37 @@ function expectSummaryMetadataToMatchReportProjection(payload: HelperRuntimePubl
 }
 
 describe("prompt optimization advisory", () => {
+  it("keeps mutability positive-allowlist-only instead of treating everything else as mutable", () => {
+    const analysis = analyzeV4UserPromptMutability([
+      "Please summarize the debugging approach clearly.\n",
+      "alpha + beta => gamma\n",
+      "Repeat the final diagnosis clearly. Repeat the final diagnosis clearly.",
+    ].join(""))
+
+    expect(analysis.segments.map((segment) => ({ kind: segment.kind, ruleId: segment.ruleId, text: segment.text.trimEnd() }))).toEqual([
+      {
+        kind: "mutable-allowlist",
+        ruleId: "allowlist-plain-natural-language-filler",
+        text: "Please summarize the debugging approach clearly.",
+      },
+      {
+        kind: "immutable-unclassified",
+        ruleId: null,
+        text: "alpha + beta => gamma",
+      },
+      {
+        kind: "mutable-allowlist",
+        ruleId: "allowlist-repetitive-natural-language-prose",
+        text: "Repeat the final diagnosis clearly. Repeat the final diagnosis clearly.",
+      },
+    ])
+    expect(analysis.reconstructedMessage).toBe([
+      "Please summarize the debugging approach clearly.\n",
+      "alpha + beta => gamma\n",
+      "Repeat the final diagnosis clearly. Repeat the final diagnosis clearly.",
+    ].join(""))
+  })
+
   it("reports exact-openai-tokens budget pressure without mutating the eligible prompt surfaces", () => {
     // Given
     const fixture = captureCanonicalRuntimeFixture("fixture-runtime-context")

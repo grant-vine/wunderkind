@@ -10,6 +10,10 @@ import {
   PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
 } from "../../src/cli/prompt-optimization-runtime-public-payload.js"
 import type { PromptOptimizationRuntimeReport } from "../../src/cli/prompt-optimization-runtime-reporting.js"
+import {
+  analyzeV4UserPromptMutability,
+  buildV4UserPromptOptimizationSurface,
+} from "../../src/runtime-user-prompt-optimization.js"
 
 type RealConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
 
@@ -957,6 +961,283 @@ describe("Wunderkind plugin transform", () => {
     expect(helperRun.stdout.trim()).toBe(
       '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"configured-bytes","trimBasis":"configured-bytes","eligibleSections":["runtime-docs-output","runtime-context","runtime-native-agents","compaction-continuity"],"beforeBytes":6606,"afterBytes":1116,"savedBytes":5490,"trimApplied":true,"trimExhausted":false,"trimmedSections":["runtime-native-agents","runtime-docs-output"]}',
     )
+  })
+
+  it("isolates only the latest user-authored message for the V4 optimization surface", () => {
+    const surface = buildV4UserPromptOptimizationSurface({
+      messages: [
+        { role: "system", content: "runtime-owned instructions stay elsewhere" },
+        { role: "user", content: "Earlier user requirement" },
+        { role: "assistant", content: "Assistant reply" },
+        { role: "user", content: "Most recent user request" },
+      ],
+      retainedHistory: ["Retained history summary"],
+      transcriptWideCompaction: ["Compaction continuity preserved. Earlier compaction context was removed only for byte budget."],
+      soulOverlays: ["## Wunderkind SOUL Overlay\nProject-local persona guidance"],
+      runtimeOwnedTrimSurfaces: ["## Documentation Output\nRuntime-managed docs lane"],
+    })
+
+    expect(surface.target).toBe("latest-user-message-only")
+    expect(surface.latestUserMessage).toBe("Most recent user request")
+    expect(surface.earlierUserMessages).toEqual(["Earlier user requirement"])
+    expect(surface.combinedUserHistory).toBe("Earlier user requirement\n\nMost recent user request")
+    expect(surface.retainedHistory).toEqual(["Retained history summary"])
+    expect(surface.transcriptWideCompaction).toEqual([
+      "Compaction continuity preserved. Earlier compaction context was removed only for byte budget.",
+    ])
+    expect(surface.soulOverlays).toEqual([
+      "## Wunderkind SOUL Overlay\nProject-local persona guidance",
+    ])
+    expect(surface.runtimeOwnedTrimSurfaces).toEqual([
+      "## Documentation Output\nRuntime-managed docs lane",
+    ])
+    expect(surface.excludedSurfaceIds).toEqual([
+      "earlier-user-messages",
+      "retained-history",
+      "transcript-wide-compaction",
+      "soul-overlays",
+      "runtime-owned-trim-surfaces",
+    ])
+  })
+
+  it("preserves immutable mixed-content spans byte-exact while only allowlisted prose is eligible", () => {
+    const mixedPrompt = [
+      "Please keep the response concise and focused on the actual bug.\n",
+      "Repeat the main diagnosis clearly. Repeat the main diagnosis clearly.\n",
+      "MUST NOT change the current byte budget.\n",
+      "$ bun test\n",
+      "See https://example.com/spec for reference.\n",
+      "Path: src/runtime-user-prompt-optimization.ts\n",
+      "POPIA and OWASP wording stays byte-exact for security review.\n",
+      'Quoted user example: "only mutate the plain-language summary".\n',
+      "```ts\nconsole.log(\"leave this code untouched\")\n```",
+    ].join("")
+
+    const analysis = analyzeV4UserPromptMutability(mixedPrompt)
+    const immutableSegments = analysis.segments.filter((segment) => segment.kind === "immutable")
+    const eligibleSegments = analysis.segments.filter((segment) => segment.kind === "mutable-allowlist")
+
+    expect(analysis.reconstructedMessage).toBe(mixedPrompt)
+    expect(immutableSegments.map((segment) => segment.ruleId)).toEqual([
+      "immutable-explicit-requirement",
+      "immutable-command",
+      "immutable-url",
+      "immutable-file-path",
+      "immutable-compliance-legal-security",
+      "immutable-quoted-user-text",
+      "immutable-code-block",
+    ])
+    expect(immutableSegments.map((segment) => segment.text.trimEnd())).toEqual([
+      "MUST NOT change the current byte budget.",
+      "$ bun test",
+      "See https://example.com/spec for reference.",
+      "Path: src/runtime-user-prompt-optimization.ts",
+      "POPIA and OWASP wording stays byte-exact for security review.",
+      'Quoted user example: "only mutate the plain-language summary".',
+      "```ts\nconsole.log(\"leave this code untouched\")\n```",
+    ])
+    expect(eligibleSegments.map((segment) => ({ ruleId: segment.ruleId, text: segment.text.trimEnd() }))).toEqual([
+      {
+        ruleId: "allowlist-plain-natural-language-filler",
+        text: "Please keep the response concise and focused on the actual bug.",
+      },
+      {
+        ruleId: "allowlist-repetitive-natural-language-prose",
+        text: "Repeat the main diagnosis clearly. Repeat the main diagnosis clearly.",
+      },
+    ])
+    expect(analysis.segments.every((segment) => {
+      if (segment.kind !== "mutable-allowlist") {
+        return true
+      }
+
+      return segment.ruleId === "allowlist-plain-natural-language-filler"
+        || segment.ruleId === "allowlist-repetitive-natural-language-prose"
+    })).toBe(true)
+  })
+
+  it("fail-closes risky and low-confidence V4 latest-user-message cases without leaking raw prompt text into runtime artifacts", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-v4-passthrough-${Date.now()}`)
+    const runtimeReportDir = join(tempDir, ".wunderkind", "runtime", "prompt-optimization")
+    const systemReportPath = join(runtimeReportDir, "system-transform.latest.json")
+    const summaryEvents: TestMetadataEvent[] = []
+    const riskyPrompt = [
+      "Please keep the diagnosis short and useful.\n",
+      "$ bun test tests/unit/plugin-transform.test.ts\n",
+      "RISKY_USER_SENTINEL sk-live-task-5-user-secret should never appear in persisted artifacts.\n",
+    ].join("")
+    const lowConfidencePrompt = "fragment only\n"
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationTokenBudget: 120000,
+          promptOptimizationByteBudget: 120000,
+          promptOptimizationReportingMode: "summary",
+        }),
+      )
+
+      const riskySurface = buildV4UserPromptOptimizationSurface({
+        messages: [{ role: "user", content: riskyPrompt }],
+      })
+      const lowConfidenceSurface = buildV4UserPromptOptimizationSurface({
+        messages: [{ role: "user", content: lowConfidencePrompt }],
+      })
+
+      expect(riskySurface.latestUserMessage).toBe(riskyPrompt)
+      expect(riskySurface.latestUserMessageAnalysis?.reconstructedMessage).toBe(riskyPrompt)
+      expect(Reflect.get(riskySurface, "latestUserMessagePassthroughReason")).toBe(
+        "v4-safety-command-or-path",
+      )
+
+      expect(lowConfidenceSurface.latestUserMessage).toBe(lowConfidencePrompt)
+      expect(lowConfidenceSurface.latestUserMessageAnalysis?.reconstructedMessage).toBe(lowConfidencePrompt)
+      expect(Reflect.get(lowConfidenceSurface, "latestUserMessagePassthroughReason")).toBe(
+        "v4-low-confidence-no-allowlist-match",
+      )
+
+      await cachedTransform!(
+        {
+          modelId: "gpt-4.1",
+          model: "gpt-4.1",
+          messages: [{ role: "user", content: riskyPrompt }],
+        },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      const riskyReport = readRuntimeReport(systemReportPath)
+      const riskyPublicPayload = buildPromptOptimizationRuntimePublicPayload(riskyReport)
+      const riskyPersistedJson = readFileSync(systemReportPath, "utf-8")
+      const riskySummaryJson = JSON.stringify(summaryEvents)
+
+      expect(riskyReport.noTrimReason).toBe("v4-safety-command-or-path")
+      expect(riskyReport.trimApplied).toBe(false)
+      expect(riskyReport.beforeBytes).toBe(riskyReport.afterBytes)
+      expect(riskyReport.savedBytes).toBe(0)
+      expect(riskyReport.exactTokenDelta?.savedTokens ?? 0).toBe(0)
+      expect(summaryEvents).toEqual([
+        {
+          title: "Prompt optimization summary",
+          metadata: riskyPublicPayload.summaryMetadata,
+        },
+      ])
+      expect(riskyPublicPayload.summaryMetadata).not.toHaveProperty("noTrimReason")
+      expect(riskyPublicPayload.summaryMetadata).not.toHaveProperty("passthroughReason")
+      expect(riskyPersistedJson).not.toContain("RISKY_USER_SENTINEL")
+      expect(riskyPersistedJson).not.toContain("sk-live-task-5-user-secret")
+      expect(riskySummaryJson).not.toContain("RISKY_USER_SENTINEL")
+      expect(riskySummaryJson).not.toContain("sk-live-task-5-user-secret")
+
+      summaryEvents.length = 0
+
+      await cachedTransform!(
+        {
+          modelId: "gpt-4.1",
+          model: "gpt-4.1",
+          messages: [{ role: "user", content: lowConfidencePrompt }],
+        },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      const lowConfidenceReport = readRuntimeReport(systemReportPath)
+      const lowConfidencePublicPayload = buildPromptOptimizationRuntimePublicPayload(lowConfidenceReport)
+
+      expect(lowConfidenceReport.noTrimReason).toBe("v4-low-confidence-no-allowlist-match")
+      expect(lowConfidenceReport.trimApplied).toBe(false)
+      expect(lowConfidenceReport.beforeBytes).toBe(lowConfidenceReport.afterBytes)
+      expect(lowConfidenceReport.savedBytes).toBe(0)
+      expect(lowConfidenceReport.exactTokenDelta?.savedTokens ?? 0).toBe(0)
+      expect(summaryEvents).toEqual([
+        {
+          title: "Prompt optimization summary",
+          metadata: lowConfidencePublicPayload.summaryMetadata,
+        },
+      ])
+      expect(lowConfidencePublicPayload.summaryMetadata).not.toHaveProperty("noTrimReason")
+      expect(lowConfidencePublicPayload.summaryMetadata).not.toHaveProperty("passthroughReason")
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("optimizes the latest safe user-authored message in active contexts and reports measured savings without persisting raw text", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-v4-safe-optimization-${Date.now()}`)
+    const runtimeReportPath = join(
+      tempDir,
+      ".wunderkind",
+      "runtime",
+      "prompt-optimization",
+      "system-transform.latest.json",
+    )
+    const summaryEvents: TestMetadataEvent[] = []
+    const safePrompt = [
+      "Please keep the diagnosis short and actionable for SAFEUSERSENTINEL. ",
+      "Please keep the diagnosis short and actionable for SAFEUSERSENTINEL.\n",
+    ].join("")
+    const optimizedPrompt = "Please keep the diagnosis short and actionable for SAFEUSERSENTINEL.\n"
+    const input = {
+      modelId: "gpt-4.1",
+      model: "gpt-4.1",
+      messages: [{ role: "user", content: safePrompt }],
+    }
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationTokenBudget: 120000,
+          promptOptimizationByteBudget: 120000,
+          promptOptimizationReportingMode: "summary",
+        }),
+      )
+
+      await cachedTransform!(input, {
+        system: [],
+        metadata: (event) => summaryEvents.push(event),
+      })
+
+      const latestMessage = input.messages[0]
+      if (!latestMessage) {
+        throw new Error("Expected latest user message fixture")
+      }
+
+      expect(latestMessage.content).toBe(optimizedPrompt)
+
+      const persistedReport = readRuntimeReport(runtimeReportPath)
+      const publicPayload = buildPromptOptimizationRuntimePublicPayload(persistedReport)
+      const persistedJson = readFileSync(runtimeReportPath, "utf-8")
+      const summaryJson = JSON.stringify(summaryEvents)
+
+      expect(persistedReport.noTrimReason).toBe(null)
+      expect(persistedReport.trimApplied).toBe(true)
+      expect(persistedReport.beforeBytes).toBeGreaterThan(persistedReport.afterBytes)
+      expect(persistedReport.savedBytes).toBeGreaterThan(0)
+      expect(persistedReport.exactTokenDelta).not.toBe(null)
+      expect(persistedReport.exactTokenDelta?.savedTokens).toBeGreaterThan(0)
+      expect(summaryEvents).toEqual([
+        {
+          title: "Prompt optimization summary",
+          metadata: publicPayload.summaryMetadata,
+        },
+      ])
+      expect(persistedJson).not.toContain(safePrompt.trim())
+      expect(persistedJson).not.toContain(optimizedPrompt.trim())
+      expect(summaryJson).not.toContain(safePrompt.trim())
+      expect(summaryJson).not.toContain(optimizedPrompt.trim())
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
   })
 
   it("denies shell-based file mutation for non-fullstack retained agents", async () => {

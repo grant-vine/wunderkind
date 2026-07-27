@@ -141,6 +141,7 @@ describe("design-md command asset", () => {
 
     expect(tokenAuditBody).toContain("agent: fullstack-wunderkind")
     expect(tokenAuditBody).toContain("name: token-audit")
+    expect(tokenAuditBody).toContain("audit-only, read-only prompt-surface measurement")
     expect(tokenAuditBody).toContain("`bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]`")
     expect(tokenAuditBody).toContain("bytes, lines, and file counts")
     expect(tokenAuditBody).toContain("audit-only prompt-surface report")
@@ -148,6 +149,8 @@ describe("design-md command asset", () => {
     expect(tokenAuditBody).toContain("no model-token truth claims")
     expect(tokenAuditBody).toContain("supplementary prompt optimization engine")
     expect(tokenAuditBody).toContain("config-driven")
+    expect(tokenAuditBody).toContain("latest-user-message-only")
+    expect(tokenAuditBody).toContain("runtime reports only")
   })
 
   it("keeps README and docs wording aligned around audit-only token-audit versus the supplementary engine", () => {
@@ -159,12 +162,18 @@ describe("design-md command asset", () => {
     expect(readmeBody).toContain("separate from `wunderkind token-audit`")
     expect(readmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
     expect(readmeBody).toContain("separate runtime-report surface")
+    expect(readmeBody).toContain("latest-user-message-only")
+    expect(readmeBody).toContain("whole-message passthrough")
+    expect(readmeBody).toContain("not summary metadata guidance")
+    expect(readmeBody).not.toContain("configured `500000`-byte budget")
 
     expect(docsReadmeBody).toContain("supplementary, config-driven prompt optimization engine")
     expect(docsReadmeBody).toContain("token-audit")
     expect(docsReadmeBody).toContain("audit-only")
     expect(docsReadmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
     expect(docsReadmeBody).toContain("separate runtime-report surface")
+    expect(docsReadmeBody).toContain("latest-user-message-only")
+    expect(docsReadmeBody).toContain("whole-message passthrough")
   })
 
   it("documents promptOptimizationReportingMode and the latest runtime-report artifact paths", () => {

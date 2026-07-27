@@ -1,5 +1,8 @@
 import type { PromptOptimizationRuntimeReport } from "./prompt-optimization-runtime-reporting.js"
-import type { PromptOptimizationRuntimeReportRequiredField } from "./prompt-runtime-contract.js"
+import {
+  isPromptOptimizationV4PassthroughReason,
+  type PromptOptimizationRuntimeReportRequiredField,
+} from "./prompt-runtime-contract.js"
 
 export const PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS = [
   "hookPath",
@@ -22,8 +25,10 @@ export const PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS = [
 
 export type PromptOptimizationRuntimeSummaryMetadata = Pick<
   PromptOptimizationRuntimeReport,
-  (typeof PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS)[number]
->
+  Exclude<(typeof PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS)[number], "noTrimReason">
+> & {
+  readonly noTrimReason?: PromptOptimizationRuntimeReport["noTrimReason"]
+}
 
 export interface PromptOptimizationRuntimePublicPayload {
   readonly report: PromptOptimizationRuntimeReport
@@ -88,7 +93,8 @@ export function buildPromptOptimizationRuntimePublicPayload(
   const sanitizedReport: PromptOptimizationRuntimeReport = {
     ...report,
     modelId: getPromptOptimizationRuntimePublicModelId(report.modelId),
-    }
+  }
+  const shouldExposeNoTrimReason = !isPromptOptimizationV4PassthroughReason(sanitizedReport.noTrimReason)
 
   return {
     report: sanitizedReport,
@@ -107,7 +113,7 @@ export function buildPromptOptimizationRuntimePublicPayload(
       trimApplied: sanitizedReport.trimApplied,
       trimExhausted: sanitizedReport.trimExhausted,
       trimmedSections: sanitizedReport.trimmedSections,
-      noTrimReason: sanitizedReport.noTrimReason,
+      ...(shouldExposeNoTrimReason ? { noTrimReason: sanitizedReport.noTrimReason } : {}),
       exactTokenDelta: sanitizedReport.exactTokenDelta,
     },
   }

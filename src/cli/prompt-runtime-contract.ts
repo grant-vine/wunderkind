@@ -6,6 +6,8 @@ export const PROMPT_OPTIMIZATION_REPORTING_MODES = ["off", "persist", "summary"]
 export const PROMPT_RUNTIME_AUDIT_MODE = "audit-only-v1" as const
 export const PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT_MODE =
   "supplementary-prompt-optimization-v1" as const
+export const PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT_MODE =
+  "v4-user-prompt-optimization-contract-v1" as const
 export const PROMPT_OPTIMIZATION_RUNTIME_REPORT_CONTRACT_MODE =
   "prompt-optimization-runtime-report-v3" as const
 export const PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS = [
@@ -26,9 +28,16 @@ export const PROMPT_OPTIMIZATION_HELPER_FIXTURE_IDS = [
   "fixture-runtime-active-trim",
 ] as const
 
+export const PROMPT_OPTIMIZATION_V4_USER_PROMPT_FIXTURE_IDS = [
+  "safe-latest-user-message",
+  "risky-immutable-user-message",
+] as const
+
 export type PromptRuntimeFixtureId =
   | (typeof PROMPT_RUNTIME_CANONICAL_FIXTURE_IDS)[number]
   | (typeof PROMPT_OPTIMIZATION_HELPER_FIXTURE_IDS)[number]
+export type PromptOptimizationV4UserPromptFixtureId =
+  (typeof PROMPT_OPTIMIZATION_V4_USER_PROMPT_FIXTURE_IDS)[number]
 export type PromptOptimizationMode = (typeof PROMPT_OPTIMIZATION_MODES)[number]
 export type PromptOptimizationReportingMode = (typeof PROMPT_OPTIMIZATION_REPORTING_MODES)[number]
 export type PromptOptimizationEnabledInput = boolean | "omitted"
@@ -68,6 +77,32 @@ export type PromptOptimizationRuntimeSecretRuleId =
   | "jwt-shape"
   | "credentialed-url-authority"
   | "pem-private-key-sentinel"
+export type PromptOptimizationV4MutableSurfaceExclusion =
+  | "earlier-user-messages"
+  | "retained-history"
+  | "transcript-wide-compaction"
+  | "soul-overlays"
+  | "runtime-owned-trim-surfaces"
+export type PromptOptimizationV4ImmutableContentRuleId =
+  | "immutable-code-block"
+  | "immutable-url"
+  | "immutable-file-path"
+  | "immutable-command"
+  | "immutable-explicit-requirement"
+  | "immutable-compliance-legal-security"
+  | "immutable-quoted-user-text"
+export type PromptOptimizationV4MutableAllowlistRuleId =
+  | "allowlist-plain-natural-language-filler"
+  | "allowlist-repetitive-natural-language-prose"
+export type PromptOptimizationV4PassthroughReasonId =
+  | "v4-low-confidence-no-allowlist-match"
+  | "v4-low-confidence-mixed-immutable-content"
+  | "v4-safety-code-block"
+  | "v4-safety-command-or-path"
+  | "v4-safety-explicit-requirement"
+  | "v4-safety-compliance-legal-security"
+  | "v4-safety-quoted-user-text"
+export type PromptOptimizationV4PassthroughReasonClass = "low-confidence" | "safety-risk"
 
 export interface PromptOptimizationRuntimePublicFieldDefinition {
   readonly field: PromptOptimizationRuntimeReportRequiredField
@@ -86,6 +121,49 @@ export interface PromptOptimizationRuntimeRedactionPolicy {
 export interface PromptOptimizationRuntimeSecretRuleDefinition {
   readonly id: PromptOptimizationRuntimeSecretRuleId
   readonly matcher: string
+}
+
+export interface PromptOptimizationV4ImmutableContentRuleDefinition {
+  readonly id: PromptOptimizationV4ImmutableContentRuleId
+  readonly comment: string
+}
+
+export interface PromptOptimizationV4MutableAllowlistRuleDefinition {
+  readonly id: PromptOptimizationV4MutableAllowlistRuleId
+  readonly comment: string
+}
+
+export interface PromptOptimizationV4PassthroughReasonDefinition {
+  readonly id: PromptOptimizationV4PassthroughReasonId
+  readonly class: PromptOptimizationV4PassthroughReasonClass
+  readonly comment: string
+}
+
+export interface PromptOptimizationV4UserPromptContract {
+  readonly contractMode: typeof PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT_MODE
+  readonly mutableSurface: {
+    readonly target: "latest-user-message-only"
+    readonly excludes: readonly PromptOptimizationV4MutableSurfaceExclusion[]
+  }
+  readonly immutableContentRules: readonly PromptOptimizationV4ImmutableContentRuleDefinition[]
+  readonly mutableContentPolicy: {
+    readonly defaultMutability: "immutable-unless-allowlisted"
+    readonly allowlistRules: readonly PromptOptimizationV4MutableAllowlistRuleDefinition[]
+  }
+  readonly fallbackBehavior: {
+    readonly mode: "whole-message-passthrough"
+    readonly passthroughReasonTaxonomy: readonly PromptOptimizationV4PassthroughReasonDefinition[]
+  }
+  readonly reasonVisibility: {
+    readonly runtimeReport: "reason-codes-only"
+    readonly summaryMetadata: "omit-v4-passthrough-reasons"
+    readonly forbiddenSummaryFields: readonly ["noTrimReason"]
+  }
+  readonly openTokenAdoption: {
+    readonly dependencyAllowed: false
+    readonly productSurfaceAdoptionAllowed: false
+    readonly designInputOnly: true
+  }
 }
 
 export interface PromptOptimizationReportingModeDefinition {
@@ -136,6 +214,7 @@ export interface PromptOptimizationSupplementaryContract {
   readonly defaultMode: "off"
   readonly countStates: readonly PromptOptimizationCountStateDefinition[]
   readonly modeMatrix: readonly PromptOptimizationModeMatrixRow[]
+  readonly v4UserPromptOptimization: PromptOptimizationV4UserPromptContract
 }
 
 export interface PromptOptimizationCountStateDefinition {
@@ -275,12 +354,120 @@ export const PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS = [
   },
 ] as const satisfies readonly PromptOptimizationRuntimeReportArtifact[]
 
+export const PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT: PromptOptimizationV4UserPromptContract = {
+  contractMode: PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT_MODE,
+  mutableSurface: {
+    target: "latest-user-message-only",
+    excludes: [
+      "earlier-user-messages",
+      "retained-history",
+      "transcript-wide-compaction",
+      "soul-overlays",
+      "runtime-owned-trim-surfaces",
+    ],
+  },
+  immutableContentRules: [
+    { id: "immutable-code-block", comment: "Preserve fenced and inline code spans byte-exact." },
+    { id: "immutable-url", comment: "Preserve absolute URLs and URL-like literals byte-exact." },
+    { id: "immutable-file-path", comment: "Preserve file-system paths and path-like literals byte-exact." },
+    { id: "immutable-command", comment: "Preserve shell, CLI, and executable command text byte-exact." },
+    {
+      id: "immutable-explicit-requirement",
+      comment: "Preserve explicit constraints, requirements, and must/must-not wording byte-exact.",
+    },
+    {
+      id: "immutable-compliance-legal-security",
+      comment: "Preserve compliance, legal, and security wording byte-exact.",
+    },
+    {
+      id: "immutable-quoted-user-text",
+      comment: "Preserve quoted user text and worked examples byte-exact.",
+    },
+  ],
+  mutableContentPolicy: {
+    defaultMutability: "immutable-unless-allowlisted",
+    allowlistRules: [
+      {
+        id: "allowlist-plain-natural-language-filler",
+        comment: "Allow only ordinary natural-language filler outside immutable spans.",
+      },
+      {
+        id: "allowlist-repetitive-natural-language-prose",
+        comment: "Allow only repetitive natural-language prose outside immutable spans.",
+      },
+    ],
+  },
+  fallbackBehavior: {
+    mode: "whole-message-passthrough",
+    passthroughReasonTaxonomy: [
+      {
+        id: "v4-low-confidence-no-allowlist-match",
+        class: "low-confidence",
+        comment: "No positive mutable allowlist rule matched the latest user-authored message.",
+      },
+      {
+        id: "v4-low-confidence-mixed-immutable-content",
+        class: "low-confidence",
+        comment: "Immutable and mutable cues were interleaved too tightly to separate safely.",
+      },
+      {
+        id: "v4-safety-code-block",
+        class: "safety-risk",
+        comment: "Code-block detector matched within the latest user-authored message.",
+      },
+      {
+        id: "v4-safety-command-or-path",
+        class: "safety-risk",
+        comment: "Command, file-path, or URL detector matched within the latest user-authored message.",
+      },
+      {
+        id: "v4-safety-explicit-requirement",
+        class: "safety-risk",
+        comment: "Explicit requirement or constraint detector matched within the latest user-authored message.",
+      },
+      {
+        id: "v4-safety-compliance-legal-security",
+        class: "safety-risk",
+        comment: "Compliance, legal, or security wording detector matched within the latest user-authored message.",
+      },
+      {
+        id: "v4-safety-quoted-user-text",
+        class: "safety-risk",
+        comment: "Quoted user text or quoted example detector matched within the latest user-authored message.",
+      },
+    ],
+  },
+  reasonVisibility: {
+    runtimeReport: "reason-codes-only",
+    summaryMetadata: "omit-v4-passthrough-reasons",
+    forbiddenSummaryFields: ["noTrimReason"],
+  },
+  openTokenAdoption: {
+    dependencyAllowed: false,
+    productSurfaceAdoptionAllowed: false,
+    designInputOnly: true,
+  },
+}
+
+export function isPromptOptimizationV4PassthroughReason(
+  reason: string | null | undefined,
+): reason is PromptOptimizationV4PassthroughReasonId {
+  if (typeof reason !== "string") {
+    return false
+  }
+
+  return PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT.fallbackBehavior.passthroughReasonTaxonomy.some(
+    ({ id }) => id === reason,
+  )
+}
+
 export const PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT: PromptOptimizationSupplementaryContract = {
   contractMode: PROMPT_OPTIMIZATION_SUPPLEMENTARY_CONTRACT_MODE,
   defaultEnabled: false,
   defaultMode: "off",
   countStates: PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS,
   modeMatrix: PROMPT_OPTIMIZATION_MODE_MATRIX,
+  v4UserPromptOptimization: PROMPT_OPTIMIZATION_V4_USER_PROMPT_CONTRACT,
 }
 
 export const PROMPT_OPTIMIZATION_RUNTIME_REPORT_CONTRACT: PromptOptimizationRuntimeReportContract = {

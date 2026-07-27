@@ -1006,6 +1006,9 @@ describe("runDoctor", () => {
           m.includes("token-audit"),
       ),
     ).toBe(true)
+    expect(messages.some((m) => m.includes("V4 user prompt boundary:") && m.includes("latest-user-message-only"))).toBe(true)
+    expect(messages.some((m) => m.includes("V4 immutable exclusions:") && m.includes("quoted user text") && m.includes("byte-exact"))).toBe(true)
+    expect(messages.some((m) => m.includes("V4 passthrough reasons:") && m.includes("runtime-report-only") && m.includes("not summary metadata guidance"))).toBe(true)
     expect(
       messages.some(
         (m) =>
@@ -1017,6 +1020,35 @@ describe("runDoctor", () => {
     ).toBe(true)
     expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("configured-bytes"))).toBe(true)
     expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("exact-openai-tokens"))).toBe(false)
+  })
+
+  it("keeps doctor explicit that prompt optimization is product-default-off when no repo-local override exists", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-prompt-optimization-default-off-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    mockProjectDoctorContext(tempProject)
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("prompt optimization enabled:") && m.includes("✗ no"))).toBe(true)
+      expect(messages.some((m) => m.includes("prompt optimization mode:") && m.includes("off"))).toBe(true)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("prompt optimization engine:") &&
+            m.includes("supplementary") &&
+            m.includes("product-default-off") &&
+            m.includes("token-audit"),
+        ),
+      ).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
   })
 
   it("keeps doctor on budget-unavailable when only a token budget is configured in phase 1", async () => {
@@ -2341,7 +2373,7 @@ describe("wunderkind team entry detection", () => {
       expect(messages.some((m) => m.includes("/wunderkind-team config:") && m.includes("team_mode.enabled"))).toBe(true)
       expect(messages.some((m) => m.includes("/wunderkind-team selected spec:") && m.includes("config.json"))).toBe(true)
       expect(messages.some((m) => m.includes("team bootstrap command:") && m.includes("bunx @grant-vine/wunderkind team-bootstrap --scope=project"))).toBe(true)
-      expect(messages.some((m) => m.includes("token audit contract:") && m.includes("audit-only") && m.includes("no live prompt packing") && m.includes("no model-token truth claims"))).toBe(true)
+      expect(messages.some((m) => m.includes("token audit contract:") && m.includes("audit-only") && m.includes("no live prompt packing") && m.includes("no model-token truth claims") && m.includes("no OpenToken dependency"))).toBe(true)
       expect(messages.some((m) => m.includes("/wunderkind-team fallback:") && m.includes("solo product-wunderkind orchestration"))).toBe(true)
     } finally {
       process.chdir(originalCwd)

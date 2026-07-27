@@ -1,12 +1,14 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { encodingForModel, type Tiktoken, type TiktokenModel } from "js-tiktoken"
+import type { PromptOptimizationV4PassthroughReasonId } from "./prompt-runtime-contract.js"
 import { buildPromptOptimizationRuntimePublicPayload } from "./prompt-optimization-runtime-public-payload.js"
 import {
   PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS,
   type PromptOptimizationRuntimeReportArtifact,
 } from "./prompt-runtime-contract.js"
 import type { PromptOptimizationMode, PromptOptimizationReportingMode } from "./types.js"
+import type { V4UserPromptOptimizationMeasurement } from "../runtime-user-prompt-optimization.js"
 import {
   getPromptOptimizationRuntimeSectionByteLength,
   trimPromptOptimizationRuntimeSections,
@@ -99,6 +101,8 @@ export interface PromptOptimizationAdvisoryInput extends PromptOptimizationBudge
 export interface PromptOptimizationRuntimeReportInput extends PromptOptimizationAdvisoryInput {
   readonly hookPath: PromptOptimizationRuntimeReportArtifact["hookPath"]
   readonly trimResult?: PromptOptimizationRuntimeTrimResult | undefined
+  readonly v4PassthroughReason?: PromptOptimizationV4PassthroughReasonId | null | undefined
+  readonly v4UserPromptOptimizationMeasurement?: V4UserPromptOptimizationMeasurement | undefined
 }
 
 type ExactLocalOpenAiModelId = (typeof OPENAI_EXACT_LOCAL_MODEL_IDS)[number]
@@ -159,12 +163,22 @@ function buildExactTokenDelta(input: {
   }
 }
 
+function joinMeasuredPromptContent(segments: readonly string[]): string {
+  return segments.filter((segment) => segment !== "").join("\n")
+}
+
 function getNoTrimReason(input: PromptOptimizationRuntimeReportInput, trimResult: PromptOptimizationRuntimeTrimResult): string | null {
-  if (trimResult.trimApplied) {
+  if (trimResult.trimApplied || input.v4UserPromptOptimizationMeasurement?.trimApplied === true) {
     return null
   }
 
-  if (trimResult.eligibleSections.length === 0) {
+  if (input.v4PassthroughReason) {
+    return input.v4PassthroughReason
+  }
+
+  const v4MeasuredBytes = input.v4UserPromptOptimizationMeasurement?.afterBytes ?? 0
+
+  if (trimResult.eligibleSections.length === 0 && v4MeasuredBytes === 0) {
     return "no-eligible-sections"
   }
 
@@ -178,7 +192,7 @@ function getNoTrimReason(input: PromptOptimizationRuntimeReportInput, trimResult
         return "trim-budget-unavailable"
       }
 
-      return trimResult.afterBytes > input.promptOptimizationByteBudget
+      return trimResult.afterBytes + v4MeasuredBytes > input.promptOptimizationByteBudget
         ? "over-trim-budget-no-trimmable-sections"
         : "within-trim-budget"
     }
@@ -358,31 +372,42 @@ export function buildPromptOptimizationRuntimeReport(
 ): PromptOptimizationRuntimeReport {
   const budgetPressure = measurePromptOptimizationBudgetPressure(input)
   const trimResult = input.trimResult ?? buildRuntimeTrimResult(input)
-  const afterContent = joinPromptOptimizationSectionContent(trimResult.sections)
+  const runtimeBeforeContent = input.content
+  const runtimeAfterContent = joinPromptOptimizationSectionContent(trimResult.sections)
+  const v4UserPromptOptimizationMeasurement = input.v4UserPromptOptimizationMeasurement
+  const beforeContent = v4UserPromptOptimizationMeasurement
+    ? joinMeasuredPromptContent([runtimeBeforeContent, v4UserPromptOptimizationMeasurement.beforeMessage])
+    : runtimeBeforeContent
+  const afterContent = v4UserPromptOptimizationMeasurement
+    ? joinMeasuredPromptContent([runtimeAfterContent, v4UserPromptOptimizationMeasurement.afterMessage])
+    : runtimeAfterContent
+  const beforeBytes = trimResult.beforeBytes + (v4UserPromptOptimizationMeasurement?.beforeBytes ?? 0)
+  const afterBytes = trimResult.afterBytes + (v4UserPromptOptimizationMeasurement?.afterBytes ?? 0)
+  const savedBytes = trimResult.savedBytes + (v4UserPromptOptimizationMeasurement?.savedBytes ?? 0)
 
   return {
     hookPath: input.hookPath,
     modelId: input.modelId ?? null,
     promptOptimizationMode: input.promptOptimizationMode,
     countState: budgetPressure.countState,
-    budgetBasis: budgetPressure.budgetBasis,
-    budgetLimit: budgetPressure.budgetLimit,
-    trimBasis: trimResult.trimBasis,
-    trimBudgetLimit: input.promptOptimizationByteBudget ?? null,
-    eligibleSections: trimResult.eligibleSections,
-    beforeBytes: trimResult.beforeBytes,
-    afterBytes: trimResult.afterBytes,
-    savedBytes: trimResult.savedBytes,
-    trimApplied: trimResult.trimApplied,
-    trimExhausted: trimResult.trimExhausted,
-    trimmedSections: trimResult.trimmedSections,
-    noTrimReason: getNoTrimReason(input, trimResult),
-    exactTokenDelta: buildExactTokenDelta({
-      modelId: input.modelId,
-      beforeContent: input.content,
-      afterContent,
-    }),
-  }
+      budgetBasis: budgetPressure.budgetBasis,
+      budgetLimit: budgetPressure.budgetLimit,
+      trimBasis: trimResult.trimBasis,
+      trimBudgetLimit: input.promptOptimizationByteBudget ?? null,
+      eligibleSections: trimResult.eligibleSections,
+      beforeBytes,
+      afterBytes,
+      savedBytes,
+      trimApplied: trimResult.trimApplied || (v4UserPromptOptimizationMeasurement?.trimApplied ?? false),
+      trimExhausted: trimResult.trimExhausted,
+      trimmedSections: trimResult.trimmedSections,
+      noTrimReason: getNoTrimReason(input, trimResult),
+      exactTokenDelta: buildExactTokenDelta({
+        modelId: input.modelId,
+        beforeContent,
+        afterContent,
+      }),
+    }
 }
 
 export function maybePersistPromptOptimizationRuntimeReport(options: {
