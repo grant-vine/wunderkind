@@ -157,10 +157,35 @@ describe("design-md command asset", () => {
     expect(readmeBody).toContain("supplementary, config-driven prompt optimization engine")
     expect(readmeBody).toContain("no public optimize command")
     expect(readmeBody).toContain("separate from `wunderkind token-audit`")
+    expect(readmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
+    expect(readmeBody).toContain("separate runtime-report surface")
 
     expect(docsReadmeBody).toContain("supplementary, config-driven prompt optimization engine")
     expect(docsReadmeBody).toContain("token-audit")
     expect(docsReadmeBody).toContain("audit-only")
+    expect(docsReadmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
+    expect(docsReadmeBody).toContain("separate runtime-report surface")
+  })
+
+  it("documents promptOptimizationReportingMode and the latest runtime-report artifact paths", () => {
+    const readmeBody = readText(new URL("../../README.md", import.meta.url))
+    const docsReadmeBody = readText(docsReadmeFile)
+    const schemaBody = readText(new URL("../../schemas/wunderkind.config.schema.json", import.meta.url))
+
+    expect(readmeBody).toContain('"promptOptimizationReportingMode": "persist"')
+    expect(readmeBody).toContain("`off`, `persist`, and `summary`")
+    expect(readmeBody).toContain(".wunderkind/runtime/prompt-optimization/system-transform.latest.json")
+    expect(readmeBody).toContain(".wunderkind/runtime/prompt-optimization/session-compacting.latest.json")
+
+    expect(docsReadmeBody).toContain("promptOptimizationReportingMode")
+    expect(docsReadmeBody).toContain("system-transform.latest.json")
+    expect(docsReadmeBody).toContain("session-compacting.latest.json")
+    expect(docsReadmeBody).toContain("redacted")
+
+    expect(schemaBody).toContain('"promptOptimizationReportingMode"')
+    expect(schemaBody).toContain('"enum": ["off", "persist", "summary"]')
+    expect(schemaBody).toContain("sanitized/redacted latest-report artifacts or summaries")
+    expect(schemaBody).toContain("audit-only token-audit surface")
   })
 
   it("keeps the docs index aligned with the final OpenCode release reference", () => {

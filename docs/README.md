@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.2**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.3**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -30,6 +30,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit`, stays default-off, and does not add a public optimize command in this phase.
+- `promptOptimizationReportingMode` now documents the opt-in separate runtime-report surface (`off`, `persist`, `summary`), where sanitized/redacted latest-report artifacts or summaries back `system-transform.latest.json` and `session-compacting.latest.json`, and `doctor --verbose` exposes existence/status rather than claiming runtime savings.
 - The hard-cut migration release keeps `.omo/` as the only active artifact root, leaves `.sisyphus/` as manual migration history only, and keeps `wunderkind migrate` as a fail-hard guidance surface.
 - `/docs-index` is the managed docs refresh/bootstrap command and `init-deep` remains an upstream OMO workflow concept rather than a Wunderkind CLI subcommand.
 
@@ -39,7 +40,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.23.2` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.23.3` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 

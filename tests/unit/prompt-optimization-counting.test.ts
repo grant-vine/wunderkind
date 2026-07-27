@@ -6,12 +6,12 @@ import {
 import {
   OPENAI_EXACT_LOCAL_MODEL_IDS,
   countPromptOptimizationTokens,
-} from "../../src/cli/token-audit.js"
+} from "../../src/cli/prompt-optimization-runtime-reporting.js"
 
 const FROZEN_EXACT_LOCAL_MODEL_IDS = ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano"] as const
 
 describe("prompt optimization token counting", () => {
-  it("keeps the frozen supported OpenAI model map in token-audit as the single exact-local source of truth", () => {
+  it("keeps the frozen supported OpenAI model map in the runtime-reporting seam as the single exact-local source of truth", () => {
     expect(OPENAI_EXACT_LOCAL_MODEL_IDS).toEqual(FROZEN_EXACT_LOCAL_MODEL_IDS)
   })
 

@@ -11,7 +11,10 @@ import { runTokenAudit } from "./token-audit.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
-import { PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS } from "./prompt-runtime-contract.js"
+import {
+  PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS,
+  PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS,
+} from "./prompt-runtime-contract.js"
 import type { DocHistoryMode, InstallArgs, InstallScope, TeamBootstrapScope } from "./types.js"
 import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 import { WUNDERKIND_CANONICAL_MANIFEST } from "../agents/canonical-manifest.js"
@@ -20,6 +23,10 @@ const REGULATION_LIST = "GDPR, POPIA, CCPA, LGPD, HIPAA, PIPEDA, PDPA, APPI, SOC
 const PROMPT_OPTIMIZATION_COUNT_STATE_HELP_TEXT = PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS.map(
   (state) => `${state.state} (${state.label})`,
 ).join(", ")
+const PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT = "off|persist|summary"
+const PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS = PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS.map(
+  (artifact) => artifact.filePath,
+)
 
 function parseYesNoOption(flagName: string, value: string): boolean {
   const normalized = value.trim().toLowerCase()
@@ -43,6 +50,7 @@ program
       "",
       "Also includes a supplementary, config-driven prompt optimization engine",
       "surfaced through config and doctor only in phase 1 — no public optimize command.",
+      `Opt-in runtime reporting uses promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface.`,
       "",
       "Examples:",
       "  bunx @grant-vine/wunderkind install",
@@ -506,6 +514,19 @@ program
   .command("doctor")
   .description("Run read-only diagnostics for Wunderkind install and current project context.")
   .option("-v, --verbose", "Enable verbose diagnostic output")
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Behavior:",
+      "  - remains read-only; reports configuration posture and artifact existence only",
+      "  - token-audit remains separate and audit-only",
+      `  - --verbose surfaces promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for the separate runtime-report surface`,
+      `  - --verbose checks sanitized/redacted latest-report artifact status for ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[0]}`,
+      `    and ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[1]}`,
+      "  - latest-report artifact presence is configuration posture, not a proven runtime savings report",
+    ].join("\n"),
+  )
   .action(async (opts: { verbose?: boolean | undefined }) => {
     const exitCode = await runDoctorWithOptions({ verbose: opts.verbose === true })
     process.exit(exitCode)

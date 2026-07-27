@@ -39,6 +39,10 @@ describe("CLI help copy", () => {
     expect(output).toContain("Adds six retained native OpenCode agents covering")
     expect(output).toContain("marketing, design, product, engineering, security, and legal")
     expect(output).toContain("supplementary, config-driven prompt optimization engine")
+    expect(output).toContain("promptOptimizationReportingMode")
+    expect(output).toContain("sanitized/redacted latest-report artifacts")
+    expect(output).toContain("summaries on the separate runtime-report surface")
+    expect(output).toContain("separate runtime-report surface")
     expect(output).toContain("no public optimize command")
     expect(output).not.toContain("  optimize")
     expect(output).not.toContain("  prompt-optimization")
@@ -98,6 +102,12 @@ describe("CLI help copy", () => {
     const output = runCliHelp("doctor", "--help")
 
     expect(output).toContain("Enable verbose diagnostic output")
+    expect(output).toContain("promptOptimizationReportingMode")
+    expect(output).toContain(".wunderkind/runtime/prompt-optimization/system-transform.latest.json")
+    expect(output).toContain(".wunderkind/runtime/prompt-optimization/session-compacting.latest.json")
+    expect(output).toContain("configuration posture")
+    expect(output).toContain("sanitized/redacted latest-report artifact status")
+    expect(output).toContain("token-audit remains separate")
   })
 
   it("includes workflow-sync command help text", () => {
@@ -127,6 +137,7 @@ describe("CLI help copy", () => {
     expect(output).toContain("unsupported")
     expect(output).toContain("configured-bytes")
     expect(output).toContain("budget-unavailable")
+    expect(output).not.toContain("promptOptimizationReportingMode")
     expect(output).not.toContain("exact-openai-tokens")
   })
 

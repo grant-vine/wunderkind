@@ -43,10 +43,11 @@
         "designPath": { "type": "string" },
         "designMcpOwnership": { "enum": ["none", "wunderkind-managed", "reused-project", "reused-global"] },
         "cavemanEnabled": { "type": "boolean", "description": "Enable project-default caveman mode for terse, high-signal replies when value is preserved." },
-        "promptOptimizationEnabled": { "type": "boolean" },
-        "promptOptimizationMode": { "enum": ["off", "advisory", "active"] },
-        "promptOptimizationTokenBudget": { "type": "integer", "minimum": 1 },
-        "promptOptimizationByteBudget": { "type": "integer", "minimum": 1 }
+        "promptOptimizationEnabled": { "type": "boolean", "description": "Enable the separate supplementary prompt optimization engine. This does not change the audit-only token-audit contract or surface." },
+        "promptOptimizationMode": { "enum": ["off", "advisory", "active"], "description": "Runtime optimization mode for the separate supplementary engine: off disables it, advisory measures/report budgets, and active allows bounded trimming of supported sections only without changing the audit-only token-audit surface." },
+        "promptOptimizationReportingMode": { "enum": ["off", "persist", "summary"], "description": "Opt-in runtime reporting posture for the separate runtime-report surface. persist and summary keep sanitized/redacted latest-report artifacts or summaries under .wunderkind/runtime/prompt-optimization/ without changing the audit-only token-audit surface." },
+        "promptOptimizationTokenBudget": { "type": "integer", "minimum": 1, "description": "Optional token budget used only when the current model matches the supported exact OpenAI map." },
+        "promptOptimizationByteBudget": { "type": "integer", "minimum": 1, "description": "Optional byte-budget fallback for unsupported or unset models when operators still want bounded runtime behavior." }
       },
       "required": [
         "$schema",

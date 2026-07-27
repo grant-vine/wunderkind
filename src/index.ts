@@ -2,8 +2,18 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { tool } from "@opencode-ai/plugin/tool"
 import { spawnSync } from "node:child_process"
 import { DURABLE_ARTIFACT_TOOL_NAME, writeDurableArtifact } from "./artifact-writer.js"
+import {
+  buildPromptOptimizationRuntimeReport,
+  maybePersistPromptOptimizationRuntimeReport,
+  readPromptOptimizationModelId,
+  type PromptOptimizationRuntimeReport,
+} from "./cli/prompt-optimization-runtime-reporting.js"
+import { buildPromptOptimizationRuntimePublicPayload } from "./cli/prompt-optimization-runtime-public-payload.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
-import { applyWunderkindSystemTransform, buildCompactionContext } from "./runtime-prompt-sections.js"
+import {
+  applyWunderkindSystemTransform,
+  buildCompactionContextResult,
+} from "./runtime-prompt-sections.js"
 
 const OMO_AST_GREP_SG_PATH_ENV_KEY = "OMO_AST_GREP_SG_PATH"
 
@@ -100,6 +110,32 @@ const SHELL_FILE_MUTATION_PATTERNS = [
   /\bnode\b.*\bwrite\b/,
 ] as const
 
+function maybeEmitPromptOptimizationRuntimeSummary(
+  reportingMode: string | null | undefined,
+  report: PromptOptimizationRuntimeReport,
+  output: unknown,
+): void {
+  if (reportingMode !== "summary") {
+    return
+  }
+
+  if (typeof output !== "object" || output === null) {
+    return
+  }
+
+  const metadata = Reflect.get(output, "metadata")
+  if (typeof metadata !== "function") {
+    return
+  }
+
+  const publicPayload = buildPromptOptimizationRuntimePublicPayload(report)
+
+  metadata({
+    title: "Prompt optimization summary",
+    metadata: publicPayload.summaryMetadata,
+  })
+}
+
 function inferPermissionAgent(metadata: Record<string, unknown>): string | null {
   const directAgent = metadata["agent"]
   if (typeof directAgent === "string" && directAgent.trim() !== "") return directAgent
@@ -167,14 +203,55 @@ const WunderkindPlugin: Plugin = async (_input) => {
     },
     "experimental.session.compacting": async (_input, output) => {
       const wunderkindConfig = readWunderkindConfig()
-      output.context.push(...buildCompactionContext(wunderkindConfig))
+      const compactionResult = buildCompactionContextResult(wunderkindConfig)
+      output.context.push(...compactionResult.context)
+
+      const runtimeReport = buildPromptOptimizationRuntimeReport({
+        hookPath: "experimental.session.compacting",
+        modelId: readPromptOptimizationModelId(_input),
+        promptOptimizationMode: wunderkindConfig?.promptOptimizationMode ?? "off",
+        content: compactionResult.eligibleSections.map((section) => section.content).join("\n"),
+        eligibleSections: compactionResult.eligibleSections,
+        trimResult: compactionResult.trimResult,
+        promptOptimizationTokenBudget: wunderkindConfig?.promptOptimizationTokenBudget,
+        promptOptimizationByteBudget: wunderkindConfig?.promptOptimizationByteBudget,
+      })
+      maybePersistPromptOptimizationRuntimeReport({
+        reportingMode: wunderkindConfig?.promptOptimizationReportingMode,
+        report: runtimeReport,
+      })
+      maybeEmitPromptOptimizationRuntimeSummary(
+        wunderkindConfig?.promptOptimizationReportingMode,
+        runtimeReport,
+        output,
+      )
     },
     "experimental.chat.system.transform": async (_input, output) => {
       const wunderkindConfig = readWunderkindConfig()
-      applyWunderkindSystemTransform({
+      const transformResult = applyWunderkindSystemTransform({
         system: output.system,
         wunderkindConfig,
       })
+
+      const runtimeReport = buildPromptOptimizationRuntimeReport({
+        hookPath: "experimental.chat.system.transform",
+        modelId: readPromptOptimizationModelId(_input),
+        promptOptimizationMode: wunderkindConfig?.promptOptimizationMode ?? "off",
+        content: transformResult.eligibleSections.map((section) => section.content).join("\n"),
+        eligibleSections: transformResult.eligibleSections,
+        trimResult: transformResult.trimResult,
+        promptOptimizationTokenBudget: wunderkindConfig?.promptOptimizationTokenBudget,
+        promptOptimizationByteBudget: wunderkindConfig?.promptOptimizationByteBudget,
+      })
+      maybePersistPromptOptimizationRuntimeReport({
+        reportingMode: wunderkindConfig?.promptOptimizationReportingMode,
+        report: runtimeReport,
+      })
+      maybeEmitPromptOptimizationRuntimeSummary(
+        wunderkindConfig?.promptOptimizationReportingMode,
+        runtimeReport,
+        output,
+      )
     },
   }
 }

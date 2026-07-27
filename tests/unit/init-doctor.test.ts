@@ -5,9 +5,16 @@ import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { DetectedConfig, InstallConfig, OmoFreshnessInfo, PluginVersionInfo } from "../../src/cli/types.js"
 
+type RealConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
+
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
 const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
+const REAL_CONFIG_MANAGER_MODULE_URL = new URL(
+  `src/cli/config-manager/index.ts?init-doctor-config=${Date.now()}`,
+  `file://${PROJECT_ROOT}`,
+).href
+const realConfigManager = (await import(REAL_CONFIG_MANAGER_MODULE_URL)) as RealConfigManagerModule
 function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedConfig {
   return {
     isInstalled: false,
@@ -50,7 +57,9 @@ const mockRemoveNativeAgentFiles = mock(() => ({ success: true, configPath: "/tm
 const mockRemoveNativeCommandFiles = mock(() => ({ success: true, configPath: "/tmp/mock-commands", changed: true }))
 const mockRemoveNativeSkillFiles = mock(() => ({ success: true, configPath: "/tmp/mock-skills", changed: true }))
 const mockRemoveGlobalWunderkindConfig = mock(() => ({ success: true, configPath: "/tmp/.wunderkind/wunderkind.config.jsonc", changed: true }))
-const mockReadWunderkindConfigForScope = mock<() => Partial<InstallConfig> | null>(() => null)
+const mockReadWunderkindConfigForScope = mock<
+  (scope: "global" | "project") => Partial<InstallConfig> | null
+>(() => null)
 const mockDetectLegacyConfig = mock(() => false)
 const mockResolveWunderkindTeamConfigPath = mock((scope: "project" | "user", teamName: string) =>
   scope === "project"
@@ -186,6 +195,7 @@ mock.module(`${PROJECT_ROOT}src/cli/mcp-helpers.js`, () => ({
 }))
 
 const configManagerMockFactory = () => ({
+  ...realConfigManager,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
@@ -997,6 +1007,71 @@ describe("runDoctor", () => {
     expect(messages.some((m) => m.includes("prompt optimization mode:") && m.includes("advisory"))).toBe(true)
     expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("budget-unavailable"))).toBe(true)
     expect(messages.some((m) => m.includes("prompt optimization hook budget basis:") && m.includes("exact-openai-tokens"))).toBe(false)
+  })
+
+  it("shows prompt optimization latest-report artifact status without overclaiming runtime savings", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-runtime-reporting-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    mkdirSync(join(tempProject, ".wunderkind", "runtime", "prompt-optimization"), { recursive: true })
+    writeFileSync(
+      join(tempProject, ".wunderkind", "runtime", "prompt-optimization", "system-transform.latest.json"),
+      "{}\n",
+    )
+
+    mockProjectDoctorContext(
+      tempProject,
+      {
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "active",
+        promptOptimizationReportingMode: "summary",
+        promptOptimizationByteBudget: 8192,
+      },
+      {
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "active",
+        promptOptimizationReportingMode: "summary",
+        promptOptimizationByteBudget: 8192,
+      },
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("prompt optimization reporting mode:") && m.includes("summary"))).toBe(true)
+    expect(
+      messages.some(
+        (m) =>
+          m.includes("prompt optimization runtime reporting:") &&
+          m.includes("separate runtime-report surface") &&
+          m.includes("sanitized/redacted latest artifacts or summaries") &&
+          m.includes("configuration posture only") &&
+          m.includes("not a proven runtime savings report"),
+      ),
+    ).toBe(true)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("experimental.chat.system.transform latest report:") &&
+            m.includes("✓ yes") &&
+            m.includes(".wunderkind/runtime/prompt-optimization/system-transform.latest.json"),
+        ),
+      ).toBe(true)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("experimental.session.compacting latest report:") &&
+            m.includes("✗ no") &&
+            m.includes(".wunderkind/runtime/prompt-optimization/session-compacting.latest.json"),
+        ),
+      ).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
   })
 
   it("warns when global install exists but native global agents are absent", async () => {

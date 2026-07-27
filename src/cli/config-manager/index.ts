@@ -34,6 +34,7 @@ import type {
   OmoInstallReadiness,
   OmoFreshnessSummary,
   PromptOptimizationMode,
+  PromptOptimizationReportingMode,
   PluginVersionInfo,
   ProjectConfig,
   ProductPersonality,
@@ -64,6 +65,10 @@ function isDesignMcpOwnership(value: unknown): value is DesignMcpOwnership {
 
 function isPromptOptimizationMode(value: unknown): value is PromptOptimizationMode {
   return value === "off" || value === "advisory" || value === "active"
+}
+
+function isPromptOptimizationReportingMode(value: unknown): value is PromptOptimizationReportingMode {
+  return value === "off" || value === "persist" || value === "summary"
 }
 
 function isPositiveInteger(value: unknown): value is number {
@@ -118,6 +123,13 @@ function getValidatedPromptOptimizationBudgets(config: Partial<ProjectConfig>): 
 }
 
 function validatePromptOptimizationConfig(config: Partial<ProjectConfig>): string | null {
+  if (
+    config.promptOptimizationReportingMode !== undefined &&
+    !isPromptOptimizationReportingMode(config.promptOptimizationReportingMode)
+  ) {
+    return "promptOptimizationReportingMode must be one of: off, persist, or summary"
+  }
+
   if (config.promptOptimizationTokenBudget !== undefined && !isPositiveInteger(config.promptOptimizationTokenBudget)) {
     return "promptOptimizationTokenBudget must be a positive integer"
   }
@@ -275,6 +287,7 @@ const PROJECT_CONFIG_KEYS = [
   "cavemanEnabled",
   "promptOptimizationEnabled",
   "promptOptimizationMode",
+  "promptOptimizationReportingMode",
   "promptOptimizationTokenBudget",
   "promptOptimizationByteBudget",
 ] as const
@@ -941,6 +954,9 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (isPromptOptimizationMode(source["promptOptimizationMode"])) {
     result.promptOptimizationMode = source["promptOptimizationMode"]
   }
+  if (isPromptOptimizationReportingMode(source["promptOptimizationReportingMode"])) {
+    result.promptOptimizationReportingMode = source["promptOptimizationReportingMode"]
+  }
   if (isPositiveInteger(source["promptOptimizationTokenBudget"])) {
     result.promptOptimizationTokenBudget = source["promptOptimizationTokenBudget"]
   }
@@ -1063,10 +1079,12 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     promptOptimizationEnabled: config.promptOptimizationEnabled,
     promptOptimizationMode: config.promptOptimizationMode,
   })
+  const promptOptimizationReportingMode = config.promptOptimizationReportingMode ?? "off"
   const promptOptimizationBudgets = getValidatedPromptOptimizationBudgets(config)
   const omitPromptOptimizationFields =
     resolvedPromptOptimization.enabled === false &&
     resolvedPromptOptimization.mode === "off" &&
+    promptOptimizationReportingMode === "off" &&
     promptOptimizationBudgets.promptOptimizationTokenBudget === undefined &&
     promptOptimizationBudgets.promptOptimizationByteBudget === undefined
   const lines = [
@@ -1138,7 +1156,10 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
   )
 
   if (!omitPromptOptimizationFields) {
-    lines.push(`  // Supplementary prompt optimization engine settings`)
+    lines.push(
+      `  // Supplementary prompt optimization engine settings`,
+      `  // promptOptimizationReportingMode controls sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface, not the audit-only token-audit surface`,
+    )
 
     if (config.promptOptimizationEnabled !== undefined) {
       lines.push(`  "promptOptimizationEnabled": ${JSON.stringify(config.promptOptimizationEnabled)},`)
@@ -1146,6 +1167,13 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
 
     if (config.promptOptimizationMode !== undefined) {
       lines.push(`  "promptOptimizationMode": ${JSON.stringify(config.promptOptimizationMode)},`)
+    }
+
+    if (config.promptOptimizationReportingMode !== undefined && config.promptOptimizationReportingMode !== "off") {
+      lines.push(
+        `  // Reporting mode: "persist" keeps sanitized/redacted latest-report artifacts, and "summary" also emits sanitized/redacted summary metadata`,
+      )
+      lines.push(`  "promptOptimizationReportingMode": ${JSON.stringify(config.promptOptimizationReportingMode)},`)
     }
 
     if (promptOptimizationBudgets.promptOptimizationTokenBudget !== undefined) {
@@ -1298,6 +1326,9 @@ export function detectCurrentConfig(): DetectedConfig {
     cavemanEnabled: projectLocal?.cavemanEnabled ?? defaults.cavemanEnabled ?? false,
     promptOptimizationEnabled: resolvedPromptOptimization.enabled,
     promptOptimizationMode: resolvedPromptOptimization.mode,
+    ...(projectLocal?.promptOptimizationReportingMode !== undefined
+      ? { promptOptimizationReportingMode: projectLocal.promptOptimizationReportingMode }
+      : {}),
     ...(projectLocal?.promptOptimizationTokenBudget !== undefined
       ? { promptOptimizationTokenBudget: projectLocal.promptOptimizationTokenBudget }
       : {}),

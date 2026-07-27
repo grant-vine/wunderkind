@@ -1,26 +1,39 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
 import { spawnSync } from "node:child_process"
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { InstallConfig } from "../../src/cli/types.js"
 import { createProductWunderkindAgent } from "../../src/agents/index.js"
+import {
+  buildPromptOptimizationRuntimePublicPayload,
+  PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+} from "../../src/cli/prompt-optimization-runtime-public-payload.js"
+import type { PromptOptimizationRuntimeReport } from "../../src/cli/prompt-optimization-runtime-reporting.js"
+
+type RealConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
 const CONFIG_MANAGER_TS_URL = new URL("src/cli/config-manager/index.ts", `file://${PROJECT_ROOT}`).href
+const REAL_CONFIG_MANAGER_MODULE_URL = new URL(
+  `src/cli/config-manager/index.ts?plugin-transform-config=${Date.now()}`,
+  `file://${PROJECT_ROOT}`,
+).href
 const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?plugin-transform=${Date.now()}`, `file://${PROJECT_ROOT}`).href
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
 const ORIGINAL_CWD = process.cwd()
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
+const realConfigManager = (await import(REAL_CONFIG_MANAGER_MODULE_URL)) as RealConfigManagerModule
 
 const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
 
 function registerConfigManagerMock(): void {
   const factory = () => ({
+    ...realConfigManager,
     readWunderkindConfig: mockReadWunderkindConfig,
-    detectCurrentConfig: () => ({ isInstalled: false }),
+    detectCurrentConfig: realConfigManager.detectCurrentConfig,
     detectOmoInstallReadiness: () => ({
       installed: false,
       registered: false,
@@ -71,7 +84,7 @@ function registerConfigManagerMock(): void {
     summarizeOmoFreshness: () => ({ state: "not-detected", guidance: "mock guidance" }),
     detectWunderkindVersionInfo: () => ({ currentVersion: null }),
     getProjectOverrideMarker: () => ({ marker: "○", sourceLabel: "inherited default" }),
-    readProjectWunderkindConfig: () => null,
+    readProjectWunderkindConfig: realConfigManager.readProjectWunderkindConfig,
     resolveOpenCodeConfigPath: () => ({ path: "/tmp/mock-opencode.json", format: "json", source: "opencode.json" }),
     resolveWunderkindTeamConfigPath: () => "/tmp/.omo/teams/wunderkind-daily-brief/config.json",
     writeWunderkindTeamConfig: () => ({ success: true, configPath: "/tmp/.omo/teams/wunderkind-daily-brief/config.json" }),
@@ -85,21 +98,59 @@ function registerConfigManagerMock(): void {
 
 type TestOutput = {
   system: string[]
+  metadata?: (input: TestMetadataEvent) => void
 }
 
-type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "experimental.session.compacting"?: (input: unknown, output: { context: string[] }) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
+type TestMetadataEvent = {
+  readonly title?: string
+  readonly metadata?: Record<string, unknown>
+}
+
+type CompactionOutput = {
+  context: string[]
+  metadata?: (input: TestMetadataEvent) => void
+}
+
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "experimental.session.compacting"?: (input: unknown, output: CompactionOutput) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
+let cachedCompaction: ((input: unknown, output: CompactionOutput) => Promise<void>) | null = null
 const initPromise = (async () => {
   registerConfigManagerMock()
   const mod = (await import(INDEX_TEST_MODULE_URL)) as PluginModule
   const pluginResult = await mod.default({})
   const transform = pluginResult["experimental.chat.system.transform"]
+  const compaction = pluginResult["experimental.session.compacting"]
   if (!transform) {
     throw new Error("Expected experimental.chat.system.transform to exist")
   }
+  if (!compaction) {
+    throw new Error("Expected experimental.session.compacting to exist")
+  }
   cachedTransform = transform
+  cachedCompaction = compaction
 })()
+
+function readRuntimeReport(reportPath: string): PromptOptimizationRuntimeReport {
+  return JSON.parse(readFileSync(reportPath, "utf-8")) as PromptOptimizationRuntimeReport
+}
+
+function createRuntimeReportingConfig(overrides: Partial<InstallConfig> = {}): Partial<InstallConfig> {
+  return {
+    region: "South Africa",
+    industry: "SaaS",
+    primaryRegulation: "POPIA",
+    secondaryRegulation: "",
+    teamCulture: "pragmatic-balanced",
+    orgStructure: "flat",
+    docsEnabled: true,
+    docsPath: "./docs",
+    docHistoryMode: "append-dated",
+    promptOptimizationEnabled: true,
+    promptOptimizationReportingMode: "persist",
+    ...overrides,
+  }
+}
 
 describe("Wunderkind plugin transform", () => {
   beforeEach(() => {
@@ -107,6 +158,56 @@ describe("Wunderkind plugin transform", () => {
     mockReadWunderkindConfig.mockImplementation(() => null)
     process.chdir(ORIGINAL_CWD)
     delete process.env["OMO_AST_GREP_SG_PATH"]
+  })
+
+  it("builds one sanitized public runtime payload and derives summary metadata from its stable subset", () => {
+    const publicPayload = buildPromptOptimizationRuntimePublicPayload({
+      hookPath: "experimental.chat.system.transform",
+      modelId: "sk-live-summary",
+      promptOptimizationMode: "active",
+      countState: "exact-local",
+      budgetBasis: "configured-bytes",
+      budgetLimit: 128,
+      trimBasis: "configured-bytes",
+      trimBudgetLimit: 96,
+      eligibleSections: ["runtime-context"],
+      beforeBytes: 200,
+      afterBytes: 120,
+      savedBytes: 80,
+      trimApplied: true,
+      trimExhausted: false,
+      trimmedSections: ["runtime-docs-output"],
+      noTrimReason: null,
+      exactTokenDelta: {
+        beforeTokens: 40,
+        afterTokens: 24,
+        savedTokens: 16,
+      },
+    })
+
+    expect(publicPayload.report.modelId).toBe("***")
+    expect(publicPayload.summaryMetadata).toEqual({
+      hookPath: publicPayload.report.hookPath,
+      promptOptimizationMode: publicPayload.report.promptOptimizationMode,
+      countState: publicPayload.report.countState,
+      budgetBasis: publicPayload.report.budgetBasis,
+      budgetLimit: publicPayload.report.budgetLimit,
+      trimBasis: publicPayload.report.trimBasis,
+      trimBudgetLimit: publicPayload.report.trimBudgetLimit,
+      eligibleSections: publicPayload.report.eligibleSections,
+      beforeBytes: publicPayload.report.beforeBytes,
+      afterBytes: publicPayload.report.afterBytes,
+      savedBytes: publicPayload.report.savedBytes,
+      trimApplied: publicPayload.report.trimApplied,
+      trimExhausted: publicPayload.report.trimExhausted,
+      trimmedSections: publicPayload.report.trimmedSections,
+      noTrimReason: publicPayload.report.noTrimReason,
+      exactTokenDelta: publicPayload.report.exactTokenDelta,
+    })
+    expect(Object.keys(publicPayload.summaryMetadata)).toEqual([
+      ...PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+    ])
+    expect(publicPayload.summaryMetadata).not.toHaveProperty("modelId")
   })
 
   it("prefers ast-grep via the upstream env override seam on macOS when unset", async () => {
@@ -368,6 +469,457 @@ describe("Wunderkind plugin transform", () => {
     expect(output.system.some((entry) => entry.includes(NATIVE_AGENTS_SENTINEL))).toBe(true)
   })
 
+  it("overwrites the latest runtime report for both live hook paths and persists only scalar metrics plus section ids", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-runtime-report-${Date.now()}`)
+    const runtimeReportDir = join(tempDir, ".wunderkind", "runtime", "prompt-optimization")
+    const systemReportPath = join(runtimeReportDir, "system-transform.latest.json")
+    const sessionReportPath = join(runtimeReportDir, "session-compacting.latest.json")
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "advisory",
+          promptOptimizationByteBudget: 1200,
+        }),
+      )
+
+      await cachedTransform!({}, { system: [] })
+      await cachedCompaction!({}, { context: [] })
+
+      const firstSystemReport = readRuntimeReport(systemReportPath)
+      const firstSessionReport = readRuntimeReport(sessionReportPath)
+
+      expect(Object.keys(firstSystemReport)).toEqual([
+        "hookPath",
+        "modelId",
+        "promptOptimizationMode",
+        "countState",
+        "budgetBasis",
+        "budgetLimit",
+        "trimBasis",
+        "trimBudgetLimit",
+        "eligibleSections",
+        "beforeBytes",
+        "afterBytes",
+        "savedBytes",
+        "trimApplied",
+        "trimExhausted",
+        "trimmedSections",
+        "noTrimReason",
+        "exactTokenDelta",
+      ])
+      expect(firstSystemReport.hookPath).toBe("experimental.chat.system.transform")
+      expect(firstSystemReport.promptOptimizationMode).toBe("advisory")
+      expect(firstSystemReport.trimApplied).toBe(false)
+      expect(firstSystemReport.noTrimReason).toBe("advisory-mode-report-only")
+      expect(firstSystemReport.exactTokenDelta).toBe(null)
+      expect(firstSessionReport.hookPath).toBe("experimental.session.compacting")
+      expect(firstSessionReport.promptOptimizationMode).toBe("advisory")
+      expect(firstSessionReport.trimApplied).toBe(false)
+      expect(firstSessionReport.noTrimReason).toBe("advisory-mode-report-only")
+      expect(firstSessionReport.exactTokenDelta).toBe(null)
+      expect(firstSystemReport.eligibleSections.length).toBeGreaterThan(0)
+      expect(firstSystemReport.eligibleSections.every((sectionId) => typeof sectionId === "string")).toBe(true)
+      expect(firstSystemReport).not.toHaveProperty("content")
+      expect(firstSystemReport).not.toHaveProperty("system")
+      expect(firstSystemReport).not.toHaveProperty("context")
+
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+        }),
+      )
+
+      await cachedTransform!({}, { system: [] })
+      await cachedCompaction!({}, { context: [] })
+
+      const secondSystemReport = readRuntimeReport(systemReportPath)
+      const secondSessionReport = readRuntimeReport(sessionReportPath)
+
+      expect(secondSystemReport.hookPath).toBe("experimental.chat.system.transform")
+      expect(secondSystemReport.promptOptimizationMode).toBe("active")
+      expect(secondSystemReport.trimApplied).toBe(true)
+      expect(secondSystemReport.trimExhausted).toBe(true)
+      expect(secondSystemReport.noTrimReason).toBe(null)
+      expect(secondSystemReport.savedBytes).toBeGreaterThan(0)
+      expect(secondSystemReport.afterBytes < secondSystemReport.beforeBytes).toBe(true)
+      expect(secondSystemReport).not.toEqual(firstSystemReport)
+      expect(secondSystemReport.noTrimReason).not.toBe(firstSystemReport.noTrimReason)
+
+      expect(secondSessionReport.hookPath).toBe("experimental.session.compacting")
+      expect(secondSessionReport.promptOptimizationMode).toBe("active")
+      expect(secondSessionReport.trimApplied).toBe(true)
+      expect(secondSessionReport.trimExhausted).toBe(true)
+      expect(secondSessionReport.noTrimReason).toBe(null)
+      expect(secondSessionReport.trimmedSections).toEqual(["compaction-continuity"])
+      expect(secondSessionReport.savedBytes).toBeGreaterThan(0)
+      expect(secondSessionReport.afterBytes < secondSessionReport.beforeBytes).toBe(true)
+      expect(secondSessionReport).not.toEqual(firstSessionReport)
+      expect(secondSessionReport.noTrimReason).not.toBe(firstSessionReport.noTrimReason)
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("persists an over-budget no-trim reason when runtime-context is the only eligible system-transform section", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-runtime-context-only-${Date.now()}`)
+    const runtimeReportPath = join(
+      tempDir,
+      ".wunderkind",
+      "runtime",
+      "prompt-optimization",
+      "system-transform.latest.json",
+    )
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          docsEnabled: false,
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+        }),
+      )
+
+      await cachedTransform!(
+        {},
+        {
+          system: [
+            `${NATIVE_AGENTS_SENTINEL}\n## Wunderkind Native Agents\nAlready present`,
+          ],
+        },
+      )
+
+      const persistedReport = readRuntimeReport(runtimeReportPath)
+      const persistedJson = readFileSync(runtimeReportPath, "utf-8")
+
+      expect(persistedReport.hookPath).toBe("experimental.chat.system.transform")
+      expect(persistedReport.promptOptimizationMode).toBe("active")
+      expect(persistedReport.eligibleSections).toEqual(["runtime-context"])
+      expect(persistedReport.trimApplied).toBe(false)
+      expect(persistedReport.afterBytes).toBe(persistedReport.beforeBytes)
+      expect(persistedReport.afterBytes > (persistedReport.trimBudgetLimit ?? Number.POSITIVE_INFINITY)).toBe(true)
+      expect(persistedReport.noTrimReason).toBe("over-trim-budget-no-trimmable-sections")
+      expect(persistedJson).not.toContain("Already present")
+      expect(persistedJson).not.toContain("## Wunderkind Native Agents")
+      expect(persistedJson).not.toContain("## Documentation Output")
+      expect(persistedJson).not.toContain("SOUL")
+      expect(persistedJson).not.toContain("bg_")
+      expect(persistedJson).not.toContain("Preserve every active background task id")
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("masks seeded secret model ids in persisted latest reports and still overwrites both live hook paths on the next run", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-runtime-public-payload-${Date.now()}`)
+    const runtimeReportDir = join(tempDir, ".wunderkind", "runtime", "prompt-optimization")
+    const systemReportPath = join(runtimeReportDir, "system-transform.latest.json")
+    const sessionReportPath = join(runtimeReportDir, "session-compacting.latest.json")
+    const seededSecretModelId = "sk-live-summary"
+    const safeModelId = "gpt-4.1"
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "advisory",
+          promptOptimizationByteBudget: 1200,
+          promptOptimizationReportingMode: "persist",
+        }),
+      )
+
+      await cachedTransform!({ modelId: seededSecretModelId }, { system: [] })
+      await cachedCompaction!({ modelId: seededSecretModelId }, { context: [] })
+
+      const firstPersistedSystemReport = readRuntimeReport(systemReportPath)
+      const firstPersistedSessionReport = readRuntimeReport(sessionReportPath)
+      const firstPersistedSystemJson = readFileSync(systemReportPath, "utf-8")
+      const firstPersistedSessionJson = readFileSync(sessionReportPath, "utf-8")
+
+      expect(firstPersistedSystemReport.modelId).toBe("***")
+      expect(firstPersistedSessionReport.modelId).toBe("***")
+      expect(firstPersistedSystemReport.hookPath).toBe("experimental.chat.system.transform")
+      expect(firstPersistedSessionReport.hookPath).toBe("experimental.session.compacting")
+      expect(firstPersistedSystemReport.promptOptimizationMode).toBe("advisory")
+      expect(firstPersistedSessionReport.promptOptimizationMode).toBe("advisory")
+      expect(firstPersistedSystemReport.trimApplied).toBe(false)
+      expect(firstPersistedSessionReport.trimApplied).toBe(false)
+      expect(firstPersistedSystemJson).not.toContain(seededSecretModelId)
+      expect(firstPersistedSessionJson).not.toContain(seededSecretModelId)
+
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "persist",
+        }),
+      )
+
+      await cachedTransform!({ modelId: safeModelId }, { system: [] })
+      await cachedCompaction!({ modelId: safeModelId }, { context: [] })
+
+      const secondPersistedSystemReport = readRuntimeReport(systemReportPath)
+      const secondPersistedSessionReport = readRuntimeReport(sessionReportPath)
+      const secondPersistedSystemJson = readFileSync(systemReportPath, "utf-8")
+      const secondPersistedSessionJson = readFileSync(sessionReportPath, "utf-8")
+
+      expect(secondPersistedSystemReport.hookPath).toBe("experimental.chat.system.transform")
+      expect(secondPersistedSessionReport.hookPath).toBe("experimental.session.compacting")
+      expect(secondPersistedSystemReport.modelId).toBe(safeModelId)
+      expect(secondPersistedSessionReport.modelId).toBe(safeModelId)
+      expect(secondPersistedSystemReport.promptOptimizationMode).toBe("active")
+      expect(secondPersistedSessionReport.promptOptimizationMode).toBe("active")
+      expect(secondPersistedSystemReport.trimApplied).toBe(true)
+      expect(secondPersistedSessionReport.trimApplied).toBe(true)
+      expect(secondPersistedSystemReport).not.toEqual(firstPersistedSystemReport)
+      expect(secondPersistedSessionReport).not.toEqual(firstPersistedSessionReport)
+      expect(secondPersistedSystemJson).toContain(`"modelId": "${safeModelId}"`)
+      expect(secondPersistedSessionJson).toContain(`"modelId": "${safeModelId}"`)
+      expect(secondPersistedSystemJson).not.toContain(seededSecretModelId)
+      expect(secondPersistedSessionJson).not.toContain(seededSecretModelId)
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("leaves existing latest runtime reports untouched and emits no summary metadata when reporting mode changes from persist to off", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-runtime-off-${Date.now()}`)
+    const runtimeReportDir = join(tempDir, ".wunderkind", "runtime", "prompt-optimization")
+    const systemReportPath = join(runtimeReportDir, "system-transform.latest.json")
+    const sessionReportPath = join(runtimeReportDir, "session-compacting.latest.json")
+    const summaryEvents: TestMetadataEvent[] = []
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "persist",
+        }),
+      )
+
+      await cachedTransform!(
+        { modelId: "gpt-4.1" },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+      await cachedCompaction!(
+        { modelId: "gpt-4.1" },
+        { context: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      const persistedSystemJsonBeforeOff = readFileSync(systemReportPath, "utf-8")
+      const persistedSessionJsonBeforeOff = readFileSync(sessionReportPath, "utf-8")
+
+      summaryEvents.length = 0
+
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "off",
+        }),
+      )
+
+      await cachedTransform!(
+        { modelId: "github_pat_off_mode_should_not_overwrite" },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+      await cachedCompaction!(
+        { modelId: "github_pat_off_mode_should_not_overwrite" },
+        { context: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      expect(summaryEvents).toHaveLength(0)
+      expect(existsSync(systemReportPath)).toBe(true)
+      expect(existsSync(sessionReportPath)).toBe(true)
+      expect(readFileSync(systemReportPath, "utf-8")).toBe(persistedSystemJsonBeforeOff)
+      expect(readFileSync(sessionReportPath, "utf-8")).toBe(persistedSessionJsonBeforeOff)
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  it("emits scalar-only summary metadata for both live hook paths only in summary mode", async () => {
+    await initPromise
+    const tempDir = join(tmpdir(), `wunderkind-runtime-summary-${Date.now()}`)
+    const runtimeReportDir = join(tempDir, ".wunderkind", "runtime", "prompt-optimization")
+    const systemReportPath = join(runtimeReportDir, "system-transform.latest.json")
+    const sessionReportPath = join(runtimeReportDir, "session-compacting.latest.json")
+    const summaryEvents: TestMetadataEvent[] = []
+    const safeModelId = "gpt-4.1"
+    const seededSecretModelId = "sk-live-summary"
+
+    mkdirSync(tempDir, { recursive: true })
+    process.chdir(tempDir)
+
+    try {
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationTokenBudget: 1,
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "summary",
+        }),
+      )
+
+      await cachedTransform!(
+        { modelId: safeModelId, model: safeModelId },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+      await cachedCompaction!(
+        { modelId: safeModelId, model: safeModelId },
+        { context: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      const persistedSystemReport = readRuntimeReport(systemReportPath)
+      const persistedSessionReport = readRuntimeReport(sessionReportPath)
+      const expectedSystemPublicPayload = buildPromptOptimizationRuntimePublicPayload(
+        persistedSystemReport,
+      )
+      const expectedSessionPublicPayload = buildPromptOptimizationRuntimePublicPayload(
+        persistedSessionReport,
+      )
+
+      expect(summaryEvents).toHaveLength(2)
+      expect(persistedSystemReport).toEqual(expectedSystemPublicPayload.report)
+      expect(persistedSessionReport).toEqual(expectedSessionPublicPayload.report)
+      expect(summaryEvents[0]).toEqual({
+        title: "Prompt optimization summary",
+        metadata: expectedSystemPublicPayload.summaryMetadata,
+      })
+      expect(summaryEvents[1]).toEqual({
+        title: "Prompt optimization summary",
+        metadata: expectedSessionPublicPayload.summaryMetadata,
+      })
+
+      expect(persistedSystemReport.exactTokenDelta).not.toBe(null)
+      expect(persistedSystemReport.exactTokenDelta?.savedTokens).toBeGreaterThan(0)
+      expect(persistedSessionReport.exactTokenDelta).not.toBe(null)
+      expect(persistedSessionReport.exactTokenDelta?.savedTokens).toBeGreaterThan(0)
+
+      const summaryPayload = JSON.stringify(summaryEvents)
+      const persistedSystemJson = readFileSync(systemReportPath, "utf-8")
+      const persistedSessionJson = readFileSync(sessionReportPath, "utf-8")
+
+      expect(persistedSystemReport.modelId).toBe(safeModelId)
+      expect(persistedSessionReport.modelId).toBe(safeModelId)
+      expect(Object.keys(summaryEvents[0]?.metadata ?? {})).toEqual([
+        ...PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+      ])
+      expect(Object.keys(summaryEvents[1]?.metadata ?? {})).toEqual([
+        ...PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+      ])
+      expect(summaryPayload).not.toContain("## Documentation Output")
+      expect(summaryPayload).not.toContain("Preserve every active background task id")
+      expect(summaryPayload).not.toContain("bg_")
+      expect(summaryPayload).not.toContain("task")
+      expect(summaryPayload).not.toContain("SOUL")
+      expect(persistedSystemJson).not.toContain("## Documentation Output")
+      expect(persistedSessionJson).not.toContain("Preserve every active background task id")
+      expect(persistedSessionJson).not.toContain("bg_")
+      expect(persistedSystemJson).not.toContain("SOUL")
+
+      summaryEvents.length = 0
+
+      await cachedTransform!(
+        { modelId: seededSecretModelId, model: safeModelId },
+        { system: [], metadata: (input) => summaryEvents.push(input) },
+      )
+      await cachedCompaction!(
+        { modelId: seededSecretModelId, model: safeModelId },
+        { context: [], metadata: (input) => summaryEvents.push(input) },
+      )
+
+      const redactedSystemReport = readRuntimeReport(systemReportPath)
+      const redactedSessionReport = readRuntimeReport(sessionReportPath)
+      const expectedRedactedSystemPublicPayload = buildPromptOptimizationRuntimePublicPayload(
+        redactedSystemReport,
+      )
+      const expectedRedactedSessionPublicPayload = buildPromptOptimizationRuntimePublicPayload(
+        redactedSessionReport,
+      )
+      const redactedSummaryPayload = JSON.stringify(summaryEvents)
+      const redactedSystemJson = readFileSync(systemReportPath, "utf-8")
+      const redactedSessionJson = readFileSync(sessionReportPath, "utf-8")
+
+      expect(summaryEvents).toHaveLength(2)
+      expect(redactedSystemReport).toEqual(expectedRedactedSystemPublicPayload.report)
+      expect(redactedSessionReport).toEqual(expectedRedactedSessionPublicPayload.report)
+      expect(redactedSystemReport.modelId).toBe("***")
+      expect(redactedSessionReport.modelId).toBe("***")
+      expect(summaryEvents[0]).toEqual({
+        title: "Prompt optimization summary",
+        metadata: expectedRedactedSystemPublicPayload.summaryMetadata,
+      })
+      expect(summaryEvents[1]).toEqual({
+        title: "Prompt optimization summary",
+        metadata: expectedRedactedSessionPublicPayload.summaryMetadata,
+      })
+      expect(Object.keys(summaryEvents[0]?.metadata ?? {})).toEqual([
+        ...PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+      ])
+      expect(Object.keys(summaryEvents[1]?.metadata ?? {})).toEqual([
+        ...PROMPT_OPTIMIZATION_RUNTIME_SUMMARY_METADATA_FIELDS,
+      ])
+      expect(redactedSummaryPayload).not.toContain(seededSecretModelId)
+      expect(redactedSystemJson).not.toContain(seededSecretModelId)
+      expect(redactedSessionJson).not.toContain(seededSecretModelId)
+      expect(redactedSystemJson).toContain('"modelId": "***"')
+      expect(redactedSessionJson).toContain('"modelId": "***"')
+      expect(redactedSummaryPayload).not.toContain('"modelId"')
+
+      summaryEvents.length = 0
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "persist",
+        }),
+      )
+
+      await cachedTransform!({}, { system: [], metadata: (input) => summaryEvents.push(input) })
+      await cachedCompaction!({}, { context: [], metadata: (input) => summaryEvents.push(input) })
+
+      expect(summaryEvents).toHaveLength(0)
+
+      mockReadWunderkindConfig.mockImplementation(() =>
+        createRuntimeReportingConfig({
+          promptOptimizationMode: "active",
+          promptOptimizationByteBudget: 1,
+          promptOptimizationReportingMode: "off",
+        }),
+      )
+
+      await cachedTransform!({}, { system: [], metadata: (input) => summaryEvents.push(input) })
+      await cachedCompaction!({}, { context: [], metadata: (input) => summaryEvents.push(input) })
+
+      expect(summaryEvents).toHaveLength(0)
+    } finally {
+      process.chdir(ORIGINAL_CWD)
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
   it("preserves the continuity floor text when active compaction trimming exhausts earlier content", async () => {
     registerConfigManagerMock()
     mockReadWunderkindConfig.mockImplementation(() => ({
@@ -403,7 +955,7 @@ describe("Wunderkind plugin transform", () => {
 
     expect(helperRun.status).toBe(0)
     expect(helperRun.stdout.trim()).toBe(
-      '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"configured-bytes","trimApplied":true,"trimExhausted":false,"trimmedSections":["runtime-native-agents","runtime-docs-output"]}',
+      '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"configured-bytes","trimBasis":"configured-bytes","eligibleSections":["runtime-docs-output","runtime-context","runtime-native-agents","compaction-continuity"],"beforeBytes":6606,"afterBytes":1116,"savedBytes":5490,"trimApplied":true,"trimExhausted":false,"trimmedSections":["runtime-native-agents","runtime-docs-output"]}',
     )
   })
 

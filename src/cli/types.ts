@@ -7,6 +7,7 @@ export type PrdPipelineMode = "filesystem" | "github"
 export type DesignTool = "none" | "google-stitch"
 export type DesignMcpOwnership = "none" | "wunderkind-managed" | "reused-project" | "reused-global"
 export type PromptOptimizationMode = "off" | "advisory" | "active"
+export type PromptOptimizationReportingMode = "off" | "persist" | "summary"
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -43,6 +44,7 @@ export interface ProjectConfig {
   cavemanEnabled?: boolean
   promptOptimizationEnabled?: boolean | undefined
   promptOptimizationMode?: PromptOptimizationMode | undefined
+  promptOptimizationReportingMode?: PromptOptimizationReportingMode | undefined
   promptOptimizationTokenBudget?: number | undefined
   promptOptimizationByteBudget?: number | undefined
 }
@@ -112,6 +114,7 @@ export interface DetectedConfig {
   cavemanEnabled?: boolean
   promptOptimizationEnabled?: boolean | undefined
   promptOptimizationMode?: PromptOptimizationMode | undefined
+  promptOptimizationReportingMode?: PromptOptimizationReportingMode | undefined
   promptOptimizationTokenBudget?: number | undefined
   promptOptimizationByteBudget?: number | undefined
 }

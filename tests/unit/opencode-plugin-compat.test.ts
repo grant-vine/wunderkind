@@ -32,4 +32,19 @@ describe("OpenCode plugin compatibility shim", () => {
       ),
     ).toBe(false)
   })
+
+  it("keeps live runtime reporting owned by the runtime seam instead of token-audit", () => {
+    const tokenAuditSource = readFileSync(new URL("../../src/cli/token-audit.ts", import.meta.url), "utf8")
+    const pluginSource = readFileSync(new URL("../../src/index.ts", import.meta.url), "utf8")
+
+    expect(tokenAuditSource).toContain('./prompt-surface-audit.js')
+    expect(tokenAuditSource).not.toContain("prompt-optimization-runtime-reporting")
+    expect(tokenAuditSource).not.toContain("system-transform.latest.json")
+    expect(tokenAuditSource).not.toContain("session-compacting.latest.json")
+    expect(tokenAuditSource).not.toContain("promptOptimizationReportingMode")
+
+    expect(pluginSource).toContain("./cli/prompt-optimization-runtime-reporting.js")
+    expect(pluginSource).toContain("buildPromptOptimizationRuntimeReport")
+    expect(pluginSource).toContain("maybePersistPromptOptimizationRuntimeReport")
+  })
 })

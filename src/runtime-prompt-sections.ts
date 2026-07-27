@@ -22,11 +22,27 @@ export interface PromptOptimizationRuntimeSection {
   readonly content: string
 }
 
+export type PromptOptimizationRuntimeTrimBasis = "configured-bytes"
+
 export interface PromptOptimizationRuntimeTrimResult {
   readonly sections: readonly PromptOptimizationRuntimeSection[]
+  readonly trimBasis: PromptOptimizationRuntimeTrimBasis
+  readonly eligibleSections: readonly PromptOptimizationRuntimeSectionId[]
+  readonly beforeBytes: number
+  readonly afterBytes: number
+  readonly savedBytes: number
   readonly trimApplied: boolean
   readonly trimExhausted: boolean
   readonly trimmedSections: readonly PromptOptimizationRuntimeSectionId[]
+}
+
+export interface PromptOptimizationRuntimeEvaluation {
+  readonly eligibleSections: readonly PromptOptimizationRuntimeSection[]
+  readonly trimResult: PromptOptimizationRuntimeTrimResult
+}
+
+export interface PromptOptimizationCompactionContextBuildResult extends PromptOptimizationRuntimeEvaluation {
+  readonly context: readonly string[]
 }
 
 const ACTIVE_RUNTIME_TRIM_ORDER = [
@@ -51,6 +67,12 @@ function joinRuntimeSections(sections: readonly PromptOptimizationRuntimeSection
     .join("\n")
 }
 
+export function getPromptOptimizationRuntimeSectionByteLength(
+  sections: readonly PromptOptimizationRuntimeSection[],
+): number {
+  return Buffer.byteLength(joinRuntimeSections(sections), "utf8")
+}
+
 function getTrimmedSectionContent(sectionId: PromptOptimizationRuntimeSectionId): string | null {
   switch (sectionId) {
     case "runtime-native-agents":
@@ -60,6 +82,24 @@ function getTrimmedSectionContent(sectionId: PromptOptimizationRuntimeSectionId)
       return COMPACTION_CONTINUITY_FLOOR_TEXT
     case "runtime-context":
       return null
+  }
+}
+
+function createUntrimmedRuntimeResult(
+  sections: readonly PromptOptimizationRuntimeSection[],
+): PromptOptimizationRuntimeTrimResult {
+  const beforeBytes = getPromptOptimizationRuntimeSectionByteLength(sections)
+
+  return {
+    sections,
+    trimBasis: "configured-bytes",
+    eligibleSections: sections.map((section) => section.id),
+    beforeBytes,
+    afterBytes: beforeBytes,
+    savedBytes: 0,
+    trimApplied: false,
+    trimExhausted: false,
+    trimmedSections: [],
   }
 }
 
@@ -84,11 +124,18 @@ export function trimPromptOptimizationRuntimeSections(
   byteBudget: number,
 ): PromptOptimizationRuntimeTrimResult {
   const trimmedSections = sections.map((section) => ({ ...section }))
+  const eligibleSections = sections.map((section) => section.id)
+  const beforeBytes = getPromptOptimizationRuntimeSectionByteLength(sections)
   const appliedSectionIds: PromptOptimizationRuntimeSectionId[] = []
 
-  if (Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8") <= byteBudget) {
+  if (getPromptOptimizationRuntimeSectionByteLength(trimmedSections) <= byteBudget) {
     return {
       sections: trimmedSections,
+      trimBasis: "configured-bytes",
+      eligibleSections,
+      beforeBytes,
+      afterBytes: beforeBytes,
+      savedBytes: 0,
       trimApplied: false,
       trimExhausted: false,
       trimmedSections: [],
@@ -96,7 +143,7 @@ export function trimPromptOptimizationRuntimeSections(
   }
 
   for (const sectionId of ACTIVE_RUNTIME_TRIM_ORDER) {
-    if (Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8") <= byteBudget) {
+    if (getPromptOptimizationRuntimeSectionByteLength(trimmedSections) <= byteBudget) {
       break
     }
 
@@ -122,12 +169,17 @@ export function trimPromptOptimizationRuntimeSections(
     appliedSectionIds.push(sectionId)
   }
 
-  const remainingBytes = Buffer.byteLength(joinRuntimeSections(trimmedSections), "utf8")
+  const afterBytes = getPromptOptimizationRuntimeSectionByteLength(trimmedSections)
 
   return {
     sections: trimmedSections,
+    trimBasis: "configured-bytes",
+    eligibleSections,
+    beforeBytes,
+    afterBytes,
+    savedBytes: beforeBytes - afterBytes,
     trimApplied: appliedSectionIds.length > 0,
-    trimExhausted: appliedSectionIds.length > 0 && remainingBytes > byteBudget,
+    trimExhausted: appliedSectionIds.length > 0 && afterBytes > byteBudget,
     trimmedSections: appliedSectionIds,
   }
 }
@@ -197,10 +249,10 @@ function readSoulOverlay(agentKey: (typeof SOUL_HEADING_MARKERS)[number]["agentK
   }
 }
 
-export function buildCompactionContext(
+export function buildCompactionContextResult(
   wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
   cwd: string = process.cwd(),
-): string[] {
+): PromptOptimizationCompactionContextBuildResult {
   const context = [
     `## Wunderkind compaction priorities
 
@@ -244,32 +296,56 @@ The project is using github PRD/workflow mode. Preserve any active GitHub issue,
   }
 
   const activeByteBudget = getActiveRuntimePromptOptimizationByteBudget(wunderkindConfig)
+  const eligibleSections: readonly PromptOptimizationRuntimeSection[] = [
+    { id: "compaction-continuity", content: context.join("\n") },
+  ]
+
   if (activeByteBudget === null) {
-    return context
+    return {
+      context,
+      eligibleSections,
+      trimResult: createUntrimmedRuntimeResult(eligibleSections),
+    }
   }
 
-  const trimResult = trimPromptOptimizationRuntimeSections(
-    [{ id: "compaction-continuity", content: context.join("\n") }],
-    activeByteBudget,
-  )
+  const trimResult = trimPromptOptimizationRuntimeSections(eligibleSections, activeByteBudget)
 
   if (!trimResult.trimApplied) {
-    return context
+    return {
+      context,
+      eligibleSections,
+      trimResult,
+    }
   }
 
   const trimmedCompactionSection = trimResult.sections[0]
   if (!trimmedCompactionSection || trimmedCompactionSection.content === "") {
-    return []
+    return {
+      context: [],
+      eligibleSections,
+      trimResult,
+    }
   }
 
-  return [trimmedCompactionSection.content]
+  return {
+    context: [trimmedCompactionSection.content],
+    eligibleSections,
+    trimResult,
+  }
+}
+
+export function buildCompactionContext(
+  wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
+  cwd: string = process.cwd(),
+): string[] {
+  return [...buildCompactionContextResult(wunderkindConfig, cwd).context]
 }
 
 export function applyWunderkindSystemTransform(options: {
   system: string[]
   wunderkindConfig: ReturnType<typeof readWunderkindConfig>
   cwd?: string
-}): void {
+}): PromptOptimizationRuntimeEvaluation {
   const cwd = options.cwd ?? process.cwd()
   const existingSystemContent = options.system.join("")
   const hasDocsOutputSentinel = existingSystemContent.includes(DOCS_OUTPUT_SENTINEL)
@@ -406,23 +482,25 @@ Treat the resolved runtime context above as the source of truth for region, indu
  `.split("\u0000").join("").trim()
   }
 
+  const eligibleSections: readonly PromptOptimizationRuntimeSection[] = [
+    ...(docsOutputSection ? [{ id: "runtime-docs-output" as const, content: docsOutputSection }] : []),
+    ...(runtimeContextSection ? [{ id: "runtime-context" as const, content: runtimeContextSection }] : []),
+    ...(nativeAgentsSection ? [{ id: "runtime-native-agents" as const, content: nativeAgentsSection }] : []),
+  ]
+
   const activeByteBudget = getActiveRuntimePromptOptimizationByteBudget(wunderkindConfig)
   if (activeByteBudget === null) {
     if (docsOutputSection) options.system.push(docsOutputSection)
     if (runtimeContextSection) options.system.push(runtimeContextSection)
     if (soulOverlaySection) options.system.push(soulOverlaySection)
     if (nativeAgentsSection) options.system.push(nativeAgentsSection)
-    return
+    return {
+      eligibleSections,
+      trimResult: createUntrimmedRuntimeResult(eligibleSections),
+    }
   }
 
-  const trimResult = trimPromptOptimizationRuntimeSections(
-    [
-      ...(docsOutputSection ? [{ id: "runtime-docs-output" as const, content: docsOutputSection }] : []),
-      ...(runtimeContextSection ? [{ id: "runtime-context" as const, content: runtimeContextSection }] : []),
-      ...(nativeAgentsSection ? [{ id: "runtime-native-agents" as const, content: nativeAgentsSection }] : []),
-    ],
-    activeByteBudget,
-  )
+  const trimResult = trimPromptOptimizationRuntimeSections(eligibleSections, activeByteBudget)
 
   const trimmedDocsOutputSection = trimResult.sections.find((section) => section.id === "runtime-docs-output")
   const trimmedRuntimeContextSection = trimResult.sections.find((section) => section.id === "runtime-context")
@@ -439,5 +517,10 @@ Treat the resolved runtime context above as the source of truth for region, indu
   }
   if (trimmedNativeAgentsSection && trimmedNativeAgentsSection.content !== "") {
     options.system.push(trimmedNativeAgentsSection.content)
+  }
+
+  return {
+    eligibleSections,
+    trimResult,
   }
 }

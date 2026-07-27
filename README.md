@@ -24,15 +24,16 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.23.2
+## What's new in 0.23.3
 
-Wunderkind `0.23.2` keeps the `oh-my-openagent` `4.19.1` plus OpenCode plugin/SDK `1.18.4` alignment, preserves `token-audit` as an audit-only reporting surface, and retains the macOS ast-grep compatibility shim because the upstream `4.19.1` patch does not change the warning behavior.
+Wunderkind `0.23.3` hardens the supplementary prompt-optimization runtime-report surface introduced in `0.23.0` without changing `wunderkind token-audit` into a live optimization feature. This release freezes the public runtime-report contract, redacts secret-like emitted `modelId` values, keeps SOUL content out of reportable sections, aligns operator-facing wording around the separate sanitized/redacted runtime-report surface, and ships the deterministic regression bundle that proves those guarantees.
 
 - keep `wunderkind token-audit` audit-only: no live prompt packing, no model-token truth claims, and no public optimize command
-- preserve the supplementary prompt-optimization engine introduced in `0.23.0`, including bounded runtime trimming for supported sections only
-- bump Wunderkind's direct `oh-my-openagent` dependency to `4.19.1`
-- keep the macOS-only `OMO_AST_GREP_SG_PATH` startup shim because upstream `4.19.1` does not supersede the local ast-grep mitigation
-- preserve any operator-provided `OMO_AST_GREP_SG_PATH` override instead of clobbering upstream configuration
+- route persisted latest-report artifacts and summary metadata through one shared sanitized public-payload seam
+- redact secret-like emitted `modelId` values as `***` while preserving safe literals and unchanged `off` / `persist` / `summary` semantics
+- preserve `runtime-soul-overlay` in live prompt assembly while keeping it excluded from eligible/reportable runtime-report surfaces
+- align README, docs, CLI help, doctor output, config comments, and schema wording around the separate sanitized/redacted runtime-report surface
+- ship deterministic seeded-secret and integrated proof coverage for persisted artifacts, summary metadata, and final scope fidelity
 
 ### Clean upgrade path for existing installs
 
@@ -277,6 +278,10 @@ wunderkind token-audit --surface commands --format json
 - v1 is read-only and reporting-only
 - prompt-runtime v1 is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency
 - any supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit` and surfaces through config and doctor rather than a new public optimize command
+- `promptOptimizationReportingMode` is the opt-in key for the separate runtime-report surface: `off`, `persist`, and `summary`
+- `persist` keeps sanitized/redacted latest-report artifacts or summaries on that separate runtime-report surface at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
+- the separate prompt-optimization runtime-report surface is scalar-first: every current emitted public field is safe scalar/enum/id except `modelId`, which is the only unconstrained public string carrier in the frozen V3 contract
+- V3 freezes omission-before-mask precedence for that runtime-report surface: keep fields omitted or scalar-only when possible, preserve ordinary safe-literal `modelId` values, and replace a secret-bearing public `modelId` with `***` when it matches the frozen rule set (`sk-`, `ghp_`, `github_pat_`, `xoxb-`, `xoxp-`, `Bearer `, JWT-shape, credentialed URL authority, or PEM/private-key sentinels)
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -363,8 +368,11 @@ wunderkind doctor
 - Active region, industry, and regulation baseline with source markers
 - PRD workflow mode and GitHub-readiness signals
 - workflow-sync guidance and tracked GitHub workflow state directory
+- `promptOptimizationReportingMode` plus latest-report artifact existence for `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
+
+`wunderkind doctor` stays conservative here: it reports configuration posture and latest-artifact existence, not proven runtime savings. `wunderkind token-audit` remains the separate audit-only reporting surface.
 
 Legend:
 - `●` = project override
@@ -607,10 +615,12 @@ Edit the global file to change region/industry/regulation defaults after install
   // PRD / planning workflow mode
   "prdPipelineMode": "filesystem",
 
-  // Prompt optimization engine (optional; omit all four keys to keep the engine fully off)
+  // Prompt optimization engine (optional; omit all five related keys to keep the engine fully off)
   "promptOptimizationEnabled": false,
   // Mode: "off" | "advisory" | "active"
   "promptOptimizationMode": "off",
+  // Runtime reporting mode for the separate runtime-report surface: "off" | "persist" | "summary"
+  "promptOptimizationReportingMode": "persist",
   // Optional token budget used only for supported exact OpenAI model counting
   "promptOptimizationTokenBudget": 120000,
   // Optional byte budget fallback for unsupported or unset model IDs
@@ -626,6 +636,10 @@ Prompt optimization is intentionally supplementary in this release. It is **defa
 - `off` keeps runtime trimming disabled and should usually be represented by omitting the optimization keys entirely.
 - `advisory` computes/report budgets without mutating the live prompt.
 - `active` allows bounded runtime trimming of the supported runtime sections only.
+- `promptOptimizationReportingMode` accepts `off`, `persist`, and `summary` on the separate runtime-report surface.
+- `persist` writes sanitized/redacted latest-report artifacts or summaries to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
+- that runtime-report surface uses the frozen V3 scalar-first public contract: every current emitted field is safe scalar/enum/id except `modelId`, and secret-bearing `modelId` values must surface as `***` rather than cleartext when the public payload is emitted.
+- `summary` keeps those same sanitized/redacted latest-report artifacts and also emits sanitized/redacted session summary metadata; `doctor --verbose` surfaces existence/status only and does not claim proven runtime savings.
 - `promptOptimizationTokenBudget` is meaningful only when the current model is inside the supported exact OpenAI map.
 - `promptOptimizationByteBudget` is the explicit fallback for unsupported or unset models when operators still want bounded runtime behavior.
 

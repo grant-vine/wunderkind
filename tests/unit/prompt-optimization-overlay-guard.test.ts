@@ -8,6 +8,20 @@ import {
 import { getPromptRuntimeContract } from "../../src/cli/prompt-surface-audit.js"
 
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
+const SOUL_BOUNDARY_HELPER_PATH = new URL("./helpers/run-runtime-soul-boundary-fixture.mjs", import.meta.url)
+
+function createHelperEnv(overrides: Readonly<Record<string, string>> = {}): NodeJS.ProcessEnv {
+  const env = { ...process.env, ...overrides }
+  delete env.WUNDERKIND_TEST_MODEL
+  delete env.WUNDERKIND_TEST_ENGINE
+  delete env.WUNDERKIND_TEST_TOKEN_BUDGET
+  delete env.WUNDERKIND_TEST_BYTE_BUDGET
+  delete env.WUNDERKIND_TEST_FIXTURE
+  delete env.WUNDERKIND_TEST_OUTPUT
+  delete env.WUNDERKIND_TEST_HOOK_PATH
+
+  return { ...env, ...overrides }
+}
 
 describe("prompt optimization overlay guard", () => {
   it("publishes explicit runtime-soul-overlay guardrail coverage in the runtime contract", () => {
@@ -32,17 +46,148 @@ describe("prompt optimization overlay guard", () => {
 
   it("keeps the runtime-soul-overlay helper fixture byte-stable while active mode is enabled", () => {
     const helperRun = spawnSync(process.execPath, [HELPER_PATH.pathname], {
-      env: {
-        ...process.env,
+      env: createHelperEnv({
         WUNDERKIND_TEST_ENGINE: "active",
         WUNDERKIND_TEST_FIXTURE: "fixture-runtime-soul-overlay",
-      },
+      }),
       encoding: "utf8",
     })
 
     expect(helperRun.status).toBe(0)
     expect(helperRun.stdout.trim()).toBe(
-      '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"budget-unavailable","trimApplied":false,"trimExhausted":false,"trimmedSections":[]}',
+      '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"budget-unavailable","trimBasis":"configured-bytes","eligibleSections":["runtime-context","runtime-native-agents","compaction-continuity"],"beforeBytes":5987,"afterBytes":5987,"savedBytes":0,"trimApplied":false,"trimExhausted":false,"trimmedSections":[]}',
     )
+  })
+
+  it("keeps runtime-soul-overlay excluded in structured runtime-report helper output", () => {
+    const helperRun = spawnSync(process.execPath, [HELPER_PATH.pathname], {
+      env: createHelperEnv({
+        WUNDERKIND_TEST_OUTPUT: "runtime-report",
+        WUNDERKIND_TEST_ENGINE: "active",
+        WUNDERKIND_TEST_FIXTURE: "fixture-runtime-soul-overlay",
+        WUNDERKIND_TEST_BYTE_BUDGET: "7000",
+      }),
+      encoding: "utf8",
+    })
+
+    const parsed = JSON.parse(helperRun.stdout.trim() || "{}") as {
+      readonly eligibleSections?: readonly string[]
+      readonly trimmedSections?: readonly string[]
+      readonly noTrimReason?: string | null
+      readonly exactTokenDelta?: unknown
+    }
+
+    expect(helperRun.status).toBe(0)
+    expect((parsed as { readonly hookPath?: string }).hookPath).toBe("experimental.chat.system.transform")
+    expect(parsed.eligibleSections).toEqual([
+      "runtime-context",
+      "runtime-native-agents",
+      "compaction-continuity",
+    ])
+    expect(parsed.eligibleSections).not.toContain("runtime-soul-overlay")
+    expect(parsed.trimmedSections).not.toContain("runtime-soul-overlay")
+    expect(parsed.noTrimReason).toBe("within-trim-budget")
+    expect(parsed.exactTokenDelta).toBe(null)
+  })
+
+  it("keeps secret-shaped SOUL content in raw runtime assembly while excluding it from reportable sections", () => {
+    const helperRun = spawnSync(process.execPath, [SOUL_BOUNDARY_HELPER_PATH.pathname], {
+      encoding: "utf8",
+    })
+
+    const parsed = JSON.parse(helperRun.stdout.trim() || "{}") as {
+      readonly systemSections?: readonly string[]
+      readonly eligibleSectionIds?: readonly string[]
+      readonly eligibleContent?: string
+      readonly trimmedSectionIds?: readonly string[]
+    }
+
+    expect(helperRun.status).toBe(0)
+    expect(parsed.systemSections?.some((section) => section.includes("## Wunderkind SOUL Overlay"))).toBe(true)
+    expect(parsed.systemSections?.some((section) => section.includes("sk-live-soul-boundary-proof"))).toBe(true)
+    expect(parsed.eligibleSectionIds).toEqual(["runtime-context", "runtime-native-agents"])
+    expect(parsed.eligibleContent).not.toContain("runtime-soul-overlay")
+    expect(parsed.eligibleContent).not.toContain("## Wunderkind SOUL Overlay")
+    expect(parsed.eligibleContent).not.toContain("sk-live-soul-boundary-proof")
+    expect(parsed.trimmedSectionIds).not.toContain("runtime-soul-overlay")
+  })
+
+  it("keeps runtime-context eligible but never trimmed during forced over-budget active trimming", () => {
+    const helperRun = spawnSync(process.execPath, [HELPER_PATH.pathname], {
+      env: createHelperEnv({
+        WUNDERKIND_TEST_ENGINE: "active",
+        WUNDERKIND_TEST_FIXTURE: "fixture-runtime-active-trim",
+        WUNDERKIND_TEST_BYTE_BUDGET: "1",
+      }),
+      encoding: "utf8",
+    })
+
+    const parsed = JSON.parse(helperRun.stdout.trim() || "{}") as {
+      readonly trimBasis?: string
+      readonly eligibleSections?: readonly string[]
+      readonly beforeBytes?: number
+      readonly afterBytes?: number
+      readonly savedBytes?: number
+      readonly trimApplied?: boolean
+      readonly trimExhausted?: boolean
+      readonly trimmedSections?: readonly string[]
+    }
+
+    expect(helperRun.status).toBe(0)
+    expect(parsed.trimBasis).toBe("configured-bytes")
+    expect(parsed.eligibleSections).toEqual([
+      "runtime-docs-output",
+      "runtime-context",
+      "runtime-native-agents",
+      "compaction-continuity",
+    ])
+    expect(parsed.trimApplied).toBe(true)
+    expect(parsed.trimExhausted).toBe(true)
+    expect(parsed.trimmedSections).toEqual([
+      "runtime-native-agents",
+      "runtime-docs-output",
+      "compaction-continuity",
+    ])
+    expect(parsed.trimmedSections).not.toContain("runtime-context")
+    expect(typeof parsed.beforeBytes).toBe("number")
+    expect(typeof parsed.afterBytes).toBe("number")
+    expect(typeof parsed.savedBytes).toBe("number")
+    expect(parsed.beforeBytes).toBeGreaterThan(parsed.afterBytes ?? Number.POSITIVE_INFINITY)
+    expect(parsed.savedBytes).toBe((parsed.beforeBytes ?? 0) - (parsed.afterBytes ?? 0))
+  })
+
+  it("keeps soul-overlay advisory helper output deterministic when parent env leaks runtime-report vars", () => {
+    const originalOutput = process.env.WUNDERKIND_TEST_OUTPUT
+    const originalHookPath = process.env.WUNDERKIND_TEST_HOOK_PATH
+
+    process.env.WUNDERKIND_TEST_OUTPUT = "runtime-report"
+    process.env.WUNDERKIND_TEST_HOOK_PATH = "experimental.session.compacting"
+
+    try {
+      const helperRun = spawnSync(process.execPath, [HELPER_PATH.pathname], {
+        env: createHelperEnv({
+          WUNDERKIND_TEST_ENGINE: "active",
+          WUNDERKIND_TEST_FIXTURE: "fixture-runtime-soul-overlay",
+        }),
+        encoding: "utf8",
+      })
+
+      expect(helperRun.status).toBe(0)
+      expect(helperRun.stdout.trim()).toBe(
+        '{"modelId":null,"promptOptimizationMode":"active","countState":"unsupported","budgetBasis":"budget-unavailable","trimBasis":"configured-bytes","eligibleSections":["runtime-context","runtime-native-agents","compaction-continuity"],"beforeBytes":5987,"afterBytes":5987,"savedBytes":0,"trimApplied":false,"trimExhausted":false,"trimmedSections":[]}',
+      )
+    } finally {
+      if (originalOutput === undefined) {
+        delete process.env.WUNDERKIND_TEST_OUTPUT
+      } else {
+        process.env.WUNDERKIND_TEST_OUTPUT = originalOutput
+      }
+
+      if (originalHookPath === undefined) {
+        delete process.env.WUNDERKIND_TEST_HOOK_PATH
+      } else {
+        process.env.WUNDERKIND_TEST_HOOK_PATH = originalHookPath
+      }
+    }
   })
 })

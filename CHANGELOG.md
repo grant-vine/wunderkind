@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.23.3
+
+- freeze the V3 prompt-optimization runtime-report public contract around one shared sanitized payload for persisted latest artifacts and summary metadata
+- redact secret-like emitted `modelId` values as `***`, preserve safe literal values where allowed, and keep `runtime-soul-overlay` excluded from reportable runtime surfaces
+- align README, docs, CLI help, doctor output, rendered config comments, and schema descriptions around the separate sanitized/redacted runtime-report surface while preserving audit-only `token-audit`
+- add deterministic seeded-secret regression coverage plus the final integrated proof sweep for persisted artifacts, summary metadata, helper surfaces, and final scope fidelity
+
 ## 0.23.2
 
 - align Wunderkind's direct upstream dependency pin to `oh-my-openagent@4.19.1`
