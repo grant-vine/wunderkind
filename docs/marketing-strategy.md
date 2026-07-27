@@ -1,6 +1,6 @@
 # Marketing Strategy
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 
 ## Positioning
 
@@ -17,7 +17,9 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 4. **Upgrade trust matters**
    - `wunderkind doctor` and `wunderkind upgrade` now surface stale native assets and native agent markdown version drift.
 5. **Filesystem-first docs and planning**
-   - `docs-with-grill`, `prd-pipeline`, `triage-issue`, and `/docs-index` all reinforce a repo-local, durable workflow. Deprecated skill routes, including `design-an-interface`, stay as replacement guidance only.
+    - `docs-with-grill`, `prd-pipeline`, `triage-issue`, and `/docs-index` all reinforce a repo-local, durable workflow. Deprecated skill routes, including `design-an-interface`, stay as replacement guidance only.
+6. **Optional runtime observability without product-default lock-in**
+   - `token-audit` stays audit-only, while the separate prompt-optimization runtime-report surface gives teams an opt-in way to observe local trimming/reporting behavior without turning that into a public optimize workflow.
 
 ## Priority audiences
 
@@ -31,6 +33,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 - “Keep your OpenCode setup; add retained specialist depth.”
 - “Use `CONTEXT.md` + `docs-with-grill` to make docs and planning more coherent over time.”
 - “Doctor tells you when your installed native assets drift.”
+- “Keep product defaults conservative, but allow project-local prompt optimization when the repo needs it.”
 
 ## Messaging updates worth carrying forward
 

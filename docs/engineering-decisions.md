@@ -1,13 +1,13 @@
 # Engineering Decisions
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
 - **Plugin package**: `@opencode-ai/plugin@1.18.7`
 - **OMO dependency**: `oh-my-openagent@4.19.2`
-- **Current Wunderkind package version**: `0.23.4`
+- **Current Wunderkind package version**: `0.23.5`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 
 ## Architecture decisions
@@ -31,12 +31,16 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ### CONTEXT.md is part of project bootstrap
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
 
+### Prompt optimization reporting is a separate operational seam
+The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-contract.ts`, `src/cli/prompt-optimization-runtime-reporting.ts`, and `src/runtime-prompt-sections.ts`. It is deliberately separate from `src/cli/token-audit.ts`, keeps `token-audit` audit-only, and persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`.
+
 ## Current operational notes
 
 - Docs output is enabled for this repo at `./docs` with history mode `overwrite`.
 - The repo’s current managed docs lanes come from `src/agents/docs-config.ts`.
 - `/docs-index` is a shipped command asset in `commands/docs-index.md`.
 - `init-deep` is documented as an upstream OMO workflow concept, not a Wunderkind CLI command.
+- This repo currently keeps a project-local prompt optimization override enabled in `.wunderkind/wunderkind.config.jsonc`; keep that framed as local repo state, not product-wide default behavior.
 
 ## Dependency posture
 

@@ -1,11 +1,11 @@
 # Product Decisions
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.23.4`
+- **Current version**: `0.23.5`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -44,8 +44,11 @@ The current alignment target is `oh-my-openagent` `4.19.2` with `@opencode-ai/pl
 ### 11. Keep team-mode explicit and fallback-safe
 Wunderkind team mode is a thin upstream-compatible layer: `wunderkind team-bootstrap` writes canonical `.omo/teams/<name>/config.json` specs, `/wunderkind-team` checks canonical `oh-my-openagent` config paths plus `team_mode.enabled`, and disabled or missing-spec states fall back to solo `product-wunderkind` orchestration.
 
-### 12. Keep prompt-runtime v1 audit-only
-Prompt-runtime work is `audit-only` in v1: no live prompt packing, no model-token truth claims, no OpenToken adoption, and no daemon or sidecar runtime. `token-audit` reports deterministic bytes, lines, files, and canonical fixture layers rather than model-specific token counts.
+### 12. Keep `token-audit` audit-only while allowing separate supplementary prompt optimization
+`token-audit` stays `audit-only`: no live prompt packing, no model-token truth claims, no OpenToken adoption, and no daemon or sidecar runtime. Separately, the supplementary prompt optimization engine may be enabled per project through config; it remains distinct from `token-audit`, does not introduce a public optimize command, and keeps live mutation byte-budget-driven in this phase.
+
+### 13. Treat this repo's active prompt optimization posture as local repo state, not product default
+This repository currently keeps a project-local prompt optimization override enabled (`active`, `summary`, `120000` token budget, `500000` byte budget). That posture should be documented as local operating state for this repo, not as a claim that Wunderkind defaults to active optimization for all users.
 
 ## Current feature set to highlight
 
@@ -60,6 +63,7 @@ Prompt-runtime work is `audit-only` in v1: no live prompt packing, no model-toke
 - Native asset freshness/version reporting.
 - `/wunderkind-team` native command and `wunderkind team-bootstrap` CLI bootstrap.
 - `wunderkind token-audit` prompt-runtime reporting with audit-only layered fixture metadata.
+- Separate prompt-optimization runtime-report artifacts discoverable through `doctor --verbose`.
 - Embedded `wunderkind_version` in generated native agent markdown.
 - Filesystem/GitHub PRD pipeline support.
 - Caveman mode and design tool integration.

@@ -1,6 +1,6 @@
 # Security Decisions
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 
 ## Runtime and compliance context
 
@@ -15,6 +15,9 @@ Managed docs, `AGENTS.md`, `CONTEXT.md`, and `.omo/` work should remain inside t
 
 ### Durable memory lanes stay append-only
 `.omo/notepads/` and `.omo/evidence/` are append-only durable lanes; ordinary docs output belongs in `docs/` and should not be written through the bounded durable artifact writer.
+
+### Runtime prompt reports must stay sanitized and local
+The supplementary prompt-optimization reporting surface persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`. Those reports must remain scalar-first, redact secret-shaped `modelId` values, and never be described as general proof of savings beyond the local repo/run that produced them.
 
 ### Compatibility guidance should be explicit, not silent
 Canonical `oh-my-openagent` naming is the only active path. Legacy `oh-my-opencode` references remain detection-only warning and migration surfaces so operators can diagnose stale installs without believing fallback execution still exists.
@@ -33,6 +36,7 @@ Resolved patched versions currently present in the dependency graph:
 - `wunderkind doctor` is the primary read-only verification surface.
 - Native asset freshness and native agent markdown version drift are now observable.
 - Project docs output is enabled locally, but still scoped to `./docs` and governed by the configured history mode.
+- `doctor --verbose` may expose prompt-optimization posture and artifact existence, but it must not be described as proving runtime savings.
 
 ## Source map
 

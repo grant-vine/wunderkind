@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.21.0  
+**Package:** `@grant-vine/wunderkind` v0.23.5  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`
 
 oh-my-openagent addon that acts as a retained-agent overlay for OpenCode. It injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal), keeps `product-wunderkind` as the default front door, and anchors workflow state in `.omo`, docs output, and lifecycle commands instead of acting as a generic skills marketplace.
@@ -18,7 +18,7 @@ wunderkind/
 │   ├── cli/                   # Install/upgrade/init/doctor/uninstall/gitignore commands
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
-├── commands/                  # Shipped native command assets (docs-index, dream, design-md)
+├── commands/                  # Shipped native command assets (docs-index, dream, design-md, workflow-sync, wunderkind-team)
 ├── skills/                    # Static SKILL.md files: 19 promoted + 4 Wunderkind-specific public routes, 1 deprecated docs-history route, and SKILL-STANDARD.md
 ├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
@@ -36,7 +36,8 @@ wunderkind/
 <project-root>/
 ├── CONTEXT.md                  # Compact shared product/domain context for docs grilling and future skill compatibility
 └── .wunderkind/                 # Per-project config + state (gitignored)
-    └── wunderkind.config.jsonc  # Per-project config override
+    ├── wunderkind.config.jsonc  # Per-project config override
+    └── runtime/                 # Latest-only runtime artifacts such as prompt-optimization reports
 ```
 
 ### Global directory (created by installer at first run)
@@ -67,6 +68,12 @@ wunderkind/
 | Check if oh-my-openagent is installed | `src/cli/config-manager/index.ts` → `detectOmoInstallReadiness()` |
 | Change wunderkind config written | `src/cli/config-manager/index.ts` → `writeWunderkindConfig()` |
 | Add gitignore entries | `src/cli/gitignore-manager.ts` → `addAiTracesToGitignore()` |
+| Change workflow-sync behavior | `src/cli/workflow-sync.ts` + `src/cli/github-issues-*.ts` |
+| Change team-mode entry/fallback | `commands/wunderkind-team.md` + `src/cli/team-mode-entry.ts` |
+| Change docs-index command contract | `commands/docs-index.md` + `src/agents/docs-index-plan.ts` |
+| Change prompt optimization contract/reporting | `src/cli/prompt-runtime-contract.ts` + `src/cli/prompt-optimization-runtime-reporting.ts` + `src/runtime-prompt-sections.ts` |
+| Change canonical agent/docs manifest | `src/agents/canonical-manifest.ts` + `src/agents/manifest.ts` + `src/agents/versioning.ts` |
+| Check retained workflow contracts | `.omo/contracts/` + `.omo/plans/` |
 
 ---
 
@@ -82,6 +89,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 - **`cleanup`** (`src/cli/cleanup.ts`) — Removes project-local OpenCode plugin wiring and `.wunderkind/` state while leaving `AGENTS.md`, `.omo/`, docs output, and shared global native assets intact. Historical `.sisyphus/` directories are not managed.
 - **`doctor`** (`src/cli/doctor.ts`) — Read-only diagnostics. Checks installation status, configuration paths, and project soul-file health.
 - **`team-bootstrap`** (`src/cli/team-bootstrap.ts`) — Explicitly creates upstream-compatible Wunderkind `.omo/teams/<name>/config.json` specs for `/wunderkind-team`; ordinary lifecycle commands do not mutate team specs.
+- **`workflow-sync`** (`src/cli/workflow-sync.ts`) — Explicitly projects filesystem-first `.omo` workflow plans into GitHub Issues when `prdPipelineMode` is `github`; local workflow state remains authoritative.
 - **`token-audit`** (`src/cli/token-audit.ts`) — Read-only prompt-runtime reporting surface. Contract is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - **`uninstall`** (`src/cli/uninstall.ts`) — Removes Wunderkind plugin wiring and shared global native assets while leaving project-local bootstrap artifacts intact.
 
@@ -123,6 +131,17 @@ Recommended bootstrap sequence:
 4. Use `/docs-index` to refresh or bootstrap the managed docs set when docs output is enabled.
 
 Treat this as the recommended audit/bootstrap workflow when bringing a project up to a high-context Wunderkind baseline.
+
+### `.omo/` workflow lanes
+
+The active workflow root is `.omo/`, not `.sisyphus/`. The high-signal subdirectories in this repo are:
+
+- `.omo/plans/` — implementation plans and product-work decisions
+- `.omo/contracts/` — frozen contracts that downstream work should treat as source-of-truth constraints
+- `.omo/notepads/` — durable learnings and repo-specific observations
+- `.omo/evidence/` — command outputs and proof artifacts
+- `.omo/teams/` — canonical upstream-compatible team specs used by `/wunderkind-team`
+- `.omo/start-work/` and `.omo/run-continuation/` — continuation/state surfaces for OMO workflow execution
 
 ---
 
@@ -257,6 +276,8 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **Caveman mode is project-configurable and chat-activatable** — `cavemanEnabled` can enable terse default replies per project, while any chat can still activate caveman mode explicitly without persisting it globally.
 - **code-health is a read-only audit skill** — the `code-health` skill (owned by `fullstack-wunderkind`) produces severity-ranked audit reports as structured markdown in the response. It does not invoke any automated cleanup tool, Python scripts, or external package manager workflows. There is no config key for enabling automated cleanup; any stale config keys from older versions are silently ignored on read.
 - **`/docs-index` is shipped as a native command asset** — its source lives in `commands/docs-index.md`, and it may suggest `init-deep` as an upstream OMO follow-up workflow rather than a Wunderkind CLI subcommand.
+- **Prompt optimization in this repo is a local override, not a product default** — the product contract stays supplementary/default-off, but this repository currently keeps a project-local `.wunderkind/wunderkind.config.jsonc` override with `promptOptimizationMode: "active"`, `promptOptimizationReportingMode: "summary"`, `promptOptimizationTokenBudget: 120000`, and `promptOptimizationByteBudget: 500000`. Treat that as local repo state, not a published default.
+- **Runtime optimization reports live outside the audit-only `token-audit` surface** — latest-only runtime artifacts live at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`; `doctor --verbose` reports posture and artifact existence, not proven savings.
 - **Platform strategy: overlay now, migrate only when triggers fire** — Wunderkind is and should remain a synchronous OMO/OpenCode plugin (zero runtime process). The explicit migration gates are documented in `.omo/plans/overlay-decision.md`; do not treat platform migration as a default next step. Trigger threshold requires at least two of five concrete capability gaps to fire simultaneously.
 - **Audit-style reviewer freshness rule** — when using Metis, Momus, oracle, or any equivalent critic agent for a review pass, always spawn a **fresh agent/session** for each new round after fixes are made. Never reuse the previous reviewer session — reused sessions narrow their attention to previously reported findings instead of performing a fresh audit.
 

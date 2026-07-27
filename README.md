@@ -24,6 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.23.5
+
+Wunderkind `0.23.5` is a docs-and-release-hygiene patch. It keeps the shipped runtime contract intact while refreshing the maintainer context, managed docs lanes, and local prompt-optimization guidance around the current `0.23.x` retained-agent workflow.
+
+- refresh `AGENTS.md`, `CONTEXT.md`, and the managed docs lane around the current workflow surfaces
+- document the separate supplementary prompt-optimization runtime-report surface more clearly without changing the public `token-audit` contract
+- align active `.omo` guidance with the current `.omo`-first workflow and canonical `oh-my-openagent` naming
+
 ## What's new in 0.23.4
 
 Wunderkind `0.23.4` is a small upstream-alignment release. It bumps the inherited OpenCode SDK surface to `@opencode-ai/plugin@1.18.7` and `@opencode-ai/sdk@1.18.7`, lifts the direct `oh-my-openagent` dependency to `4.19.2`, and refreshes the repo’s compatibility references for that patch wave.
@@ -284,6 +292,38 @@ wunderkind token-audit --surface commands --format json
 - it does **not** claim model-specific token truth or perform prompt compaction
 
 This is intentionally separate from `wunderkind migrate`. `migrate` remains legacy `.sisyphus/` guidance only.
+
+### Supplementary prompt optimization
+
+The prompt-optimization engine is a separate, config-driven runtime surface. It is intentionally supplementary to `wunderkind token-audit`, remains default-off, and does not introduce a public `optimize` command.
+
+- `off` disables runtime trimming.
+- `advisory` measures budget pressure and emits reports without mutating the live prompt.
+- `active` allows bounded runtime trimming of supported runtime-owned sections only.
+- reporting modes are `off`, `persist`, and `summary`
+- `persist` and `summary` write sanitized latest-report artifacts to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
+- `summary` also emits sanitized summary metadata, while `doctor --verbose` stays conservative and reports posture plus artifact existence rather than claiming runtime savings
+
+Supported counting/report behavior in this release:
+
+- exact-local token counting is available for `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, and `gpt-4.1-nano`
+- unmapped OpenAI-style aliases fall back to `provider-api-only`
+- non-OpenAI models fall back to `unsupported`
+- live mutation remains byte-budget-driven even when exact-local token counting is available
+
+What can trim and what is preserved:
+
+- eligible runtime section ids are `runtime-docs-output`, `runtime-context`, `runtime-native-agents`, and `compaction-continuity`
+- active runtime trim order is `runtime-native-agents` → `runtime-docs-output` → `compaction-continuity`
+- `runtime-context` is preserved and is not replaced with an empty stub when over budget
+- the compaction hook collapses to the continuity floor text `Compaction continuity preserved. Earlier compaction context was removed only for byte budget.` when byte pressure requires it
+- project-local SOUL overlays are intentionally outside this trim set and still flow through separately
+
+Measured repo-backed examples:
+
+- the current project-local latest reports in this repo show no trim at the configured `500000`-byte budget: `system-transform.latest.json` records `5920` bytes before and after, and `session-compacting.latest.json` records `1679` bytes before and after
+- the frozen `1200`-byte active fixture used in unit coverage trims the combined runtime fixture from `6606` bytes to `1116` bytes (`savedBytes: 5490`) and trims `runtime-native-agents` plus `runtime-docs-output`
+- the exact-local `gpt-4.1` runtime-report path is also test-covered: the same `1200`-byte trim stays byte-budget-driven while emitting supplemental exact token deltas for the saved prompt size
 
 ### Caveman Mode
 
@@ -640,6 +680,8 @@ Prompt optimization is intentionally supplementary in this release. It is **defa
 - `summary` keeps those same sanitized/redacted latest-report artifacts and also emits sanitized/redacted session summary metadata; `doctor --verbose` surfaces existence/status only and does not claim proven runtime savings.
 - `promptOptimizationTokenBudget` is meaningful only when the current model is inside the supported exact OpenAI map.
 - `promptOptimizationByteBudget` is the explicit fallback for unsupported or unset models when operators still want bounded runtime behavior.
+- supported exact-local model ids in the current map are `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
+- the runtime-owned eligible section ids are `runtime-docs-output`, `runtime-context`, `runtime-native-agents`, and `compaction-continuity`; active trimming removes only the trimmable subset and preserves `runtime-context`.
 
 ---
 

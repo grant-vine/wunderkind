@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.5
+
+- refresh README, AGENTS, CONTEXT, managed docs lanes, and active `.omo` guidance around the current retained-agent workflow and prompt-optimization reporting posture
+- keep the product contract conservative while documenting this repo's project-local prompt-optimization override and current runtime-report artifact behavior
+
 ## 0.23.4
 
 - align Wunderkind's inherited OpenCode SDK surface to `@opencode-ai/plugin@1.18.7` and `@opencode-ai/sdk@1.18.7`

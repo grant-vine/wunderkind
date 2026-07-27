@@ -89,7 +89,7 @@ Those are related, but they do not need to be executed as one oversized task lis
 ## Child Plan Index
 
 ### 1) Foundation and Config
-**Plan**: `.sisyphus/plans/docs-output-d1-foundation-and-config.md`
+**Historical child plan path**: `.sisyphus/plans/docs-output-d1-foundation-and-config.md` (migration-era reference only; the active repo now keeps the durable workflow root under `.omo/`)
 
 Owns:
 - config-path bug fix
@@ -103,7 +103,7 @@ Primary files:
 - `src/cli/config-manager/index.ts`
 
 ### 2) Installer Surfaces and Bootstrap
-**Plan**: `.sisyphus/plans/docs-output-d2-installer-surfaces-and-bootstrap.md`
+**Historical child plan path**: `.sisyphus/plans/docs-output-d2-installer-surfaces-and-bootstrap.md` (migration-era reference only; no active `.sisyphus/` workflow path remains)
 
 Owns:
 - docs-output customization validation and mapping used by init
@@ -117,7 +117,7 @@ Primary files:
 - likely shared init/bootstrap helper module consumed by D5
 
 ### 3) Runtime Docs Injection
-**Plan**: `.sisyphus/plans/docs-output-d3-runtime-docs-injection.md`
+**Historical child plan path**: `.sisyphus/plans/docs-output-d3-runtime-docs-injection.md` (migration-era reference only; verify current behavior from source/tests)
 
 Owns:
 - runtime prompt injection in `src/index.ts`
@@ -129,7 +129,7 @@ Primary files:
 - `tests/unit/docs-injection.test.ts`
 
 ### 4) Agent Prompts and Docs Surfaces
-**Plan**: `.sisyphus/plans/docs-output-d4-agent-prompts-and-docs-surfaces.md`
+**Historical child plan path**: `.sisyphus/plans/docs-output-d4-agent-prompts-and-docs-surfaces.md` (migration-era reference only; current maintained docs truth lives in source, tests, and managed docs lanes)
 
 Owns:
 - `docs-config.ts` helper + tests
@@ -146,7 +146,7 @@ Primary files:
 - `AGENTS.md`
 
 ### 5) Project Init and Context-Aware Doctor
-**Plan**: `.sisyphus/plans/docs-output-d5-project-init-and-context-aware-doctor.md`
+**Historical child plan path**: `.sisyphus/plans/docs-output-d5-project-init-and-context-aware-doctor.md` (migration-era reference only; active workflow/root is `.omo/`)
 
 Owns:
 - project-context detection

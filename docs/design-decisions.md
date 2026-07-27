@@ -1,6 +1,6 @@
 # Design Decisions
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 
 ## Current design focus
 
@@ -21,12 +21,14 @@ Wunderkind’s most important “design” work in this repo is not a polished f
 - `CONTEXT.md` is the compact domain/context artifact for future sessions and docs grilling.
 - `docs/` is the managed, perspective-specific documentation lane.
 - `.omo/` remains the durable planning/evidence lane.
+- `.wunderkind/runtime/prompt-optimization/` is a local operational reporting lane, not a public product-docs lane.
 
 ## Tone and clarity rules reflected in the product
 
 - Prefer canonical naming first (`oh-my-openagent`). If legacy naming is mentioned at all, label it as detection-only migration history rather than live compatibility.
 - Use role-based docs ownership so readers know which doc is authoritative for which concern.
 - Avoid “AI slop” phrasing in comments and docs; keep language direct and maintainable.
+- Keep config truth and runtime truth separate in prose: raw `.wunderkind` settings describe local posture, while injected resolved runtime context governs agent behavior in-session.
 
 ## Open design opportunities
 

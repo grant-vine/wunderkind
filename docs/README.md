@@ -1,12 +1,12 @@
 # Documentation Index
 
-Last refreshed: 2026-07-15T11-11-35Z
+Last refreshed: 2026-07-27T08-43-00Z
 History mode: `overwrite`
 Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.4**, including the latest local features, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.23.5**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -31,6 +31,8 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit`, stays default-off, and does not add a public optimize command in this phase.
 - `promptOptimizationReportingMode` now documents the opt-in separate runtime-report surface (`off`, `persist`, `summary`), where sanitized/redacted latest-report artifacts or summaries back `system-transform.latest.json` and `session-compacting.latest.json`, and `doctor --verbose` exposes existence/status rather than claiming runtime savings.
+- This repo currently keeps a **project-local** prompt optimization override enabled: `active` mode, `summary` reporting, `120000` token budget, and `500000` byte budget. That is local repo state, not the published product default.
+- The latest local runtime reports currently show **no trim** at the configured `500000`-byte budget (`5920` bytes on system transform and `1679` bytes on session compaction before/after).
 - The hard-cut migration release keeps `.omo/` as the only active artifact root, leaves `.sisyphus/` as manual migration history only, and keeps `wunderkind migrate` as a fail-hard guidance surface.
 - `/docs-index` is the managed docs refresh/bootstrap command and `init-deep` remains an upstream OMO workflow concept rather than a Wunderkind CLI subcommand.
 
@@ -39,8 +41,9 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - Docs output is now enabled in `.wunderkind/wunderkind.config.jsonc`.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
+- Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.23.4` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.23.5` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 
@@ -53,6 +56,9 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `src/cli/init.ts`
 - `src/cli/doctor.ts`
 - `src/cli/config-manager/index.ts`
+- `src/cli/prompt-runtime-contract.ts`
+- `src/cli/prompt-optimization-runtime-reporting.ts`
+- `src/runtime-prompt-sections.ts`
 - `src/agents/versioning.ts`
 - `package.json`
 - `.claude-plugin/plugin.json`

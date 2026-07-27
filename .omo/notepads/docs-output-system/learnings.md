@@ -98,3 +98,8 @@ D1 → { D2, D3 } → D5 → D4
 - The `install` vs `init` distinction is crucial for user clarity: `install` is global/project plugin registration, while `init` is per-project soul-file bootstrapping.
 - Maintainer docs now explicitly highlight the `## Documentation Output` (runtime) vs `## Documentation Output (Static Reference)` (static) heading distinction to protect the idempotency sentinel check.
 - Added `/docs-index` documentation as a prompt-text slash command, not a CLI tool.
+
+## 2026-07-27T08:43:00Z Docs/context refresh follow-up
+- Current durable docs truth is now split cleanly across `README.md` (public surface), `AGENTS.md` (maintainer KB), `CONTEXT.md` (compact shared context), `docs/README.md` plus managed docs lanes, and the source/test seams that enforce `/docs-index` behavior.
+- The repo still uses `docsEnabled: true`, `docsPath: ./docs`, and `docHistoryMode: overwrite` locally; this is repo-local operating state, not a universal product default.
+- The active workflow root is `.omo/`. Any remaining `.sisyphus/` child-plan references inside historical docs-output planning material should be treated as migration-era references only, not as live workflow paths.
