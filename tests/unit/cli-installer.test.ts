@@ -395,6 +395,24 @@ describe("runCliInstaller", () => {
     }
   })
 
+  it("explains that install registers OpenCode and points repo bootstrap to init", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+
+    try {
+      const code = await runCliInstaller(baseArgs({ scope: "global" }))
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("registered Wunderkind with OpenCode") && message.includes("does not bootstrap this repo"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx @grant-vine/wunderkind init") && message.includes("repo-local readiness"))).toBe(true)
+    } finally {
+      console.log = origLog
+    }
+  })
+
   it("allows successful project install without baseline flags", async () => {
     const { runCliInstaller } = await cliInstallerModulePromise
     mockDetectCurrentConfig.mockImplementation(() =>
@@ -574,10 +592,9 @@ describe("runCliInstaller", () => {
     }
   })
 
-  it("returns 1 when native command write fails and warns on gitignore error", async () => {
+  it("returns 1 when native command write fails", async () => {
     const { runCliInstaller } = await cliInstallerModulePromise
     mockWriteNativeCommandFiles.mockImplementation(() => ({ success: false, configPath: "/tmp/global-commands", error: "boom" }))
-    mockAddAiTracesToGitignore.mockImplementation(() => ({ success: false, added: [], alreadyPresent: [], error: "nope" }))
     const restore = silenceConsole()
     try {
       const code = await runCliInstaller(baseArgs())
@@ -611,20 +628,15 @@ describe("runCliInstaller", () => {
     }
   })
 
-  it("warns on gitignore error but still returns 0", async () => {
+  it("does not mutate repo-local gitignore during install", async () => {
     const { runCliInstaller } = await cliInstallerModulePromise
-    const warnings: string[] = []
-    const origLog = console.log
-    console.log = (...args: unknown[]) => {
-      warnings.push(args.map(String).join(" "))
-    }
-    mockAddAiTracesToGitignore.mockImplementation(() => ({ success: false, added: [], alreadyPresent: [], error: "readonly filesystem" }))
+    const restore = silenceConsole()
     try {
       const code = await runCliInstaller(baseArgs())
       expect(code).toBe(0)
-      expect(warnings.some((w) => w.includes("readonly filesystem"))).toBe(true)
+      expect(mockAddAiTracesToGitignore).toHaveBeenCalledTimes(0)
     } finally {
-      console.log = origLog
+      restore()
     }
   })
 

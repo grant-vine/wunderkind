@@ -24,6 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.23.7
+
+Wunderkind `0.23.7` is an operator-story clarity patch. It keeps the existing product contract intact while making the install-versus-init split explicit across README guidance, CLI help, installer/init runtime copy, and `doctor`, and it makes the audit-only `token-audit` versus runtime prompt-optimization posture split easier to follow.
+
+- clarify that `bunx @grant-vine/wunderkind install` registers Wunderkind with OpenCode, while `bunx @grant-vine/wunderkind init` bootstraps repo-local readiness afterward
+- make `doctor` surface project readiness separately from install status and keep runtime prompt-optimization posture and latest-report artifact status on `doctor --verbose`
+- preserve the audit-only `token-audit` contract and keep the supplementary prompt-optimization engine config-driven with no new public command
+
 ## What's new in 0.23.6
 
 Wunderkind `0.23.6` is a command-guidance consistency patch. It makes `bunx @grant-vine/wunderkind ...` the canonical way public docs and runtime help tell operators to run Wunderkind commands, while preserving the separate `bun install @grant-vine/wunderkind` package-refresh path where `doctor` reports it explicitly.
@@ -71,9 +79,9 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 | Command | Purpose | Modifies |
 |---|---|---|
-| `wunderkind install` | Registers the plugin in OpenCode | OpenCode config + native agents/skills (+ shared native commands) |
+| `wunderkind install` | Registers Wunderkind with OpenCode; does not bootstrap the current repo | OpenCode config + native agents/skills (+ shared native commands) |
 | `wunderkind upgrade` | Refreshes Wunderkind-owned native assets | Native agents/skills + shared native commands |
-| `wunderkind init` | Bootstraps a project with soul files | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
+| `wunderkind init` | Bootstraps repo-local readiness after install; does not register with OpenCode | `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs README |
 | `wunderkind team-bootstrap` | Creates the canonical Wunderkind upstream team spec | `.omo/teams/<name>/config.json` |
 | `wunderkind workflow-sync` | Explicitly projects a local `.omo` plan into GitHub Issues | GitHub Issues + `.wunderkind/workflows/github-issues/` |
 | `wunderkind token-audit` | Reports deterministic prompt-surface size metrics for Wunderkind-owned assets | None |
@@ -89,8 +97,10 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 
 Wunderkind distinguishes between **installing** the plugin and **initializing** a project:
 
-1. **Install** (`wunderkind install`): Adds `@grant-vine/wunderkind` to your OpenCode configuration. This makes the agents available to your AI assistant. You typically do this once globally.
-2. **Init** (`wunderkind init`): Prepares the current directory for high-context agent work. It creates or updates the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, the compact shared `CONTEXT.md` lane, optional project-local SOUL files, and optional documentation output folders.
+1. **Install** (`wunderkind install`): Registers `@grant-vine/wunderkind` with OpenCode. This makes the agents available to your AI assistant. It does **not** bootstrap the current repo.
+2. **Init** (`wunderkind init`): Bootstraps repo-local readiness after install. It prepares the current directory for high-context agent work by creating or updating the `.wunderkind/` configuration directory, the `AGENTS.md` project knowledge base, the compact shared `CONTEXT.md` lane, optional project-local SOUL files, and optional documentation output folders. It does **not** replace registration.
+
+In practice: run `bunx @grant-vine/wunderkind install` first, then run `bunx @grant-vine/wunderkind init` inside each repo you want Wunderkind to prepare.
 
 ---
 
@@ -133,6 +143,8 @@ The TUI will guide you through:
 ### Non-interactive install
 
 For CI/CD or scripted environments, use the `install` command with the `--no-tui` flag.
+
+This still registers Wunderkind with OpenCode only. If you also want the current repository bootstrapped, run `bunx @grant-vine/wunderkind init` afterward in that repo.
 
 > **oh-my-openagent must already be installed** before running non-interactive mode. If it isn't, install it first:
 > ```bash
@@ -217,6 +229,8 @@ This keeps the lifecycle concept explicit without overloading `install`.
 
 Initialize the current directory as a Wunderkind project to enable advanced features like Documentation Output and agent context persistence.
 
+`init` is the repo-local bootstrap step that follows install. It prepares the current repo for Wunderkind, but it does not register Wunderkind with OpenCode and does not replace `bunx @grant-vine/wunderkind install`.
+
 ```bash
 bunx @grant-vine/wunderkind init [options]
 ```
@@ -290,6 +304,7 @@ bunx @grant-vine/wunderkind token-audit --surface commands --format json
 - v1 is read-only and reporting-only
 - prompt-runtime v1 is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency
 - any supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit` and surfaces through config and doctor rather than a new public optimize command
+- runtime prompt-optimization posture and latest-report artifact status belong to `bunx @grant-vine/wunderkind doctor --verbose`, not `wunderkind token-audit`
 - `promptOptimizationReportingMode` is the opt-in key for the separate runtime-report surface: `off`, `persist`, and `summary`
 - `persist` keeps sanitized/redacted latest-report artifacts or summaries on that separate runtime-report surface at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - the separate prompt-optimization runtime-report surface is scalar-first: every current emitted public field is safe scalar/enum/id except `modelId`, which is the only unconstrained public string carrier in the frozen V3 contract
@@ -394,6 +409,7 @@ bunx @grant-vine/wunderkind doctor
 ```
 
 `bunx @grant-vine/wunderkind doctor` reports:
+- install status separately from project readiness in project context
 - Installed version and scope (Global vs Project)
 - Detected Wunderkind and OMO version state
 - Whether installed native agents/commands/skills look stale and should be refreshed via `wunderkind upgrade`
@@ -416,7 +432,7 @@ bunx @grant-vine/wunderkind doctor
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
 
-`bunx @grant-vine/wunderkind doctor` stays conservative here: it reports configuration posture and latest-artifact existence, not proven runtime savings. `wunderkind token-audit` remains the separate audit-only reporting surface.
+`bunx @grant-vine/wunderkind doctor` stays conservative here: it reports configuration posture and latest-artifact existence, not proven runtime savings. `wunderkind token-audit` remains the separate audit-only prompt-surface measurement surface.
 
 Legend:
 - `●` = project override

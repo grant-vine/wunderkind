@@ -13,7 +13,6 @@ import {
   writeNativeSkillFiles,
   writeWunderkindConfig,
 } from "./config-manager/index.js"
-import { addAiTracesToGitignore } from "./gitignore-manager.js"
 
 export const SYMBOLS = {
   check: color.green("[OK]"),
@@ -221,7 +220,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   printHeader(isUpdate)
   printOmoReadinessWarnings(omoReadiness)
 
-  const totalSteps = 3
+  const totalSteps = 2
   let step = 1
 
   const config: InstallConfig = {
@@ -281,15 +280,6 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   printSuccess(`Native skills written ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)
 
-  printStep(step++, totalSteps, "Updating .gitignore with AI tooling traces...")
-  const gitignoreResult = addAiTracesToGitignore()
-  if (gitignoreResult.added.length > 0) {
-    printSuccess(`Added to .gitignore: ${gitignoreResult.added.join(", ")}`)
-  }
-  if (gitignoreResult.error) {
-    printWarning(`Could not update .gitignore: ${gitignoreResult.error}`)
-  }
-
   printBox(
     [
       `  ${color.bold("Region:")}              ${color.cyan(config.region)}`,
@@ -302,6 +292,8 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     isUpdate ? "Updated Configuration" : "Installation Complete",
   )
 
+  printInfo("Install registered Wunderkind with OpenCode. It does not bootstrap this repo.")
+  printInfo("For repo-local readiness, run bunx @grant-vine/wunderkind init in the project you want to prepare.")
   console.log(`${SYMBOLS.star} ${color.bold(color.green(isUpdate ? "Configuration updated!" : "Installation complete!"))}`)
   console.log(`  Run ${color.cyan("opencode")} to start!`)
   console.log()

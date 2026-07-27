@@ -19,12 +19,14 @@ This command is invoked as `/token-audit`.
 4. Keep the report deterministic by using source-owned renderers and shipped markdown assets.
 5. Summarize the result plainly as an audit-only prompt-surface report, not as prompt optimization or compaction work.
 6. Keep any supplementary prompt optimization engine guidance clearly separate and describe it as config-driven rather than as a second public command.
+7. When users ask about runtime prompt-optimization posture or latest-report artifact status, point them to `bunx @grant-vine/wunderkind doctor --verbose` instead of improvising a second reporting path here.
 
 ## Constraints
 
 - Do not mutate prompts, native assets, project files, or docs as part of this command.
 - Prompt-runtime v1 is audit-only: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - Any supplementary prompt optimization engine is config-driven and separate from this audit-only report.
+- Runtime prompt-optimization posture and latest-report artifact status belong to `bunx @grant-vine/wunderkind doctor --verbose`, not `/token-audit`.
 - Use the existing `bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]` CLI surface as the reporting boundary.
 - Report deterministic bytes, lines, and file counts only. Do not claim model-specific token truth unless the underlying CLI explicitly adds a tokenizer-aware mode.
 - Keep all reads and command execution scoped to the current package and project root.

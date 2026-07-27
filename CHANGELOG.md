@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.7
+
+- clarify the operator story so `install` is consistently presented as OpenCode registration while `init` is consistently presented as repo-local readiness bootstrap
+- make `doctor` report project readiness separately from install status and keep runtime prompt-optimization posture on `doctor --verbose` while preserving audit-only `token-audit`
+
 ## 0.23.6
 
 - make `bunx @grant-vine/wunderkind ...` the canonical user-facing invocation across README guidance, runtime help text, doctor/init/install messaging, and shipped command assets

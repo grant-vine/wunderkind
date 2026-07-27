@@ -736,6 +736,30 @@ describe("runDoctor", () => {
     }
   })
 
+  it("shows project readiness separately from install status when a repo has not been initialized", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-project-readiness-"))
+    writeFileSync(join(tempProject, "package.json"), "{}\n")
+    process.chdir(tempProject)
+
+    mockProjectDoctorContext(tempProject, {
+      globalInstalled: true,
+      projectInstalled: false,
+      registrationScope: "global",
+    })
+
+    try {
+      const { code, messages } = await captureDoctorOutput({})
+
+      expect(code).toBe(0)
+      expect(messages.some((m) => m.includes("installed:") && m.includes("✓ yes"))).toBe(true)
+      expect(messages.some((m) => m.includes("project readiness:") && m.includes("needs init"))).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
   it("prints verbose diagnostic sections when verbose mode is enabled", async () => {
     const messages: string[] = []
     const originalLog = console.log

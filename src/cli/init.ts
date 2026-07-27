@@ -1090,8 +1090,9 @@ export async function runInit(options: InitOptions): Promise<number> {
       bootstrapDocsReadme(config.docsPath, cwd)
     }
 
-    console.log(`Initialized project in ${cwd}`)
+    console.log(`Bootstrapped repo-local readiness in ${cwd}`)
     console.log(`Project config: ${writeResult.configPath}`)
+    console.log("OpenCode registration is unchanged here; use bunx @grant-vine/wunderkind install for registration.")
     if (!noTui) {
       console.log("Tip: Run 'bunx @grant-vine/wunderkind doctor --verbose' to review the retained personas and docs/runtime settings later.")
     }

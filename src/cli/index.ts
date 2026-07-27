@@ -70,6 +70,9 @@ program
     [
       "Install Wunderkind into your OpenCode setup.",
       "",
+      "Registers Wunderkind with OpenCode. It does not bootstrap the current repo;",
+      "run `bunx @grant-vine/wunderkind init` after install when you want repo-local readiness.",
+      "",
       "Runs the interactive TUI by default. Pass --no-tui for",
       "non-interactive use in CI or scripted environments.",
       "",
@@ -234,6 +237,8 @@ program
     [
       "Initialize Wunderkind in the current project folder.",
       "",
+      "Bootstraps repo-local readiness after install.",
+      "It does not register Wunderkind with OpenCode and does not replace `bunx @grant-vine/wunderkind install`.",
       "Bootstraps project-local config, optional retained-persona SOUL files, and project artifact lanes (.omo/, AGENTS.md, docs README).",
       "Uses .omo/ as the primary project-working directory. If legacy .sisyphus/ artifacts still exist, move any needed files into .omo/ manually.",
       "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
@@ -442,6 +447,7 @@ program
       "  - reads source-owned renderers and shipped markdown assets only",
       "  - does not mutate prompts, native assets, or project files",
       "  - prompt-runtime v1 is audit-only: no live prompt packing and no model-token truth claims",
+      "  - runtime prompt-optimization posture and runtime-report artifact status stay on doctor --verbose",
       "  - the supplementary prompt optimization engine stays config-driven and separate from this audit-only report",
       `  - supplementary prompt optimization count states stay frozen: ${PROMPT_OPTIMIZATION_COUNT_STATE_HELP_TEXT}`,
       "  - phase-1 hook-effective budget basis stays configured-bytes or budget-unavailable only",
@@ -519,8 +525,10 @@ program
     [
       "",
       "Behavior:",
+      "  - distinguishes install status from project readiness in project context",
       "  - remains read-only; reports configuration posture and artifact existence only",
       "  - token-audit remains separate and audit-only",
+      "  - runtime prompt-optimization posture and latest-report artifact status belong here via --verbose, not token-audit",
       `  - --verbose surfaces promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for the separate runtime-report surface`,
       `  - --verbose checks sanitized/redacted latest-report artifact status for ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[0]}`,
       `    and ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[1]}`,

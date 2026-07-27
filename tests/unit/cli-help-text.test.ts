@@ -60,6 +60,9 @@ describe("CLI help copy", () => {
     const output = runCliHelp("install", "--help")
 
     expect(output).toContain("Install Wunderkind into your OpenCode setup.")
+    expect(output).toContain("Registers Wunderkind with OpenCode")
+    expect(output).toContain("does not bootstrap the current repo")
+    expect(output).toContain("run `bunx @grant-vine/wunderkind init` after install")
     expect(output).toContain("non-interactive use in CI or scripted environments")
     expect(output).toContain("optional baseline default flags")
     expect(output).toContain("oh-my-openagent")
@@ -102,6 +105,7 @@ describe("CLI help copy", () => {
     const output = runCliHelp("doctor", "--help")
 
     expect(output).toContain("Enable verbose diagnostic output")
+    expect(output).toContain("distinguishes install status from project readiness")
     expect(output).toContain("promptOptimizationReportingMode")
     expect(output).toContain(".wunderkind/runtime/prompt-optimization/system-transform.latest.json")
     expect(output).toContain(".wunderkind/runtime/prompt-optimization/session-compacting.latest.json")
@@ -131,6 +135,8 @@ describe("CLI help copy", () => {
     expect(output).toContain("audit-only")
     expect(output).toContain("no live prompt packing")
     expect(output).toContain("no model-token truth claims")
+    expect(output).toContain("doctor --verbose")
+    expect(output).toContain("runtime-report artifact status")
     expect(output).toContain("config-driven and separate from this audit-only report")
     expect(output).toContain("exact-local")
     expect(output).toContain("provider-api-only")
@@ -173,6 +179,10 @@ describe("CLI help copy", () => {
     const output = runCliHelp("init", "--help")
 
     expect(output).toContain("bunx @grant-vine/wunderkind")
+    expect(output).toContain("Bootstraps repo-local readiness after install")
+    expect(output).toContain("does not register Wunderkind with OpenCode")
+    expect(output).toContain("does not replace")
+    expect(output).toContain("@grant-vine/wunderkind install")
     expect(output).toContain("--design-tool")
     expect(output).toContain("--design-path")
     expect(output).toContain("--stitch-setup")

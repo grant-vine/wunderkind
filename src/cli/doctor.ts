@@ -423,7 +423,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line(
         "prompt optimization runtime reporting:",
         color.dim(
-          "separate runtime-report surface for sanitized/redacted latest artifacts or summaries; configuration posture only; latest-report artifact presence is not a proven runtime savings report",
+          "doctor --verbose owns the separate runtime-report surface for sanitized/redacted latest artifacts or summaries; configuration posture only; latest-report artifact presence is not a proven runtime savings report",
         ),
       )
       line(
@@ -511,6 +511,14 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const hasEvidence = existsSync(omoEvidencePath)
       const hasLegacyArtifactRoot = existsSync(legacyArtifactRootPath)
       const hasDocsReadme = existsSync(docsReadmePath)
+      const projectReady =
+        localConfigExists &&
+        hasAgents &&
+        hasContext &&
+        hasPlans &&
+        hasNotepads &&
+        hasEvidence &&
+        (!(projectConfig?.docsEnabled ?? detected.docsEnabled) || hasDocsReadme)
       const globalNativeAgents = detectNativeAgentFiles("global")
       const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
@@ -577,6 +585,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
       section(options.verbose ? "Project Health" : "Project health")
       line("cwd:", color.dim(cwd))
+      line("project readiness:", projectReady ? color.green("ready") : color.yellow("needs init"))
       line("AGENTS.md present:", status(hasAgents))
       line("CONTEXT.md present:", status(hasContext))
       line(".omo/plans present:", status(hasPlans))
