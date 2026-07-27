@@ -41,9 +41,11 @@ import type {
   PrdPipelineMode,
   TeamBootstrapScope,
   TeamCulture,
+  WunderkindPathReadiness,
 } from "../types.js"
 
 const PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.package.name
+const WUNDERKIND_SAFE_FALLBACK_COMMAND = "bunx @grant-vine/wunderkind" as const
 const WUNDERKIND_SCHEMA_URL = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.configSchemaUrl
 const OMO_CANONICAL_PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoCanonicalPackageName
 const NATIVE_ASSET_VERSION_MARKER_FILENAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.markerFilename
@@ -915,6 +917,30 @@ export function detectGitHubWorkflowReadiness(cwd: string): GitHubWorkflowReadin
     ghInstalled,
     authVerified,
     authCheckAttempted,
+  }
+}
+
+export function detectWunderkindPathReadiness(): WunderkindPathReadiness {
+  const result = spawnSync("wunderkind", ["--version"], {
+    encoding: "utf8",
+    timeout: 750,
+    maxBuffer: 1024 * 32,
+  })
+
+  if (!result.error && result.status === 0) {
+    return {
+      available: true,
+      guidance:
+        `Direct \`wunderkind\` invocation is available in the current shell PATH. ` +
+        `\`${WUNDERKIND_SAFE_FALLBACK_COMMAND} ...\` remains the safe fallback.`,
+    }
+  }
+
+  return {
+    available: false,
+    guidance:
+      `Direct \`wunderkind\` invocation is not available in the current shell PATH. ` +
+      `Keep using \`${WUNDERKIND_SAFE_FALLBACK_COMMAND} ...\`. Wunderkind does not auto-edit shell PATH.`,
   }
 }
 

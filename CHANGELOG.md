@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.8
+
+- add PATH-supportability diagnostics so `doctor`, installer messaging, and CLI help report whether direct `wunderkind` invocation is currently available
+- keep `bunx @grant-vine/wunderkind ...` as the safe fallback and explicitly preserve the no-auto-edit-shell-PATH contract
+
 ## 0.23.7
 
 - clarify the operator story so `install` is consistently presented as OpenCode registration while `init` is consistently presented as repo-local readiness bootstrap

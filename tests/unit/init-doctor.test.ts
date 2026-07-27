@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
-import type { DetectedConfig, InstallConfig, OmoFreshnessInfo, PluginVersionInfo } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, OmoFreshnessInfo, PluginVersionInfo, WunderkindPathReadiness } from "../../src/cli/types.js"
 
 type RealConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
 
@@ -171,6 +171,16 @@ function createOmoFreshness(overrides: Partial<OmoFreshnessInfo> = {}): OmoFresh
     ...overrides,
   }
 }
+function createWunderkindPathReadiness(
+  overrides: Partial<WunderkindPathReadiness> = {},
+): WunderkindPathReadiness {
+  return {
+    available: false,
+    guidance:
+      "Direct `wunderkind` invocation is not available in the current shell PATH. Keep using `bunx @grant-vine/wunderkind ...`. Wunderkind does not auto-edit shell PATH.",
+    ...overrides,
+  }
+}
 const mockResolveOpenCodeConfigPath = mock((scope: "global" | "project") =>
   scope === "global"
     ? { path: "/tmp/opencode.json", format: "json" as const, source: "opencode.json" as const }
@@ -183,6 +193,7 @@ const mockDetectGitHubWorkflowReadiness = mock(() => ({
   authVerified: true,
   authCheckAttempted: true,
 }))
+const mockDetectWunderkindPathReadiness = mock<() => WunderkindPathReadiness>(() => createWunderkindPathReadiness())
 
 const mockDetectStitchMcpPresence = mock<(_projectPath?: string) => Promise<"missing" | "project-local" | "global-only" | "both">>(
   async () => "missing",
@@ -200,6 +211,7 @@ const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: mockDetectGitHubWorkflowReadiness,
+  detectWunderkindPathReadiness: mockDetectWunderkindPathReadiness,
   detectNativeAgentMarkdownVersions: mockDetectNativeAgentMarkdownVersions,
   detectNativeAssetVersion: mockDetectNativeAssetVersion,
   detectNativeAgentFiles: mockDetectNativeAgentFiles,
@@ -622,8 +634,10 @@ describe("runDoctor", () => {
     mockWriteNativeAgentFiles.mockClear()
     mockResolveOpenCodeConfigPath.mockClear()
     mockDetectGitHubWorkflowReadiness.mockClear()
+    mockDetectWunderkindPathReadiness.mockClear()
     mockDetectStitchMcpPresence.mockClear()
     mockDetectStitchMcpPresence.mockImplementation(async () => "missing")
+    mockDetectWunderkindPathReadiness.mockImplementation(() => createWunderkindPathReadiness())
     mockDetectOmoVersionInfo.mockImplementation(() => ({
       packageName: "oh-my-openagent",
       currentVersion: null,
@@ -1214,6 +1228,17 @@ describe("runDoctor", () => {
     expect(messages.some((m) => m.includes("native agent markdown versions:") && m.includes("up to date"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("Latest oh-my-openagent freshness could not be verified"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("bunx oh-my-openagent"))).toBe(true)
+  })
+
+  it("reports direct wunderkind PATH availability and bunx fallback guidance", async () => {
+    mockDetectWunderkindPathReadiness.mockImplementation(() => createWunderkindPathReadiness())
+
+    const { code, messages } = await captureDoctorOutput({})
+
+    expect(code).toBe(0)
+    expect(messages.some((m) => m.includes("direct wunderkind on PATH:") && m.includes("✗ no"))).toBe(true)
+    expect(messages.some((m) => m.includes("invocation guidance:") && m.includes("bunx @grant-vine/wunderkind"))).toBe(true)
+    expect(messages.some((m) => m.includes("invocation guidance:") && m.includes("does not auto-edit shell PATH"))).toBe(true)
   })
 
   it("shows project-scope wunderkind upgrade guidance when registration is project-only", async () => {

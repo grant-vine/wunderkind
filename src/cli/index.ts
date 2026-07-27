@@ -51,6 +51,8 @@ program
       "Also includes a supplementary, config-driven prompt optimization engine",
       "surfaced through config and doctor only in phase 1 — no public optimize command.",
       `Opt-in runtime reporting uses promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface.`,
+      "Direct `wunderkind ...` is supported when the current shell already exposes it on PATH.",
+      "`bunx @grant-vine/wunderkind ...` remains the safe fallback. Wunderkind does not auto-edit shell PATH.",
       "",
       "Examples:",
       "  bunx @grant-vine/wunderkind install",
@@ -76,7 +78,10 @@ program
       "Runs the interactive TUI by default. Pass --no-tui for",
       "non-interactive use in CI or scripted environments.",
       "",
-       "Upstream naming note: use oh-my-openagent for plugin entries, config basenames, and install commands.",
+      "Direct `wunderkind ...` is supported when available in the current shell PATH.",
+      "`bunx @grant-vine/wunderkind ...` remains the safe fallback.",
+      "",
+      "Upstream naming note: use oh-my-openagent for plugin entries, config basenames, and install commands.",
     ].join("\n"),
   )
   .option("--no-tui", "Run non-interactive CLI installer with optional baseline default flags")
@@ -532,6 +537,8 @@ program
       `  - --verbose surfaces promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for the separate runtime-report surface`,
       `  - --verbose checks sanitized/redacted latest-report artifact status for ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[0]}`,
       `    and ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[1]}`,
+      "  - reports whether direct `wunderkind` invocation is available in the current shell PATH",
+      "  - `bunx @grant-vine/wunderkind ...` remains the safe fallback and Wunderkind does not edit shell PATH",
       "  - latest-report artifact presence is configuration posture, not a proven runtime savings report",
     ].join("\n"),
   )

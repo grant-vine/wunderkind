@@ -419,18 +419,53 @@ describe("config-manager coverage", () => {
     expect(projectSchema).toBeDefined()
 
     const properties = projectSchema?.properties as Record<string, Record<string, unknown>> | undefined
-    expect(properties?.promptOptimizationEnabled).toMatchObject({
-      type: "boolean",
-      description: "Enable the separate supplementary prompt optimization engine. This does not change the audit-only token-audit contract or surface.",
-    })
-    expect(properties?.promptOptimizationMode).toMatchObject({ enum: ["off", "advisory", "active"] })
-    expect(properties?.promptOptimizationTokenBudget).toMatchObject({ type: "integer", minimum: 1 })
-    expect(properties?.promptOptimizationByteBudget).toMatchObject({ type: "integer", minimum: 1 })
+    expect(properties?.promptOptimizationEnabled?.type).toBe("boolean")
+    expect(properties?.promptOptimizationEnabled?.description).toBe(
+      "Enable the separate supplementary prompt optimization engine. This does not change the audit-only token-audit contract or surface.",
+    )
+    expect(properties?.promptOptimizationMode?.enum).toEqual(["off", "advisory", "active"])
+    expect(properties?.promptOptimizationTokenBudget?.type).toBe("integer")
+    expect(properties?.promptOptimizationTokenBudget?.minimum).toBe(1)
+    expect(properties?.promptOptimizationByteBudget?.type).toBe("integer")
+    expect(properties?.promptOptimizationByteBudget?.minimum).toBe(1)
   })
 
   it("returns null when neither global nor project config exists", async () => {
     await withSandbox("read-null-no-config", async (_sandbox, mod) => {
       expect(mod.readWunderkindConfig()).toBe(null)
+    })
+  })
+
+  it("detects whether direct wunderkind invocation is available on PATH", async () => {
+    await withSandbox("wunderkind-path-readiness", async (sandbox) => {
+      const childProcess = await import("node:child_process")
+      const originalSpawnSync = childProcess.spawnSync
+
+      mock.module("node:child_process", () => ({
+        spawnSync: ((command: string, args: string[]) => {
+          if (command === "wunderkind" && args[0] === "--version") {
+            return {
+              status: 0,
+              stdout: "0.23.8\n",
+              stderr: "",
+            }
+          }
+
+          return originalSpawnSync(command, args, { encoding: "utf8" })
+        }) as typeof childProcess.spawnSync,
+      }))
+
+      try {
+        const freshMod = (await import(`${CONFIG_MANAGER_MODULE_URL}&wunderkind-path-ready=1`)) as ConfigManagerModule
+        freshMod.__setConfigManagerPathOverrideForTests({ cwd: sandbox.projectDir, home: sandbox.homeDir })
+
+        expect(freshMod.detectWunderkindPathReadiness()).toEqual({
+          available: true,
+          guidance: "Direct `wunderkind` invocation is available in the current shell PATH. `bunx @grant-vine/wunderkind ...` remains the safe fallback.",
+        })
+      } finally {
+        mock.module("node:child_process", () => ({ spawnSync: originalSpawnSync }))
+      }
     })
   })
 

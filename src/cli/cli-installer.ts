@@ -6,6 +6,7 @@ import {
   detectCurrentConfig,
   detectLegacyConfig,
   detectOmoInstallReadiness,
+  detectWunderkindPathReadiness,
   getDefaultGlobalConfig,
   readWunderkindConfigForScope,
   writeNativeAgentFiles,
@@ -292,6 +293,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     isUpdate ? "Updated Configuration" : "Installation Complete",
   )
 
+  printInfo(detectWunderkindPathReadiness().guidance)
   printInfo("Install registered Wunderkind with OpenCode. It does not bootstrap this repo.")
   printInfo("For repo-local readiness, run bunx @grant-vine/wunderkind init in the project you want to prepare.")
   console.log(`${SYMBOLS.star} ${color.bold(color.green(isUpdate ? "Configuration updated!" : "Installation complete!"))}`)

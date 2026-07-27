@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import type { InstallArgs } from "../../src/cli/types.js"
-import type { DetectedConfig, InstallConfig, InstallScope, OmoInstallReadiness } from "../../src/cli/types.js"
+import type { DetectedConfig, InstallConfig, InstallScope, OmoInstallReadiness, WunderkindPathReadiness } from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
@@ -80,8 +80,18 @@ function makeOmoInstallReadiness(overrides: Partial<OmoInstallReadiness> = {}): 
   }
 }
 
+function makeWunderkindPathReadiness(overrides: Partial<WunderkindPathReadiness> = {}): WunderkindPathReadiness {
+  return {
+    available: false,
+    guidance:
+      "Direct `wunderkind` invocation is not available in the current shell PATH. Keep using `bunx @grant-vine/wunderkind ...`. Wunderkind does not auto-edit shell PATH.",
+    ...overrides,
+  }
+}
+
 const mockDetectCurrentConfig = mock(() => makeDetectedConfig())
 const mockDetectOmoInstallReadiness = mock(() => makeOmoInstallReadiness())
+const mockDetectWunderkindPathReadiness = mock(() => makeWunderkindPathReadiness())
 const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 
 const mockDetectLegacyConfig = mock(() => false)
@@ -114,6 +124,7 @@ const mockResolveOpenCodeConfigPath = mock((scope: InstallScope) =>
 const configManagerMockFactory = () => ({
   detectCurrentConfig: mockDetectCurrentConfig,
   detectOmoInstallReadiness: mockDetectOmoInstallReadiness,
+  detectWunderkindPathReadiness: mockDetectWunderkindPathReadiness,
   detectLegacyConfig: mockDetectLegacyConfig,
   addPluginToOpenCodeConfig: mockAddPluginToOpenCodeConfig,
   writeWunderkindConfig: mockWriteWunderkindConfig,
@@ -316,6 +327,7 @@ describe("runCliInstaller", () => {
   beforeEach(() => {
     mockDetectCurrentConfig.mockClear()
     mockDetectOmoInstallReadiness.mockClear()
+    mockDetectWunderkindPathReadiness.mockClear()
     mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
@@ -334,6 +346,7 @@ describe("runCliInstaller", () => {
     mockDetectLegacyConfig.mockImplementation(() => false)
     mockDetectCurrentConfig.mockImplementation(() => makeDetectedConfig())
     mockDetectOmoInstallReadiness.mockImplementation(() => makeOmoInstallReadiness())
+    mockDetectWunderkindPathReadiness.mockImplementation(() => makeWunderkindPathReadiness())
     mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockAddPluginToOpenCodeConfig.mockImplementation(() => ({ success: true, configPath: "/fake/opencode.json" }))
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: true, configPath: "/fake/.wunderkind/config" }))
@@ -408,6 +421,26 @@ describe("runCliInstaller", () => {
       expect(code).toBe(0)
       expect(messages.some((message) => message.includes("registered Wunderkind with OpenCode") && message.includes("does not bootstrap this repo"))).toBe(true)
       expect(messages.some((message) => message.includes("bunx @grant-vine/wunderkind init") && message.includes("repo-local readiness"))).toBe(true)
+    } finally {
+      console.log = origLog
+    }
+  })
+
+  it("reports the direct-invocation fallback when wunderkind is not on PATH", async () => {
+    const { runCliInstaller } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+    mockDetectWunderkindPathReadiness.mockImplementation(() => makeWunderkindPathReadiness())
+
+    try {
+      const code = await runCliInstaller(baseArgs({ scope: "global" }))
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("Direct `wunderkind` invocation is not available"))).toBe(true)
+      expect(messages.some((message) => message.includes("bunx @grant-vine/wunderkind"))).toBe(true)
+      expect(messages.some((message) => message.includes("does not auto-edit shell PATH"))).toBe(true)
     } finally {
       console.log = origLog
     }

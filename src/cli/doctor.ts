@@ -13,6 +13,7 @@ import {
   detectCurrentConfig,
   detectNativeAssetVersion,
   detectNativeAgentMarkdownVersions,
+  detectWunderkindPathReadiness,
   detectWunderkindVersionInfo,
   getPromptOptimizationHookBudgetBasis,
   getNativeCommandFilePaths,
@@ -219,6 +220,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const localConfigExists = existsSync(localConfigPath)
     const wunderkindVersion = detectWunderkindVersionInfo()
     const omoVersion = detectOmoVersionInfo()
+    const wunderkindPathReadiness = detectWunderkindPathReadiness()
 
     const warnings: string[] = []
 
@@ -266,6 +268,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       .map((asset) => asset.kind)
     line("wunderkind lifecycle:", color.dim(wunderkindUpgrade.lifecycle))
     line("wunderkind package refresh:", color.dim(wunderkindUpgrade.packageRefresh))
+    line(
+      "direct wunderkind on PATH:",
+      wunderkindPathReadiness.available ? color.green("✓ yes") : color.yellow("✗ no"),
+    )
+    line("invocation guidance:", color.dim(wunderkindPathReadiness.guidance))
     line(
       "native agent markdown versions:",
       nativeAgentMarkdownVersions.allCurrent

@@ -24,6 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.23.8
+
+Wunderkind `0.23.8` is a PATH-supportability patch. It keeps the bunx-first operator story intact while making direct `wunderkind ...` invocation explicitly diagnosable across help text, install messaging, `doctor`, and README guidance.
+
+- report whether direct `wunderkind` invocation is currently available in the shell PATH
+- keep `bunx @grant-vine/wunderkind ...` as the canonical safe fallback when direct invocation is unavailable
+- preserve the explicit contract that Wunderkind does not auto-edit shell PATH, shell rc files, or symlinks
+
 ## What's new in 0.23.7
 
 Wunderkind `0.23.7` is an operator-story clarity patch. It keeps the existing product contract intact while making the install-versus-init split explicit across README guidance, CLI help, installer/init runtime copy, and `doctor`, and it makes the audit-only `token-audit` versus runtime prompt-optimization posture split easier to follow.
@@ -76,6 +84,13 @@ If you are upgrading an existing deployment, use this order:
 ## CLI
 
 Wunderkind provides a tiered CLI for installation, project setup, and health checks.
+
+### Invocation contract
+
+- `bunx @grant-vine/wunderkind ...` is the canonical safe fallback in docs and operator guidance.
+- Direct `wunderkind ...` invocation is supported when the current shell already exposes `wunderkind` on PATH.
+- `bunx @grant-vine/wunderkind doctor` reports whether direct invocation is currently available.
+- Wunderkind does not auto-edit shell PATH, shell rc files, or symlinks.
 
 | Command | Purpose | Modifies |
 |---|---|---|
@@ -145,6 +160,8 @@ The TUI will guide you through:
 For CI/CD or scripted environments, use the `install` command with the `--no-tui` flag.
 
 This still registers Wunderkind with OpenCode only. If you also want the current repository bootstrapped, run `bunx @grant-vine/wunderkind init` afterward in that repo.
+
+If your current shell already exposes `wunderkind` on PATH, direct `wunderkind ...` invocation is supported. If it does not, keep using `bunx @grant-vine/wunderkind ...`. Wunderkind does not auto-edit shell PATH.
 
 > **oh-my-openagent must already be installed** before running non-interactive mode. If it isn't, install it first:
 > ```bash
@@ -410,6 +427,7 @@ bunx @grant-vine/wunderkind doctor
 
 `bunx @grant-vine/wunderkind doctor` reports:
 - install status separately from project readiness in project context
+- whether direct `wunderkind` invocation is available in the current shell PATH
 - Installed version and scope (Global vs Project)
 - Detected Wunderkind and OMO version state
 - Whether installed native agents/commands/skills look stale and should be refreshed via `wunderkind upgrade`
@@ -420,6 +438,7 @@ bunx @grant-vine/wunderkind doctor
 - Current Documentation Output configuration and index status
 
 `bunx @grant-vine/wunderkind doctor` is strictly read-only and makes no changes to your filesystem.
+It reports direct invocation availability and fallback guidance only; it does not edit shell PATH.
 
 ### Doctor Verbose (`--verbose`)
 

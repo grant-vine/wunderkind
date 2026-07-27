@@ -498,7 +498,7 @@ describe("runInit non-interactive branching", () => {
       expect(existsSync(join(tempProject, ".omo", "evidence"))).toBe(true)
       expect(existsSync(join(tempProject, "notes", "docs", "README.md"))).toBe(true)
       expect(readFileSync(join(tempProject, "notes", "docs", "README.md"), "utf-8")).toContain("# Documentation")
-      expect(messages.some((message) => message.includes("Initialized project in"))).toBe(true)
+      expect(messages.some((message) => message.includes("Bootstrapped repo-local readiness in"))).toBe(true)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog

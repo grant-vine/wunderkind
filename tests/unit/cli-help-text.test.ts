@@ -44,6 +44,10 @@ describe("CLI help copy", () => {
     expect(output).toContain("summaries on the separate runtime-report surface")
     expect(output).toContain("separate runtime-report surface")
     expect(output).toContain("no public optimize command")
+    expect(output).toContain("Direct `wunderkind ...` is supported")
+    expect(output).toContain("on PATH")
+    expect(output).toContain("`bunx @grant-vine/wunderkind ...` remains the safe fallback")
+    expect(output).toContain("auto-edit shell PATH")
     expect(output).not.toContain("  optimize")
     expect(output).not.toContain("  prompt-optimization")
   })
@@ -66,6 +70,9 @@ describe("CLI help copy", () => {
     expect(output).toContain("non-interactive use in CI or scripted environments")
     expect(output).toContain("optional baseline default flags")
     expect(output).toContain("oh-my-openagent")
+    expect(output).toContain("Direct `wunderkind ...` is supported")
+    expect(output).toContain("current shell PATH")
+    expect(output).toContain("`bunx @grant-vine/wunderkind ...` remains the safe fallback")
     expect(output).not.toContain("oh-my-opencode")
   })
 
@@ -112,6 +119,8 @@ describe("CLI help copy", () => {
     expect(output).toContain("configuration posture")
     expect(output).toContain("sanitized/redacted latest-report artifact status")
     expect(output).toContain("token-audit remains separate")
+    expect(output).toContain("reports whether direct `wunderkind` invocation is available in the current shell PATH")
+    expect(output).toContain("does not edit shell PATH")
   })
 
   it("includes workflow-sync command help text", () => {

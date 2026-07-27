@@ -167,6 +167,11 @@ export interface OmoInstallReadiness {
   guidance: string
 }
 
+export interface WunderkindPathReadiness {
+  available: boolean
+  guidance: string
+}
+
 export type OmoFreshnessState =
   | "not-detected"
   | "stale-override"
