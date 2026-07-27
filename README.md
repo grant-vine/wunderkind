@@ -24,6 +24,13 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.23.6
+
+Wunderkind `0.23.6` is a command-guidance consistency patch. It makes `bunx @grant-vine/wunderkind ...` the canonical way public docs and runtime help tell operators to run Wunderkind commands, while preserving the separate `bun install @grant-vine/wunderkind` package-refresh path where `doctor` reports it explicitly.
+
+- align README command examples, init/doctor/install messaging, and shipped command assets around a bunx-first invocation story
+- preserve the lifecycle-vs-package-refresh split so `doctor` still distinguishes `bunx @grant-vine/wunderkind upgrade ...` from `bun install @grant-vine/wunderkind`
+
 ## What's new in 0.23.5
 
 Wunderkind `0.23.5` is a docs-and-release-hygiene patch. It keeps the shipped runtime contract intact while refreshing the maintainer context, managed docs lanes, and local prompt-optimization guidance around the current `0.23.x` retained-agent workflow.
@@ -49,10 +56,10 @@ If you are upgrading an existing deployment, use this order:
    - global install: `cd ~/.config/opencode && bun install @grant-vine/wunderkind`
    - project install: `cd <project> && bun install @grant-vine/wunderkind`
 2. Refresh native assets:
-   - global install: `wunderkind upgrade --scope=global`
-   - project install: `wunderkind upgrade --scope=project`
-   - both scopes: `wunderkind upgrade --scope=project && wunderkind upgrade --scope=global`
-3. Verify the install with `wunderkind doctor --verbose`
+   - global install: `bunx @grant-vine/wunderkind upgrade --scope=global`
+   - project install: `bunx @grant-vine/wunderkind upgrade --scope=project`
+   - both scopes: `bunx @grant-vine/wunderkind upgrade --scope=project && bunx @grant-vine/wunderkind upgrade --scope=global`
+3. Verify the install with `bunx @grant-vine/wunderkind doctor --verbose`
 
 `wunderkind doctor` prints both the lifecycle command and the package-refresh command for the detected install scope, so operators do not have to reconstruct the upgrade sequence manually.
 
@@ -114,13 +121,12 @@ The guide contains all flags for non-interactive install so the agent can run a 
 bunx @grant-vine/wunderkind install
 ```
 
-or
-
 The TUI will guide you through:
 1. Checking for oh-my-openagent first, then auto-running `bunx oh-my-openagent install` when the upstream CLI is available and OMO is missing.
 2. Selecting the install scope (Global vs Project).
-3. Optionally configuring shared baseline defaults: region, industry, and data-protection regulations.
+3. Reviewing any detected existing configuration.
 4. Optionally initializing the current project immediately.
+5. Optionally adding AI tooling traces to `.gitignore` during that init handoff.
 
 > Note: upstream now prefers `oh-my-openagent` for plugin entries, OMO config basenames, and public install commands. Legacy `oh-my-opencode` config files are ignored by the converged Wunderkind flow and are reported only as migration warnings.
 
@@ -166,7 +172,7 @@ bunx @grant-vine/wunderkind install --no-tui \
   --primary-regulation=CCPA
 ```
 
-> Running `wunderkind` with no subcommand now shows help and exits. Installation must be explicit via `wunderkind install`.
+> Running `wunderkind` with no subcommand now shows help and exits. Installation must be explicit via `bunx @grant-vine/wunderkind install`.
 
 ---
 
@@ -175,10 +181,10 @@ bunx @grant-vine/wunderkind install --no-tui \
 Wunderkind exposes an explicit upgrade lifecycle command:
 
 ```bash
-wunderkind upgrade --scope=global
+bunx @grant-vine/wunderkind upgrade --scope=global
 
 # project-scope caveman default refresh
-wunderkind upgrade --scope=project --caveman-enabled=yes
+bunx @grant-vine/wunderkind upgrade --scope=project --caveman-enabled=yes
 ```
 
 Current upgrade behavior:
@@ -192,15 +198,15 @@ Current upgrade behavior:
 - supports `--dry-run` and `--refresh-config` for safe testing
 - project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
 
-Older installs require `wunderkind upgrade` to receive the `/dream` command. `wunderkind doctor` will surface missing or stale command assets.
+Older installs require `bunx @grant-vine/wunderkind upgrade` to receive the `/dream` command. `bunx @grant-vine/wunderkind doctor` will surface missing or stale command assets.
 
 ### What `doctor` tells operators
 
-`wunderkind doctor` is the clean post-upgrade verification surface for this release. It reports:
+`bunx @grant-vine/wunderkind doctor` is the clean post-upgrade verification surface for this release. It reports:
 
 - whether native agents, commands, and skills are stale relative to the currently installed Wunderkind package
 - whether generated native agent markdown versions drift from the current package version
-- the recommended `wunderkind upgrade --scope=...` lifecycle command for the detected install scope
+- the recommended `bunx @grant-vine/wunderkind upgrade --scope=...` lifecycle command for the detected install scope
 - the direct package refresh command (`bun install @grant-vine/wunderkind`) for the detected global and/or project install location
 
 This keeps the lifecycle concept explicit without overloading `install`.
@@ -212,7 +218,7 @@ This keeps the lifecycle concept explicit without overloading `install`.
 Initialize the current directory as a Wunderkind project to enable advanced features like Documentation Output and agent context persistence.
 
 ```bash
-wunderkind init [options]
+bunx @grant-vine/wunderkind init [options]
 ```
 
 ### Options
@@ -225,11 +231,11 @@ wunderkind init [options]
 | `--no-tui` | Skip interactive prompts | (false) |
 | `--caveman-enabled <yes\|no>` | Enable project-default caveman mode during non-interactive init | (not set) |
 
-Interactive `wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona. Those SOUL questions are now select-first with an explicit custom-answer fallback, show a compact persona banner before each persona block, and prefill current project-local SOUL answers when you rerun `init` on an already configured project. Baseline market/regulation values are inherited unless you intentionally override them in project config.
+Interactive `bunx @grant-vine/wunderkind init` always asks for team culture, org structure, and docs-output settings. It can also optionally create project-local SOUL files for any retained persona. Those SOUL questions are now select-first with an explicit custom-answer fallback, show a compact persona banner before each persona block, and prefill current project-local SOUL answers when you rerun `init` on an already configured project. Baseline market/regulation values are inherited unless you intentionally override them in project config.
 
 Wave 2 also lets `init` set the PRD/planning workflow mode for the project:
 - `filesystem` — PRDs, plans, issues, triage notes, RFCs, and glossary artifacts live in `.omo/`
-- `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready; use `wunderkind workflow-sync` for explicit GitHub Issues projection
+- `github` — GitHub-backed workflows can be used when `gh` is installed and the repo is GitHub-ready; use `bunx @grant-vine/wunderkind workflow-sync` for explicit GitHub Issues projection
 
 If `prdPipelineMode` is absent in an older project config, Wunderkind treats it as `filesystem`.
 
@@ -237,13 +243,13 @@ If `prdPipelineMode` is absent in an older project config, Wunderkind treats it 
 
 ## Workflow Sync
 
-Use `wunderkind workflow-sync` when `prdPipelineMode` is `github` and you want to project a local `.omo` workflow plan into GitHub Issues.
+Use `bunx @grant-vine/wunderkind workflow-sync` when `prdPipelineMode` is `github` and you want to project a local `.omo` workflow plan into GitHub Issues.
 
 ```bash
-wunderkind workflow-sync --plan ./.omo/plans/my-plan.md
-wunderkind workflow-sync --plan ./.omo/plans/my-plan.md --apply
-wunderkind workflow-sync --all
-wunderkind workflow-sync --all --apply
+bunx @grant-vine/wunderkind workflow-sync --plan ./.omo/plans/my-plan.md
+bunx @grant-vine/wunderkind workflow-sync --plan ./.omo/plans/my-plan.md --apply
+bunx @grant-vine/wunderkind workflow-sync --all
+bunx @grant-vine/wunderkind workflow-sync --all --apply
 ```
 
 - provide exactly one of `--plan <path>` or `--all`
@@ -255,12 +261,12 @@ wunderkind workflow-sync --all --apply
 
 ## Wunderkind Team Mode
 
-Use `wunderkind team-bootstrap` to create the canonical upstream-shaped team spec consumed by `/wunderkind-team`.
+Use `bunx @grant-vine/wunderkind team-bootstrap` to create the canonical upstream-shaped team spec consumed by `/wunderkind-team`.
 
 ```bash
-wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief
-wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief
-wunderkind team-bootstrap --scope=project --dry-run
+bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief
+bunx @grant-vine/wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief
+bunx @grant-vine/wunderkind team-bootstrap --scope=project --dry-run
 ```
 
 - project scope writes `<project>/.omo/teams/wunderkind-daily-brief/config.json`
@@ -271,11 +277,11 @@ wunderkind team-bootstrap --scope=project --dry-run
 
 ## Token Audit
 
-Use `wunderkind token-audit` to inspect deterministic prompt-surface size metrics for Wunderkind-owned assets.
+Use `bunx @grant-vine/wunderkind token-audit` to inspect deterministic prompt-surface size metrics for Wunderkind-owned assets.
 
 ```bash
-wunderkind token-audit
-wunderkind token-audit --surface commands --format json
+bunx @grant-vine/wunderkind token-audit
+bunx @grant-vine/wunderkind token-audit --surface commands --format json
 ```
 
 - default surface is `agents`
@@ -364,13 +370,13 @@ The schema is scope-aware:
 
 ```bash
 # Enable Stitch with a project-local API key file
-wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=project-local --stitch-api-key-file=./my-stitch-key.txt
+bunx @grant-vine/wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=project-local --stitch-api-key-file=./my-stitch-key.txt
 
 # Enable Stitch reusing an existing MCP setup
-wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=reuse
+bunx @grant-vine/wunderkind init --no-tui --design-tool=google-stitch --stitch-setup=reuse
 
 # Enable Stitch interactively (guided prompts)
-wunderkind init
+bunx @grant-vine/wunderkind init
 ```
 
 - `/design-md` supports `new` for greenfield Q&A and `capture-existing` for existing-app capture.
@@ -384,10 +390,10 @@ wunderkind init
 Run diagnostics to verify your installation, configuration, and project health.
 
 ```bash
-wunderkind doctor
+bunx @grant-vine/wunderkind doctor
 ```
 
-`wunderkind doctor` reports:
+`bunx @grant-vine/wunderkind doctor` reports:
 - Installed version and scope (Global vs Project)
 - Detected Wunderkind and OMO version state
 - Whether installed native agents/commands/skills look stale and should be refreshed via `wunderkind upgrade`
@@ -397,11 +403,11 @@ wunderkind doctor
 - Presence and status of project soul files (in a project context)
 - Current Documentation Output configuration and index status
 
-`wunderkind doctor` is strictly read-only and makes no changes to your filesystem.
+`bunx @grant-vine/wunderkind doctor` is strictly read-only and makes no changes to your filesystem.
 
 ### Doctor Verbose (`--verbose`)
 
-`wunderkind doctor --verbose` additionally shows:
+`bunx @grant-vine/wunderkind doctor --verbose` additionally shows:
 - Full path resolution for global and project OpenCode configs
 - Active region, industry, and regulation baseline with source markers
 - PRD workflow mode and GitHub-readiness signals
@@ -410,7 +416,7 @@ wunderkind doctor
 - All agent personality settings with human-readable descriptions
 - Docs output configuration (path, history mode, enabled status)
 
-`wunderkind doctor` stays conservative here: it reports configuration posture and latest-artifact existence, not proven runtime savings. `wunderkind token-audit` remains the separate audit-only reporting surface.
+`bunx @grant-vine/wunderkind doctor` stays conservative here: it reports configuration posture and latest-artifact existence, not proven runtime savings. `wunderkind token-audit` remains the separate audit-only reporting surface.
 
 Legend:
 - `●` = project override
@@ -435,14 +441,14 @@ Agent Personalities
 Safely remove Wunderkind plugin/config wiring:
 
 ```bash
-wunderkind uninstall
+bunx @grant-vine/wunderkind uninstall
 ```
 
 Optional scope targeting:
 
 ```bash
-wunderkind uninstall --scope=global
-wunderkind uninstall --scope=project
+bunx @grant-vine/wunderkind uninstall --scope=global
+bunx @grant-vine/wunderkind uninstall --scope=project
 ```
 
 `wunderkind uninstall` removes Wunderkind plugin registration from OpenCode config. On global uninstall it also removes `~/.wunderkind/wunderkind.config.jsonc` (and the parent `~/.wunderkind/` directory if it becomes empty). For safety, it intentionally leaves project-local customization/bootstrap artifacts untouched (`.wunderkind/`, `AGENTS.md`, `.omo/`, docs folders). Historical `.sisyphus/` directories are not managed by uninstall.
@@ -452,7 +458,7 @@ wunderkind uninstall --scope=project
 Remove Wunderkind from just the current project without touching shared global capabilities:
 
 ```bash
-wunderkind cleanup
+bunx @grant-vine/wunderkind cleanup
 ```
 
 `wunderkind cleanup` removes project-local OpenCode plugin wiring and the project's `.wunderkind/` directory. It intentionally leaves `AGENTS.md`, `.omo/`, docs output folders, and shared global native assets untouched. Historical `.sisyphus/` directories are not managed by cleanup.
@@ -463,7 +469,7 @@ wunderkind cleanup
 
 When enabled, agents can persist their decisions and strategies to your project's docs folder.
 
-1. **Enable** via interactive `wunderkind init`, or non-interactively with `wunderkind init --no-tui --docs-enabled=yes --docs-path ./docs`
+1. **Enable** via interactive `bunx @grant-vine/wunderkind init`, or non-interactively with `bunx @grant-vine/wunderkind init --no-tui --docs-enabled=yes --docs-path ./docs`
 2. **Configure** in `.wunderkind/wunderkind.config.jsonc` via `docsEnabled`, `docsPath`, and `docHistoryMode`.
 3. **Refresh or bootstrap** via `/docs-index`. This executable plugin command uses one shared UTC token per run (`YYYY-MM-DDTHH-mm-ssZ`, for example `2026-03-12T18-37-52Z`). In `append-dated`, it updates canonical files with headings like `## Update 2026-03-12T18-37-52Z`. In `new-dated-file`, it writes managed family files like `marketing-strategy--2026-03-12T18-37-52Z.md` beside the canonical file. Existing date-only artifacts are preserved unchanged.
 
@@ -475,7 +481,7 @@ If an older project still has `.sisyphus/` content, move the files manually:
 
 1. Move durable notes into `.omo/notepads/`.
 2. Move proof, logs, and run output into `.omo/evidence/`.
-3. Rerun `wunderkind doctor` and resolve any remaining detection-only warnings.
+3. Rerun `bunx @grant-vine/wunderkind doctor` and resolve any remaining detection-only warnings.
 
 `wunderkind migrate` remains present only as a fail-hard guidance surface. Both normal and `--dry-run` invocations exit non-zero and do not move files.
 
@@ -497,7 +503,7 @@ To request an audit, ask `fullstack-wunderkind` directly or invoke the `code-hea
 
 Wunderkind supports that upstream bootstrap flow in this order:
 
-1. Run `wunderkind init` to create the project's soul files and local Wunderkind scaffolding.
+1. Run `bunx @grant-vine/wunderkind init` to create the project's soul files and local Wunderkind scaffolding.
 2. Have an agent populate `AGENTS.md` with project knowledge, conventions, and operating context.
 3. Systematically explore the codebase and capture durable findings in `.omo/` notepads and evidence.
 4. Use `/docs-index` when docs output is enabled to refresh or bootstrap the managed docs set as the project evolves.
@@ -519,7 +525,7 @@ The `/dream` native command is a mixed-domain workflow for ideation, soul synthe
 1. **Workflow**: /dream [topic] → ideation → soul synthesis → exploration.
 2. **Context**: Uses project-local SOUL overlays from `.wunderkind/souls/<agent-key>.md`, `AGENTS.md` knowledge, and `.omo/` notepads/evidence for high-fidelity reasoning.
 3. **Output**: Chat-first. Any durable findings or artifacts must be explicitly requested for save (to `.omo/notepads/` or `.omo/evidence/` only).
-4. **Lifecycle**: Refreshed via `wunderkind install` and `wunderkind upgrade`. Run `wunderkind doctor` to check for stale assets.
+4. **Lifecycle**: Refreshed via `bunx @grant-vine/wunderkind install` and `bunx @grant-vine/wunderkind upgrade`. Run `bunx @grant-vine/wunderkind doctor` to check for stale assets.
 
 ---
 
@@ -784,7 +790,7 @@ To manually add Wunderkind to your OpenCode configuration, update the `plugin` a
 Run this command to ensure `.wunderkind/` and other AI tooling directories are gitignored in your project:
 
 ```bash
-wunderkind gitignore
+bunx @grant-vine/wunderkind gitignore
 ```
 
 This adds `.wunderkind/`, `AGENTS.md`, `.omo/`, and `.opencode/` to your `.gitignore` if they aren't already present.

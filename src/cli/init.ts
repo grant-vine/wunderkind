@@ -48,7 +48,7 @@ const PROJECT_CONTEXT_MARKERS = ["package.json", "bun.lockb", "bun.lock", "tscon
 const AGENTS_MD_PLACEHOLDER = `# Project Agents
 
 This file documents the AI agents configured for this project via Wunderkind.
-Run \`wunderkind doctor\` to see current agent configuration and status.
+Run \`bunx @grant-vine/wunderkind doctor\` to see current agent configuration and status.
 `
 
 const CONTEXT_MD_PLACEHOLDER = `# Project Context
@@ -627,7 +627,7 @@ export async function runInit(options: InitOptions): Promise<number> {
   try {
     const detected = detectCurrentConfig()
     if (!detected.isInstalled) {
-      console.error("Error: Wunderkind is not installed in OpenCode. Run 'wunderkind install' first.")
+      console.error("Error: Wunderkind is not installed in OpenCode. Run 'bunx @grant-vine/wunderkind install' first.")
       return 1
     }
 
@@ -1012,7 +1012,7 @@ export async function runInit(options: InitOptions): Promise<number> {
         console.log("Warning: GitHub PRD mode selected, but `gh auth status` could not verify GitHub readiness. You may need to authenticate before using GitHub-backed workflows.")
       }
 
-      console.log("Next step: use `wunderkind workflow-sync --plan ./.omo/plans/<plan>.md` or `wunderkind workflow-sync --all` for explicit GitHub Issues sync. Add `--apply` only when the dry-run output looks correct.")
+      console.log("Next step: use `bunx @grant-vine/wunderkind workflow-sync --plan ./.omo/plans/<plan>.md` or `bunx @grant-vine/wunderkind workflow-sync --all` for explicit GitHub Issues sync. Add `--apply` only when the dry-run output looks correct.")
     }
 
     if (config.docsEnabled) {
@@ -1093,7 +1093,7 @@ export async function runInit(options: InitOptions): Promise<number> {
     console.log(`Initialized project in ${cwd}`)
     console.log(`Project config: ${writeResult.configPath}`)
     if (!noTui) {
-      console.log("Tip: Run 'wunderkind doctor --verbose' to review the retained personas and docs/runtime settings later.")
+      console.log("Tip: Run 'bunx @grant-vine/wunderkind doctor --verbose' to review the retained personas and docs/runtime settings later.")
     }
     return 0
   } catch (error) {

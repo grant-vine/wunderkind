@@ -25,7 +25,7 @@ This command is invoked as `/token-audit`.
 - Do not mutate prompts, native assets, project files, or docs as part of this command.
 - Prompt-runtime v1 is audit-only: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - Any supplementary prompt optimization engine is config-driven and separate from this audit-only report.
-- Use the existing `wunderkind token-audit [--surface <surface>] [--format <format>]` CLI surface as the reporting boundary.
+- Use the existing `bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]` CLI surface as the reporting boundary.
 - Report deterministic bytes, lines, and file counts only. Do not claim model-specific token truth unless the underlying CLI explicitly adds a tokenizer-aware mode.
 - Keep all reads and command execution scoped to the current package and project root.
 
@@ -34,7 +34,7 @@ This command is invoked as `/token-audit`.
 - This command is shipped as `/token-audit`.
 - Default surface is `agents`.
 - Default format is `table`.
-- The underlying CLI command is `wunderkind token-audit [--surface <surface>] [--format <format>]`.
+- The underlying CLI command is `bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]`.
 - If the CLI executable is unavailable in the environment, explain that blocker clearly instead of improvising a second reporting path.
 
 <user-request>

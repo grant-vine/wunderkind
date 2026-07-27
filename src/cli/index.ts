@@ -238,7 +238,7 @@ program
       "Uses .omo/ as the primary project-working directory. If legacy .sisyphus/ artifacts still exist, move any needed files into .omo/ manually.",
       "Project-local config stays sparse and only stores values that intentionally override inherited defaults.",
       "Init also configures the PRD/planning workflow mode for this project.",
-      "Requires Wunderkind to already be installed via `wunderkind install`.",
+      "Requires Wunderkind to already be installed via `bunx @grant-vine/wunderkind install`.",
     ].join("\n"),
   )
   .option("--no-tui", "Run non-interactive project bootstrap")

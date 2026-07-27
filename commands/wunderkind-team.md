@@ -40,7 +40,7 @@ This command is invoked as `/wunderkind-team`.
 ## Notes
 
 - The canonical intake opener is `What do you want to do today?`.
-- The canonical bootstrap command for the missing-spec case is `wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief` or `wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief`.
+- The canonical bootstrap command for the missing-spec case is `bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief` or `bunx @grant-vine/wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief`.
 - When fallback is required, say why: `team mode disabled`, `missing team spec`, or `team tools unavailable in this runtime`.
 - The fallback path is always solo `product-wunderkind` orchestration.
 

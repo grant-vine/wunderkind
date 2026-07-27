@@ -925,8 +925,8 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Workflow Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("PRD pipeline mode:") && m.includes("filesystem"))).toBe(true)
       expect(messages.some((m) => m.includes("GitHub remote detected:") && m.includes("✓ yes"))).toBe(true)
-      expect(messages.some((m) => m.includes("workflow sync command:") && m.includes("wunderkind workflow-sync --plan <path> [--apply]"))).toBe(true)
-      expect(messages.some((m) => m.includes("token audit command:") && m.includes("wunderkind token-audit --surface agents --format table"))).toBe(true)
+      expect(messages.some((m) => m.includes("workflow sync command:") && m.includes("bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]"))).toBe(true)
+      expect(messages.some((m) => m.includes("token audit command:") && m.includes("bunx @grant-vine/wunderkind token-audit --surface agents --format table"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -1185,7 +1185,7 @@ describe("runDoctor", () => {
     const { code, messages } = await captureDoctorOutput({})
 
     expect(code).toBe(0)
-    expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=global"))).toBe(true)
+    expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("bunx @grant-vine/wunderkind upgrade --scope=global"))).toBe(true)
     expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
     expect(messages.some((m) => m.includes("native agent markdown versions:") && m.includes("up to date"))).toBe(true)
     expect(messages.some((m) => m.includes("upgrade guidance:") && m.includes("Latest oh-my-openagent freshness could not be verified"))).toBe(true)
@@ -1208,7 +1208,7 @@ describe("runDoctor", () => {
       const { code, messages } = await captureDoctorOutput({ verbose: true })
 
       expect(code).toBe(0)
-      expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("wunderkind upgrade --scope=project"))).toBe(true)
+      expect(messages.some((m) => m.includes("wunderkind lifecycle:") && m.includes("bunx @grant-vine/wunderkind upgrade --scope=project"))).toBe(true)
       expect(messages.some((m) => m.includes("wunderkind package refresh:") && m.includes(tempProject) && m.includes("bun install @grant-vine/wunderkind"))).toBe(true)
     } finally {
       process.chdir(originalCwd)
@@ -2291,7 +2291,7 @@ describe("wunderkind team entry detection", () => {
       expect(messages.some((m) => m.includes("/wunderkind-team readiness:") && m.includes("team-ready"))).toBe(true)
       expect(messages.some((m) => m.includes("/wunderkind-team config:") && m.includes("team_mode.enabled"))).toBe(true)
       expect(messages.some((m) => m.includes("/wunderkind-team selected spec:") && m.includes("config.json"))).toBe(true)
-      expect(messages.some((m) => m.includes("team bootstrap command:") && m.includes("wunderkind team-bootstrap --scope=project"))).toBe(true)
+      expect(messages.some((m) => m.includes("team bootstrap command:") && m.includes("bunx @grant-vine/wunderkind team-bootstrap --scope=project"))).toBe(true)
       expect(messages.some((m) => m.includes("token audit contract:") && m.includes("audit-only") && m.includes("no live prompt packing") && m.includes("no model-token truth claims"))).toBe(true)
       expect(messages.some((m) => m.includes("/wunderkind-team fallback:") && m.includes("solo product-wunderkind orchestration"))).toBe(true)
     } finally {

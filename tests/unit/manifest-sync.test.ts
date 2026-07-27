@@ -131,8 +131,8 @@ describe("design-md command asset", () => {
 
     expect(workflowSyncBody).toContain("agent: product-wunderkind")
     expect(workflowSyncBody).toContain("name: workflow-sync")
-    expect(workflowSyncBody).toContain("`wunderkind workflow-sync --plan <path> [--apply]`")
-    expect(workflowSyncBody).toContain("`wunderkind workflow-sync --all [--apply]`")
+    expect(workflowSyncBody).toContain("`bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]`")
+    expect(workflowSyncBody).toContain("`bunx @grant-vine/wunderkind workflow-sync --all [--apply]`")
     expect(workflowSyncBody).toContain(".wunderkind/workflows/github-issues/")
   })
 
@@ -141,7 +141,7 @@ describe("design-md command asset", () => {
 
     expect(tokenAuditBody).toContain("agent: fullstack-wunderkind")
     expect(tokenAuditBody).toContain("name: token-audit")
-    expect(tokenAuditBody).toContain("`wunderkind token-audit [--surface <surface>] [--format <format>]`")
+    expect(tokenAuditBody).toContain("`bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]`")
     expect(tokenAuditBody).toContain("bytes, lines, and file counts")
     expect(tokenAuditBody).toContain("audit-only prompt-surface report")
     expect(tokenAuditBody).toContain("no live prompt packing")

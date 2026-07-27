@@ -199,7 +199,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
     }
     console.log()
     printInfo(
-      "Usage: bunx wunderkind install --no-tui [--region='South Africa'] [--industry=SaaS] [--primary-regulation=POPIA]",
+      "Usage: bunx @grant-vine/wunderkind install --no-tui [--region='South Africa'] [--industry=SaaS] [--primary-regulation=POPIA]",
     )
     console.log()
     return 1
@@ -212,7 +212,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   }
   const omoPreflight = validateOmoPreflightForCli()
   if (!omoPreflight.valid) {
-    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind install --no-tui")
+    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running bunx @grant-vine/wunderkind install --no-tui")
     return 1
   }
   const omoReadiness = detectOmoInstallReadiness()
@@ -317,7 +317,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   }
   const omoPreflight = validateOmoPreflightForCli()
   if (!omoPreflight.valid) {
-    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running wunderkind upgrade")
+    printError(omoPreflight.message ?? "oh-my-openagent must be installed before running bunx @grant-vine/wunderkind upgrade")
     return 1
   }
   const omoReadiness = detectOmoInstallReadiness()
@@ -327,8 +327,8 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
     printHeader(false)
     printError(
       args.scope === "project"
-        ? "Wunderkind is not installed in the project scope. Did you mean 'wunderkind install --scope=project'?"
-        : "Wunderkind is not installed in the global scope. Did you mean 'wunderkind install --scope=global'?",
+        ? "Wunderkind is not installed in the project scope. Did you mean 'bunx @grant-vine/wunderkind install --scope=project'?"
+        : "Wunderkind is not installed in the global scope. Did you mean 'bunx @grant-vine/wunderkind install --scope=global'?",
     )
     return 1
   }

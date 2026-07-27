@@ -824,12 +824,12 @@ describe("config-manager coverage", () => {
 
       const workflowSyncContent = readFileSync(join(mod.getNativeCommandsDir(), "workflow-sync.md"), "utf-8")
       expect(workflowSyncContent).toContain("name: workflow-sync")
-      expect(workflowSyncContent).toContain("wunderkind workflow-sync --plan <path> [--apply]")
-      expect(workflowSyncContent).toContain("wunderkind workflow-sync --all [--apply]")
+      expect(workflowSyncContent).toContain("bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]")
+      expect(workflowSyncContent).toContain("bunx @grant-vine/wunderkind workflow-sync --all [--apply]")
 
       const tokenAuditContent = readFileSync(join(mod.getNativeCommandsDir(), "token-audit.md"), "utf-8")
       expect(tokenAuditContent).toContain("name: token-audit")
-      expect(tokenAuditContent).toContain("wunderkind token-audit [--surface <surface>] [--format <format>]")
+      expect(tokenAuditContent).toContain("bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]")
 
       const wunderkindTeamContent = readFileSync(join(mod.getNativeCommandsDir(), "wunderkind-team.md"), "utf-8")
       expect(wunderkindTeamContent).toContain("name: wunderkind-team")

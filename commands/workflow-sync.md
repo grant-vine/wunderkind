@@ -24,7 +24,7 @@ This command is invoked as `/workflow-sync`.
 ## Constraints
 
 - Do not create a second implementation path for GitHub Issues sync.
-- Use the existing `wunderkind workflow-sync --plan <path> [--apply]` and `wunderkind workflow-sync --all [--apply]` CLI surfaces as the mutation boundary.
+- Use the existing `bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]` and `bunx @grant-vine/wunderkind workflow-sync --all [--apply]` CLI surfaces as the mutation boundary.
 - Keep the workflow local-authoritative. Do not treat GitHub as the source of truth.
 - Machine-local workflow bindings must remain under `.wunderkind/workflows/github-issues/`.
 - If local or remote drift is detected, fail closed and report the blocker instead of recreating issues blindly.
@@ -35,7 +35,7 @@ This command is invoked as `/workflow-sync`.
 - This command is shipped as `/workflow-sync`.
 - Default mode is dry-run analysis.
 - `--apply` is required for GitHub writes and local workflow-state persistence.
-- The underlying CLI command is `wunderkind workflow-sync --plan <path> [--apply]` or `wunderkind workflow-sync --all [--apply]`.
+- The underlying CLI command is `bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]` or `bunx @grant-vine/wunderkind workflow-sync --all [--apply]`.
 - If the CLI executable is unavailable in the environment, explain that blocker clearly instead of improvising a replacement mutation flow.
 
 <user-request>

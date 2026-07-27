@@ -172,6 +172,7 @@ describe("CLI help copy", () => {
   it("includes design workflow init flags in help", () => {
     const output = runCliHelp("init", "--help")
 
+    expect(output).toContain("bunx @grant-vine/wunderkind")
     expect(output).toContain("--design-tool")
     expect(output).toContain("--design-path")
     expect(output).toContain("--stitch-setup")

@@ -221,7 +221,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
       `Primary regulation:  ${color.cyan(config.primaryRegulation || color.dim("(not set)"))}`,
       config.secondaryRegulation ? `Secondary:           ${color.cyan(config.secondaryRegulation)}` : "",
       ``,
-      `${color.dim("Use 'wunderkind init' for project-local market/regulation, team/personality, and docs settings.")}`,
+      `${color.dim("Use 'bunx @grant-vine/wunderkind init' for project-local market/regulation, team/personality, and docs settings.")}`,
     ]
       .filter(Boolean)
       .join("\n"),

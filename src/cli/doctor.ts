@@ -104,18 +104,18 @@ function summarizeWunderkindUpgradeCommands(input: {
   switch (input.registrationScope) {
     case "project":
       return {
-        lifecycle: "wunderkind upgrade --scope=project",
+        lifecycle: "bunx @grant-vine/wunderkind upgrade --scope=project",
         packageRefresh: projectInstallCommand,
       }
     case "both":
       return {
-        lifecycle: "wunderkind upgrade --scope=project && wunderkind upgrade --scope=global",
+        lifecycle: "bunx @grant-vine/wunderkind upgrade --scope=project && bunx @grant-vine/wunderkind upgrade --scope=global",
         packageRefresh: `project: ${projectInstallCommand} | global: ${globalInstallCommand}`,
       }
     case "global":
     default:
       return {
-        lifecycle: "wunderkind upgrade --scope=global",
+        lifecycle: "bunx @grant-vine/wunderkind upgrade --scope=global",
         packageRefresh: globalInstallCommand,
       }
   }
@@ -469,9 +469,9 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const workflowStateCount = existsSync(workflowStateDir)
         ? readdirSync(workflowStateDir).filter((entry) => entry.endsWith(".json")).length
         : 0
-      line("workflow sync command:", color.dim("wunderkind workflow-sync --plan <path> [--apply]"))
-      line("team bootstrap command:", color.dim("wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"))
-      line("token audit command:", color.dim("wunderkind token-audit --surface agents --format table"))
+      line("workflow sync command:", color.dim("bunx @grant-vine/wunderkind workflow-sync --plan <path> [--apply]"))
+      line("team bootstrap command:", color.dim("bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"))
+      line("token audit command:", color.dim("bunx @grant-vine/wunderkind token-audit --surface agents --format table"))
       line("token audit contract:", color.dim("audit-only; no live prompt packing; no model-token truth claims"))
       line(
         "github workflow state dir:",
@@ -620,7 +620,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         )
         line(
           "/wunderkind-team bootstrap:",
-          color.dim("wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"),
+          color.dim("bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief"),
         )
         line(
           "/wunderkind-team fallback:",

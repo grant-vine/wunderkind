@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.6
+
+- make `bunx @grant-vine/wunderkind ...` the canonical user-facing invocation across README guidance, runtime help text, doctor/init/install messaging, and shipped command assets
+- keep `doctor`'s package-refresh guidance explicit with `bun install @grant-vine/wunderkind` while aligning lifecycle commands and tests around the bunx-first command story
+
 ## 0.23.5
 
 - refresh README, AGENTS, CONTEXT, managed docs lanes, and active `.omo` guidance around the current retained-agent workflow and prompt-optimization reporting posture
