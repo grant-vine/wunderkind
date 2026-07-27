@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { spawnSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -30,12 +29,13 @@ interface ReportingModeProbeResult {
   readonly malformedDetectedReportingMode: string | null
 }
 
-function runReportingModeProbe(testName: string): ReportingModeProbeResult {
+async function runReportingModeProbe(testName: string): Promise<ReportingModeProbeResult> {
   const rootDir = mkdtempSync(join(tmpdir(), `wunderkind-${testName}-`))
   const homeDir = join(rootDir, "home")
   const projectDir = join(rootDir, "project")
   const projectConfigPath = join(projectDir, ".wunderkind", "wunderkind.config.jsonc")
   const projectOpenCodePath = join(projectDir, "opencode.json")
+  const probeResultPath = join(rootDir, "probe-result.json")
 
   mkdirSync(homeDir, { recursive: true })
   mkdirSync(projectDir, { recursive: true })
@@ -89,7 +89,7 @@ try {
 
   writeFileSync(
     ${JSON.stringify(projectConfigPath)},
-    ` + JSON.stringify(`{
+    ${JSON.stringify(`{
   "$schema": "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   "teamCulture": "pragmatic-balanced",
   "orgStructure": "flat",
@@ -103,10 +103,10 @@ try {
   "docsPath": "./docs",
   "docHistoryMode": "append-dated",
   "promptOptimizationReportingMode": "loud"
-}`) + `,
+}`)},
   )
 
-  console.log(JSON.stringify({
+  writeFileSync(${JSON.stringify(probeResultPath)}, JSON.stringify({
     offResultSuccess: offResult.success,
     offFileContainsReportingMode,
     persistResultSuccess: persistResult.success,
@@ -127,17 +127,24 @@ try {
 `
 
   try {
-    const result = spawnSync("bun", ["-e", script], {
+    const result = Bun.spawnSync(["bun", "-e", script], {
       cwd: projectDir,
       env: process.env,
-      encoding: "utf8",
+      stderr: "pipe",
+      stdout: "pipe",
     })
+    const stdout = result.stdout.toString()
+    const stderr = result.stderr.toString()
 
-    if (result.status !== 0) {
-      throw new Error(result.stderr || result.stdout || "config-manager probe failed")
+    if (result.exitCode !== 0) {
+      throw new Error(stderr || stdout || "config-manager probe failed")
     }
 
-    return JSON.parse(result.stdout.trim()) as ReportingModeProbeResult
+    if (!Bun.file(probeResultPath).exists()) {
+      throw new Error(stderr || stdout || `config-manager probe did not write ${probeResultPath}`)
+    }
+
+    return JSON.parse(readFileSync(probeResultPath, "utf8")) as ReportingModeProbeResult
   } finally {
     rmSync(rootDir, { recursive: true, force: true })
   }
@@ -326,7 +333,7 @@ describe("prompt optimization fallback policy", () => {
   })
 
   it("keeps reporting mode sparse by default, rejects malformed writer input, and excludes malformed persisted values from config detection", async () => {
-    const probe = runReportingModeProbe("prompt-optimization-reporting-mode")
+    const probe = await runReportingModeProbe("prompt-optimization-reporting-mode")
 
     expect(probe.offResultSuccess).toBe(true)
     expect(probe.offFileContainsReportingMode).toBe(false)

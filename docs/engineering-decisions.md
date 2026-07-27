@@ -5,9 +5,9 @@ Last refreshed: 2026-07-15T11-11-35Z
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
-- **Plugin package**: `@opencode-ai/plugin@1.17.8`
-- **OMO dependency**: `oh-my-openagent@4.11.1`
-- **Current Wunderkind package version**: `0.20.1`
+- **Plugin package**: `@opencode-ai/plugin@1.18.7`
+- **OMO dependency**: `oh-my-openagent@4.19.2`
+- **Current Wunderkind package version**: `0.23.4`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 
 ## Architecture decisions
@@ -41,8 +41,8 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ## Dependency posture
 
 - Key direct dependencies are current for this upgrade cycle:
-  - `oh-my-openagent@4.11.1`
-  - `@opencode-ai/plugin@1.17.8`
+  - `oh-my-openagent@4.19.2`
+  - `@opencode-ai/plugin@1.18.7`
 - Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
 - Patched transitive overrides currently pin:
   - `fast-uri@3.1.2`

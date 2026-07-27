@@ -191,8 +191,8 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.4")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.4")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.7")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

@@ -419,10 +419,13 @@ describe("config-manager coverage", () => {
     expect(projectSchema).toBeDefined()
 
     const properties = projectSchema?.properties as Record<string, Record<string, unknown>> | undefined
-    expect(properties?.promptOptimizationEnabled).toEqual({ type: "boolean" })
-    expect(properties?.promptOptimizationMode).toEqual({ enum: ["off", "advisory", "active"] })
-    expect(properties?.promptOptimizationTokenBudget).toEqual({ type: "integer", minimum: 1 })
-    expect(properties?.promptOptimizationByteBudget).toEqual({ type: "integer", minimum: 1 })
+    expect(properties?.promptOptimizationEnabled).toMatchObject({
+      type: "boolean",
+      description: "Enable the separate supplementary prompt optimization engine. This does not change the audit-only token-audit contract or surface.",
+    })
+    expect(properties?.promptOptimizationMode).toMatchObject({ enum: ["off", "advisory", "active"] })
+    expect(properties?.promptOptimizationTokenBudget).toMatchObject({ type: "integer", minimum: 1 })
+    expect(properties?.promptOptimizationByteBudget).toMatchObject({ type: "integer", minimum: 1 })
   })
 
   it("returns null when neither global nor project config exists", async () => {

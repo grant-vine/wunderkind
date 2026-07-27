@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.4
+
+- align Wunderkind's inherited OpenCode SDK surface to `@opencode-ai/plugin@1.18.7` and `@opencode-ai/sdk@1.18.7`
+- bump the direct `oh-my-openagent` dependency to `4.19.2` and refresh compatibility references for the current upstream wave
+
 ## 0.23.3
 
 - freeze the V3 prompt-optimization runtime-report public contract around one shared sanitized payload for persisted latest artifacts and summary metadata

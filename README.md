@@ -24,16 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.23.3
+## What's new in 0.23.4
 
-Wunderkind `0.23.3` hardens the supplementary prompt-optimization runtime-report surface introduced in `0.23.0` without changing `wunderkind token-audit` into a live optimization feature. This release freezes the public runtime-report contract, redacts secret-like emitted `modelId` values, keeps SOUL content out of reportable sections, aligns operator-facing wording around the separate sanitized/redacted runtime-report surface, and ships the deterministic regression bundle that proves those guarantees.
+Wunderkind `0.23.4` is a small upstream-alignment release. It bumps the inherited OpenCode SDK surface to `@opencode-ai/plugin@1.18.7` and `@opencode-ai/sdk@1.18.7`, lifts the direct `oh-my-openagent` dependency to `4.19.2`, and refreshes the repo’s compatibility references for that patch wave.
 
-- keep `wunderkind token-audit` audit-only: no live prompt packing, no model-token truth claims, and no public optimize command
-- route persisted latest-report artifacts and summary metadata through one shared sanitized public-payload seam
-- redact secret-like emitted `modelId` values as `***` while preserving safe literals and unchanged `off` / `persist` / `summary` semantics
-- preserve `runtime-soul-overlay` in live prompt assembly while keeping it excluded from eligible/reportable runtime-report surfaces
-- align README, docs, CLI help, doctor output, config comments, and schema wording around the separate sanitized/redacted runtime-report surface
-- ship deterministic seeded-secret and integrated proof coverage for persisted artifacts, summary metadata, and final scope fidelity
+- align `@opencode-ai/plugin` and `@opencode-ai/sdk` together at `1.18.7`
+- lift the direct `oh-my-openagent` dependency to `4.19.2`
+- keep native-asset freshness, doctor guidance, and manifest sync surfaces aligned with the current upstream wave
+- preserve the existing audit-only `token-audit` contract, the no public optimize command posture, and the supplementary prompt-optimization runtime-report behavior unchanged
 
 ### Clean upgrade path for existing installs
 
