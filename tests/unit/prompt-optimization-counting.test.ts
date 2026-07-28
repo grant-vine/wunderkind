@@ -7,6 +7,7 @@ import {
   OPENAI_EXACT_LOCAL_MODEL_IDS,
   buildPromptOptimizationRuntimeReport,
   countPromptOptimizationTokens,
+  measurePromptOptimizationReduction,
 } from "../../src/cli/prompt-optimization-runtime-reporting.js"
 import type { PromptOptimizationRuntimeTrimResult } from "../../src/runtime-prompt-sections.js"
 
@@ -65,6 +66,40 @@ describe("prompt optimization token counting", () => {
     expect(countPromptOptimizationTokens("claude-3-5-sonnet", "Hello from another provider")).toEqual({
       countState: "unsupported",
       tokenCount: null,
+    })
+  })
+
+  it("measures aggregate reduction with exact-token priority for the frozen supported OpenAI model ids", () => {
+    const reduction = measurePromptOptimizationReduction({
+      modelId: "gpt-4.1",
+      beforeContent: "Repeat the diagnosis clearly. Repeat the diagnosis clearly.\n",
+      afterContent: "Repeat the diagnosis clearly.\n",
+    })
+
+    expect(reduction.metricBasis).toBe("exact-tokens")
+    expect(reduction.exactTokenDelta).not.toBe(null)
+    expect(reduction.beforeValue).toBe(reduction.exactTokenDelta?.beforeTokens)
+    expect(reduction.afterValue).toBe(reduction.exactTokenDelta?.afterTokens)
+    expect(reduction.savedValue).toBe(reduction.exactTokenDelta?.savedTokens)
+    expect(reduction.savedValue).toBeGreaterThan(0)
+  })
+
+  it("falls back to deterministic byte measurement when exact-local token counting is unavailable", () => {
+    const beforeContent = "Keep the benchmark deterministic. Keep the benchmark deterministic.\n"
+    const afterContent = "Keep the benchmark deterministic.\n"
+
+    expect(
+      measurePromptOptimizationReduction({
+        modelId: "claude-3-5-sonnet",
+        beforeContent,
+        afterContent,
+      }),
+    ).toEqual({
+      metricBasis: "bytes-fallback",
+      beforeValue: Buffer.byteLength(beforeContent, "utf8"),
+      afterValue: Buffer.byteLength(afterContent, "utf8"),
+      savedValue: Buffer.byteLength(beforeContent, "utf8") - Buffer.byteLength(afterContent, "utf8"),
+      exactTokenDelta: null,
     })
   })
 

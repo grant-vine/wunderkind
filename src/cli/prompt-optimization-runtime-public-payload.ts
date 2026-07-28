@@ -35,6 +35,14 @@ export interface PromptOptimizationRuntimePublicPayload {
   readonly summaryMetadata: PromptOptimizationRuntimeSummaryMetadata
 }
 
+type PromptOptimizationRuntimePublicScalar =
+  | boolean
+  | number
+  | string
+  | null
+  | readonly PromptOptimizationRuntimePublicScalar[]
+  | { readonly [key: string]: PromptOptimizationRuntimePublicScalar }
+
 const PROMPT_OPTIMIZATION_RUNTIME_PUBLIC_REDACTION_MASK = "***"
 const PROMPT_OPTIMIZATION_RUNTIME_SECRET_RULE_PREFIXES = [
   "sk-",
@@ -117,4 +125,32 @@ export function buildPromptOptimizationRuntimePublicPayload(
       exactTokenDelta: sanitizedReport.exactTokenDelta,
     },
   }
+}
+
+function isPromptOptimizationRuntimePublicScalarSafe(value: unknown): value is PromptOptimizationRuntimePublicScalar {
+  if (value == null) {
+    return true
+  }
+
+  if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+    return true
+  }
+
+  if (Array.isArray(value)) {
+    return value.every((entry) => isPromptOptimizationRuntimePublicScalarSafe(entry))
+  }
+
+  if (typeof value !== "object") {
+    return false
+  }
+
+  return Object.values(value as Record<string, unknown>).every((entry) =>
+    isPromptOptimizationRuntimePublicScalarSafe(entry),
+  )
+}
+
+export function isPromptOptimizationRuntimePublicPayloadScalarSafe(
+  payload: PromptOptimizationRuntimePublicPayload,
+): boolean {
+  return isPromptOptimizationRuntimePublicScalarSafe(payload.report) && isPromptOptimizationRuntimePublicScalarSafe(payload.summaryMetadata)
 }

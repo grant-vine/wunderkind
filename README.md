@@ -24,13 +24,25 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.25.0
+
+Wunderkind `0.25.0` ships the completed prompt-optimization expansion as one default-off multi-level prompt optimization engine. It keeps `token-audit` audit-only, preserves the conservative latest-user boundary as the lowest supported level, and now includes the verified runtime-owned trimming, tool-output compaction, contextual compression, and transcript compression paths behind the cumulative `promptOptimizationLevel` model.
+
+- document one capability-based `promptOptimizationLevel` model: `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`
+- ship the completed level-fixture and runtime-report verification coverage that freezes the operator-facing behavior of those cumulative levels
+- keep the security-safe baseline on whenever optimization is enabled: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift
+- preserve audit-only `token-audit`, explicit exclusions, and runtime-report-only passthrough visibility while updating fixtures, docs, help text, and operator guidance around the final level-based system
+
 ## What's new in 0.24.0
 
-Wunderkind `0.24.0` is a V4 safe user-prompt optimization release. It keeps `token-audit` audit-only and product-default-off prompt optimization intact while adding the conservative latest-user-message-only V4 path, measured runtime-report savings, and fail-closed passthrough coverage for risky or immutable user-authored content.
+Wunderkind `0.24.0` documents the final prompt-optimization contract as one default-off multi-level prompt optimization engine. It keeps `token-audit` audit-only, preserves the conservative latest-user boundary as the lowest supported level, and makes the cumulative `promptOptimizationLevel` model the operator-facing way to reason about broader runtime-owned trimming, tool-output compaction, contextual compression, and transcript compression.
 
-- add V4 latest-user-message-only prompt optimization with immutable byte-exact exclusions and whole-message passthrough for low-confidence or safety-risk cases
-- keep passthrough reason visibility on the separate runtime-report surface only, never in summary metadata or `token-audit`
-- extend fixtures, runtime evidence helpers, doctor/help/docs wording, and regression coverage around the new V4 boundary while preserving the audit-only `token-audit` contract
+- document one capability-based `promptOptimizationLevel` model: `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`
+- keep the security-safe baseline on whenever optimization is enabled: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift
+- preserve audit-only `token-audit`, explicit exclusions, and runtime-report-only passthrough visibility while updating fixtures, docs, help text, and operator guidance around the final level-based system
+
+> [!WARNING]
+> **Breaking change (pre-v1):** operator docs now describe prompt optimization as one multi-level engine instead of a standalone V4/latest-user-only feature wave. Legacy enabled repos that omit `promptOptimizationLevel` stay on the read-time compatibility profile until an operator explicitly selects a concrete level. Wunderkind does not auto-materialize that level during ordinary init/upgrade/refresh flows. Unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
 
 ## What's new in 0.23.8
 
@@ -330,13 +342,12 @@ bunx @grant-vine/wunderkind token-audit --surface commands --format json
 - prompt-runtime v1 is `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency
 - any supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit` and surfaces through config and doctor rather than a new public optimize command
 - runtime prompt-optimization posture and latest-report artifact status belong to `bunx @grant-vine/wunderkind doctor --verbose`, not `wunderkind token-audit`
+- the separate engine is one default-off multi-level prompt optimization engine, not a second public command surface
 - `promptOptimizationReportingMode` is the opt-in key for the separate runtime-report surface: `off`, `persist`, and `summary`
 - `persist` keeps sanitized/redacted latest-report artifacts or summaries on that separate runtime-report surface at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - the separate prompt-optimization runtime-report surface is scalar-first: every current emitted public field is safe scalar/enum/id except `modelId`, which is the only unconstrained public string carrier in the frozen V3 contract
 - V3 freezes omission-before-mask precedence for that runtime-report surface: keep fields omitted or scalar-only when possible, preserve ordinary safe-literal `modelId` values, and replace a secret-bearing public `modelId` with `***` when it matches the frozen rule set (`sk-`, `ghp_`, `github_pat_`, `xoxb-`, `xoxp-`, `Bearer `, JWT-shape, credentialed URL authority, or PEM/private-key sentinels)
-- V4 safe user-prompt optimization, when enabled by config, is latest-user-message-only; retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content are excluded
-- V4 preserves immutable content byte-exact: code blocks, URLs, file paths, commands, explicit constraints and requirements, compliance/legal/security wording, and quoted user text or examples
-- V4 fails closed with whole-message passthrough for low-confidence or safety-risk cases; passthrough reason codes are visible only on the runtime-report path and are not summary metadata guidance
+- the engine stays explicitly bounded: no persistent cross-session memory writes and no automatic context injection
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -344,17 +355,24 @@ This is intentionally separate from `wunderkind migrate`. `migrate` remains lega
 
 ### Supplementary prompt optimization
 
-The prompt-optimization engine is a separate, config-driven runtime surface. It is intentionally supplementary to `wunderkind token-audit`, remains product-default-off, and does not introduce a public `optimize` command.
+The prompt-optimization engine is a separate, default-off multi-level prompt optimization engine. It is intentionally supplementary to `wunderkind token-audit`, remains product-default-off, and does not introduce a public `optimize` command.
 
 - `off` disables runtime trimming.
 - `advisory` measures budget pressure and emits reports without mutating the live prompt.
-- `active` allows bounded runtime trimming of supported runtime-owned sections only.
+- `active` allows bounded optimization on the surfaces permitted by the selected level.
+- `promptOptimizationLevel` is the capability-based surface selector: `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`.
+- `latest-user` preserves the current latest-user-message-only seam.
+- `runtime-and-tools` adds cumulative runtime-owned trimming plus shrink-only tool-output compaction.
+- `contextual` adds cumulative compression for already-selected context.
+- `transcript` adds cumulative bounded history/transcript compression.
+- whenever optimization is enabled, the security-safe baseline stays on: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.
+- legacy enabled repos that omit `promptOptimizationLevel` stay on a read-time compatibility profile until an operator explicitly chooses a concrete level.
+- unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
 - reporting modes are `off`, `persist`, and `summary`
 - `persist` and `summary` write sanitized latest-report artifacts to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - `summary` also emits sanitized summary metadata, while `doctor --verbose` stays conservative and reports posture plus artifact existence rather than claiming runtime savings
-- V4 safe latest-user-message-only optimization is available only in enabled contexts and never rewrites retained history, earlier user messages, SOUL overlays, or transcript-wide compaction content
-- V4 may optimize only allowlisted ordinary natural-language filler or repetitive prose outside immutable spans; immutable spans stay byte-exact
-- V4 passthrough reasons are runtime-report-only, not summary metadata, and risky messages pass through as a whole unchanged
+- the `latest-user` seam may optimize only allowlisted ordinary natural-language filler or repetitive prose outside immutable spans; immutable spans stay byte-exact
+- latest-user passthrough reasons are runtime-report-only, not summary metadata, and risky messages pass through as a whole unchanged
 
 Supported counting/report behavior in this release:
 
@@ -370,7 +388,7 @@ What can trim and what is preserved:
 - `runtime-context` is preserved and is not replaced with an empty stub when over budget
 - the compaction hook collapses to the continuity floor text `Compaction continuity preserved. Earlier compaction context was removed only for byte budget.` when byte pressure requires it
 - project-local SOUL overlays are intentionally outside this trim set and still flow through separately
-- the latest user-authored message is the only user-authored content eligible for V4 optimization, and only when prompt optimization is enabled for that context
+- the latest user-authored message is the only user-authored content eligible at the `latest-user` level, and only when prompt optimization is enabled for that context
 
 Measured repo-backed examples:
 
@@ -709,16 +727,15 @@ Edit the global file to change region/industry/regulation defaults after install
   // PRD / planning workflow mode
   "prdPipelineMode": "filesystem",
 
-  // Prompt optimization engine (optional; omit all five related keys to keep the engine fully off)
-  "promptOptimizationEnabled": false,
-  // Mode: "off" | "advisory" | "active"
-  "promptOptimizationMode": "off",
-  // Runtime reporting mode for the separate runtime-report surface: "off" | "persist" | "summary"
-  "promptOptimizationReportingMode": "persist",
-  // Optional token budget used only for supported exact OpenAI model counting
-  "promptOptimizationTokenBudget": 120000,
-  // Optional byte budget fallback for unsupported or unset model IDs
-  "promptOptimizationByteBudget": 500000,
+  // Prompt optimization engine stays fully off by default.
+  // Omit all promptOptimization* keys unless you are intentionally opting in.
+  // Example opt-in block:
+  // "promptOptimizationEnabled": true,
+  // "promptOptimizationMode": "active",
+  // "promptOptimizationLevel": "runtime-and-tools",
+  // "promptOptimizationReportingMode": "summary",
+  // "promptOptimizationTokenBudget": 120000,
+  // "promptOptimizationByteBudget": 500000,
 
   // Enable project-default caveman mode for terse, high-signal replies when value is preserved
   "cavemanEnabled": false
@@ -730,9 +747,16 @@ Prompt optimization is intentionally supplementary in this release. It is **prod
 - `off` keeps runtime trimming disabled and should usually be represented by omitting the optimization keys entirely.
 - `advisory` computes/report budgets without mutating the live prompt.
 - `active` allows bounded runtime trimming of the supported runtime sections only.
-- V4 extends enabled contexts with safe latest-user-message optimization only. It excludes retained history, earlier user-authored messages, SOUL overlays, and transcript-wide compaction content.
-- V4 preserves code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples byte-exact.
-- V4 fail-closes with whole-message passthrough when immutable or low-confidence safety rules require it. Passthrough reason codes stay on runtime reports only and must not be treated as summary metadata guidance.
+- `promptOptimizationLevel` is the capability-based surface selector and currently supports `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`.
+- `latest-user` keeps the current latest-user-message-only seam. It excludes retained history, earlier user-authored messages, SOUL overlays, and transcript-wide compaction content.
+- `runtime-and-tools` adds cumulative runtime-owned trimming plus shrink-only tool-output compaction.
+- `contextual` adds cumulative compression for already-selected context.
+- `transcript` adds cumulative bounded history/transcript compression.
+- the security-safe baseline applies whenever optimization is enabled: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.
+- the latest-user seam preserves code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples byte-exact.
+- the latest-user seam fail-closes with whole-message passthrough when immutable or low-confidence safety rules require it. Passthrough reason codes stay on runtime reports only and must not be treated as summary metadata guidance.
+- legacy enabled repos that omit `promptOptimizationLevel` keep the current shipped behavior until an operator explicitly selects a concrete level.
+- unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
 - `promptOptimizationReportingMode` accepts `off`, `persist`, and `summary` on the separate runtime-report surface.
 - `persist` writes sanitized/redacted latest-report artifacts or summaries to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
 - that runtime-report surface uses the frozen V3 scalar-first public contract: every current emitted field is safe scalar/enum/id except `modelId`, and secret-bearing `modelId` values must surface as `***` rather than cleartext when the public payload is emitted.

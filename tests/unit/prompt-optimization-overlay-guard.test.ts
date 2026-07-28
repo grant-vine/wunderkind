@@ -191,6 +191,172 @@ describe("prompt optimization overlay guard", () => {
     expect(surface.latestUserMessage).not.toContain("## Wunderkind Resolved Runtime Context")
   })
 
+  it("publishes deterministic surface registry states for in-scope, deferred, and out-of-scope surfaces", () => {
+    const surface = buildV4UserPromptOptimizationSurface({
+      messages: [{ role: "user", content: "Latest user seam candidate" }],
+      retainedHistory: ["Retained history block"],
+      transcriptWideCompaction: ["Compaction continuity preserved."],
+      soulOverlays: ["## Wunderkind SOUL Overlay\nProject-local persona guidance"],
+      runtimeOwnedTrimSurfaces: ["## Wunderkind Resolved Runtime Context\nRuntime-owned section"],
+    })
+
+    const surfaceRegistry = Reflect.get(surface, "surfaceRegistry")
+    expect(Array.isArray(surfaceRegistry)).toBe(true)
+
+    if (!Array.isArray(surfaceRegistry)) {
+      throw new Error("Expected V4 surface registry array")
+    }
+
+    expect(
+      surfaceRegistry.map((entry) => ({
+        id: entry.id,
+        group: entry.group,
+        scopeStatus: entry.scopeStatus,
+        invariantClass: entry.invariantClass,
+        fallbackRule: entry.fallbackRule,
+        minimumLevel: entry.minimumLevel,
+        explicitLevels: entry.explicitLevels,
+        includedInLegacyCompatibilityProfile: entry.includedInLegacyCompatibilityProfile,
+      })),
+    ).toEqual([
+      {
+        id: "runtime-docs-output",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "runtime-context",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "exact-preserve",
+        fallbackRule: "preserve-byte-exact",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "runtime-native-agents",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "compaction-continuity",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "preserve-original-on-risk",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "latest-user-message",
+        group: "latest-user-message",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "latest-user",
+        explicitLevels: ["latest-user", "runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "tool-outputs",
+        group: "tool-outputs",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "selected-context",
+        group: "selected-context",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "preserve-original-on-risk",
+        minimumLevel: "contextual",
+        explicitLevels: ["contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "earlier-user-messages",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "retained-history",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "transcript-wide-compaction",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "soul-overlays",
+        group: "soul-overlays",
+        scopeStatus: "out-of-scope",
+        invariantClass: "no-touch",
+        fallbackRule: "never-mutate",
+        minimumLevel: null,
+        explicitLevels: [],
+        includedInLegacyCompatibilityProfile: false,
+      },
+    ])
+  })
+
+  it("keeps latest-user exclusions distinct from higher-level in-scope contract support", () => {
+    const surface = buildV4UserPromptOptimizationSurface({
+      messages: [{ role: "user", content: "Latest user seam candidate" }],
+    })
+    const surfaceRegistry = Reflect.get(surface, "surfaceRegistry")
+
+    expect(Array.isArray(surfaceRegistry)).toBe(true)
+
+    if (!Array.isArray(surfaceRegistry)) {
+      throw new Error("Expected V4 surface registry array")
+    }
+
+    const inScopeSurfaceIds = surfaceRegistry
+      .filter((entry) => entry.scopeStatus === "in-scope")
+      .map((entry) => entry.id)
+
+    expect(surface.excludedSurfaceIds.filter((surfaceId) => inScopeSurfaceIds.includes(surfaceId))).toEqual([
+      "tool-outputs",
+      "selected-context",
+      "earlier-user-messages",
+      "retained-history",
+      "transcript-wide-compaction",
+    ])
+  })
+
   it("keeps soul-overlay advisory helper output deterministic when parent env leaks runtime-report vars", () => {
     const originalOutput = process.env.WUNDERKIND_TEST_OUTPUT
     const originalHookPath = process.env.WUNDERKIND_TEST_HOOK_PATH

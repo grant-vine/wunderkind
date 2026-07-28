@@ -11,7 +11,11 @@ import {
   type PromptOptimizationV4UserPromptFixtureId,
   type PromptRuntimeFixtureId,
 } from "./prompt-runtime-contract.js"
-import { applyWunderkindSystemTransform, buildCompactionContext } from "../runtime-prompt-sections.js"
+import {
+  applyWunderkindSystemTransform,
+  buildCompactionContext,
+  type PromptOptimizationRuntimeSectionId,
+} from "../runtime-prompt-sections.js"
 import type { InstallConfig } from "./types.js"
 
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
@@ -23,6 +27,7 @@ export interface CanonicalRuntimeFixtureCapture {
   readonly fixtureId: PromptRuntimeFixtureId
   readonly sections: readonly string[]
   readonly compactionContext: readonly string[]
+  readonly toolOutputContent: string | null
 }
 
 export interface CanonicalRuntimeFixtureReport {
@@ -30,7 +35,7 @@ export interface CanonicalRuntimeFixtureReport {
 }
 
 export interface PromptOptimizationEligibleSection {
-  readonly id: "runtime-docs-output" | "runtime-context" | "runtime-native-agents" | "compaction-continuity"
+  readonly id: PromptOptimizationRuntimeSectionId
   readonly content: string
 }
 
@@ -109,6 +114,9 @@ function writeSoulFixture(projectDir: string): void {
 function setupFixture(projectDir: string, fixtureId: PromptRuntimeFixtureId): Partial<InstallConfig> | null {
   switch (fixtureId) {
     case "fixture-default-no-config":
+    case "fixture-tool-output-noisy":
+    case "fixture-tool-output-no-growth":
+    case "fixture-tool-output-suppressed":
       return null
     case "fixture-docs-valid":
       return {
@@ -196,6 +204,8 @@ function setupFixture(projectDir: string, fixtureId: PromptRuntimeFixtureId): Pa
         docsPath: "./docs/output",
         docHistoryMode: "append-dated",
       }
+    default:
+      throw new Error(`Unsupported prompt runtime fixture: ${fixtureId}`)
   }
 }
 
@@ -219,6 +229,35 @@ function shapeCompactionContextForFixture(
     }
     default:
       return compactionContext
+  }
+}
+
+function createToolOutputFixtureContent(fixtureId: PromptRuntimeFixtureId): string | null {
+  switch (fixtureId) {
+    case "fixture-tool-output-noisy":
+      return [
+        "warning: retrying noisy tool output",
+        "warning: retrying noisy tool output",
+        "warning: retrying noisy tool output",
+        "progress: still waiting for remote cache",
+        "progress: still waiting for remote cache",
+        "",
+        "",
+        "Path: src/cli/prompt-optimization-runtime-reporting.ts",
+        "See https://example.com/tool-output/log for stable reference",
+        "$ bun test tests/unit/prompt-optimization-advisory.test.ts",
+        "status: completed",
+      ].join("\n")
+    case "fixture-tool-output-no-growth":
+      return [
+        "status: scanning",
+        "status: parsing",
+        "status: completed",
+      ].join("\n")
+    case "fixture-tool-output-suppressed":
+      return "Binary output suppressed by upstream host.\u0000PNG"
+    default:
+      return null
   }
 }
 
@@ -372,12 +411,23 @@ export function capturePromptOptimizationV4UserPromptFixture(
         },
       }
     }
+    default:
+      throw new Error(`Unsupported V4 user prompt fixture: ${fixtureId}`)
   }
 }
 
 export function collectPromptOptimizationEligibleSections(
   fixture: CanonicalRuntimeFixtureCapture,
 ): readonly PromptOptimizationEligibleSection[] {
+  if (fixture.toolOutputContent !== null) {
+    return [
+      {
+        id: "tool-outputs",
+        content: fixture.toolOutputContent,
+      },
+    ]
+  }
+
   const sections: PromptOptimizationEligibleSection[] = []
 
   for (const section of fixture.sections) {
@@ -423,6 +473,7 @@ export function captureCanonicalRuntimeFixture(fixtureId: PromptRuntimeFixtureId
       fixtureId,
       sections: [...systemOutput.system],
       compactionContext: [...shapedCompactionContext],
+      toolOutputContent: createToolOutputFixtureContent(fixtureId),
     }
   } finally {
     rmSync(sandboxRoot, { recursive: true, force: true })

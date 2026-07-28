@@ -420,26 +420,50 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line("PRD pipeline mode:", color.cyan(projectConfig?.prdPipelineMode ?? detected.prdPipelineMode))
       const promptOptimizationEnabled = detected.promptOptimizationEnabled ?? false
       const promptOptimizationMode = detected.promptOptimizationMode ?? "off"
+      const promptOptimizationLevel = projectConfig?.promptOptimizationLevel ?? detected.promptOptimizationLevel
+      const promptOptimizationMalformedLevel = detected.promptOptimizationMalformedLevel
       const promptOptimizationReportingMode = detected.promptOptimizationReportingMode ?? "off"
       const promptOptimizationTokenBudget = projectConfig?.promptOptimizationTokenBudget ?? detected.promptOptimizationTokenBudget
       const promptOptimizationByteBudget = projectConfig?.promptOptimizationByteBudget ?? detected.promptOptimizationByteBudget
       line("prompt optimization enabled:", status(promptOptimizationEnabled))
       line("prompt optimization mode:", color.cyan(promptOptimizationMode))
-      line("prompt optimization reporting mode:", color.cyan(promptOptimizationReportingMode))
-      line("prompt optimization engine:", color.dim("supplementary, product-default-off, config-driven, and separate from token-audit"))
       line(
-        "V4 user prompt boundary:",
+        "prompt optimization level:",
+        promptOptimizationEnabled
+          ? promptOptimizationMalformedLevel !== undefined
+            ? `${color.red(`malformed persisted value: ${promptOptimizationMalformedLevel}`)} ${color.dim("(not treated as healthy legacy compatibility; choose latest-user, runtime-and-tools, contextual, or transcript, or remove the invalid field)")}`
+            : promptOptimizationLevel !== undefined
+            ? `${color.cyan(promptOptimizationLevel)} ${color.dim("(explicit operator selection)")}`
+            : `${color.yellow("legacy compatibility profile")} ${color.dim("(current shipped behavior until you choose a concrete level)")}`
+          : color.dim("(not set)"),
+      )
+      line("prompt optimization reporting mode:", color.cyan(promptOptimizationReportingMode))
+      line("prompt optimization engine:", color.dim("supplementary, product-default-off, config-driven, multi-level, and separate from token-audit"))
+      line(
+        "prompt optimization levels:",
+        color.dim("cumulative surfaces: latest-user → runtime-and-tools → contextual → transcript"),
+      )
+      line(
+        "prompt optimization security baseline:",
+        color.dim("when enabled: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift"),
+      )
+      line(
+        "latest-user level boundary:",
         color.dim(
           "enabled-context only; latest-user-message-only; excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content",
         ),
       )
       line(
-        "V4 immutable exclusions:",
+        "latest-user immutable exclusions:",
         color.dim("code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text remain byte-exact"),
       )
       line(
-        "V4 passthrough reasons:",
+        "latest-user passthrough reasons:",
         color.dim("whole-message passthrough on safety risk or low confidence; reason visibility is runtime-report-only, not summary metadata guidance"),
+      )
+      line(
+        "unsupported optimization features:",
+        color.dim("no persistent cross-session memory writes and no automatic context injection"),
       )
       line(
         "prompt optimization runtime reporting:",
@@ -602,6 +626,11 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       }
       if (designMcpOwnership === "wunderkind-managed" && stitchPresence === "missing") {
         warnings.push("design MCP ownership expects a managed Stitch config but none was detected")
+      }
+      if (detected.promptOptimizationMalformedLevel !== undefined) {
+        warnings.push(
+          `malformed promptOptimizationLevel persisted in project config: ${detected.promptOptimizationMalformedLevel}. Choose latest-user, runtime-and-tools, contextual, or transcript, or remove the invalid field.`,
+        )
       }
 
       section(options.verbose ? "Project Health" : "Project health")

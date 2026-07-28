@@ -5,6 +5,12 @@ import { DURABLE_ARTIFACT_TOOL_NAME } from "./artifact-writer.js"
 import { resolveProjectLocalDocsPath } from "./cli/docs-output-helper.js"
 import { readWunderkindConfig } from "./cli/config-manager/index.js"
 import {
+  compactSelectedContextContent,
+  SELECTED_CONTEXT_SENTINEL,
+} from "./runtime-context-compression.js"
+import { compactTranscriptHistorySurface } from "./runtime-transcript-compression.js"
+import { compactToolOutputContent } from "./runtime-tool-output-optimization.js"
+import {
   createEmptyV4UserPromptOptimizationSurface,
   type V4UserPromptOptimizationSurface,
 } from "./runtime-user-prompt-optimization.js"
@@ -20,6 +26,8 @@ export type PromptOptimizationRuntimeSectionId =
   | "runtime-context"
   | "runtime-native-agents"
   | "compaction-continuity"
+  | "tool-outputs"
+  | "selected-context"
 
 export interface PromptOptimizationRuntimeSection {
   readonly id: PromptOptimizationRuntimeSectionId
@@ -43,6 +51,10 @@ export interface PromptOptimizationRuntimeTrimResult {
 export interface PromptOptimizationRuntimeEvaluation {
   readonly eligibleSections: readonly PromptOptimizationRuntimeSection[]
   readonly trimResult: PromptOptimizationRuntimeTrimResult
+}
+
+export interface PromptOptimizationRuntimeOptimizationOptions {
+  readonly contextualCompressionEnabled?: boolean
 }
 
 export interface PromptOptimizationSystemTransformEvaluation extends PromptOptimizationRuntimeEvaluation {
@@ -89,8 +101,81 @@ function getTrimmedSectionContent(sectionId: PromptOptimizationRuntimeSectionId)
     case "compaction-continuity":
       return COMPACTION_CONTINUITY_FLOOR_TEXT
     case "runtime-context":
+    case "tool-outputs":
+    case "selected-context":
       return null
   }
+}
+
+function isPromptOptimizationEnabled(
+  wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
+): boolean {
+  if (wunderkindConfig?.promptOptimizationEnabled === false) {
+    return false
+  }
+
+  if (wunderkindConfig?.promptOptimizationEnabled === true) {
+    return wunderkindConfig.promptOptimizationMode !== "off"
+  }
+
+  return (
+    wunderkindConfig?.promptOptimizationMode === "advisory" ||
+    wunderkindConfig?.promptOptimizationMode === "active"
+  )
+}
+
+function isContextualCompressionEnabled(
+  wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
+): boolean {
+  if (!isPromptOptimizationEnabled(wunderkindConfig)) {
+    return false
+  }
+
+  return (
+    wunderkindConfig?.promptOptimizationLevel === "contextual" ||
+    wunderkindConfig?.promptOptimizationLevel === "transcript"
+  )
+}
+
+function isTranscriptCompressionEnabled(
+  wunderkindConfig: ReturnType<typeof readWunderkindConfig>,
+): boolean {
+  if (!isPromptOptimizationEnabled(wunderkindConfig)) {
+    return false
+  }
+
+  return wunderkindConfig?.promptOptimizationLevel === "transcript"
+}
+
+function extractSelectedContextSections(
+  systemSections: readonly string[],
+): readonly PromptOptimizationRuntimeSection[] {
+  return systemSections
+    .filter((section) => section.includes(SELECTED_CONTEXT_SENTINEL))
+    .map((content) => ({ id: "selected-context" as const, content }))
+}
+
+function replaceSelectedContextSections(
+  systemSections: string[],
+  selectedContextSections: readonly PromptOptimizationRuntimeSection[],
+): void {
+  if (selectedContextSections.length === 0) {
+    return
+  }
+
+  let selectedContextIndex = 0
+  const rebuiltSections = systemSections.map((section) => {
+    if (!section.includes(SELECTED_CONTEXT_SENTINEL)) {
+      return section
+    }
+
+    const replacement = selectedContextSections[selectedContextIndex]
+    selectedContextIndex += 1
+    return replacement?.content ?? section
+  })
+
+  systemSections.length = 0
+  systemSections.push(...rebuiltSections)
 }
 
 function createUntrimmedRuntimeResult(
@@ -189,6 +274,75 @@ export function trimPromptOptimizationRuntimeSections(
     trimApplied: appliedSectionIds.length > 0,
     trimExhausted: appliedSectionIds.length > 0 && afterBytes > byteBudget,
     trimmedSections: appliedSectionIds,
+  }
+}
+
+export function optimizePromptOptimizationRuntimeSections(
+  sections: readonly PromptOptimizationRuntimeSection[],
+  byteBudget?: number | undefined,
+  options: PromptOptimizationRuntimeOptimizationOptions = {},
+): PromptOptimizationRuntimeTrimResult {
+  const contextCompactedSections = sections.map((section) => {
+    if (section.id !== "selected-context" || options.contextualCompressionEnabled !== true) {
+      return { ...section }
+    }
+
+    const compactedSelectedContext = compactSelectedContextContent(section.content)
+    return compactedSelectedContext.changed
+      ? { ...section, content: compactedSelectedContext.content }
+      : { ...section }
+  })
+  const compactedSections = contextCompactedSections.map((section) => {
+    if (section.id !== "tool-outputs") {
+      return { ...section }
+    }
+
+    const compactedToolOutput = compactToolOutputContent(section.content)
+    return compactedToolOutput.changed
+      ? { ...section, content: compactedToolOutput.content }
+      : { ...section }
+  })
+  const beforeBytes = getPromptOptimizationRuntimeSectionByteLength(sections)
+  const selectedContextCompactionApplied = sections.some(
+    (section, index) =>
+      section.id === "selected-context" && contextCompactedSections[index]?.content !== section.content,
+  )
+  const afterToolOutputBytes = getPromptOptimizationRuntimeSectionByteLength(compactedSections)
+  const toolOutputCompactionApplied = contextCompactedSections.some(
+    (section, index) => section.id === "tool-outputs" && compactedSections[index]?.content !== section.content,
+  )
+  const compactedSectionIds = [
+    ...(selectedContextCompactionApplied ? (["selected-context"] as const) : []),
+    ...(toolOutputCompactionApplied ? (["tool-outputs"] as const) : []),
+  ]
+
+  if (typeof byteBudget !== "number") {
+    return {
+      sections: compactedSections,
+      trimBasis: "configured-bytes",
+      eligibleSections: sections.map((section) => section.id),
+      beforeBytes,
+      afterBytes: afterToolOutputBytes,
+      savedBytes: beforeBytes - afterToolOutputBytes,
+      trimApplied: compactedSectionIds.length > 0,
+      trimExhausted: false,
+      trimmedSections: compactedSectionIds,
+    }
+  }
+
+  const runtimeTrimResult = trimPromptOptimizationRuntimeSections(compactedSections, byteBudget)
+  const trimmedSections = [...compactedSectionIds, ...runtimeTrimResult.trimmedSections]
+
+  return {
+    sections: runtimeTrimResult.sections,
+    trimBasis: runtimeTrimResult.trimBasis,
+    eligibleSections: runtimeTrimResult.eligibleSections,
+    beforeBytes,
+    afterBytes: runtimeTrimResult.afterBytes,
+    savedBytes: beforeBytes - runtimeTrimResult.afterBytes,
+    trimApplied: compactedSectionIds.length > 0 || runtimeTrimResult.trimApplied,
+    trimExhausted: runtimeTrimResult.trimExhausted,
+    trimmedSections,
   }
 }
 
@@ -361,6 +515,11 @@ export function applyWunderkindSystemTransform(options: {
   const hasRuntimeContextSentinel = existingSystemContent.includes(RUNTIME_CONTEXT_SENTINEL)
   const hasNativeAgentsSentinel = existingSystemContent.includes(NATIVE_AGENTS_SENTINEL)
   const wunderkindConfig = options.wunderkindConfig
+  const contextualCompressionEnabled = isContextualCompressionEnabled(wunderkindConfig)
+  const transcriptCompressionEnabled = isTranscriptCompressionEnabled(wunderkindConfig)
+  const selectedContextSections = contextualCompressionEnabled
+    ? extractSelectedContextSections(options.system)
+    : []
   const v4UserPromptOptimizationSurface =
     options.v4UserPromptOptimizationSurface ?? createEmptyV4UserPromptOptimizationSurface()
   let docsOutputSection: string | null = null
@@ -494,6 +653,7 @@ Treat the resolved runtime context above as the source of truth for region, indu
   }
 
   const eligibleSections: readonly PromptOptimizationRuntimeSection[] = [
+    ...selectedContextSections,
     ...(docsOutputSection ? [{ id: "runtime-docs-output" as const, content: docsOutputSection }] : []),
     ...(runtimeContextSection ? [{ id: "runtime-context" as const, content: runtimeContextSection }] : []),
     ...(nativeAgentsSection ? [{ id: "runtime-native-agents" as const, content: nativeAgentsSection }] : []),
@@ -512,11 +672,19 @@ Treat the resolved runtime context above as the source of truth for region, indu
     }
   }
 
-  const trimResult = trimPromptOptimizationRuntimeSections(eligibleSections, activeByteBudget)
+  const trimResult = optimizePromptOptimizationRuntimeSections(eligibleSections, activeByteBudget, {
+    contextualCompressionEnabled,
+  })
+  const optimizedV4UserPromptOptimizationSurface = transcriptCompressionEnabled
+    ? compactTranscriptHistorySurface(v4UserPromptOptimizationSurface)
+    : v4UserPromptOptimizationSurface
 
   const trimmedDocsOutputSection = trimResult.sections.find((section) => section.id === "runtime-docs-output")
   const trimmedRuntimeContextSection = trimResult.sections.find((section) => section.id === "runtime-context")
   const trimmedNativeAgentsSection = trimResult.sections.find((section) => section.id === "runtime-native-agents")
+  const trimmedSelectedContextSections = trimResult.sections.filter((section) => section.id === "selected-context")
+
+  replaceSelectedContextSections(options.system, trimmedSelectedContextSections)
 
   if (trimmedDocsOutputSection && trimmedDocsOutputSection.content !== "") {
     options.system.push(trimmedDocsOutputSection.content)
@@ -532,7 +700,7 @@ Treat the resolved runtime context above as the source of truth for region, indu
   }
 
   return {
-    v4UserPromptOptimizationSurface,
+    v4UserPromptOptimizationSurface: optimizedV4UserPromptOptimizationSurface,
     eligibleSections,
     trimResult,
   }

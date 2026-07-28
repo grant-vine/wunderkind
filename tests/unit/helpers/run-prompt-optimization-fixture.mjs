@@ -32,7 +32,10 @@ const {
   countPromptOptimizationTokens,
 } = runtimeReportingModule
 const { buildPromptOptimizationRuntimePublicPayload } = runtimePublicPayloadModule
-const { getPromptOptimizationRuntimeSectionByteLength, trimPromptOptimizationRuntimeSections } = runtimeSectionsModule
+const {
+  getPromptOptimizationRuntimeSectionByteLength,
+  optimizePromptOptimizationRuntimeSections,
+} = runtimeSectionsModule
 
 const ALLOWED_ENGINES = new Set(["off", "advisory", "active"])
 const ALLOWED_OUTPUTS = new Set(["advisory", "runtime-report", "runtime-public-payload"])
@@ -119,8 +122,8 @@ function buildUntrimmedRuntimeResult(eligibleSections) {
 }
 
 function buildRuntimeTrimResult(promptOptimizationMode, promptOptimizationByteBudget, eligibleSections) {
-  if (promptOptimizationMode === "active" && typeof promptOptimizationByteBudget === "number") {
-    return trimPromptOptimizationRuntimeSections(eligibleSections, promptOptimizationByteBudget)
+  if (promptOptimizationMode === "active") {
+    return optimizePromptOptimizationRuntimeSections(eligibleSections, promptOptimizationByteBudget)
   }
 
   return buildUntrimmedRuntimeResult(eligibleSections)

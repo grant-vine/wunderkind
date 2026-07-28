@@ -645,6 +645,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       (
         "promptOptimizationEnabled" in persisted ||
         "promptOptimizationMode" in persisted ||
+        "promptOptimizationLevel" in persisted ||
         "promptOptimizationReportingMode" in persisted ||
         "promptOptimizationTokenBudget" in persisted ||
         "promptOptimizationByteBudget" in persisted
@@ -665,6 +666,9 @@ export async function runInit(options: InitOptions): Promise<number> {
     const promptOptimizationReportingMode = hasPersistedPromptOptimizationFields
       ? persisted?.promptOptimizationReportingMode
       : detected.promptOptimizationReportingMode
+    const promptOptimizationLevel = hasPersistedPromptOptimizationFields
+      ? persisted?.promptOptimizationLevel
+      : detected.promptOptimizationLevel
     const promptOptimizationTokenBudget = hasPersistedPromptOptimizationFields
       ? persisted?.promptOptimizationTokenBudget
       : detected.promptOptimizationTokenBudget
@@ -695,6 +699,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       cavemanEnabled: options.cavemanEnabled ?? persisted?.cavemanEnabled ?? detected.cavemanEnabled ?? false,
       ...(promptOptimizationEnabled !== undefined ? { promptOptimizationEnabled } : {}),
       ...(promptOptimizationMode !== undefined ? { promptOptimizationMode } : {}),
+      ...(promptOptimizationLevel !== undefined ? { promptOptimizationLevel } : {}),
       ...(promptOptimizationReportingMode !== undefined ? { promptOptimizationReportingMode } : {}),
       ...(promptOptimizationTokenBudget !== undefined ? { promptOptimizationTokenBudget } : {}),
       ...(promptOptimizationByteBudget !== undefined ? { promptOptimizationByteBudget } : {}),

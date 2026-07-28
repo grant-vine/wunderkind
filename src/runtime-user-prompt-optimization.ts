@@ -4,7 +4,12 @@ import {
   getV4UserPromptPassthroughReason,
   type V4UserPromptMutabilityAnalysis,
 } from "./runtime-user-prompt-optimization-detectors.js"
-import type { PromptOptimizationV4PassthroughReasonId } from "./cli/prompt-runtime-contract.js"
+import {
+  getPromptOptimizationSurfaceRegistry,
+  type PromptOptimizationSurfaceId,
+  type PromptOptimizationSurfaceRegistryEntry,
+  type PromptOptimizationV4PassthroughReasonId,
+} from "./cli/prompt-runtime-contract.js"
 import type { PromptOptimizationMode } from "./cli/types.js"
 
 export {
@@ -38,18 +43,24 @@ const V4_USER_PROMPT_OPTIMIZATION_SURFACE_INPUT_SCHEMA = z
   })
   .passthrough()
 
-const V4_USER_PROMPT_OPTIMIZATION_EXCLUDED_SURFACE_IDS = [
-  "earlier-user-messages",
-  "retained-history",
-  "transcript-wide-compaction",
-  "soul-overlays",
-  "runtime-owned-trim-surfaces",
-] as const
-
 type V4UserPromptOptimizationMessage = z.infer<typeof MESSAGE_SCHEMA>
+
+function clonePromptOptimizationSurfaceRegistry(): readonly PromptOptimizationSurfaceRegistryEntry[] {
+  return getPromptOptimizationSurfaceRegistry().map((entry) => ({
+    ...entry,
+    explicitLevels: [...entry.explicitLevels],
+  }))
+}
+
+function getExcludedPromptOptimizationSurfaceIds(): readonly PromptOptimizationSurfaceId[] {
+  return getPromptOptimizationSurfaceRegistry()
+    .filter((entry) => entry.id !== "latest-user-message" && entry.group !== "runtime-owned-sections")
+    .map((entry) => entry.id)
+}
 
 export interface V4UserPromptOptimizationSurface {
   readonly target: "latest-user-message-only"
+  readonly surfaceRegistry: readonly PromptOptimizationSurfaceRegistryEntry[]
   readonly latestUserMessage: string | null
   readonly latestUserMessageAnalysis: V4UserPromptMutabilityAnalysis | null
   readonly latestUserMessagePassthroughReason: PromptOptimizationV4PassthroughReasonId | null
@@ -60,7 +71,7 @@ export interface V4UserPromptOptimizationSurface {
   readonly transcriptWideCompaction: readonly string[]
   readonly soulOverlays: readonly string[]
   readonly runtimeOwnedTrimSurfaces: readonly string[]
-  readonly excludedSurfaceIds: readonly (typeof V4_USER_PROMPT_OPTIMIZATION_EXCLUDED_SURFACE_IDS)[number][]
+  readonly excludedSurfaceIds: readonly PromptOptimizationSurfaceId[]
 }
 
 export interface V4UserPromptOptimizationMeasurement {
@@ -222,6 +233,7 @@ function collectUserMessages(messages: readonly V4UserPromptOptimizationMessage[
 export function createEmptyV4UserPromptOptimizationSurface(): V4UserPromptOptimizationSurface {
   return {
     target: "latest-user-message-only",
+    surfaceRegistry: clonePromptOptimizationSurfaceRegistry(),
     latestUserMessage: null,
     latestUserMessageAnalysis: null,
     latestUserMessagePassthroughReason: null,
@@ -232,7 +244,7 @@ export function createEmptyV4UserPromptOptimizationSurface(): V4UserPromptOptimi
     transcriptWideCompaction: [],
     soulOverlays: [],
     runtimeOwnedTrimSurfaces: [],
-    excludedSurfaceIds: [...V4_USER_PROMPT_OPTIMIZATION_EXCLUDED_SURFACE_IDS],
+    excludedSurfaceIds: [...getExcludedPromptOptimizationSurfaceIds()],
   }
 }
 
@@ -291,6 +303,7 @@ export function buildV4UserPromptOptimizationSurface(
 
   return {
     target: "latest-user-message-only",
+    surfaceRegistry: clonePromptOptimizationSurfaceRegistry(),
     latestUserMessage,
     latestUserMessageAnalysis,
     latestUserMessagePassthroughReason,
@@ -301,6 +314,6 @@ export function buildV4UserPromptOptimizationSurface(
     transcriptWideCompaction: normalizeStringList(parsed.data.transcriptWideCompaction),
     soulOverlays: normalizeStringList(parsed.data.soulOverlays),
     runtimeOwnedTrimSurfaces: normalizeStringList(parsed.data.runtimeOwnedTrimSurfaces),
-    excludedSurfaceIds: [...V4_USER_PROMPT_OPTIMIZATION_EXCLUDED_SURFACE_IDS],
+    excludedSurfaceIds: [...getExcludedPromptOptimizationSurfaceIds()],
   }
 }

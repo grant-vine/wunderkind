@@ -617,6 +617,45 @@ describe("runInit", () => {
       expect(writtenConfig).toHaveProperty("promptOptimizationMode", "advisory")
       expect(writtenConfig).toHaveProperty("promptOptimizationTokenBudget", 4096)
       expect(writtenConfig).toHaveProperty("promptOptimizationByteBudget", 8192)
+      expect(writtenConfig).not.toHaveProperty("promptOptimizationLevel")
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      restore()
+    }
+  })
+
+  it("passes an explicit prompt optimization level through init once an operator selected it", async () => {
+    const restore = silenceConsole()
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-prompt-optimization-level-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "global",
+        projectInstalled: false,
+        globalInstalled: true,
+        registrationScope: "global",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+      }),
+    )
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      promptOptimizationMode: "active",
+      promptOptimizationLevel: "contextual",
+      promptOptimizationByteBudget: 8192,
+    }))
+
+    try {
+      const code = await runInit({ noTui: true })
+      expect(code).toBe(0)
+      const [writtenConfig, writtenScope] = mockWriteWunderkindConfig.mock.calls[0] ?? []
+      expect(writtenScope).toBe("project")
+      expect(writtenConfig).toHaveProperty("promptOptimizationMode", "active")
+      expect(writtenConfig).toHaveProperty("promptOptimizationLevel", "contextual")
+      expect(writtenConfig).toHaveProperty("promptOptimizationByteBudget", 8192)
     } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
@@ -975,6 +1014,7 @@ describe("runDoctor", () => {
     mockReadProjectWunderkindConfig.mockImplementation(() => ({
       promptOptimizationEnabled: true,
       promptOptimizationMode: "active",
+      promptOptimizationLevelSource: "legacy-compatibility",
       promptOptimizationByteBudget: 8192,
     }))
     mockDetectCurrentConfig.mockImplementation(() =>
@@ -988,6 +1028,7 @@ describe("runDoctor", () => {
         globalOpenCodeConfigPath: "/tmp/opencode.json",
         promptOptimizationEnabled: true,
         promptOptimizationMode: "active",
+        promptOptimizationLevelSource: "legacy-compatibility",
         promptOptimizationByteBudget: 8192,
       }),
     )
@@ -997,18 +1038,37 @@ describe("runDoctor", () => {
     expect(code).toBe(0)
     expect(messages.some((m) => m.includes("prompt optimization mode:") && m.includes("active"))).toBe(true)
     expect(messages.some((m) => m.includes("prompt optimization enabled:") && m.includes("✓ yes"))).toBe(true)
+    expect(messages.some((m) => m.includes("prompt optimization level:") && m.includes("legacy compatibility profile"))).toBe(true)
     expect(
       messages.some(
         (m) =>
           m.includes("prompt optimization engine:") &&
           m.includes("supplementary") &&
+          m.includes("multi-level") &&
           m.includes("config-driven") &&
           m.includes("token-audit"),
       ),
     ).toBe(true)
-    expect(messages.some((m) => m.includes("V4 user prompt boundary:") && m.includes("latest-user-message-only"))).toBe(true)
-    expect(messages.some((m) => m.includes("V4 immutable exclusions:") && m.includes("quoted user text") && m.includes("byte-exact"))).toBe(true)
-    expect(messages.some((m) => m.includes("V4 passthrough reasons:") && m.includes("runtime-report-only") && m.includes("not summary metadata guidance"))).toBe(true)
+    expect(messages.some((m) => m.includes("latest-user level boundary:") && m.includes("latest-user-message-only"))).toBe(true)
+    expect(messages.some((m) => m.includes("latest-user immutable exclusions:") && m.includes("quoted user text") && m.includes("byte-exact"))).toBe(true)
+    expect(messages.some((m) => m.includes("latest-user passthrough reasons:") && m.includes("runtime-report-only") && m.includes("not summary metadata guidance"))).toBe(true)
+    expect(
+      messages.some(
+        (m) =>
+          m.includes("prompt optimization security baseline:") &&
+          m.includes("redacted reporting") &&
+          m.includes("preserve/fallback enforcement") &&
+          m.includes("no protected-content persistence drift"),
+      ),
+    ).toBe(true)
+    expect(
+      messages.some(
+        (m) =>
+          m.includes("unsupported optimization features:") &&
+          m.includes("no persistent cross-session memory writes") &&
+          m.includes("no automatic context injection"),
+      ),
+    ).toBe(true)
     expect(
       messages.some(
         (m) =>
@@ -1138,6 +1198,97 @@ describe("runDoctor", () => {
             m.includes(".wunderkind/runtime/prompt-optimization/session-compacting.latest.json"),
         ),
       ).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("tells operators that legacy enabled repos stay on compatibility behavior until they choose a level", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-prompt-optimization-legacy-level-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    mockProjectDoctorContext(
+      tempProject,
+      {
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "advisory",
+        promptOptimizationLevelSource: "legacy-compatibility",
+        promptOptimizationByteBudget: 8192,
+      },
+      {
+        promptOptimizationMode: "advisory",
+        promptOptimizationByteBudget: 8192,
+      },
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+      expect(code).toBe(0)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("prompt optimization level:") &&
+            m.includes("legacy compatibility profile") &&
+            m.includes("choose a concrete level"),
+        ),
+      ).toBe(true)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("surfaces malformed persisted prompt optimization levels distinctly instead of reporting healthy legacy compatibility", async () => {
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-doctor-prompt-optimization-malformed-level-"))
+    writeProjectHealthFixture(tempProject)
+    process.chdir(tempProject)
+
+    mockProjectDoctorContext(
+      tempProject,
+      Object.assign(
+        {
+          promptOptimizationEnabled: true,
+          promptOptimizationMode: "advisory" as const,
+          promptOptimizationLevelSource: "malformed-persisted" as const,
+          promptOptimizationByteBudget: 8192,
+        },
+        { promptOptimizationMalformedLevel: "broken-level" },
+      ),
+      {
+        promptOptimizationMode: "advisory",
+        promptOptimizationByteBudget: 8192,
+      },
+    )
+
+    try {
+      const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+      expect(code).toBe(0)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("prompt optimization level:") &&
+            m.includes("malformed persisted value: broken-level") &&
+            m.includes("not treated as healthy legacy compatibility"),
+        ),
+      ).toBe(true)
+      expect(
+        messages.some(
+          (m) =>
+            m.includes("malformed promptOptimizationLevel persisted in project config") &&
+            m.includes("broken-level"),
+        ),
+      ).toBe(true)
+      expect(
+        messages.some(
+          (m) => m.includes("prompt optimization level:") && m.includes("legacy compatibility profile"),
+        ),
+      ).toBe(false)
     } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })

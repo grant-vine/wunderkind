@@ -991,13 +991,48 @@ describe("Wunderkind plugin transform", () => {
     expect(surface.runtimeOwnedTrimSurfaces).toEqual([
       "## Documentation Output\nRuntime-managed docs lane",
     ])
+
+    const surfaceRegistry = Reflect.get(surface, "surfaceRegistry")
+    expect(Array.isArray(surfaceRegistry)).toBe(true)
+
+    if (!Array.isArray(surfaceRegistry)) {
+      throw new Error("Expected V4 surface registry array")
+    }
+
     expect(surface.excludedSurfaceIds).toEqual([
+      "tool-outputs",
+      "selected-context",
       "earlier-user-messages",
       "retained-history",
       "transcript-wide-compaction",
       "soul-overlays",
-      "runtime-owned-trim-surfaces",
     ])
+    expect(
+      surfaceRegistry
+        .filter((entry) => entry.scopeStatus === "in-scope")
+        .map((entry) => entry.id),
+    ).toEqual([
+      "runtime-docs-output",
+      "runtime-context",
+      "runtime-native-agents",
+      "compaction-continuity",
+      "latest-user-message",
+      "tool-outputs",
+      "selected-context",
+      "earlier-user-messages",
+      "retained-history",
+      "transcript-wide-compaction",
+    ])
+    expect(
+      surfaceRegistry
+        .filter((entry) => entry.scopeStatus === "deferred")
+        .map((entry) => entry.id),
+    ).toEqual([])
+    expect(
+      surfaceRegistry
+        .filter((entry) => entry.scopeStatus === "out-of-scope")
+        .map((entry) => entry.id),
+    ).toEqual(["soul-overlays"])
   })
 
   it("preserves immutable mixed-content spans byte-exact while only allowlisted prose is eligible", () => {

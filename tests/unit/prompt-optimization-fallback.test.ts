@@ -3,7 +3,15 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { buildPromptOptimizationRuntimePublicPayload } from "../../src/cli/prompt-optimization-runtime-public-payload.js"
+import {
+  captureCanonicalRuntimeFixture,
+  collectPromptOptimizationEligibleSections,
+} from "../../src/cli/prompt-runtime-fixtures.js"
+import {
+  buildPromptOptimizationRuntimePublicPayload,
+  isPromptOptimizationRuntimePublicPayloadScalarSafe,
+} from "../../src/cli/prompt-optimization-runtime-public-payload.js"
+import { buildPromptOptimizationRuntimeReport } from "../../src/cli/prompt-optimization-runtime-reporting.js"
 import { getPromptOptimizationRuntimeReportContract } from "../../src/cli/prompt-runtime-contract.js"
 import type { PromptOptimizationRuntimeReport } from "../../src/cli/prompt-optimization-runtime-reporting.js"
 import { getPromptOptimizationRuntimePublicModelId } from "../../src/cli/prompt-optimization-runtime-reporting.js"
@@ -368,5 +376,32 @@ describe("prompt optimization fallback policy", () => {
     expect(probe.malformedFileContainsLoud).toBe(false)
     expect(probe.malformedReadReportingMode).toBe(null)
     expect(probe.malformedDetectedReportingMode).toBe(null)
+  })
+
+  it("keeps tool-output compaction evidence scalar-only on the public runtime payload", () => {
+    const fixture = captureCanonicalRuntimeFixture("fixture-tool-output-noisy")
+    const eligibleSections = collectPromptOptimizationEligibleSections(fixture)
+    const promptContent = eligibleSections.map((section) => section.content).join("\n")
+
+    const report = buildPromptOptimizationRuntimeReport({
+      hookPath: "experimental.chat.system.transform",
+      modelId: "gpt-4.1",
+      promptOptimizationMode: "active",
+      content: promptContent,
+      eligibleSections,
+      promptOptimizationByteBudget: 4096,
+    })
+    const payload = buildPromptOptimizationRuntimePublicPayload(report)
+    const renderedPayload = JSON.stringify(payload)
+
+    expect(payload.report.trimApplied).toBe(true)
+    expect(payload.report.trimmedSections).toContain("tool-outputs")
+    expect(payload.summaryMetadata.savedBytes).toBeGreaterThan(0)
+    expect(payload.summaryMetadata.trimmedSections).toContain("tool-outputs")
+    expect(isPromptOptimizationRuntimePublicPayloadScalarSafe(payload)).toBe(true)
+    expect(renderedPayload).not.toContain("warning: retrying noisy tool output")
+    expect(renderedPayload).not.toContain("https://example.com/tool-output/log")
+    expect(renderedPayload).not.toContain("src/cli/prompt-optimization-runtime-reporting.ts")
+    expect(renderedPayload).not.toContain("$ bun test tests/unit/prompt-optimization-advisory.test.ts")
   })
 })

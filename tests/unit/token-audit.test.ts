@@ -153,6 +153,33 @@ describe("runTokenAudit", () => {
           readonly contractMode: string
           readonly defaultEnabled: boolean
           readonly defaultMode: string
+          readonly namingPolicy: {
+            readonly publicSettingKeys: string
+            readonly publicLevelValues: string
+            readonly forbiddenVersionLabelPolicy: string
+          }
+          readonly publicSettingDefinitions: readonly {
+            readonly key: string
+            readonly role: string
+            readonly compatibility: string
+          }[]
+          readonly levelMatrix: readonly {
+            readonly level: string
+            readonly eligibleSurfaces: readonly string[]
+          }[]
+          readonly surfaceRegistry: readonly {
+            readonly id: string
+            readonly scopeStatus: string
+          }[]
+          readonly legacyCompatibilityProfile: {
+            readonly profile: string
+            readonly persistedPublicLevel: null
+            readonly eligibleSurfaces: readonly string[]
+            readonly excludedExpandedSurfaces: readonly string[]
+            readonly publicWriteBehavior: string
+          }
+          readonly objectiveRanking: readonly string[]
+          readonly outOfScopeExclusions: readonly string[]
           readonly modeMatrix: readonly {
             readonly enabledInput: boolean | "omitted"
             readonly modeInput: string
@@ -173,7 +200,119 @@ describe("runTokenAudit", () => {
     )
     expect(parsed.contract.supplementaryOptimization.defaultEnabled).toBe(false)
     expect(parsed.contract.supplementaryOptimization.defaultMode).toBe("off")
+    expect(parsed.contract.supplementaryOptimization.namingPolicy).toEqual({
+      publicSettingKeys: "capability-based-only",
+      publicLevelValues: "capability-based-only",
+      forbiddenVersionLabelPolicy: "no-version-labelled-public-keys-or-values",
+    })
+    expect(parsed.contract.supplementaryOptimization.publicSettingDefinitions).toEqual([
+      {
+        key: "promptOptimizationEnabled",
+        role: "master-enable-gate",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationMode",
+        role: "optimization-mode",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationLevel",
+        role: "eligible-surface-level",
+        compatibility: "new-public-key",
+      },
+      {
+        key: "promptOptimizationReportingMode",
+        role: "runtime-reporting-mode",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationTokenBudget",
+        role: "exact-token-budget",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationByteBudget",
+        role: "byte-budget-fallback",
+        compatibility: "existing-frozen",
+      },
+    ])
+    expect(parsed.contract.supplementaryOptimization.levelMatrix).toEqual([
+      {
+        level: "latest-user",
+        eligibleSurfaces: ["latest-user-message"],
+      },
+      {
+        level: "runtime-and-tools",
+        eligibleSurfaces: ["latest-user-message", "runtime-owned-sections", "tool-outputs"],
+      },
+      {
+        level: "contextual",
+        eligibleSurfaces: [
+          "latest-user-message",
+          "runtime-owned-sections",
+          "tool-outputs",
+          "selected-context",
+        ],
+      },
+      {
+        level: "transcript",
+        eligibleSurfaces: [
+          "latest-user-message",
+          "runtime-owned-sections",
+          "tool-outputs",
+          "selected-context",
+          "history-and-transcript",
+        ],
+      },
+    ])
+    expect(
+      parsed.contract.supplementaryOptimization.surfaceRegistry
+        .filter((entry) => entry.id === "tool-outputs" || entry.id === "selected-context")
+        .map((entry) => ({ id: entry.id, scopeStatus: entry.scopeStatus })),
+    ).toEqual([
+      { id: "tool-outputs", scopeStatus: "in-scope" },
+      { id: "selected-context", scopeStatus: "in-scope" },
+    ])
+    expect(
+      parsed.contract.supplementaryOptimization.surfaceRegistry.filter(
+        (entry) =>
+          entry.id === "earlier-user-messages"
+          || entry.id === "retained-history"
+          || entry.id === "transcript-wide-compaction",
+      ).map((entry) => ({ id: entry.id, scopeStatus: entry.scopeStatus })),
+    ).toEqual([
+      { id: "earlier-user-messages", scopeStatus: "in-scope" },
+      { id: "retained-history", scopeStatus: "in-scope" },
+      { id: "transcript-wide-compaction", scopeStatus: "in-scope" },
+    ])
+    expect(parsed.contract.supplementaryOptimization.legacyCompatibilityProfile).toEqual({
+      profile: "legacy-enabled-without-level",
+      persistedPublicLevel: null,
+      eligibleSurfaces: ["latest-user-message", "runtime-owned-sections"],
+      excludedExpandedSurfaces: ["tool-outputs", "selected-context", "history-and-transcript"],
+      publicWriteBehavior: "require-explicit-level-selection",
+    })
+    expect(parsed.contract.supplementaryOptimization.objectiveRanking).toEqual([
+      "token-reduction-first",
+      "observability-required-proof-surface",
+    ])
+    expect(parsed.contract.supplementaryOptimization.outOfScopeExclusions).toEqual([
+      "persistent-cross-session-memory",
+      "automatic-context-injection",
+    ])
     expect(parsed.contract.supplementaryOptimization.modeMatrix).toHaveLength(12)
+    expect(
+      parsed.contract.supplementaryOptimization.publicSettingDefinitions.every(
+        ({ key }) => !/v4|v5/i.test(key),
+      ),
+    ).toBe(true)
+    expect(
+      parsed.contract.supplementaryOptimization.levelMatrix.every(
+        ({ level }) => !/v4|v5/i.test(level),
+      ),
+    ).toBe(true)
+    expect(JSON.stringify(parsed.contract)).not.toMatch(/v4|v5/i)
     expect(
       parsed.contract.supplementaryOptimization.modeMatrix.some(
         (row) =>

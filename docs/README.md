@@ -1,12 +1,12 @@
 # Documentation Index
 
-Last refreshed: 2026-07-27T08-43-00Z
+Last refreshed: 2026-07-28T00-00-00Z
 History mode: `overwrite`
 Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.24.0**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.25.0**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -29,10 +29,12 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - The upstream alignment target is `oh-my-openagent` `4.19.2` with OpenCode plugin/SDK `1.18.7`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
-- The supplementary, config-driven prompt optimization engine remains separate from `wunderkind token-audit`, stays default-off, and does not add a public optimize command in this phase.
-- V4 safe user-prompt optimization is latest-user-message-only in enabled contexts. It excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content.
-- V4 preserves immutable content byte-exact, including code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples.
-- V4 fail-closes with whole-message passthrough for low-confidence or safety-risk cases, with passthrough reason visibility limited to runtime reports and not summary metadata guidance.
+- The supplementary engine is now documented as one default-off multi-level prompt optimization engine, separate from `wunderkind token-audit` and still without a public optimize command.
+- `promptOptimizationLevel` remains capability-based and cumulative: `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`.
+- The security-safe baseline remains part of any enabled optimization posture: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.
+- The `latest-user` level preserves immutable content byte-exact, including code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples.
+- The `latest-user` level still fail-closes with whole-message passthrough for low-confidence or safety-risk cases, with passthrough reason visibility limited to runtime reports and not summary metadata guidance.
+- Unsupported features remain explicitly excluded from the final system: no persistent cross-session memory writes and no automatic context injection.
 - `promptOptimizationReportingMode` now documents the opt-in separate runtime-report surface (`off`, `persist`, `summary`), where sanitized/redacted latest-report artifacts or summaries back `system-transform.latest.json` and `session-compacting.latest.json`, and `doctor --verbose` exposes existence/status rather than claiming runtime savings.
 - This repo currently keeps a **project-local** prompt optimization override enabled: `active` mode, `summary` reporting, `120000` token budget, and `1200` byte budget. That is local repo state for this explicitly enabled repo context, not the published product default.
 - `doctor --verbose` is the operator surface for current runtime-report posture and latest-artifact presence in this repo; that repo-local override must not be read as proof of a global always-on product posture.
@@ -44,9 +46,9 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - Docs output is now enabled in `.wunderkind/wunderkind.config.jsonc`.
 - `docsPath` is `./docs`.
 - `docHistoryMode` remains `overwrite` for this repo.
-- Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override.
+- Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override on the legacy compatibility profile until an explicit `promptOptimizationLevel` is chosen.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.24.0` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.25.0` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 

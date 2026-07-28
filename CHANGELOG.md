@@ -1,10 +1,16 @@
 # Changelog
 
+## 0.25.0
+
+- ship the completed prompt-optimization expansion as one cumulative multi-level system with verified `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` level behavior
+- keep the operator contract conservative: `token-audit` remains audit-only, runtime reporting stays separate and sanitized, and unsupported features remain unsupported
+- refresh release metadata, managed docs, and generated native agent version surfaces for the 0.25.0 cut
+
 ## 0.24.0
 
-- add V4 safe user-prompt optimization for enabled contexts, limited to the latest user-authored message with immutable byte-exact exclusions and whole-message fail-closed passthrough
-- add measured runtime-report savings, dedicated V4 fixture helpers, and final regression/manual QA coverage while preserving audit-only `token-audit` and no public optimize command
-- refresh README, docs, CLI help, doctor, and maintainer context around the product-default-off V4 boundary and this repo's local `1200`-byte posture
+- document prompt optimization as one default-off multi-level engine with capability-based `promptOptimizationLevel` settings and cumulative `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` levels
+- preserve audit-only `token-audit`, the separate runtime-report surface, and the explicit unsupported-feature contract: no persistent cross-session memory writes and no automatic context injection
+- refresh README, docs, CLI help, doctor, and maintainer context around the final level-based operator story, the pre-v1 breaking-change note, and this repo's local compatibility-profile posture
 
 ## 0.23.8
 

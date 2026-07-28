@@ -33,6 +33,8 @@ import type {
   BaselineConfigKey,
   OmoInstallReadiness,
   OmoFreshnessSummary,
+  PromptOptimizationLevel,
+  PromptOptimizationLevelSource,
   PromptOptimizationMode,
   PromptOptimizationReportingMode,
   PluginVersionInfo,
@@ -69,6 +71,10 @@ function isPromptOptimizationMode(value: unknown): value is PromptOptimizationMo
   return value === "off" || value === "advisory" || value === "active"
 }
 
+function isPromptOptimizationLevel(value: unknown): value is PromptOptimizationLevel {
+  return value === "latest-user" || value === "runtime-and-tools" || value === "contextual" || value === "transcript"
+}
+
 function isPromptOptimizationReportingMode(value: unknown): value is PromptOptimizationReportingMode {
   return value === "off" || value === "persist" || value === "summary"
 }
@@ -77,11 +83,39 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0
 }
 
+function formatMalformedPromptOptimizationLevel(value: unknown): string | undefined {
+  if (value === undefined || isPromptOptimizationLevel(value)) {
+    return undefined
+  }
+
+  if (typeof value === "string") {
+    return value
+  }
+
+  const jsonValue = JSON.stringify(value)
+  return jsonValue ?? String(value)
+}
+
 function resolvePromptOptimizationState(input: {
   promptOptimizationEnabled: boolean | undefined
   promptOptimizationMode: PromptOptimizationMode | undefined
-}): { enabled: boolean; mode: PromptOptimizationMode } {
-  const { promptOptimizationEnabled, promptOptimizationMode } = input
+  promptOptimizationLevel: PromptOptimizationLevel | undefined
+  malformedPromptOptimizationLevel: string | undefined
+}): {
+  enabled: boolean
+  mode: PromptOptimizationMode
+  level?: PromptOptimizationLevel
+  levelSource?: PromptOptimizationLevelSource
+} {
+  const {
+    promptOptimizationEnabled,
+    promptOptimizationMode,
+    promptOptimizationLevel,
+    malformedPromptOptimizationLevel,
+  } = input
+  const implicitLevelSource: PromptOptimizationLevelSource = malformedPromptOptimizationLevel !== undefined
+    ? "malformed-persisted"
+    : "legacy-compatibility"
 
   if (promptOptimizationEnabled === false) {
     return { enabled: false, mode: "off" }
@@ -89,19 +123,31 @@ function resolvePromptOptimizationState(input: {
 
   if (promptOptimizationEnabled === true) {
     if (promptOptimizationMode === undefined) {
-      return { enabled: true, mode: "advisory" }
+      return promptOptimizationLevel === undefined
+        ? { enabled: true, mode: "advisory", levelSource: implicitLevelSource }
+        : { enabled: true, mode: "advisory", level: promptOptimizationLevel, levelSource: "explicit" }
     }
 
-    return promptOptimizationMode === "off"
+    const resolvedState: { enabled: boolean; mode: PromptOptimizationMode } = promptOptimizationMode === "off"
       ? { enabled: false, mode: "off" }
       : { enabled: true, mode: promptOptimizationMode }
+
+    if (!resolvedState.enabled) {
+      return resolvedState
+    }
+
+    return promptOptimizationLevel === undefined
+      ? { ...resolvedState, levelSource: implicitLevelSource }
+      : { ...resolvedState, level: promptOptimizationLevel, levelSource: "explicit" }
   }
 
   if (promptOptimizationMode === undefined || promptOptimizationMode === "off") {
     return { enabled: false, mode: "off" }
   }
 
-  return { enabled: true, mode: promptOptimizationMode }
+  return promptOptimizationLevel === undefined
+    ? { enabled: true, mode: promptOptimizationMode, levelSource: implicitLevelSource }
+    : { enabled: true, mode: promptOptimizationMode, level: promptOptimizationLevel, levelSource: "explicit" }
 }
 
 function getValidatedPromptOptimizationBudgets(config: Partial<ProjectConfig>): {
@@ -125,6 +171,13 @@ function getValidatedPromptOptimizationBudgets(config: Partial<ProjectConfig>): 
 }
 
 function validatePromptOptimizationConfig(config: Partial<ProjectConfig>): string | null {
+  if (
+    config.promptOptimizationLevel !== undefined &&
+    !isPromptOptimizationLevel(config.promptOptimizationLevel)
+  ) {
+    return "promptOptimizationLevel must be one of: latest-user, runtime-and-tools, contextual, or transcript"
+  }
+
   if (
     config.promptOptimizationReportingMode !== undefined &&
     !isPromptOptimizationReportingMode(config.promptOptimizationReportingMode)
@@ -289,6 +342,7 @@ const PROJECT_CONFIG_KEYS = [
   "cavemanEnabled",
   "promptOptimizationEnabled",
   "promptOptimizationMode",
+  "promptOptimizationLevel",
   "promptOptimizationReportingMode",
   "promptOptimizationTokenBudget",
   "promptOptimizationByteBudget",
@@ -980,6 +1034,9 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   if (isPromptOptimizationMode(source["promptOptimizationMode"])) {
     result.promptOptimizationMode = source["promptOptimizationMode"]
   }
+  if (isPromptOptimizationLevel(source["promptOptimizationLevel"])) {
+    result.promptOptimizationLevel = source["promptOptimizationLevel"]
+  }
   if (isPromptOptimizationReportingMode(source["promptOptimizationReportingMode"])) {
     result.promptOptimizationReportingMode = source["promptOptimizationReportingMode"]
   }
@@ -991,6 +1048,14 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
   }
 
   return result
+}
+
+function getMalformedPersistedPromptOptimizationLevel(source: Record<string, unknown> | null): string | undefined {
+  if (source === null || !("promptOptimizationLevel" in source)) {
+    return undefined
+  }
+
+  return formatMalformedPromptOptimizationLevel(source["promptOptimizationLevel"])
 }
 
 function listLegacyGlobalProjectFields(source: Record<string, unknown>): ProjectConfigKey[] {
@@ -1104,12 +1169,15 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
   const resolvedPromptOptimization = resolvePromptOptimizationState({
     promptOptimizationEnabled: config.promptOptimizationEnabled,
     promptOptimizationMode: config.promptOptimizationMode,
+    promptOptimizationLevel: config.promptOptimizationLevel,
+    malformedPromptOptimizationLevel: undefined,
   })
   const promptOptimizationReportingMode = config.promptOptimizationReportingMode ?? "off"
   const promptOptimizationBudgets = getValidatedPromptOptimizationBudgets(config)
   const omitPromptOptimizationFields =
     resolvedPromptOptimization.enabled === false &&
     resolvedPromptOptimization.mode === "off" &&
+    config.promptOptimizationLevel === undefined &&
     promptOptimizationReportingMode === "off" &&
     promptOptimizationBudgets.promptOptimizationTokenBudget === undefined &&
     promptOptimizationBudgets.promptOptimizationByteBudget === undefined
@@ -1185,6 +1253,8 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
       lines.push(
         `  // Supplementary prompt optimization engine settings`,
         `  // Omit these keys to keep the shipped product posture default-off; set them only for explicitly enabled project-local runtime contexts`,
+        `  // Enabling optimization keeps the security-safe baseline on: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift`,
+        `  // promptOptimizationLevel is the capability-based surface selector. Legacy enabled repos that omit it keep the current shipped behavior until an operator explicitly chooses a level`,
         `  // promptOptimizationReportingMode controls sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface, not the audit-only token-audit surface`,
       )
 
@@ -1194,6 +1264,13 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
 
     if (config.promptOptimizationMode !== undefined) {
       lines.push(`  "promptOptimizationMode": ${JSON.stringify(config.promptOptimizationMode)},`)
+    }
+
+    if (config.promptOptimizationLevel !== undefined) {
+      lines.push(
+        `  // Level: "latest-user" | "runtime-and-tools" | "contextual" | "transcript"`,
+      )
+      lines.push(`  "promptOptimizationLevel": ${JSON.stringify(config.promptOptimizationLevel)},`)
     }
 
     if (config.promptOptimizationReportingMode !== undefined && config.promptOptimizationReportingMode !== "off") {
@@ -1317,9 +1394,12 @@ export function detectCurrentConfig(): DetectedConfig {
   const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
+  const malformedPromptOptimizationLevel = getMalformedPersistedPromptOptimizationLevel(projectConfig)
   const resolvedPromptOptimization = resolvePromptOptimizationState({
     promptOptimizationEnabled: projectLocal?.promptOptimizationEnabled,
     promptOptimizationMode: projectLocal?.promptOptimizationMode,
+    promptOptimizationLevel: projectLocal?.promptOptimizationLevel,
+    malformedPromptOptimizationLevel,
   })
 
   return {
@@ -1353,6 +1433,15 @@ export function detectCurrentConfig(): DetectedConfig {
     cavemanEnabled: projectLocal?.cavemanEnabled ?? defaults.cavemanEnabled ?? false,
     promptOptimizationEnabled: resolvedPromptOptimization.enabled,
     promptOptimizationMode: resolvedPromptOptimization.mode,
+    ...(resolvedPromptOptimization.level !== undefined
+      ? { promptOptimizationLevel: resolvedPromptOptimization.level }
+      : {}),
+    ...(resolvedPromptOptimization.enabled && resolvedPromptOptimization.levelSource !== undefined
+      ? { promptOptimizationLevelSource: resolvedPromptOptimization.levelSource }
+      : {}),
+    ...(malformedPromptOptimizationLevel !== undefined
+      ? { promptOptimizationMalformedLevel: malformedPromptOptimizationLevel }
+      : {}),
     ...(projectLocal?.promptOptimizationReportingMode !== undefined
       ? { promptOptimizationReportingMode: projectLocal.promptOptimizationReportingMode }
       : {}),

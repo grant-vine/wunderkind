@@ -118,13 +118,231 @@ describe("prompt runtime audit contract", () => {
         resolvedMode: "off",
       },
     ])
+    expect(supplementaryOptimization.namingPolicy).toEqual({
+      publicSettingKeys: "capability-based-only",
+      publicLevelValues: "capability-based-only",
+      forbiddenVersionLabelPolicy: "no-version-labelled-public-keys-or-values",
+    })
+    expect(supplementaryOptimization.publicSettingDefinitions).toEqual([
+      {
+        key: "promptOptimizationEnabled",
+        role: "master-enable-gate",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationMode",
+        role: "optimization-mode",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationLevel",
+        role: "eligible-surface-level",
+        compatibility: "new-public-key",
+      },
+      {
+        key: "promptOptimizationReportingMode",
+        role: "runtime-reporting-mode",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationTokenBudget",
+        role: "exact-token-budget",
+        compatibility: "existing-frozen",
+      },
+      {
+        key: "promptOptimizationByteBudget",
+        role: "byte-budget-fallback",
+        compatibility: "existing-frozen",
+      },
+    ])
+    expect(supplementaryOptimization.levelMatrix).toEqual([
+      {
+        level: "latest-user",
+        eligibleSurfaces: ["latest-user-message"],
+      },
+      {
+        level: "runtime-and-tools",
+        eligibleSurfaces: ["latest-user-message", "runtime-owned-sections", "tool-outputs"],
+      },
+      {
+        level: "contextual",
+        eligibleSurfaces: [
+          "latest-user-message",
+          "runtime-owned-sections",
+          "tool-outputs",
+          "selected-context",
+        ],
+      },
+      {
+        level: "transcript",
+        eligibleSurfaces: [
+          "latest-user-message",
+          "runtime-owned-sections",
+          "tool-outputs",
+          "selected-context",
+          "history-and-transcript",
+        ],
+      },
+    ])
+    expect(supplementaryOptimization.legacyCompatibilityProfile).toEqual({
+      profile: "legacy-enabled-without-level",
+      persistedPublicLevel: null,
+      eligibleSurfaces: ["latest-user-message", "runtime-owned-sections"],
+      excludedExpandedSurfaces: ["tool-outputs", "selected-context", "history-and-transcript"],
+      publicWriteBehavior: "require-explicit-level-selection",
+    })
+    expect(supplementaryOptimization.objectiveRanking).toEqual([
+      "token-reduction-first",
+      "observability-required-proof-surface",
+    ])
+    expect(supplementaryOptimization.outOfScopeExclusions).toEqual([
+      "persistent-cross-session-memory",
+      "automatic-context-injection",
+    ])
+    expect(
+      supplementaryOptimization.publicSettingDefinitions.every(({ key }) => !/v4|v5/i.test(key)),
+    ).toBe(true)
+    expect(
+      supplementaryOptimization.levelMatrix.every(({ level }) => !/v4|v5/i.test(level)),
+    ).toBe(true)
+
+    const surfaceRegistry = Reflect.get(supplementaryOptimization, "surfaceRegistry")
+    expect(Array.isArray(surfaceRegistry)).toBe(true)
+
+    if (!Array.isArray(surfaceRegistry)) {
+      throw new Error("Expected prompt optimization surface registry array")
+    }
+
+    expect(
+      surfaceRegistry.map((entry) => ({
+        id: entry.id,
+        group: entry.group,
+        scopeStatus: entry.scopeStatus,
+        invariantClass: entry.invariantClass,
+        fallbackRule: entry.fallbackRule,
+        minimumLevel: entry.minimumLevel,
+        explicitLevels: entry.explicitLevels,
+        includedInLegacyCompatibilityProfile: entry.includedInLegacyCompatibilityProfile,
+      })),
+    ).toEqual([
+      {
+        id: "runtime-docs-output",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "runtime-context",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "exact-preserve",
+        fallbackRule: "preserve-byte-exact",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "runtime-native-agents",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "compaction-continuity",
+        group: "runtime-owned-sections",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "preserve-original-on-risk",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "latest-user-message",
+        group: "latest-user-message",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "latest-user",
+        explicitLevels: ["latest-user", "runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: true,
+      },
+      {
+        id: "tool-outputs",
+        group: "tool-outputs",
+        scopeStatus: "in-scope",
+        invariantClass: "shrink-only",
+        fallbackRule: "preserve-original-on-no-shrink",
+        minimumLevel: "runtime-and-tools",
+        explicitLevels: ["runtime-and-tools", "contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "selected-context",
+        group: "selected-context",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "preserve-original-on-risk",
+        minimumLevel: "contextual",
+        explicitLevels: ["contextual", "transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "earlier-user-messages",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "retained-history",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "transcript-wide-compaction",
+        group: "history-and-transcript",
+        scopeStatus: "in-scope",
+        invariantClass: "semantic-preserve",
+        fallbackRule: "whole-surface-passthrough",
+        minimumLevel: "transcript",
+        explicitLevels: ["transcript"],
+        includedInLegacyCompatibilityProfile: false,
+      },
+      {
+        id: "soul-overlays",
+        group: "soul-overlays",
+        scopeStatus: "out-of-scope",
+        invariantClass: "no-touch",
+        fallbackRule: "never-mutate",
+        minimumLevel: null,
+        explicitLevels: [],
+        includedInLegacyCompatibilityProfile: false,
+      },
+    ])
   })
 
-  it("freezes the V4 latest-user-message contract and safety taxonomy", () => {
+  it("freezes the latest-user-message contract and safety taxonomy", () => {
     const contract = getPromptRuntimeContract()
 
-    expect(contract.supplementaryOptimization.v4UserPromptOptimization).toEqual({
-      contractMode: "v4-user-prompt-optimization-contract-v1",
+    expect(contract.supplementaryOptimization.latestUserPromptOptimization).toEqual({
+      contractMode: "latest-user-prompt-optimization-contract-v1",
       mutableSurface: {
         target: "latest-user-message-only",
         excludes: [
@@ -182,37 +400,37 @@ describe("prompt runtime audit contract", () => {
         mode: "whole-message-passthrough",
         passthroughReasonTaxonomy: [
           {
-            id: "v4-low-confidence-no-allowlist-match",
+            id: "latest-user-low-confidence-no-allowlist-match",
             class: "low-confidence",
             comment: "No positive mutable allowlist rule matched the latest user-authored message.",
           },
           {
-            id: "v4-low-confidence-mixed-immutable-content",
+            id: "latest-user-low-confidence-mixed-immutable-content",
             class: "low-confidence",
             comment: "Immutable and mutable cues were interleaved too tightly to separate safely.",
           },
           {
-            id: "v4-safety-code-block",
+            id: "latest-user-safety-code-block",
             class: "safety-risk",
             comment: "Code-block detector matched within the latest user-authored message.",
           },
           {
-            id: "v4-safety-command-or-path",
+            id: "latest-user-safety-command-or-path",
             class: "safety-risk",
             comment: "Command, file-path, or URL detector matched within the latest user-authored message.",
           },
           {
-            id: "v4-safety-explicit-requirement",
+            id: "latest-user-safety-explicit-requirement",
             class: "safety-risk",
             comment: "Explicit requirement or constraint detector matched within the latest user-authored message.",
           },
           {
-            id: "v4-safety-compliance-legal-security",
+            id: "latest-user-safety-compliance-legal-security",
             class: "safety-risk",
             comment: "Compliance, legal, or security wording detector matched within the latest user-authored message.",
           },
           {
-            id: "v4-safety-quoted-user-text",
+            id: "latest-user-safety-quoted-user-text",
             class: "safety-risk",
             comment: "Quoted user text or quoted example detector matched within the latest user-authored message.",
           },
@@ -220,7 +438,7 @@ describe("prompt runtime audit contract", () => {
       },
       reasonVisibility: {
         runtimeReport: "reason-codes-only",
-        summaryMetadata: "omit-v4-passthrough-reasons",
+        summaryMetadata: "omit-latest-user-passthrough-reasons",
         forbiddenSummaryFields: ["noTrimReason"],
       },
       openTokenAdoption: {

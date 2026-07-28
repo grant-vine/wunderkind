@@ -1,7 +1,7 @@
 ---
 description: >
   Fullstack Wunderkind — CTO-calibre engineer for architecture, implementation, and systems tradeoffs.
-wunderkind_version: "0.24.0"
+wunderkind_version: "0.25.0"
 mode: all
 temperature: 0.1
 ---

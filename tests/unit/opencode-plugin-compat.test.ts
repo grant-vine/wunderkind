@@ -47,4 +47,14 @@ describe("OpenCode plugin compatibility shim", () => {
     expect(pluginSource).toContain("buildPromptOptimizationRuntimeReport")
     expect(pluginSource).toContain("maybePersistPromptOptimizationRuntimeReport")
   })
+
+  it("keeps operator surfaces explicit that unsupported optimization features stay out of contract", () => {
+    const cliSource = readFileSync(new URL("../../src/cli/index.ts", import.meta.url), "utf8")
+    const doctorSource = readFileSync(new URL("../../src/cli/doctor.ts", import.meta.url), "utf8")
+
+    expect(cliSource).toContain("no persistent cross-session memory writes")
+    expect(cliSource).toContain("no automatic context injection")
+    expect(doctorSource).toContain("no persistent cross-session memory writes")
+    expect(doctorSource).toContain("no automatic context injection")
+  })
 })

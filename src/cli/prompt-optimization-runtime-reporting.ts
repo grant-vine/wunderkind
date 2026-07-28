@@ -11,7 +11,7 @@ import type { PromptOptimizationMode, PromptOptimizationReportingMode } from "./
 import type { V4UserPromptOptimizationMeasurement } from "../runtime-user-prompt-optimization.js"
 import {
   getPromptOptimizationRuntimeSectionByteLength,
-  trimPromptOptimizationRuntimeSections,
+  optimizePromptOptimizationRuntimeSections,
   type PromptOptimizationRuntimeSection,
   type PromptOptimizationRuntimeSectionId,
   type PromptOptimizationRuntimeTrimBasis,
@@ -64,6 +64,14 @@ export interface PromptOptimizationExactTokenDelta {
   readonly beforeTokens: number
   readonly afterTokens: number
   readonly savedTokens: number
+}
+
+export interface PromptOptimizationReductionMeasurement {
+  readonly metricBasis: "exact-tokens" | "bytes-fallback"
+  readonly beforeValue: number
+  readonly afterValue: number
+  readonly savedValue: number
+  readonly exactTokenDelta: PromptOptimizationExactTokenDelta | null
 }
 
 export interface PromptOptimizationRuntimeReport {
@@ -131,8 +139,8 @@ function buildUntrimmedRuntimeResult(
 function buildRuntimeTrimResult(input: PromptOptimizationAdvisoryInput): PromptOptimizationRuntimeTrimResult {
   const eligibleSections = input.eligibleSections ?? []
 
-  if (input.promptOptimizationMode === "active" && typeof input.promptOptimizationByteBudget === "number") {
-    return trimPromptOptimizationRuntimeSections(eligibleSections, input.promptOptimizationByteBudget)
+  if (input.promptOptimizationMode === "active") {
+    return optimizePromptOptimizationRuntimeSections(eligibleSections, input.promptOptimizationByteBudget)
   }
 
   return buildUntrimmedRuntimeResult(eligibleSections)
@@ -160,6 +168,34 @@ function buildExactTokenDelta(input: {
     beforeTokens: beforeCount.tokenCount,
     afterTokens: afterCount.tokenCount,
     savedTokens: beforeCount.tokenCount - afterCount.tokenCount,
+  }
+}
+
+export function measurePromptOptimizationReduction(input: {
+  readonly modelId: string | null | undefined
+  readonly beforeContent: string
+  readonly afterContent: string
+}): PromptOptimizationReductionMeasurement {
+  const exactTokenDelta = buildExactTokenDelta(input)
+  if (exactTokenDelta) {
+    return {
+      metricBasis: "exact-tokens",
+      beforeValue: exactTokenDelta.beforeTokens,
+      afterValue: exactTokenDelta.afterTokens,
+      savedValue: exactTokenDelta.savedTokens,
+      exactTokenDelta,
+    }
+  }
+
+  const beforeValue = Buffer.byteLength(input.beforeContent, "utf8")
+  const afterValue = Buffer.byteLength(input.afterContent, "utf8")
+
+  return {
+    metricBasis: "bytes-fallback",
+    beforeValue,
+    afterValue,
+    savedValue: beforeValue - afterValue,
+    exactTokenDelta: null,
   }
 }
 
@@ -402,11 +438,11 @@ export function buildPromptOptimizationRuntimeReport(
       trimExhausted: trimResult.trimExhausted,
       trimmedSections: trimResult.trimmedSections,
       noTrimReason: getNoTrimReason(input, trimResult),
-      exactTokenDelta: buildExactTokenDelta({
+      exactTokenDelta: measurePromptOptimizationReduction({
         modelId: input.modelId,
         beforeContent,
         afterContent,
-      }),
+      }).exactTokenDelta,
     }
 }
 

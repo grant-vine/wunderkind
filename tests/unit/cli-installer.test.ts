@@ -926,6 +926,48 @@ describe("runCliUpgrade", () => {
     }
   })
 
+  it("does not materialize promptOptimizationLevel during project refresh-config for legacy enabled repos", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
+    mockDetectCurrentConfig.mockImplementation(() =>
+      makeDetectedConfig({
+        isInstalled: true,
+        scope: "project",
+        projectInstalled: true,
+        globalInstalled: true,
+        registrationScope: "both",
+        region: "South Africa",
+        industry: "SaaS",
+        primaryRegulation: "POPIA",
+        secondaryRegulation: "GDPR",
+        promptOptimizationEnabled: true,
+        promptOptimizationMode: "advisory",
+        promptOptimizationLevelSource: "legacy-compatibility",
+        promptOptimizationByteBudget: 8192,
+      }),
+    )
+    mockReadWunderkindConfigForScope.mockImplementation((scope: InstallScope) =>
+      scope === "project"
+        ? {
+            promptOptimizationMode: "advisory",
+            promptOptimizationByteBudget: 8192,
+          }
+        : null,
+    )
+
+    const restore = silenceConsole()
+    try {
+      const code = await runCliUpgrade({ scope: "project", refreshConfig: true })
+      expect(code).toBe(0)
+      const configArg = mockWriteWunderkindConfig.mock.calls[0]?.[0] as Record<string, unknown>
+      expect(configArg.promptOptimizationMode).toBe("advisory")
+      expect(configArg.promptOptimizationByteBudget).toBe(8192)
+      expect(configArg).not.toHaveProperty("promptOptimizationEnabled")
+      expect(configArg).not.toHaveProperty("promptOptimizationLevel")
+    } finally {
+      restore()
+    }
+  })
+
   it("returns 1 when refresh config write fails", async () => {
     const { runCliUpgrade } = await cliInstallerModulePromise
     mockWriteWunderkindConfig.mockImplementation(() => ({ success: false, configPath: "/fake/.wunderkind/config", error: "boom" }))

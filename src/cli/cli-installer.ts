@@ -99,6 +99,29 @@ export interface UpgradeArgs {
   cavemanEnabled?: boolean
 }
 
+function getPersistedPromptOptimizationConfig(config: Partial<InstallConfig>): Partial<InstallConfig> {
+  return {
+    ...(config.promptOptimizationEnabled !== undefined
+      ? { promptOptimizationEnabled: config.promptOptimizationEnabled }
+      : {}),
+    ...(config.promptOptimizationMode !== undefined
+      ? { promptOptimizationMode: config.promptOptimizationMode }
+      : {}),
+    ...(config.promptOptimizationLevel !== undefined
+      ? { promptOptimizationLevel: config.promptOptimizationLevel }
+      : {}),
+    ...(config.promptOptimizationReportingMode !== undefined
+      ? { promptOptimizationReportingMode: config.promptOptimizationReportingMode }
+      : {}),
+    ...(config.promptOptimizationTokenBudget !== undefined
+      ? { promptOptimizationTokenBudget: config.promptOptimizationTokenBudget }
+      : {}),
+    ...(config.promptOptimizationByteBudget !== undefined
+      ? { promptOptimizationByteBudget: config.promptOptimizationByteBudget }
+      : {}),
+  }
+}
+
 function canAutoBootstrapOmoInTui(): boolean {
   const result = spawnSync("bunx", ["oh-my-openagent", "--help"], {
     encoding: "utf8",
@@ -384,10 +407,22 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   }
 
   if (args.refreshConfig === true || !isNoop) {
+    const {
+      promptOptimizationEnabled: _detectedPromptOptimizationEnabled,
+      promptOptimizationMode: _detectedPromptOptimizationMode,
+      promptOptimizationLevel: _detectedPromptOptimizationLevel,
+      promptOptimizationLevelSource: _detectedPromptOptimizationLevelSource,
+      promptOptimizationReportingMode: _detectedPromptOptimizationReportingMode,
+      promptOptimizationTokenBudget: _detectedPromptOptimizationTokenBudget,
+      promptOptimizationByteBudget: _detectedPromptOptimizationByteBudget,
+      ...detectedWithoutPromptOptimization
+    } = detected
+    const persistedPromptOptimizationConfig = getPersistedPromptOptimizationConfig(persisted)
     const configForWrite: InstallConfig = {
       ...persisted,
-      ...detected,
+      ...detectedWithoutPromptOptimization,
       ...nextConfig,
+      ...persistedPromptOptimizationConfig,
     }
 
     const configResult = writeWunderkindConfig(configForWrite, args.scope)

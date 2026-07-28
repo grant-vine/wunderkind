@@ -11,6 +11,7 @@ import {
   buildPromptOptimizationRuntimeReport,
   measurePromptOptimizationBudgetPressure,
 } from "../../src/cli/prompt-optimization-runtime-reporting.js"
+import { optimizePromptOptimizationRuntimeSections } from "../../src/runtime-prompt-sections.js"
 import { analyzeV4UserPromptMutability } from "../../src/runtime-user-prompt-optimization.js"
 
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
@@ -110,6 +111,18 @@ function expectSummaryMetadataToMatchReportProjection(payload: HelperRuntimePubl
     exactTokenDelta: payload.report.exactTokenDelta,
   })
   expect(JSON.stringify(payload.summaryMetadata)).not.toContain('"modelId"')
+}
+
+function getSectionContent(
+  sections: readonly { readonly id: string; readonly content: string }[],
+  sectionId: string,
+): string {
+  const section = sections.find((candidate) => candidate.id === sectionId)
+  if (!section) {
+    throw new Error(`Missing section: ${sectionId}`)
+  }
+
+  return section.content
 }
 
 describe("prompt optimization advisory", () => {
@@ -571,6 +584,79 @@ describe("prompt optimization advisory", () => {
     expect(report.beforeBytes).toBe(report.afterBytes)
     expect(report.afterBytes > (report.trimBudgetLimit ?? Number.POSITIVE_INFINITY)).toBe(true)
     expect(report.noTrimReason).toBe("over-trim-budget-no-trimmable-sections")
+  })
+
+  it("compacts noisy tool-output fixtures in active mode while preserving protected substrings byte-exact", () => {
+    const fixture = captureCanonicalRuntimeFixture("fixture-tool-output-noisy")
+    const eligibleSections = collectPromptOptimizationEligibleSections(fixture)
+    const originalToolOutput = getSectionContent(eligibleSections, "tool-outputs")
+
+    const trimResult = optimizePromptOptimizationRuntimeSections(eligibleSections, 4096)
+    const compactedToolOutput = getSectionContent(trimResult.sections, "tool-outputs")
+
+    expect(eligibleSections.map((section) => section.id)).toContain("tool-outputs")
+    expect(trimResult.trimApplied).toBe(true)
+    expect(trimResult.trimExhausted).toBe(false)
+    expect(trimResult.trimmedSections).toContain("tool-outputs")
+    expect(trimResult.afterBytes < trimResult.beforeBytes).toBe(true)
+    expect(compactedToolOutput).toContain("Path: src/cli/prompt-optimization-runtime-reporting.ts")
+    expect(compactedToolOutput).toContain("See https://example.com/tool-output/log for stable reference")
+    expect(compactedToolOutput).toContain("$ bun test tests/unit/prompt-optimization-advisory.test.ts")
+    expect(compactedToolOutput).not.toBe(originalToolOutput)
+    expect(compactedToolOutput).not.toContain("warning: retrying noisy tool output\nwarning: retrying noisy tool output")
+  })
+
+  it("uses tool-output compaction in the built helper runtime-report path for noisy fixtures", () => {
+    const report = runHelperRuntimeReport({
+      WUNDERKIND_TEST_ENGINE: "active",
+      WUNDERKIND_TEST_FIXTURE: "fixture-tool-output-noisy",
+      WUNDERKIND_TEST_BYTE_BUDGET: "4096",
+    })
+
+    expect(report.eligibleSections).toEqual(["tool-outputs"])
+    expect(report.savedBytes).toBeGreaterThan(0)
+    expect(report.trimApplied).toBe(true)
+    expect(report.trimExhausted).toBe(false)
+    expect(report.trimmedSections).toContain("tool-outputs")
+    expect(report.noTrimReason).toBe(null)
+  })
+
+  it("keeps no-growth tool-output fixtures byte-exact when shrink-only compaction cannot reduce bytes", () => {
+    const fixture = captureCanonicalRuntimeFixture("fixture-tool-output-no-growth")
+    const eligibleSections = collectPromptOptimizationEligibleSections(fixture)
+    const originalToolOutput = getSectionContent(eligibleSections, "tool-outputs")
+
+    const trimResult = optimizePromptOptimizationRuntimeSections(eligibleSections, 4096)
+
+    expect(trimResult.trimApplied).toBe(false)
+    expect(trimResult.trimmedSections).toEqual([])
+    expect(trimResult.beforeBytes).toBe(trimResult.afterBytes)
+    expect(getSectionContent(trimResult.sections, "tool-outputs")).toBe(originalToolOutput)
+  })
+
+  it("fail-opens suppressed tool-output fixtures and reports unchanged bytes", () => {
+    const fixture = captureCanonicalRuntimeFixture("fixture-tool-output-suppressed")
+    const eligibleSections = collectPromptOptimizationEligibleSections(fixture)
+    const promptContent = eligibleSections.map((section) => section.content).join("\n")
+    const originalToolOutput = getSectionContent(eligibleSections, "tool-outputs")
+
+    const trimResult = optimizePromptOptimizationRuntimeSections(eligibleSections, 4096)
+    const report = buildPromptOptimizationRuntimeReport({
+      hookPath: "experimental.chat.system.transform",
+      modelId: null,
+      promptOptimizationMode: "active",
+      content: promptContent,
+      eligibleSections,
+      trimResult,
+      promptOptimizationByteBudget: 4096,
+    })
+
+    expect(trimResult.trimApplied).toBe(false)
+    expect(getSectionContent(trimResult.sections, "tool-outputs")).toBe(originalToolOutput)
+    expect(report.trimApplied).toBe(false)
+    expect(report.savedBytes).toBe(0)
+    expect(report.noTrimReason).toBe("within-trim-budget")
+    expect(report.trimmedSections).toEqual([])
   })
 
   it("emits a continuity-floor exhaustion runtime report for the compaction hook", () => {

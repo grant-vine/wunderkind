@@ -358,6 +358,8 @@ describe("config-manager coverage", () => {
       const detected = mod.detectCurrentConfig()
       expect(detected.promptOptimizationEnabled).toBe(true)
       expect(detected.promptOptimizationMode).toBe("advisory")
+      expect(detected.promptOptimizationLevelSource).toBe("legacy-compatibility")
+      expect(detected).not.toHaveProperty("promptOptimizationLevel")
       expect(detected.promptOptimizationTokenBudget).toBe(4096)
       expect(detected.promptOptimizationByteBudget).toBe(8192)
 
@@ -372,6 +374,29 @@ describe("config-manager coverage", () => {
       const disabledDetected = mod.detectCurrentConfig()
       expect(disabledDetected.promptOptimizationEnabled).toBe(false)
       expect(disabledDetected.promptOptimizationMode).toBe("off")
+    })
+  })
+
+  it("surfaces malformed persisted prompt optimization levels distinctly from omitted legacy compatibility", async () => {
+    await withSandbox("prompt-optimization-malformed-level", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+      mkdirSync(join(sandbox.projectDir, ".wunderkind"), { recursive: true })
+
+      writeFileSync(
+        sandbox.projectConfigPath,
+        `{
+  "promptOptimizationMode": "active",
+  "promptOptimizationLevel": "broken-level",
+  "promptOptimizationByteBudget": 8192
+}`,
+      )
+
+      const detected = mod.detectCurrentConfig()
+      expect(detected.promptOptimizationEnabled).toBe(true)
+      expect(detected.promptOptimizationMode).toBe("active")
+      expect(detected).not.toHaveProperty("promptOptimizationLevel")
+      expect(detected).toHaveProperty("promptOptimizationLevelSource", "malformed-persisted")
+      expect(detected).toHaveProperty("promptOptimizationMalformedLevel", "broken-level")
     })
   })
 
@@ -425,6 +450,37 @@ describe("config-manager coverage", () => {
     })
   })
 
+  it("materializes an explicit prompt optimization level only when the operator selected one", async () => {
+    await withSandbox("prompt-optimization-explicit-level", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+
+      const result = mod.writeProjectWunderkindConfig({
+        ...mod.getDefaultProjectConfig(),
+        promptOptimizationMode: "active",
+        promptOptimizationLevel: "contextual",
+        promptOptimizationReportingMode: "summary",
+        promptOptimizationByteBudget: 8192,
+      })
+
+      expect(result.success).toBe(true)
+
+      const written = readFileSync(sandbox.projectConfigPath, "utf-8")
+      expect(written).toContain('"promptOptimizationLevel": "contextual"')
+
+      const merged = mod.readWunderkindConfig()
+      expect(merged?.promptOptimizationLevel).toBe("contextual")
+
+      const projectOnly = mod.readProjectWunderkindConfig()
+      expect(projectOnly?.promptOptimizationLevel).toBe("contextual")
+
+      const detected = mod.detectCurrentConfig()
+      expect(detected.promptOptimizationEnabled).toBe(true)
+      expect(detected.promptOptimizationMode).toBe("active")
+      expect(detected.promptOptimizationLevel).toBe("contextual")
+      expect(detected.promptOptimizationLevelSource).toBe("explicit")
+    })
+  })
+
   it("locks the schema to positive-integer prompt optimization budgets", async () => {
     const schema = JSON.parse(
       readFileSync(join(PROJECT_ROOT, "schemas", "wunderkind.config.schema.json"), "utf-8"),
@@ -437,10 +493,23 @@ describe("config-manager coverage", () => {
 
     const properties = projectSchema?.properties as Record<string, Record<string, unknown>> | undefined
     expect(properties?.promptOptimizationEnabled?.type).toBe("boolean")
-    expect(properties?.promptOptimizationEnabled?.description).toBe(
-      "Enable the separate supplementary prompt optimization engine. This does not change the audit-only token-audit contract or surface.",
+    expect(properties?.promptOptimizationEnabled?.description).toContain(
+      "Enable the separate supplementary prompt optimization engine.",
+    )
+    expect(properties?.promptOptimizationEnabled?.description).toContain(
+      "This never changes the audit-only token-audit contract or surface.",
+    )
+    expect(properties?.promptOptimizationEnabled?.description).toContain(
+      "security-safe baseline stays on",
     )
     expect(properties?.promptOptimizationMode?.enum).toEqual(["off", "advisory", "active"])
+    expect(properties?.promptOptimizationLevel?.enum).toEqual([
+      "latest-user",
+      "runtime-and-tools",
+      "contextual",
+      "transcript",
+    ])
+    expect(properties?.promptOptimizationLevel?.description).toContain("Legacy enabled repos")
     expect(properties?.promptOptimizationTokenBudget?.type).toBe("integer")
     expect(properties?.promptOptimizationTokenBudget?.minimum).toBe(1)
     expect(properties?.promptOptimizationByteBudget?.type).toBe("integer")

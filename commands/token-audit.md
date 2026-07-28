@@ -20,15 +20,16 @@ This command is invoked as `/token-audit`.
 5. Summarize the result plainly as an audit-only prompt-surface report, not as prompt optimization or compaction work.
 6. Keep any supplementary prompt optimization engine guidance clearly separate and describe it as config-driven rather than as a second public command.
 7. When users ask about runtime prompt-optimization posture or latest-report artifact status, point them to `bunx @grant-vine/wunderkind doctor --verbose` instead of improvising a second reporting path here.
-8. When users ask about V4 user-prompt optimization, explain only the boundary: enabled contexts may optimize the latest user-authored message, immutable content stays byte-exact, risky messages pass through whole-message unchanged, and passthrough reasons are visible on runtime reports only.
+8. When users ask about the separate optimization engine, explain that it is one default-off multi-level system: `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`. Keep `token-audit` audit-only, note that the latest-user level preserves immutable content byte-exact, and keep passthrough reasons on runtime reports only.
 
 ## Constraints
 
 - Do not mutate prompts, native assets, project files, or docs as part of this command.
 - Prompt-runtime v1 is audit-only: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
-- Any supplementary prompt optimization engine is config-driven and separate from this audit-only report.
-- V4 safe user-prompt optimization, when enabled by config, is latest-user-message-only and remains outside this audit-only report.
-- Do not expose V4 passthrough reasons as summary metadata guidance from `/token-audit`; reason visibility belongs to runtime reports only.
+- Any supplementary prompt optimization engine is config-driven, multi-level, and separate from this audit-only report.
+- The separate engine supports `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`, but those levels remain outside this audit-only report.
+- Do not expose latest-user passthrough reasons as summary metadata guidance from `/token-audit`; reason visibility belongs to runtime reports only.
+- No persistent cross-session memory writes or automatic context injection are supported by this command or by the separate engine.
 - Runtime prompt-optimization posture and latest-report artifact status belong to `bunx @grant-vine/wunderkind doctor --verbose`, not `/token-audit`.
 - Use the existing `bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]` CLI surface as the reporting boundary.
 - Report deterministic bytes, lines, and file counts only. Do not claim model-specific token truth unless the underlying CLI explicitly adds a tokenizer-aware mode.
