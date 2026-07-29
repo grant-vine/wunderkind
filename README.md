@@ -24,6 +24,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.25.1
+
+Wunderkind `0.25.1` adds repo-local answer-quality evidence on top of the existing prompt-optimization preservation and efficacy coverage. It keeps the product contract conservative: the new suite is an internal regression surface for this repository, and the README now stores the latest verified findings snapshot for future release work.
+
+- add a repo-local prompt answer-quality regression suite covering the current `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` seams
+- keep one straightforward internal command (`bun run test:prompt-answer-quality`) plus an opt-in provider-command lane for live repo checks
+- record the latest verified benchmark-pack, efficacy-harness, and answer-quality results in the README as release-prep evidence rather than a public benchmark claim
+
 ## What's new in 0.25.0
 
 Wunderkind `0.25.0` ships the completed prompt-optimization expansion as one default-off multi-level prompt optimization engine. It keeps `token-audit` audit-only, preserves the conservative latest-user boundary as the lowest supported level, and now includes the verified runtime-owned trimming, tool-output compaction, contextual compression, and transcript compression paths behind the cumulative `promptOptimizationLevel` model.
@@ -395,6 +403,23 @@ Measured repo-backed examples:
 - this repo's current project-local override is configured with a `1200`-byte budget; latest runtime reports remain local posture evidence only and `doctor --verbose` reports artifact existence rather than claiming proven savings
 - the frozen `1200`-byte active fixture used in unit coverage trims the combined runtime fixture from `6606` bytes to `1116` bytes (`savedBytes: 5490`) and trims `runtime-native-agents` plus `runtime-docs-output`
 - the exact-local `gpt-4.1` runtime-report path is also test-covered: the same `1200`-byte trim stays byte-budget-driven while emitting supplemental exact token deltas for the saved prompt size
+
+### Answer-quality regression suite
+
+This repo now also carries a separate prompt answer-quality regression suite for the covered prompt-optimization case pack. It is an internal repo test surface, not a reusable benchmark product surface.
+
+- `bun run test:prompt-answer-quality` runs the deterministic stub lane for the repo-owned case pack and reports whether the covered cases still pass after prompt optimization.
+- `bun run eval:prompt-answer-quality:live -- --provider-command '["bun","/absolute/path/to/provider.mjs"]'` runs the same case pack through a caller-supplied provider command using the repo's stdin/stdout JSON protocol.
+- the emitted results are intentionally bounded: they are strong regression evidence for the covered latest-user, runtime-and-tools, contextual, and transcript cases, but they are not a universal model-quality benchmark and they are not SWE-bench.
+- default output is sanitized and summary-oriented; it is designed to prove score stability and regression posture without turning the repo test suite into a raw prompt/answer dump.
+
+Latest verified repo-local results:
+
+- prompt benchmark pack: `5` scenarios, `4` with savings, `362` total saved bytes, `77` median saved bytes, `114` max saved bytes, `allBenchmarksPreserved: true`
+- prompt efficacy harness: stable aggregate with `4` levels showing savings, `1170` total saved bytes, `allPublicEvidencePassed: true`, and `allPreservationSuitesPassed: true`
+- answer-quality regression suite: `4/4` covered cases passed, aggregate score `64/64`, normalized score `1.0`
+
+Treat those numbers as the current README-backed evidence block to reference during the next version bump unless a later verification run supersedes them.
 
 ### Caveman Mode
 

@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.25.0**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.25.1**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -48,7 +48,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docHistoryMode` remains `overwrite` for this repo.
 - Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override on the legacy compatibility profile until an explicit `promptOptimizationLevel` is chosen.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.25.0` and the frozen bucketed skill inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.25.1` and the frozen bucketed skill inventory.
 
 ## Primary local sources
 

@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "description": "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -32,7 +32,11 @@
     "test": "bun test tests/unit/",
     "test:contract": "bun test tests/unit/",
     "test:coverage": "bun test --coverage tests/unit/",
-    "test:coverage:config-manager": "bun test --coverage tests/unit/config-manager-coverage.test.ts"
+    "test:coverage:config-manager": "bun test --coverage tests/unit/config-manager-coverage.test.ts",
+    "test:prompt-efficacy": "bun tests/unit/helpers/run-prompt-optimization-efficacy.mjs --repeat 5 --enforce-repeatable",
+    "test:prompt-benchmark": "bun tests/unit/helpers/run-prompt-optimization-benchmark-pack.mjs",
+    "test:prompt-answer-quality": "bun tests/unit/helpers/run-prompt-answer-quality-eval.mjs",
+    "eval:prompt-answer-quality:live": "bun tests/unit/helpers/run-prompt-answer-quality-eval.mjs --provider command"
   },
   "dependencies": {
     "@clack/prompts": "^1.5.1",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.1
+
+- add a repo-local prompt answer-quality regression suite for the covered `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` optimization seams
+- document the latest verified internal evidence snapshot in `README.md`, including benchmark-pack, efficacy-harness, and answer-quality regression results for the next release handoff
+- refresh package, manifest, managed docs, and generated native agent version surfaces for the 0.25.1 cut
+
 ## 0.25.0
 
 - ship the completed prompt-optimization expansion as one cumulative multi-level system with verified `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` level behavior
