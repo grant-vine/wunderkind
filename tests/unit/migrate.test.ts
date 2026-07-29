@@ -2,121 +2,167 @@ import { describe, expect, it } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { spawnSync } from "node:child_process"
+import { fileURLToPath } from "node:url"
 import { runProjectArtifactMigration } from "../../src/cli/migrate.js"
+
+const CLI_ENTRY = fileURLToPath(new URL("../../src/cli/index.ts", import.meta.url))
 
 function createProjectRoot(): string {
   return mkdtempSync(join(tmpdir(), "wk-migrate-"))
 }
 
 describe("runProjectArtifactMigration", () => {
-  it("fails hard with corrective guidance even when no artifact roots exist", async () => {
+  it("reports nothing to migrate when no legacy OMO config exists", async () => {
     const originalCwd = process.cwd()
-    const originalError = console.error
     const projectRoot = createProjectRoot()
-    const errors: string[] = []
+    const messages: string[] = []
 
     try {
       process.chdir(projectRoot)
-      console.error = (...args: unknown[]) => {
-        errors.push(args.map((arg) => String(arg)).join(" "))
+      const originalLog = console.log
+      console.log = (...args: unknown[]) => {
+        messages.push(args.map((arg) => String(arg)).join(" "))
       }
 
       const code = await runProjectArtifactMigration()
 
-      expect(code).toBe(1)
-      expect(errors.some((message) => message.includes("wunderkind migrate was removed in this hard-cut release"))).toBe(true)
-      expect(errors.some((message) => message.includes(".sisyphus/ is no longer an active Wunderkind artifact root"))).toBe(true)
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("Nothing to migrate."))).toBe(true)
+      console.log = originalLog
     } finally {
-      console.error = originalError
       process.chdir(originalCwd)
       rmSync(projectRoot, { recursive: true, force: true })
     }
   })
 
-  it("fails hard with manual migration guidance when legacy artifacts exist", async () => {
+  it("merges legacy OMO config into ~/.omo/omo.jsonc without clobbering existing target values", async () => {
     const originalCwd = process.cwd()
-    const originalError = console.error
     const projectRoot = createProjectRoot()
-    const errors: string[] = []
+    const homeDir = join(projectRoot, "home")
+    const legacyConfigDir = join(homeDir, ".config", "opencode")
+    const targetDir = join(homeDir, ".omo")
 
     try {
-      mkdirSync(join(projectRoot, ".sisyphus", "plans"), { recursive: true })
-      writeFileSync(join(projectRoot, ".sisyphus", "plans", "plan.md"), "hello\n")
+      mkdirSync(legacyConfigDir, { recursive: true })
+      mkdirSync(targetDir, { recursive: true })
+      writeFileSync(
+        join(legacyConfigDir, "oh-my-opencode.json"),
+        JSON.stringify({ model: "openai/gpt-5", legacyOnly: "preserve-me" }),
+      )
+      writeFileSync(
+        join(targetDir, "omo.jsonc"),
+        JSON.stringify({ model: "openai/gpt-4.1", existingOnly: "keep-me" }),
+      )
       process.chdir(projectRoot)
-      console.error = (...args: unknown[]) => {
-        errors.push(args.map((arg) => String(arg)).join(" "))
-      }
 
-      const code = await runProjectArtifactMigration()
+      const result = spawnSync(process.execPath, [CLI_ENTRY, "migrate"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        env: { ...process.env, HOME: homeDir },
+      })
 
-      expect(code).toBe(1)
-      expect(existsSync(join(projectRoot, ".omo", "plans", "plan.md"))).toBe(false)
-      expect(existsSync(join(projectRoot, ".sisyphus", "plans", "plan.md"))).toBe(true)
-      expect(errors.some((message) => message.includes("wunderkind migrate was removed in this hard-cut release"))).toBe(true)
-      expect(errors.some((message) => message.includes("Move legacy") && message.includes(".omo/ manually, then rerun doctor"))).toBe(true)
+      expect(result.status).toBe(0)
+      expect(existsSync(join(legacyConfigDir, "oh-my-opencode.json"))).toBe(false)
+      expect(JSON.parse(readFileSync(join(targetDir, "omo.jsonc"), "utf-8"))).toEqual({
+        model: "openai/gpt-4.1",
+        existingOnly: "keep-me",
+        legacyOnly: "preserve-me",
+      })
     } finally {
-      console.error = originalError
       process.chdir(originalCwd)
       rmSync(projectRoot, { recursive: true, force: true })
     }
   })
 
-  it("fails hard even when both legacy and primary artifact roots are present", async () => {
-    const originalCwd = process.cwd()
-    const originalError = console.error
+  it("supports --dry-run and leaves files unchanged while previewing the unified target", () => {
     const projectRoot = createProjectRoot()
-    const errors: string[] = []
+    const homeDir = join(projectRoot, "home")
+    const legacyConfigDir = join(homeDir, ".config", "opencode")
+    const targetDir = join(homeDir, ".omo")
 
     try {
-      mkdirSync(join(projectRoot, ".omo", "plans"), { recursive: true })
-      writeFileSync(join(projectRoot, ".omo", "plans", "existing.md"), "existing\n")
-      mkdirSync(join(projectRoot, ".sisyphus", "notepads"), { recursive: true })
-      writeFileSync(join(projectRoot, ".sisyphus", "notepads", "new.md"), "new\n")
-      process.chdir(projectRoot)
-      console.error = (...args: unknown[]) => {
-        errors.push(args.map((arg) => String(arg)).join(" "))
-      }
+      mkdirSync(legacyConfigDir, { recursive: true })
+      mkdirSync(targetDir, { recursive: true })
+      writeFileSync(join(legacyConfigDir, "oh-my-opencode.json"), JSON.stringify({ model: "openai/gpt-5" }))
+      writeFileSync(join(targetDir, "omo.jsonc"), JSON.stringify({ model: "openai/gpt-4.1" }))
 
-      const code = await runProjectArtifactMigration()
+      const result = spawnSync(process.execPath, [CLI_ENTRY, "migrate", "--dry-run"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        env: { ...process.env, HOME: homeDir },
+      })
 
-      expect(code).toBe(1)
-      expect(readFileSync(join(projectRoot, ".omo", "plans", "existing.md"), "utf-8")).toBe("existing\n")
-      expect(existsSync(join(projectRoot, ".omo", "notepads", "new.md"))).toBe(false)
-      expect(existsSync(join(projectRoot, ".sisyphus", "notepads", "new.md"))).toBe(true)
-      expect(errors.some((message) => message.includes("wunderkind migrate was removed in this hard-cut release"))).toBe(true)
+      expect(result.status).toBe(0)
+      expect(result.stdout + result.stderr).toContain("~/.omo/omo.jsonc")
+      expect(existsSync(join(legacyConfigDir, "oh-my-opencode.json"))).toBe(true)
+      expect(JSON.parse(readFileSync(join(targetDir, "omo.jsonc"), "utf-8"))).toEqual({ model: "openai/gpt-4.1" })
     } finally {
-      console.error = originalError
-      process.chdir(originalCwd)
       rmSync(projectRoot, { recursive: true, force: true })
     }
   })
 
-  it("fails hard on --dry-run with the same corrective guidance", async () => {
-    const originalCwd = process.cwd()
-    const originalError = console.error
+  it("supports --json for machine-readable dry-run output", () => {
     const projectRoot = createProjectRoot()
-    const errors: string[] = []
-
-    console.error = (...args: unknown[]) => {
-      errors.push(args.map((arg) => String(arg)).join(" "))
-    }
+    const homeDir = join(projectRoot, "home")
+    const legacyConfigDir = join(homeDir, ".config", "opencode")
 
     try {
-      mkdirSync(join(projectRoot, ".omo", "plans"), { recursive: true })
-      writeFileSync(join(projectRoot, ".omo", "plans", "same-name.md"), "primary\n")
-      mkdirSync(join(projectRoot, ".sisyphus", "plans"), { recursive: true })
-      writeFileSync(join(projectRoot, ".sisyphus", "plans", "same-name.md"), "legacy\n")
-      process.chdir(projectRoot)
+      mkdirSync(legacyConfigDir, { recursive: true })
+      writeFileSync(join(legacyConfigDir, "oh-my-opencode.json"), JSON.stringify({ model: "openai/gpt-5" }))
 
-      const code = await runProjectArtifactMigration({ dryRun: true })
+      const result = spawnSync(process.execPath, [CLI_ENTRY, "migrate", "--dry-run", "--json"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        env: { ...process.env, HOME: homeDir },
+      })
 
-      expect(code).toBe(1)
-      expect(errors.some((message) => message.includes("wunderkind migrate was removed in this hard-cut release"))).toBe(true)
-      expect(errors.some((message) => message.includes("--dry-run no longer previews any moves"))).toBe(true)
-      expect(existsSync(join(projectRoot, ".sisyphus", "plans", "same-name.md"))).toBe(true)
+      expect(result.status).toBe(0)
+      expect(JSON.parse(result.stdout)).toEqual({
+        status: "dry-run",
+        legacyConfigPath: join(legacyConfigDir, "oh-my-opencode.json"),
+        targetConfigPath: join(homeDir, ".omo", "omo.jsonc"),
+        preview: {
+          copiedPaths: ["model"],
+          keptPaths: [],
+          conflicts: [],
+        },
+        message: `Dry run: would migrate ${join(legacyConfigDir, "oh-my-opencode.json")} into ~/.omo/omo.jsonc.`,
+      })
     } finally {
-      console.error = originalError
-      process.chdir(originalCwd)
+      rmSync(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("fails closed when the legacy config is malformed", () => {
+    const projectRoot = createProjectRoot()
+    const homeDir = join(projectRoot, "home")
+    const legacyConfigDir = join(homeDir, ".config", "opencode")
+
+    try {
+      mkdirSync(legacyConfigDir, { recursive: true })
+      writeFileSync(join(legacyConfigDir, "oh-my-opencode.json"), "[]")
+
+      const result = spawnSync(process.execPath, [CLI_ENTRY, "migrate", "--json"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        env: { ...process.env, HOME: homeDir },
+      })
+
+      expect(result.status).toBe(1)
+      expect(JSON.parse(result.stdout)).toEqual({
+        status: "error",
+        legacyConfigPath: join(legacyConfigDir, "oh-my-opencode.json"),
+        targetConfigPath: join(homeDir, ".omo", "omo.jsonc"),
+        preview: {
+          copiedPaths: [],
+          keptPaths: [],
+          conflicts: [],
+        },
+        message: `Failed to migrate ${join(legacyConfigDir, "oh-my-opencode.json")}.`,
+        error: `Invalid config format: ${join(legacyConfigDir, "oh-my-opencode.json")}`,
+      })
+    } finally {
       rmSync(projectRoot, { recursive: true, force: true })
     }
   })

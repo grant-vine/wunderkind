@@ -101,8 +101,10 @@ describe("CLI help copy", () => {
   it("includes migrate command help text", () => {
     const output = runCliHelp("migrate", "--help")
 
-    expect(output).toContain("wunderkind migrate was removed in this hard-cut release")
-    expect(output).toContain("corrective migration guidance")
+    expect(output).toContain("Migrate legacy OMO config into the unified ~/.omo/omo.jsonc chain")
+    expect(output).toContain("--dry-run")
+    expect(output).toContain("--json")
+    expect(output).toContain("oh-my-openagent config migrate")
   })
 
   it("includes upgrade command help text", () => {

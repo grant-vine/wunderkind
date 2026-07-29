@@ -16,7 +16,6 @@ import {
   PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS,
 } from "./prompt-runtime-contract.js"
 import type { DocHistoryMode, InstallArgs, InstallScope, TeamBootstrapScope } from "./types.js"
-import { LEGACY_PROJECT_ARTIFACT_DIR, PRIMARY_PROJECT_ARTIFACT_DIR } from "../project-artifacts.js"
 import { WUNDERKIND_CANONICAL_MANIFEST } from "../agents/canonical-manifest.js"
 
 const REGULATION_LIST = "GDPR, POPIA, CCPA, LGPD, HIPAA, PIPEDA, PDPA, APPI, SOC2, ISO27001, or any custom value"
@@ -492,12 +491,13 @@ program
   .command("migrate")
   .description(
     [
-      `wunderkind migrate was removed in this hard-cut release.`,
+      "Migrate legacy OMO config into the unified ~/.omo/omo.jsonc chain.",
       "",
-      `Use ${PRIMARY_PROJECT_ARTIFACT_DIR}/ as the primary project-working directory and follow the printed corrective migration guidance for any remaining legacy artifacts.`,
+      "This mirrors the upstream oh-my-openagent config-migration fix path for leftover legacy oh-my-opencode config files.",
     ].join("\n"),
   )
-  .option("--dry-run", "Print the same corrective migration guidance without performing any file moves")
+  .option("--dry-run", "Preview the migration into ~/.omo/omo.jsonc without writing files")
+  .option("--json", "Print machine-readable migration output")
   .addHelpText(
     "after",
     [
@@ -505,12 +505,14 @@ program
       "Behavior:",
       "  bunx @grant-vine/wunderkind migrate",
       "  bunx @grant-vine/wunderkind migrate --dry-run",
+      "  bunx @grant-vine/wunderkind migrate --json",
       "",
-      `Both forms fail with guidance only. Automated ${LEGACY_PROJECT_ARTIFACT_DIR}/ -> ${PRIMARY_PROJECT_ARTIFACT_DIR}/ moves are no longer supported.`,
+      "Use this when doctor reports 'Legacy OMO configuration remains'.",
+      "This command follows the same operator story as `oh-my-openagent config migrate`.",
     ].join("\n"),
   )
-  .action(async (opts: { dryRun?: boolean | undefined }) => {
-    const exitCode = await runProjectArtifactMigration({ dryRun: opts.dryRun === true })
+  .action(async (opts: { dryRun?: boolean | undefined; json?: boolean | undefined }) => {
+    const exitCode = await runProjectArtifactMigration({ dryRun: opts.dryRun === true, json: opts.json === true })
     process.exit(exitCode)
   })
 

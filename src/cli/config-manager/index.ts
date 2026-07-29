@@ -27,6 +27,9 @@ import type {
   InstallRegistrationScope,
   InstallScope,
   LegalPersonality,
+  OmoConfigMigrationConflict,
+  OmoConfigMigrationPreview,
+  OmoConfigMigrationResult,
   OmoFreshnessInfo,
   OmoFreshnessStatus,
   OrgStructure,
@@ -51,8 +54,9 @@ const WUNDERKIND_SAFE_FALLBACK_COMMAND = "bunx @grant-vine/wunderkind" as const
 const WUNDERKIND_SCHEMA_URL = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.configSchemaUrl
 const OMO_CANONICAL_PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoCanonicalPackageName
 const NATIVE_ASSET_VERSION_MARKER_FILENAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.markerFilename
-const LEGACY_OMO_CONFIG_WARNING =
-  "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc." as const
+const LEGACY_OMO_CONFIG_WARNING_TITLE = "Legacy OMO configuration remains" as const
+const LEGACY_OMO_CONFIG_WARNING_FIX =
+  "Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc." as const
 
 function isDesignTool(value: unknown): value is DesignTool {
   return value === "none" || value === "google-stitch"
@@ -215,6 +219,8 @@ interface ConfigManagerPaths {
   globalOpenCodeSkillsDir: string
   globalOpenCodeNodeModules: string
   globalCacheDir: string
+  omoUnifiedConfigDir: string
+  omoUnifiedConfigJsonc: string
   omoConfigJson: string
   omoConfigJsonc: string
   omoLegacyConfigJson: string
@@ -273,6 +279,7 @@ function resolveConfigManagerPaths(cwd?: string, home?: string): ConfigManagerPa
 
   const configDir = join(resolvedHome, ".config", "opencode")
   const globalWunderkindDir = join(resolvedHome, ".wunderkind")
+  const omoUnifiedConfigDir = join(resolvedHome, ".omo")
   const wunderkindDir = join(resolvedCwd, ".wunderkind")
 
   return {
@@ -288,6 +295,8 @@ function resolveConfigManagerPaths(cwd?: string, home?: string): ConfigManagerPa
     globalOpenCodeSkillsDir: join(configDir, WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.openCodeDirs.skills),
     globalOpenCodeNodeModules: join(configDir, "node_modules"),
     globalCacheDir: join(resolvedHome, ".cache", "opencode"),
+    omoUnifiedConfigDir,
+    omoUnifiedConfigJsonc: join(omoUnifiedConfigDir, "omo.jsonc"),
     omoConfigJson: join(configDir, "oh-my-openagent.json"),
     omoConfigJsonc: join(configDir, "oh-my-openagent.jsonc"),
     omoLegacyConfigJson: join(configDir, "oh-my-opencode.json"),
@@ -472,10 +481,11 @@ export function resolveOpenCodeConfigPath(scope: InstallScope): {
 function resolveOmoConfigPath(): {
   path: string | null
   format: "json" | "jsonc" | "none"
-  source: "oh-my-openagent.json" | "oh-my-openagent.jsonc" | "default"
+  source: "oh-my-openagent.json" | "oh-my-openagent.jsonc" | "omo.jsonc" | "default"
   legacyPath: string | null
 } {
   const paths = resolveConfigManagerPaths()
+  const unifiedJsoncExists = existsSync(paths.omoUnifiedConfigJsonc)
 
   const canonicalJsonExists = existsSync(paths.omoConfigJson)
   const canonicalJsoncExists = existsSync(paths.omoConfigJsonc)
@@ -487,6 +497,9 @@ function resolveOmoConfigPath(): {
       ? paths.omoLegacyConfigJsonc
       : null
 
+  if (unifiedJsoncExists) {
+    return { path: paths.omoUnifiedConfigJsonc, format: "jsonc", source: "omo.jsonc", legacyPath }
+  }
   if (canonicalJsonExists) {
     return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json", legacyPath }
   }
@@ -495,6 +508,14 @@ function resolveOmoConfigPath(): {
   }
 
   return { path: null, format: "none", source: "default", legacyPath }
+}
+
+function formatLegacyOmoConfigWarning(legacyPath: string): string {
+  return [
+    LEGACY_OMO_CONFIG_WARNING_TITLE,
+    `Legacy configuration remains at ${legacyPath}. It is not part of the unified OMO config chain.`,
+    `Fix: ${LEGACY_OMO_CONFIG_WARNING_FIX}`,
+  ].join("\n")
 }
 
 function parseConfig(path: string): OpenCodeConfig | null {
@@ -506,6 +527,161 @@ function parseConfig(path: string): OpenCodeConfig | null {
     return result
   } catch {
     return null
+  }
+}
+
+function parseConfigOrThrow(path: string): OpenCodeConfig {
+  const parsed = parseConfig(path)
+  if (parsed === null) {
+    throw new Error(`Invalid config format: ${path}`)
+  }
+  return parsed
+}
+
+function writeConfigFile(path: string, config: OpenCodeConfig): void {
+  writeFileSync(path, JSON.stringify(config, null, 2) + "\n")
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function cloneConfigValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneConfigValue(entry))
+  }
+
+  if (isPlainRecord(value)) {
+    const clone: Record<string, unknown> = {}
+    for (const [key, nestedValue] of Object.entries(value)) {
+      clone[key] = cloneConfigValue(nestedValue)
+    }
+    return clone
+  }
+
+  return value
+}
+
+function mergeLegacyConfigIntoTarget(input: {
+  legacyConfig: OpenCodeConfig
+  targetConfig: OpenCodeConfig
+}): { mergedConfig: OpenCodeConfig; preview: OmoConfigMigrationPreview } {
+  const mergedConfig = cloneConfigValue(input.targetConfig)
+  if (!isPlainRecord(mergedConfig)) {
+    throw new Error("Target OMO config must be an object")
+  }
+
+  const copiedPaths: string[] = []
+  const keptPaths: string[] = []
+  const conflicts: OmoConfigMigrationConflict[] = []
+
+  const mergeInto = (target: Record<string, unknown>, legacy: Record<string, unknown>, basePath: string): void => {
+    for (const [key, legacyValue] of Object.entries(legacy)) {
+      const nextPath = basePath === "" ? key : `${basePath}.${key}`
+      if (!(key in target)) {
+        target[key] = cloneConfigValue(legacyValue)
+        copiedPaths.push(nextPath)
+        continue
+      }
+
+      const targetValue = target[key]
+      if (isPlainRecord(targetValue) && isPlainRecord(legacyValue)) {
+        mergeInto(targetValue, legacyValue, nextPath)
+        continue
+      }
+
+      keptPaths.push(nextPath)
+      conflicts.push({ path: nextPath, legacyValue, keptValue: targetValue })
+    }
+  }
+
+  mergeInto(mergedConfig, input.legacyConfig, "")
+
+  return {
+    mergedConfig,
+    preview: {
+      copiedPaths,
+      keptPaths,
+      conflicts,
+    },
+  }
+}
+
+export function migrateLegacyOmoConfig(options: { dryRun?: boolean } = {}): OmoConfigMigrationResult {
+  const paths = resolveConfigManagerPaths()
+  const legacyConfigPaths = [paths.omoLegacyConfigJson, paths.omoLegacyConfigJsonc].filter((filePath) => existsSync(filePath))
+  const legacyConfigPath = legacyConfigPaths[0] ?? null
+
+  if (legacyConfigPath === null) {
+    return {
+      status: "noop",
+      legacyConfigPath: null,
+      targetConfigPath: paths.omoUnifiedConfigJsonc,
+      preview: { copiedPaths: [], keptPaths: [], conflicts: [] },
+      message: "Nothing to migrate.",
+    }
+  }
+
+  try {
+    let mergedConfig: OpenCodeConfig = existsSync(paths.omoUnifiedConfigJsonc)
+      ? parseConfigOrThrow(paths.omoUnifiedConfigJsonc)
+      : {}
+    const aggregatePreview: {
+      copiedPaths: string[]
+      keptPaths: string[]
+      conflicts: OmoConfigMigrationConflict[]
+    } = {
+      copiedPaths: [],
+      keptPaths: [],
+      conflicts: [],
+    }
+
+    for (const sourcePath of legacyConfigPaths) {
+      const legacyConfig = parseConfigOrThrow(sourcePath)
+      const mergeResult = mergeLegacyConfigIntoTarget({ legacyConfig, targetConfig: mergedConfig })
+      mergedConfig = mergeResult.mergedConfig
+      aggregatePreview.copiedPaths.push(...mergeResult.preview.copiedPaths)
+      aggregatePreview.keptPaths.push(...mergeResult.preview.keptPaths)
+      aggregatePreview.conflicts.push(...mergeResult.preview.conflicts)
+    }
+
+    const preview: OmoConfigMigrationPreview = aggregatePreview
+    const migrationLabel = legacyConfigPaths.length === 1
+      ? legacyConfigPath
+      : `${legacyConfigPaths.length} legacy OMO config files`
+
+    if (options.dryRun === true) {
+      return {
+        status: "dry-run",
+        legacyConfigPath,
+        targetConfigPath: paths.omoUnifiedConfigJsonc,
+        preview,
+        message: `Dry run: would migrate ${migrationLabel} into ~/.omo/omo.jsonc.`,
+      }
+    }
+
+    mkdirSync(paths.omoUnifiedConfigDir, { recursive: true })
+    writeConfigFile(paths.omoUnifiedConfigJsonc, mergedConfig)
+    for (const sourcePath of legacyConfigPaths) {
+      rmSync(sourcePath)
+    }
+
+    return {
+      status: "migrated",
+      legacyConfigPath,
+      targetConfigPath: paths.omoUnifiedConfigJsonc,
+      preview,
+      message: `Migrated ${migrationLabel} into ~/.omo/omo.jsonc.`,
+    }
+  } catch (error) {
+    return {
+      status: "error",
+      legacyConfigPath,
+      targetConfigPath: paths.omoUnifiedConfigJsonc,
+      preview: { copiedPaths: [], keptPaths: [], conflicts: [] },
+      message: `Failed to migrate ${legacyConfigPath}.`,
+      error: error instanceof Error ? error.message : String(error),
+    }
   }
 }
 
@@ -794,7 +970,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
       ? `upstream get-local-version reports ${currentVersion} but the loaded ${packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME} package is ${packageInfo.loaded.version}`
       : null
   const dualConfigWarning = omoConfigResolution.legacyPath !== null
-    ? `${LEGACY_OMO_CONFIG_WARNING} (${omoConfigResolution.legacyPath})`
+    ? formatLegacyOmoConfigWarning(omoConfigResolution.legacyPath)
     : null
 
   return {

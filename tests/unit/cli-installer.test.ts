@@ -685,7 +685,8 @@ describe("runCliInstaller", () => {
       makeOmoInstallReadiness({
         staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
         versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
-        dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.json)",
+        dualConfigWarning:
+          "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
       }),
     )
 
@@ -694,7 +695,7 @@ describe("runCliInstaller", () => {
       expect(code).toBe(0)
       expect(messages.some((m) => m.includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
       expect(messages.some((m) => m.includes("upstream get-local-version reports 3.17.6"))).toBe(true)
-      expect(messages.some((m) => m.includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
+      expect(messages.some((m) => m.includes("Legacy OMO configuration remains"))).toBe(true)
     } finally {
       console.log = origLog
     }

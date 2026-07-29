@@ -1,48 +1,51 @@
 import color from "picocolors"
-import { existsSync } from "node:fs"
-import { join } from "node:path"
-import {
-  LEGACY_PROJECT_ARTIFACT_DIR,
-  LEGACY_PROJECT_ARTIFACT_MESSAGE,
-  PRIMARY_PROJECT_ARTIFACT_DIR,
-} from "../project-artifacts.js"
+import { migrateLegacyOmoConfig } from "./config-manager/index.js"
 
 export interface ProjectArtifactMigrationOptions {
   dryRun?: boolean
+  json?: boolean
 }
 
-function printRemovedMigrationGuidance(cwd: string, hasLegacyRoot: boolean, hasPrimaryRoot: boolean, dryRun: boolean): void {
-  const legacyRoot = join(cwd, LEGACY_PROJECT_ARTIFACT_DIR)
-  const primaryRoot = join(cwd, PRIMARY_PROJECT_ARTIFACT_DIR)
-
-  console.error(`${color.red("✖")} wunderkind migrate was removed in this hard-cut release.`)
-  console.error(`${color.dim("- ")}${LEGACY_PROJECT_ARTIFACT_MESSAGE}`)
-  console.error(`${color.dim("- ")}Move legacy ${color.cyan(`${LEGACY_PROJECT_ARTIFACT_DIR}/`)} artifacts into ${color.cyan(`${PRIMARY_PROJECT_ARTIFACT_DIR}/`)} manually, then rerun doctor.`)
-
-  if (dryRun) {
-    console.error(`${color.dim("- ")}--dry-run no longer previews any moves because automated legacy migration is no longer supported.`)
+function printMigrationResult(options: ProjectArtifactMigrationOptions, result: ReturnType<typeof migrateLegacyOmoConfig>): void {
+  if (options.json === true) {
+    const output = {
+      status: result.status,
+      legacyConfigPath: result.legacyConfigPath,
+      targetConfigPath: result.targetConfigPath,
+      preview: result.preview,
+      message: result.message,
+      ...(result.error ? { error: result.error } : {}),
+    }
+    console.log(JSON.stringify(output, null, 2))
+    return
   }
 
-  if (hasLegacyRoot) {
-    console.error(`${color.dim("- ")}Legacy artifacts detected at ${color.dim(legacyRoot)}`)
+  if (result.status === "error") {
+    console.error(`${color.red("✖")} ${result.message}`)
+    if (result.error) {
+      console.error(`${color.dim("- ")}${result.error}`)
+    }
+    return
   }
 
-  if (hasPrimaryRoot) {
-    console.error(`${color.dim("- ")}Primary artifact root already present at ${color.dim(primaryRoot)}`)
+  console.log(result.message)
+  if (result.legacyConfigPath !== null) {
+    console.log(`${color.dim("- ")}legacy: ${color.dim(result.legacyConfigPath)}`)
+  }
+  console.log(`${color.dim("- ")}target: ${color.dim(result.targetConfigPath)} ${color.dim("(~/.omo/omo.jsonc)")}`)
+  if (result.preview.copiedPaths.length > 0) {
+    console.log(`${color.dim("- ")}copied: ${result.preview.copiedPaths.join(", ")}`)
+  }
+  if (result.preview.keptPaths.length > 0) {
+    console.log(`${color.dim("- ")}kept existing: ${result.preview.keptPaths.join(", ")}`)
   }
 }
 
 export async function runProjectArtifactMigration(options: ProjectArtifactMigrationOptions = {}): Promise<number> {
   try {
-    const cwd = process.cwd()
-    const legacyRoot = join(cwd, LEGACY_PROJECT_ARTIFACT_DIR)
-    const primaryRoot = join(cwd, PRIMARY_PROJECT_ARTIFACT_DIR)
-
-    const hasLegacyRoot = existsSync(legacyRoot)
-    const hasPrimaryRoot = existsSync(primaryRoot)
-
-    printRemovedMigrationGuidance(cwd, hasLegacyRoot, hasPrimaryRoot, options.dryRun === true)
-    return 1
+    const result = migrateLegacyOmoConfig({ dryRun: options.dryRun === true })
+    printMigrationResult(options, result)
+    return result.status === "error" ? 1 : 0
   } catch (error) {
     console.error(`Error: ${String(error)}`)
     return 1

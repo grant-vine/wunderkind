@@ -9,7 +9,7 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 > [!WARNING]
 > **Hard-cut migration release.** Older compatibility paths no longer execute. Wunderkind now uses the converged `.omo` and `oh-my-openagent` surface only.
-> - `wunderkind migrate` fails with manual migration guidance. It no longer moves or previews `.sisyphus/` artifacts.
+> - `wunderkind migrate` now handles legacy OMO config migration into `~/.omo/omo.jsonc`; it is no longer the old `.sisyphus/` migration surface.
 > - `.sisyphus/` is historical. Move durable artifacts manually into `.omo/notepads/` or `.omo/evidence/`.
 > - `wunderkind gitignore` manages `.wunderkind/`, `AGENTS.md`, `.omo/`, and `.opencode/` only.
 > - Legacy `oh-my-opencode` config files and legacy OpenCode `config.json` / `config.jsonc` files are detected for warnings only. They are not active config sources.
@@ -23,6 +23,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 > - The `code-health` skill is now an audit/reporting tool only — it does not install or invoke any automated cleanup tool.
 
 ---
+
+## What's new in 0.25.2
+
+Wunderkind `0.25.2` turns `wunderkind migrate` into a real legacy OMO config migration command. It keeps the hard-cut `.omo` posture for project artifacts, but now gives operators the upstream-style fix path for leftover `oh-my-opencode` config files by merging them into `~/.omo/omo.jsonc` without clobbering existing unified config values.
+
+- make `wunderkind migrate` perform no-clobber legacy OMO config migration with `--dry-run` and `--json`
+- align doctor, installer, warning copy, CLI help, and tests around the upstream-style `Legacy OMO configuration remains` guidance
+- refresh package, manifest, and managed docs surfaces for the `0.25.2` release cut
 
 ## What's new in 0.25.1
 
@@ -128,7 +136,7 @@ Wunderkind provides a tiered CLI for installation, project setup, and health che
 | `wunderkind team-bootstrap` | Creates the canonical Wunderkind upstream team spec | `.omo/teams/<name>/config.json` |
 | `wunderkind workflow-sync` | Explicitly projects a local `.omo` plan into GitHub Issues | GitHub Issues + `.wunderkind/workflows/github-issues/` |
 | `wunderkind token-audit` | Reports deterministic prompt-surface size metrics for Wunderkind-owned assets | None |
-| `wunderkind migrate` | Removed hard-cut command that prints manual migration guidance and exits non-zero | None |
+| `wunderkind migrate` | Migrates legacy `oh-my-opencode` config into `~/.omo/omo.jsonc` with no-clobber merge semantics | Legacy OMO config + `~/.omo/omo.jsonc` |
 | `wunderkind cleanup` | Removes project-local Wunderkind wiring and state | project OpenCode config + `.wunderkind/` |
 | `wunderkind doctor` | Read-only diagnostics | None |
 | `wunderkind uninstall` | Safely removes Wunderkind plugin wiring | OpenCode plugin config (+ global Wunderkind config when applicable) |
@@ -251,7 +259,7 @@ Current upgrade behavior:
 - rewrites Wunderkind-managed native-asset version markers so `doctor` can detect stale installed files
 - embeds a Wunderkind version value in generated native agent markdown so `doctor` can compare installed agent files too
 - preserves project-local soul/docs settings unless you explicitly opt into config refresh behavior
-- preserves the hard-cut posture: it does not migrate `.sisyphus/`, does not use legacy `oh-my-opencode` configs, and does not reactivate retired skill aliases
+- preserves the hard-cut posture for project artifacts: it does not migrate `.sisyphus/`, but it now does migrate legacy `oh-my-opencode` config into `~/.omo/omo.jsonc`, and it does not reactivate retired skill aliases
 - supports `--dry-run` and `--refresh-config` for safe testing
 - project-scope upgrades can also set `--caveman-enabled yes|no`; global upgrades keep caveman session-scoped and chat-activated
 
@@ -359,7 +367,7 @@ bunx @grant-vine/wunderkind token-audit --surface commands --format json
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
-This is intentionally separate from `wunderkind migrate`. `migrate` remains legacy `.sisyphus/` guidance only.
+This is intentionally separate from `wunderkind migrate`. `migrate` now covers legacy OMO config migration into `~/.omo/omo.jsonc`; it does not migrate legacy `.sisyphus/` project artifacts.
 
 ### Supplementary prompt optimization
 
@@ -576,7 +584,21 @@ If an older project still has `.sisyphus/` content, move the files manually:
 2. Move proof, logs, and run output into `.omo/evidence/`.
 3. Rerun `bunx @grant-vine/wunderkind doctor` and resolve any remaining detection-only warnings.
 
-`wunderkind migrate` remains present only as a fail-hard guidance surface. Both normal and `--dry-run` invocations exit non-zero and do not move files.
+`wunderkind migrate` no longer handles `.sisyphus/` project-artifact migration. It now targets only legacy `oh-my-opencode` config leftovers, merging them into `~/.omo/omo.jsonc` with no-clobber semantics and supporting `--dry-run` and `--json`.
+
+## Legacy OMO Config Migration
+
+If `doctor` reports `Legacy OMO configuration remains`, run:
+
+```bash
+bunx @grant-vine/wunderkind migrate
+bunx @grant-vine/wunderkind migrate --dry-run
+bunx @grant-vine/wunderkind migrate --json
+```
+
+- target file: `~/.omo/omo.jsonc`
+- behavior: copy missing keys from legacy `oh-my-opencode.json` / `oh-my-opencode.jsonc`, keep existing target values unchanged
+- scope: legacy OMO config only; this command does **not** migrate legacy `.sisyphus/` project artifacts
 
 ---
 

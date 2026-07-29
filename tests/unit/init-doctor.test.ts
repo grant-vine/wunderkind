@@ -239,7 +239,7 @@ const configManagerMockFactory = () => ({
       } else if (versionInfo.dualConfigWarning) {
         freshnessSummary = {
           state: "not-verified",
-          guidance: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc.",
+          guidance: "Run `oh-my-openagent config migrate` to move the legacy config into ~/.omo/omo.jsonc.",
         }
     } else if (!versionInfo.freshness || versionInfo.freshness.status === "unknown" || versionInfo.freshness.status === "error") {
       freshnessSummary = {
@@ -311,7 +311,7 @@ const configManagerMockFactory = () => ({
     if (versionInfo.dualConfigWarning) {
       return {
         state: "not-verified" as const,
-        guidance: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc.",
+          guidance: "Run `oh-my-openagent config migrate` to move the legacy config into ~/.omo/omo.jsonc.",
       }
     }
 
@@ -1586,7 +1586,8 @@ describe("runDoctor", () => {
       },
       staleOverrideWarning: null,
       versionSkewWarning: null,
-      dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.json)",
+      dualConfigWarning:
+        "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
       freshness: createOmoFreshness({
         status: "up-to-date",
         currentVersion: "3.17.6",
@@ -1597,7 +1598,9 @@ describe("runDoctor", () => {
     const { code, messages } = await captureDoctorOutput({ verbose: true })
 
     expect(code).toBe(0)
-    expect(messages.some((m) => m.includes("oh-my-openagent warning:") && m.includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
+    expect(messages.some((m) => m.includes("oh-my-openagent warning:") && m.includes("Legacy OMO configuration remains"))).toBe(true)
+    expect(messages.some((m) => m.includes("It is not part of the unified OMO config chain."))).toBe(true)
+    expect(messages.some((m) => m.includes("Fix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc."))).toBe(true)
     expect(messages.some((m) => m.includes("oh-my-openagent config source:") && m.includes("oh-my-openagent.jsonc"))).toBe(true)
     expect(messages.some((m) => m.includes("oh-my-openagent legacy config:") && m.includes("/tmp/oh-my-opencode.json"))).toBe(true)
   })

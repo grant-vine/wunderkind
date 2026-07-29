@@ -229,7 +229,7 @@ describe("config-manager coverage", () => {
   })
 
 
-  it("flags dual OMO config files when canonical and legacy basenames coexist", async () => {
+  it("flags legacy OMO config leftovers with upstream-aligned migration guidance", async () => {
     await withSandbox("omo-dual-config", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
       writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@latest"] }))
@@ -243,8 +243,42 @@ describe("config-manager coverage", () => {
       expect(info.configPath).toBe(canonicalJsonc)
       expect(info.configSource).toBe("oh-my-openagent.jsonc")
       expect(info.legacyConfigPath).toBe(legacyJson)
-      expect(info.dualConfigWarning).toContain("Legacy oh-my-opencode config was detected but is not used")
-      expect(info.dualConfigWarning).toContain(legacyJson)
+      expect(info.dualConfigWarning).toBe(
+        `Legacy OMO configuration remains\nLegacy configuration remains at ${legacyJson}. It is not part of the unified OMO config chain.\nFix: Run \`oh-my-openagent config migrate\` to move it into ~/.omo/omo.jsonc.`,
+      )
+    })
+  })
+
+  it("prefers ~/.omo/omo.jsonc as the active OMO config source once present", async () => {
+    await withSandbox("omo-unified-source", async (sandbox, mod) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      mkdirSync(join(sandbox.homeDir, ".omo"), { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@latest"] }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-openagent.jsonc"), JSON.stringify({ agents: { legacy: true } }))
+      writeFileSync(join(sandbox.homeDir, ".omo", "omo.jsonc"), JSON.stringify({ agents: { unified: true } }))
+
+      const info = mod.detectOmoVersionInfo()
+
+      expect(info.configPath).toBe(join(sandbox.homeDir, ".omo", "omo.jsonc"))
+      expect(info.configSource).toBe("omo.jsonc")
+    })
+  })
+
+  it("migrates both legacy OMO config basenames in one run", async () => {
+    await withSandbox("omo-dual-legacy-migrate", async (sandbox, mod) => {
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.json"), JSON.stringify({ profileA: { model: "openai/gpt-5" } }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.jsonc"), JSON.stringify({ profileB: { model: "openai/gpt-4.1" } }))
+
+      const result = mod.migrateLegacyOmoConfig()
+
+      expect(result.status).toBe("migrated")
+      expect(existsSync(join(sandbox.globalConfigDir, "oh-my-opencode.json"))).toBe(false)
+      expect(existsSync(join(sandbox.globalConfigDir, "oh-my-opencode.jsonc"))).toBe(false)
+      expect(JSON.parse(readFileSync(join(sandbox.homeDir, ".omo", "omo.jsonc"), "utf-8"))).toEqual({
+        profileA: { model: "openai/gpt-5" },
+        profileB: { model: "openai/gpt-4.1" },
+      })
     })
   })
 

@@ -742,7 +742,8 @@ describe("runTuiInstaller init handoff", () => {
       legacyConfigPath: "/tmp/oh-my-opencode.jsonc",
       staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
       versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
-      dualConfigWarning: "Legacy oh-my-opencode config was detected but is not used. Install or refresh oh-my-openagent and use oh-my-openagent.json or oh-my-openagent.jsonc. (/tmp/oh-my-opencode.jsonc)",
+      dualConfigWarning:
+        "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.jsonc. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
       freshness: null,
       freshnessSummary: {
         state: "version-skew",
@@ -758,7 +759,7 @@ describe("runTuiInstaller init handoff", () => {
     expect(code).toBe(0)
     expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6"))).toBe(true)
     expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("upstream get-local-version reports 3.17.6"))).toBe(true)
-    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("Legacy oh-my-opencode config was detected but is not used"))).toBe(true)
+    expect(mockLogWarn.mock.calls.some((call) => String(call[0] ?? "").includes("Legacy OMO configuration remains"))).toBe(true)
   })
 
 

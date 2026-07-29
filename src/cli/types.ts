@@ -156,6 +156,27 @@ export interface PluginVersionInfo {
   freshness?: OmoFreshnessInfo | null
 }
 
+export interface OmoConfigMigrationConflict {
+  readonly path: string
+  readonly legacyValue: unknown
+  readonly keptValue: unknown
+}
+
+export interface OmoConfigMigrationPreview {
+  readonly copiedPaths: readonly string[]
+  readonly keptPaths: readonly string[]
+  readonly conflicts: readonly OmoConfigMigrationConflict[]
+}
+
+export interface OmoConfigMigrationResult {
+  readonly status: "dry-run" | "error" | "migrated" | "noop"
+  readonly legacyConfigPath: string | null
+  readonly targetConfigPath: string
+  readonly preview: OmoConfigMigrationPreview
+  readonly message: string
+  readonly error?: string
+}
+
 export interface OmoInstallReadiness {
   installed: boolean
   registered: boolean

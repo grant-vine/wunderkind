@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.2
+
+- make `wunderkind migrate` a real legacy OMO config migration command that merges `oh-my-opencode` leftovers into `~/.omo/omo.jsonc` without clobbering existing unified config values
+- align doctor, installer, CLI help, tests, and docs around the upstream-style `Legacy OMO configuration remains` warning and migration guidance
+- refresh package, manifest, managed docs, and generated native agent version surfaces for the 0.25.2 cut
+
 ## 0.25.1
 
 - add a repo-local prompt answer-quality regression suite for the covered `latest-user`, `runtime-and-tools`, `contextual`, and `transcript` optimization seams
