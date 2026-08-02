@@ -35,6 +35,7 @@ export interface CanonicalAgentMetadata {
 export interface CanonicalSkillMetadata {
   readonly id: string
   readonly bucket: "promoted" | "wunderkind-specific" | "deprecated" | "internal" | "remove-now"
+  readonly sourceStatus: "shipped" | "inventory-only"
   readonly ownerAgentId: CanonicalAgentMetadata["id"]
   readonly description: string
   readonly sourcePath: `skills/${string}/SKILL.md`
@@ -71,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-  version: "0.25.2",
+    version: "0.25.3",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -103,6 +104,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     upstream: {
       omoCanonicalPackageName: "oh-my-openagent",
       omoLegacyPackageName: "oh-my-opencode",
+      omoTargetVersion: "4.19.3",
     },
     configSchemaUrl: "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   },
@@ -172,6 +174,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "agile-pm",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: sprint planning, task breakdown, agile, task decomposition, file conflict check, concern grouping, backlog management, story points, dependency ordering, parallel task safety, agent-friendly task structure, work breakdown structure, sprint retrospective, sprint review, velocity tracking, story splitting, definition of done, story review, acceptance criteria, INVEST criteria.",
       sourcePath: "skills/agile-pm/SKILL.md",
@@ -179,6 +182,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "code-health",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: code health audits, engineering hygiene assessments, coupling analysis, testability reviews, dependency classification, severity-ranked findings reports, and identifying systemic code quality patterns across a codebase.",
       sourcePath: "skills/code-health/SKILL.md",
@@ -186,6 +190,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "compliance-officer",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "ciso",
       description: "USE FOR: GDPR, POPIA, CCPA, CPRA, PIPEDA, LGPD, PDPA, APP, data protection, privacy compliance, data classification, consent management, data subject rights, breach notification, DPIA, data retention, cross-border transfer, ROPA, privacy policy, compliance gap assessment, and regulatory response planning.",
       sourcePath: "skills/compliance-officer/SKILL.md",
@@ -193,6 +198,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "db-architect",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: database schema design, Drizzle ORM, PostgreSQL, Neon DB, ERD generation, query analysis, EXPLAIN ANALYZE, index audit, migration diff, drizzle-kit, schema introspection, destructive operations (with confirmation), foreign key analysis.",
       sourcePath: "skills/db-architect/SKILL.md",
@@ -200,6 +206,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "design-an-interface",
       bucket: "deprecated",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description:
         "DEPRECATED: docs-history and detection-only reference for the retired design-an-interface route. Do not invoke for new work. Use improve-codebase-architecture for structural interface work, direct fullstack-wunderkind routing for narrow engineering judgement, or product/frontend exploration when user workflow or prototype evidence shapes the contract.",
@@ -208,6 +215,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "diagnose",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: deterministic bug diagnosis, reproducible failure loops, ranked hypotheses, focused instrumentation, root-cause isolation, and deciding the smallest proving regression surface before implementation starts.",
       sourcePath: "skills/diagnose/SKILL.md",
@@ -215,6 +223,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "docs-with-grill",
       bucket: "wunderkind-specific",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: context-aware documentation grilling, Matt-style grill-with-docs adaptation, repo-aware questioning, `CONTEXT.md` maintenance, validating domain language against code and docs, and preparing Wunderkind-native docs follow-up without copying external filesystem layouts verbatim.",
       sourcePath: "skills/docs-with-grill/SKILL.md",
@@ -222,6 +231,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "experimentation-analyst",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: A/B test design, experiment design, hypothesis formulation, sample size calculation, power analysis, minimum detectable effect, MDE, statistical significance, p-value, confidence interval, control group, treatment group, experiment duration, experiment readout, test results analysis, statistical testing, t-test, chi-square test, z-test, bootstrap, Bayesian A/B testing, frequentist testing, multiple testing correction, Bonferroni, false positive rate, false negative rate, Type I error, Type II error, guardrail metrics, novelty effect, network effects in experiments, holdout group, switchback test, multivariate test, MVT, feature flag rollout, staged rollout, experiment infrastructure.",
       sourcePath: "skills/experimentation-analyst/SKILL.md",
@@ -229,6 +239,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "grill-me",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: discovery interrogation, stress-testing requirements, uncovering ambiguity, product questioning, assumption checking, pseudo-orchestrator questioning, scope clarification, decision-tree exploration, requirement grilling, contradiction detection.",
       sourcePath: "skills/grill-me/SKILL.md",
@@ -236,6 +247,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "improve-codebase-architecture",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: architecture improvement, codebase deepening, module boundaries, seam design, coupling reduction, dependency review, deletion-test analysis, RFC creation, structural refactoring, and AI-navigable interfaces.",
       sourcePath: "skills/improve-codebase-architecture/SKILL.md",
@@ -243,6 +255,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "oss-licensing-advisor",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "legal-counsel",
       description: "USE FOR: OSS license audit, open source license compatibility, MIT license, Apache 2.0, GPL, LGPL, AGPL, copyleft risk, SPDX identifier, license compatibility matrix, dependency license check, third-party license compliance, FOSS compliance, OpenChain, REUSE spec, license header, contributor license agreement, CLA, individual CLA, corporate CLA, developer certificate of origin, DCO, license selection, choosing a license, dual licensing, commercial exception, license FAQ, license obligations, attribution requirements, notice file, NOTICE.txt, copyright notice, license compatibility with SaaS, OSS in commercial product.",
       sourcePath: "skills/oss-licensing-advisor/SKILL.md",
@@ -250,6 +263,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "pen-tester",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "ciso",
       description: "USE FOR: penetration testing, pen test, attack simulation, ethical hacking, OWASP ASVS, auth flow testing, JWT attack, force browsing, IDOR exploitation, privilege escalation, session hijacking, CSRF/XSS/injection testing, business logic testing, rate limit bypass, DAST, and vulnerability proof of concept.",
       sourcePath: "skills/pen-tester/SKILL.md",
@@ -257,6 +271,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "prd-pipeline",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: PRD workflow, product requirements, PRD to plan, PRD to issues, implementation planning, vertical slices, tracer bullets, filesystem workflow, GitHub workflow, product handoff, plan generation.",
       sourcePath: "skills/prd-pipeline/SKILL.md",
@@ -264,6 +279,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "security-analyst",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "ciso",
       description: "USE FOR: OWASP Top 10, vulnerability assessment, security code review, auth testing, broken access control, injection, XSS, CSRF, SSRF, dependency audit, CVE research, attack surface analysis, API security, and detailed defensive security review.",
       sourcePath: "skills/security-analyst/SKILL.md",
@@ -271,6 +287,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "setup-wunderkind-workflow",
       bucket: "wunderkind-specific",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: repo-local workflow setup, issue flow selection, triage vocabulary, glossary/docs location setup, `.omo` conventions, and adapting Matt-style setup patterns to Wunderkind-native files like `AGENTS.md` and `.omo/*`.",
       sourcePath: "skills/setup-wunderkind-workflow/SKILL.md",
@@ -278,13 +295,24 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "social-media-maven",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "marketing-wunderkind",
       description: "USE FOR: social media strategy, content calendar, content planning, hashtag research, platform strategy, engagement audit, content audit, social landing-page audit, campaign planning, community growth, platform mix, posting cadence, and social ROI.",
       sourcePath: "skills/social-media-maven/SKILL.md",
     },
     {
+      id: "supabase-architect",
+      bucket: "promoted",
+      sourceStatus: "shipped",
+      ownerAgentId: "fullstack-wunderkind",
+      description:
+        "USE FOR: Supabase auth architecture, RLS policy design, Realtime channels, Storage buckets, Edge Functions, branching, local dev, observability, and broader app-data composition where Supabase materially changes the system design. Do not use for generic backend work with no Supabase-specific architectural decision.",
+      sourcePath: "skills/supabase-architect/SKILL.md",
+    },
+    {
       id: "tdd",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: test-driven development, red-green-refactor loops, bug fixes with new regression coverage, and feature work that should be proven through public behavior. Use when implementing or repairing TypeScript code under Wunderkind's Bun-based test workflow.",
       sourcePath: "skills/tdd/SKILL.md",
@@ -292,6 +320,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "technical-writer",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "marketing-wunderkind",
       description: "USE FOR: technical writing, documentation writing, API documentation, getting started guide, quickstart guide, tutorial writing, conceptual guide, how-to guide, reference documentation, SDK documentation, integration guide, migration guide, upgrade guide, code examples, sample code, README writing, CONTRIBUTING.md, developer onboarding docs, docs architecture, documentation structure, docs site copy, Mintlify, Docusaurus, developer portal content, technical blog post, changelog writing, release notes, CLI help text, error message copy, interactive tutorial, FAQ writing, troubleshooting guide, OpenAPI spec review, webhook docs.",
       sourcePath: "skills/technical-writer/SKILL.md",
@@ -299,6 +328,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "triage-issue",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: bug triage, external PR triage, issue investigation, support handoff, incident reproduction, defect documentation, issue scoping, support-to-engineering transitions, acceptance clarity, backlog-ready issue shaping.",
       sourcePath: "skills/triage-issue/SKILL.md",
@@ -306,6 +336,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "ubiquitous-language",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: glossary maintenance, shared terminology cleanup, naming alignment, canonical terms, alias resolution, domain-language drift, and explicit updates to `.omo/glossary.md`.",
       sourcePath: "skills/ubiquitous-language/SKILL.md",
@@ -313,6 +344,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "vercel-architect",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "fullstack-wunderkind",
       description: "USE FOR: Vercel deployment, Next.js App Router, Edge Runtime, ISR/SSR/SSG, bundle analysis, performance optimisation, Neon DB branching, preview URLs, edge vs Node runtime decisions, Lighthouse CI, Core Web Vitals, and serverless route architecture.",
       sourcePath: "skills/vercel-architect/SKILL.md",
@@ -320,6 +352,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "visual-artist",
       bucket: "promoted",
+      sourceStatus: "shipped",
       ownerAgentId: "creative-director",
       description: "USE FOR: brand identity, colour palette, design system, design audit, token export, WCAG contrast, typography, spacing, visual design review, design language, brand guidelines, Tailwind theme, CSS custom properties, W3C design tokens.",
       sourcePath: "skills/visual-artist/SKILL.md",
@@ -327,6 +360,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "write-a-skill",
       bucket: "wunderkind-specific",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: authoring new Wunderkind-native skills, adapting external skill patterns, defining skill triggers, and deciding when a skill needs extra reference files or scripts. Use when work belongs in `skills/*/SKILL.md` instead of TypeScript.",
       sourcePath: "skills/write-a-skill/SKILL.md",
@@ -334,6 +368,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     {
       id: "caveman",
       bucket: "wunderkind-specific",
+      sourceStatus: "shipped",
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: terse mode, low-token replies, compressed communication, user asks like \"caveman mode\", \"be brief\", \"less tokens\", or \"talk like caveman\" while keeping technical accuracy intact.",
       sourcePath: "skills/caveman/SKILL.md",
@@ -769,6 +804,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     readonly upstream: {
       readonly omoCanonicalPackageName: string
       readonly omoLegacyPackageName: string
+      readonly omoTargetVersion: string
     }
     readonly configSchemaUrl: string
   }
@@ -805,6 +841,10 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
 export type CanonicalAgentId = (typeof WUNDERKIND_CANONICAL_MANIFEST.agents)[number]["id"]
 export type CanonicalSkillId = (typeof WUNDERKIND_CANONICAL_MANIFEST.skills)[number]["id"]
 export type NativeAssetKind = (typeof WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.kinds)[number]
+
+export function isShippedCanonicalSkill(skill: CanonicalSkillMetadata): boolean {
+  return skill.sourceStatus === "shipped"
+}
 
 export function getCanonicalClaudePluginManifest(): Record<string, string> {
   return {

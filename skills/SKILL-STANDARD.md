@@ -159,9 +159,10 @@ The convergence release classifies every current skill into one bucket. These bu
 
 Bucket counts are frozen by `.omo/contracts/wunderkind-upstream-convergence.jsonc` for this release:
 
-- Promoted retained specialist skills: 19
-- Wunderkind-specific skills: 4
-- Deprecated skills: 1
+- Promoted retained specialist skills: 20 (`promoted=20`)
+- Wunderkind-specific skills: 4 (`wunderkind-specific=4`)
+- Deprecated skills: 1 (`deprecated=1`)
+- Public/deprecated listed total: 25 (`public/deprecated total=25`)
 - Internal skills: 0
 - Remove-now skills: 0
 
@@ -203,6 +204,7 @@ Deprecated aliases and routes are docs, routing-guidance, and detection-only sur
 | `prd-pipeline` | `product-wunderkind` | Connects PRDs, work plans, and issue flow to Wunderkind's filesystem-first `.omo` workflow. |
 | `security-analyst` | `ciso` | Keeps defensive security review, OWASP analysis, and vulnerability assessment under the retained CISO owner. |
 | `social-media-maven` | `marketing-wunderkind` | Keeps channel strategy, content planning, and community growth inside the retained marketing owner. |
+| `supabase-architect` | `fullstack-wunderkind` | Keeps Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition under the retained engineering owner when Supabase materially changes the design. |
 | `tdd` | `fullstack-wunderkind` | Preserves the repo's Bun and strict TypeScript red-green-refactor execution loop under engineering stewardship. |
 | `technical-writer` | `marketing-wunderkind` | Keeps developer docs, launch guides, tutorials, and reference quality under the retained marketing and docs owner. |
 | `triage-issue` | `product-wunderkind` | Keeps support intake, reproduction clarity, acceptance criteria, and backlog handoff under product stewardship. |

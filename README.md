@@ -24,6 +24,15 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.25.3
+
+Wunderkind `0.25.3` aligns the upstream dependency baseline with `@opencode-ai/plugin@1.18.10`, `@opencode-ai/sdk@1.18.10`, and `oh-my-openagent@4.19.3`. It keeps `wunderkind migrate` focused on no-clobber legacy OMO config migration into `~/.omo/omo.jsonc`, adds the promoted `supabase-architect` route, and refreshes the bucketed public skill inventory to `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`.
+
+- bump OpenCode plugin and SDK pins to `1.18.10`, and direct OMO to `4.19.3`
+- add `supabase-architect` for Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition when Supabase materially changes architecture
+- preserve the hard-cut `.omo` posture while keeping `wunderkind migrate` scoped to legacy OMO config merges into `~/.omo/omo.jsonc`
+- update repo truth surfaces for the 20 promoted skills and 25 public/deprecated routes
+
 ## What's new in 0.25.2
 
 Wunderkind `0.25.2` turns `wunderkind migrate` into a real legacy OMO config migration command. It keeps the hard-cut `.omo` posture for project artifacts, but now gives operators the upstream-style fix path for leftover `oh-my-opencode` config files by merging them into `~/.omo/omo.jsonc` without clobbering existing unified config values.
@@ -678,7 +687,7 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 
 Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, review gates, and the bucketed skill inventory.
 
-The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 19 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only.
+The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 20 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only. Current inventory anchors are `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`.
 
 | Skill Name | Parent Agent | Domain |
 |---|---|---|
@@ -698,6 +707,7 @@ The public skill surface is intentionally bucketed, not a generic skill marketpl
 | `diagnose` | fullstack-wunderkind | Deterministic defect isolation, ranked hypotheses, and proving regression surfaces |
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
+| `supabase-architect` | fullstack-wunderkind | Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |
 | `tdd` | fullstack-wunderkind | Red-green-refactor loops for Bun + strict TypeScript |
 | `security-analyst` | ciso | OWASP Top 10, vulnerability assessment |

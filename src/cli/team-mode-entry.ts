@@ -13,7 +13,7 @@ export type WunderkindTeamModeConfigFormat = "json" | "jsonc"
 export type WunderkindTeamSpecScope = "project" | "user"
 export type WunderkindTeamEntryStatus = "team-ready" | "team-mode-disabled" | "team-spec-missing"
 
-interface CanonicalTeamModeConfigPath {
+interface UpstreamTeamModeGateConfigPath {
   readonly path: string
   readonly scope: WunderkindTeamModeConfigScope
   readonly format: WunderkindTeamModeConfigFormat
@@ -31,7 +31,7 @@ export interface WunderkindTeamEntryState {
   readonly teamName: string
   readonly status: WunderkindTeamEntryStatus
   readonly teamModeEnabled: boolean
-  readonly checkedConfigPaths: readonly CanonicalTeamModeConfigPath[]
+  readonly checkedConfigPaths: readonly UpstreamTeamModeGateConfigPath[]
   readonly activeConfigPath: string | null
   readonly activeConfigScope: WunderkindTeamModeConfigScope | null
   readonly activeConfigFormat: WunderkindTeamModeConfigFormat | null
@@ -51,7 +51,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-function getCanonicalTeamModeConfigPaths(cwd: string, homeDir: string): readonly CanonicalTeamModeConfigPath[] {
+function getUpstreamTeamModeGateConfigPaths(cwd: string, homeDir: string): readonly UpstreamTeamModeGateConfigPath[] {
   return [
     {
       path: join(cwd, ".opencode", "oh-my-openagent.jsonc"),
@@ -95,7 +95,7 @@ export function resolveWunderkindTeamEntryState(
   const cwd = options.cwd ?? process.cwd()
   const homeDir = options.homeDir ?? process.env.HOME ?? process.env.USERPROFILE ?? homedir()
   const teamName = options.teamName ?? DEFAULT_WUNDERKIND_TEAM_NAME
-  const checkedConfigPaths = getCanonicalTeamModeConfigPaths(cwd, homeDir)
+  const checkedConfigPaths = getUpstreamTeamModeGateConfigPaths(cwd, homeDir)
   const activeConfig = checkedConfigPaths.find((candidate) => existsSync(candidate.path)) ?? null
   const teamModeEnabled = activeConfig !== null && isTeamModeEnabled(readParsedTeamModeConfig(activeConfig.path))
   const projectTeamSpecPath = join(cwd, ".omo", "teams", teamName, "config.json")

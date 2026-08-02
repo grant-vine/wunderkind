@@ -25,6 +25,9 @@ export const SYMBOLS = {
   star: color.yellow("*"),
 }
 
+const LEGACY_OMO_MIGRATION_NOTE =
+  "Legacy OMO config leftovers are separate from install/upgrade. If doctor reports `Legacy OMO configuration remains`, run `bunx @grant-vine/wunderkind migrate` to merge them into ~/.omo/omo.jsonc." as const
+
 export function printHeader(isUpdate: boolean): void {
   const mode = isUpdate ? "Update" : "Install"
   console.log()
@@ -319,6 +322,7 @@ export async function runCliInstaller(args: InstallArgs): Promise<number> {
   printInfo(detectWunderkindPathReadiness().guidance)
   printInfo("Install registered Wunderkind with OpenCode. It does not bootstrap this repo.")
   printInfo("For repo-local readiness, run bunx @grant-vine/wunderkind init in the project you want to prepare.")
+  printInfo(LEGACY_OMO_MIGRATION_NOTE)
   console.log(`${SYMBOLS.star} ${color.bold(color.green(isUpdate ? "Configuration updated!" : "Installation complete!"))}`)
   console.log(`  Run ${color.cyan("opencode")} to start!`)
   console.log()
@@ -485,6 +489,8 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   if (args.scope === "global") {
     printInfo("Caveman is available per chat globally. Ask for \"caveman mode\" or enable a project default through init or project-scope upgrade.")
   }
+
+  printInfo(LEGACY_OMO_MIGRATION_NOTE)
 
   return 0
 }

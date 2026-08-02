@@ -28,20 +28,22 @@ This command is invoked as `/wunderkind-team`.
   - `<project>/.opencode/oh-my-openagent.json`
   - `~/.config/opencode/oh-my-openagent.jsonc`
   - `~/.config/opencode/oh-my-openagent.json`
+- Treat those files as the current upstream team-mode gate only. Do not describe them as the unified OMO config chain.
 - Read only the upstream `team_mode.enabled` key when deciding whether team mode is enabled.
 - Treat the canonical Wunderkind team spec paths as:
   - project scope: `<project>/.omo/teams/wunderkind-daily-brief/config.json`
   - user scope: `~/.omo/teams/wunderkind-daily-brief/config.json`
-- If the user asks for help or prerequisites, explain the detection rule, the canonical team-spec paths, and the fallback behavior before taking further action.
+- If the user asks for help or prerequisites, explain the detection rule, the canonical team-spec paths, the separate `~/.omo/omo.jsonc` migration story, and the fallback behavior before taking further action.
 - Do not silently ignore disabled team mode.
 - Do not hard-crash ordinary command flow if upstream team tools are unavailable in the current runtime.
-- Do not invent alternate config paths, legacy `oh-my-opencode` paths, or retained-agent member kinds that upstream team mode does not support.
+- Do not invent alternate config paths or retained-agent member kinds that upstream team mode does not support.
 
 ## Notes
 
 - The canonical intake opener is `What do you want to do today?`.
 - The canonical bootstrap command for the missing-spec case is `bunx @grant-vine/wunderkind team-bootstrap --scope=project --name=wunderkind-daily-brief` or `bunx @grant-vine/wunderkind team-bootstrap --scope=user --name=wunderkind-daily-brief`.
 - When fallback is required, say why: `team mode disabled`, `missing team spec`, or `team tools unavailable in this runtime`.
+- If the operator still has legacy OMO config leftovers, direct them to `bunx @grant-vine/wunderkind migrate`; do not present `/wunderkind-team` as a migration surface.
 - The fallback path is always solo `product-wunderkind` orchestration.
 
 <user-request>

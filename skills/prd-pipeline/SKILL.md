@@ -9,7 +9,7 @@ description: >
 
 # PRD Pipeline
 
-This skill converts product intent into a durable delivery workflow using the upstream idea-to-spec-to-ticket shape: clarify the idea, write the spec, break it into execution slices, and preserve acceptance checks. Wunderkind keeps the surface because `product-wunderkind` owns the product handoff, while the default output is filesystem-first `.omo` artifacts rather than an upstream GitHub-only issue flow.
+This skill converts product intent into a durable delivery workflow using the upstream idea-to-spec-to-ticket shape: clarify the idea, write the spec, break it into execution slices, and preserve acceptance checks. Wunderkind keeps the surface because `product-wunderkind` owns the product handoff, while the default output is filesystem-first `.omo` artifacts rather than an upstream GitHub-only issue flow; keep one frontier decision at a time.
 
 ## Workflow modes
 

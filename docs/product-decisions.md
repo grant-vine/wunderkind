@@ -5,7 +5,7 @@ Last refreshed: 2026-07-27T08-43-00Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.25.2`
+- **Current version**: `0.25.3`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -21,7 +21,7 @@ Docs and current flows should use `oh-my-openagent` as the canonical name. Any l
 `CONTEXT.md` is now a first-class artifact created by `wunderkind init` and consumed by docs + planning flows.
 
 ### 4. Keep the public skill surface bucketed
-The frozen convergence inventory exposes 19 promoted retained-specialist skills and 4 Wunderkind-specific workflow skills. `design-an-interface` remains only as deprecated replacement guidance and detection-only history.
+The frozen convergence inventory exposes 20 promoted retained-specialist skills and 4 Wunderkind-specific workflow skills (`promoted=20`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=25`). `supabase-architect` is the promoted Supabase route under `fullstack-wunderkind`. `design-an-interface` remains only as deprecated replacement guidance and detection-only history.
 
 ### 5. Adapt Matt Pocock-style docs grilling into Wunderkind-native lanes
 `docs-with-grill` is the retained-product adaptation of `grill-with-docs`, using `CONTEXT.md`, `AGENTS.md`, and `.omo/` instead of Matt’s repo layout.
@@ -39,23 +39,27 @@ Active upstream continuation/goal behavior should use Goal terminology. Ralph Lo
 Senpi task/orchestration docs are valid upstream context, but Wunderkind’s OpenCode-facing team-mode work should follow the OpenCode/OMO team model. Operator-facing local-model guidance that mentions Ollama tool-using agents must include the upstream `stream: false` workaround instead of promising streaming tool-call support.
 
 ### 10. Freeze the upstream-alignment targets for this wave
-The current alignment target is `oh-my-openagent` `4.19.2` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.7`. Docs/help/doctor surfaces should cite those targets when explaining this wave's compatibility contract.
+The current alignment target is `oh-my-openagent` `4.19.3` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.10`. Docs/help/doctor surfaces should cite those targets when explaining this wave's compatibility contract.
 
-### 11. Keep team-mode explicit and fallback-safe
+### 11. Keep `wunderkind migrate` scoped to legacy OMO config
+`wunderkind migrate` now owns no-clobber legacy OMO config migration into `~/.omo/omo.jsonc`. It must not be described as a `.sisyphus/` project-artifact migration surface, and it must not restore active legacy fallback execution.
+
+### 12. Keep team-mode explicit and fallback-safe
 Wunderkind team mode is a thin upstream-compatible layer: `wunderkind team-bootstrap` writes canonical `.omo/teams/<name>/config.json` specs, `/wunderkind-team` checks canonical `oh-my-openagent` config paths plus `team_mode.enabled`, and disabled or missing-spec states fall back to solo `product-wunderkind` orchestration.
 
-### 12. Keep `token-audit` audit-only while allowing one separate supplementary multi-level engine
+### 13. Keep `token-audit` audit-only while allowing one separate supplementary multi-level engine
 `token-audit` stays `audit-only`: no live prompt packing, no model-token truth claims, no OpenToken adoption, and no daemon or sidecar runtime. Separately, the supplementary prompt optimization engine may be enabled per project through config; it remains distinct from `token-audit`, does not introduce a public optimize command, and stays product-default-off. Its public setting model is capability-based: existing keys stay frozen, `promptOptimizationLevel` selects `latest-user`, `runtime-and-tools`, `contextual`, or `transcript`, and version-labelled config keys are out of contract. The levels are cumulative, the security-safe baseline applies whenever optimization is enabled, and unsupported features stay out of contract: no persistent cross-session memory writes and no automatic context injection. The `latest-user` seam remains latest-user-message-only, preserves immutable content byte-exact, and fail-closes with whole-message passthrough. Passthrough reason codes belong to runtime reports only, not summary metadata guidance.
 
-### 13. Treat this repo's active prompt optimization posture as local repo state, not product default
+### 14. Treat this repo's active prompt optimization posture as local repo state, not product default
 This repository currently keeps a project-local prompt optimization override enabled (`active`, `summary`, `120000` token budget, `1200` byte budget). That posture should be documented as local operating state for this explicitly enabled repo context, not as a claim that Wunderkind defaults to active optimization for all users. The final contract also freezes that omitting `promptOptimizationLevel` in legacy enabled repos preserves the current shipped behavior until an operator explicitly chooses one of the supported capability-based levels.
 
 ## Current feature set to highlight
 
 - Six retained specialist agents.
-- 19 promoted retained-specialist skills.
+- 20 promoted retained-specialist skills.
 - 4 Wunderkind-specific workflow skills.
 - 1 deprecated docs-history route with explicit replacement guidance: `design-an-interface` → `improve-codebase-architecture` for structural interface work, direct `fullstack-wunderkind` judgement for narrow engineering decisions, or product/frontend exploration when workflow or prototype evidence shapes the contract.
+- `supabase-architect` for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition.
 - `/docs-index` native command.
 - `/dream` native command.
 - `CONTEXT.md` bootstrap.

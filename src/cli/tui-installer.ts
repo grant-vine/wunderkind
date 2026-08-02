@@ -222,6 +222,7 @@ export async function runTuiInstaller(scopeHint?: InstallScope): Promise<number>
       config.secondaryRegulation ? `Secondary:           ${color.cyan(config.secondaryRegulation)}` : "",
       ``,
       `${color.dim("Use 'bunx @grant-vine/wunderkind init' for project-local market/regulation, team/personality, and docs settings.")}`,
+      `${color.dim("Legacy OMO config leftovers stay outside install/init. If doctor reports 'Legacy OMO configuration remains', run 'bunx @grant-vine/wunderkind migrate' to merge them into ~/.omo/omo.jsonc.")}`,
     ]
       .filter(Boolean)
       .join("\n"),

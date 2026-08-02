@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.25.3
+
+- align Wunderkind's upstream dependency baseline to `@opencode-ai/plugin@1.18.10`, `@opencode-ai/sdk@1.18.10`, and `oh-my-openagent@4.19.3`
+- add the promoted `supabase-architect` route under `fullstack-wunderkind`, covering Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition
+- refresh active docs and contract truth surfaces for the scoped `wunderkind migrate` contract, which migrates legacy OMO config into `~/.omo/omo.jsonc` and does not migrate `.sisyphus/` project artifacts
+- update the public skill inventory to `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`
+
 ## 0.25.2
 
 - make `wunderkind migrate` a real legacy OMO config migration command that merges `oh-my-opencode` leftovers into `~/.omo/omo.jsonc` without clobbering existing unified config values

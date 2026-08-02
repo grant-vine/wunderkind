@@ -16,6 +16,16 @@ const RUNTIME_SENTINELS = [
   "<!-- wunderkind:soul-runtime-start:",
 ] as const
 
+function renderAgentMarkdown(agentId: (typeof WUNDERKIND_AGENT_DEFINITIONS)[number]["id"]): string {
+  const definition = WUNDERKIND_AGENT_DEFINITIONS.find((item) => item.id === agentId)
+
+  if (definition === undefined) {
+    throw new Error(`Expected agent definition for ${agentId}`)
+  }
+
+  return renderNativeAgentMarkdown(definition)
+}
+
 describe("build-agents script", () => {
   it("regenerates every shipped agent markdown file from the manifest", async () => {
     const backups = new Map<string, string>()
@@ -54,9 +64,9 @@ describe("build-agents script", () => {
   })
 
   it("keeps high-signal generated prompt surfaces in the expected markdown shape", () => {
-    const marketing = readFileSync(join(AGENTS_DIR, "marketing-wunderkind.md"), "utf-8")
-    const ciso = readFileSync(join(AGENTS_DIR, "ciso.md"), "utf-8")
-    const fullstack = readFileSync(join(AGENTS_DIR, "fullstack-wunderkind.md"), "utf-8")
+    const marketing = renderAgentMarkdown("marketing-wunderkind")
+    const ciso = renderAgentMarkdown("ciso")
+    const fullstack = renderAgentMarkdown("fullstack-wunderkind")
 
     expect(marketing).toContain("---\ndescription: >")
     expect(marketing).toContain(`wunderkind_version: "${PACKAGE_VERSION}"`)

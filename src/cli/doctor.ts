@@ -576,7 +576,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       if (!hasEvidence) warnings.push(`missing project artifact directory: ${omoEvidencePath}`)
       if (hasLegacyArtifactRoot) {
         warnings.push(
-          `legacy ${LEGACY_PROJECT_ARTIFACT_PATHS.root}/ artifacts detected; move anything you still need into ${PRIMARY_PROJECT_ARTIFACT_PATHS.root}/ manually because wunderkind migrate has been removed`,
+          `legacy ${LEGACY_PROJECT_ARTIFACT_PATHS.root}/ artifacts detected; move anything you still need into ${PRIMARY_PROJECT_ARTIFACT_PATHS.root}/ manually because wunderkind migrate only handles legacy OMO config`,
         )
       }
       if (detected.docsEnabled && !hasDocsReadme) warnings.push(`missing docs README: ${docsReadmePath}`)
@@ -641,7 +641,7 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       line(".omo/plans present:", status(hasPlans))
       line(".omo/notepads present:", status(hasNotepads))
       line(".omo/evidence present:", status(hasEvidence))
-      line("legacy .sisyphus/ present:", status(hasLegacyArtifactRoot))
+      line("historical project artifacts present:", status(hasLegacyArtifactRoot))
       line("global native agents present:", status(globalNativeAgents.allPresent))
       line("global native commands present:", status(globalNativeCommands.allPresent))
       const dreamInstalled = getNativeCommandFilePaths().some((path) => path.endsWith("dream.md") && existsSync(path))

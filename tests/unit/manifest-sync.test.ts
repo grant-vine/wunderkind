@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test"
 import { readFileSync, statSync } from "node:fs"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -17,6 +18,16 @@ function readVersion(fileUrl: URL): string {
 
 function readText(fileUrl: URL): string {
   return readFileSync(fileUrl, "utf8")
+}
+
+function readPackageJson(): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(readText(new URL("../../package.json", import.meta.url)))
+
+  if (!isRecord(parsed)) {
+    throw new Error("Expected package.json to be a JSON object")
+  }
+
+  return parsed
 }
 
 describe("manifest version sync", () => {
@@ -59,6 +70,21 @@ describe("manifest version sync", () => {
 
     expect(packageBody).toContain("6 retained specialist agents")
     expect(packageBody).not.toContain("12 professional agents")
+  })
+
+  it("keeps the release dependency pins aligned with the canonical upstream baseline", () => {
+    const packageJson = readPackageJson()
+    const dependencies = packageJson.dependencies
+
+    expect(isRecord(dependencies)).toBe(true)
+    if (!isRecord(dependencies)) {
+      throw new Error("Expected package.json dependencies to be a record")
+    }
+
+    expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.10")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.10")
+    expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
   })
 })
 
@@ -205,8 +231,9 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.7")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.10")
+    expect(docsReadmeBody).not.toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.10")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

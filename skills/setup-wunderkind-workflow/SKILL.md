@@ -37,7 +37,7 @@ Write:
 - The repo needs a clear issue-tracker / PRD / triage contract before skills can operate consistently.
 - A maintainer wants Matt-style setup behavior, but adapted to Wunderkind-native locations.
 - The team has not agreed where glossary, triage, and workflow artifacts should live.
-- `prdPipelineMode`, triage vocabulary, or glossary conventions are confusing or implicit.
+- `prdPipelineMode`, triage vocabulary, glossary conventions, or any unresolved decision about where artifacts live are confusing or implicit.
 
 ## Anti-triggers
 

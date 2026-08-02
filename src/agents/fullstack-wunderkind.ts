@@ -45,8 +45,8 @@ export function createFullstackWunderkindAgent(model: string): AgentConfig {
   const slashCommandsSection = renderSlashCommandRegistry(RETAINED_AGENT_SLASH_COMMANDS["fullstack-wunderkind"])
 
   return {
-    description:
-      "USE FOR: full-stack development, frontend, backend, infrastructure, database, Astro, React, Next.js, TypeScript, JavaScript, Tailwind CSS, CSS, HTML, Node.js, Vercel deployment, Vercel, serverless, edge functions, API design, REST API, GraphQL, tRPC, authentication, authorisation, JWT, OAuth, session management, PostgreSQL, Neon DB, Drizzle ORM, schema design, migrations, query optimisation, EXPLAIN ANALYZE, index audit, ERD, database architecture, performance optimisation, Core Web Vitals, Lighthouse, bundle analysis, code splitting, lazy loading, ISR, SSR, SSG, App Router, Edge Runtime, Neon DB branching, preview URLs, CI/CD, GitHub Actions, automated testing, unit tests, integration tests, end-to-end tests, Playwright, security, OWASP, data privacy, architecture decisions, system design, microservices, monorepo, refactoring, code review, technical debt, dependency management, bun, npm, package management, environment variables, secrets management, logging, monitoring, error tracking, SRE, reliability engineering, SLO, SLI, SLA, error budget, incident response, postmortem, runbook, supportability review, observability, tracing, on-call, admin panel, admin tooling, internal tooling, web accessibility, WCAG, responsive design, mobile-first, dark mode, design system implementation, component library, Storybook, testing, debugging, technical triage, defect diagnosis, TDD execution, regression coverage, coverage analysis, DevOps, infrastructure as code, cloud, AI integration, LLM, embeddings, vector search, streaming.",
+      description:
+      "USE FOR: full-stack development, frontend, backend, infrastructure, database, Astro, React, Next.js, TypeScript, JavaScript, Tailwind CSS, CSS, HTML, Node.js, Vercel deployment, Vercel, serverless, edge functions, API design, REST API, GraphQL, tRPC, authentication, authorisation, JWT, OAuth, session management, PostgreSQL, Neon DB, Drizzle ORM, Supabase, Supabase Auth, RLS, Realtime, Storage, Supabase Edge Functions, schema design, migrations, query optimisation, EXPLAIN ANALYZE, index audit, ERD, database architecture, performance optimisation, Core Web Vitals, Lighthouse, bundle analysis, code splitting, lazy loading, ISR, SSR, SSG, App Router, Edge Runtime, Neon DB branching, preview URLs, CI/CD, GitHub Actions, automated testing, unit tests, integration tests, end-to-end tests, Playwright, security, OWASP, data privacy, architecture decisions, system design, microservices, monorepo, refactoring, code review, technical debt, dependency management, bun, npm, package management, environment variables, secrets management, logging, monitoring, error tracking, SRE, reliability engineering, SLO, SLI, SLA, error budget, incident response, postmortem, runbook, supportability review, observability, tracing, on-call, admin panel, admin tooling, internal tooling, web accessibility, WCAG, responsive design, mobile-first, dark mode, design system implementation, component library, Storybook, testing, debugging, technical triage, defect diagnosis, TDD execution, regression coverage, coverage analysis, DevOps, infrastructure as code, cloud, AI integration, LLM, embeddings, vector search, streaming.",
     mode: MODE,
     model,
     temperature: 0.1,
@@ -68,6 +68,7 @@ You make precise, pragmatic engineering decisions. You know when to be pragmatic
 - Frontend work across Astro, React, TypeScript, Tailwind, performance, accessibility, and browser-facing testing
 - Backend work across API design, auth/authz, serverless and background execution, storage, and operational boundaries
 - Database work across PostgreSQL, Drizzle, Neon, migrations, index strategy, and query optimisation
+- Supabase-specific app-data architecture across Auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, and observability via \`supabase-architect\` when the platform materially changes the design
 
 ### Reliability and Operations
 - Vercel, CI/CD, secrets, monitoring, structured debugging, and production-readiness gates
@@ -132,6 +133,8 @@ You make precise, pragmatic engineering decisions. You know when to be pragmatic
 **Use the \`diagnose\` skill before speculative rewriting.**
 
 **Use the \`tdd\` skill for execution-heavy quality work.**
+
+**Use the \`supabase-architect\` skill for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition when Supabase is the architectural hinge.**
 
 ---
 

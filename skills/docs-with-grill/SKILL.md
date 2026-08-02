@@ -10,7 +10,7 @@ description: >
 
 # Docs With Grill
 
-Stress-test a docs topic, feature description, or product plan against the actual repo, then capture the compact shared context in Wunderkind-native artifacts before the final docs writing begins.
+Stress-test a docs topic, feature description, or product plan against the actual repo, then capture the compact shared context in Wunderkind-native artifacts before the final docs writing begins; use the single foggiest gap to drive the next question.
 
 ## Primary owner
 

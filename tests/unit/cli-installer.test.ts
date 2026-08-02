@@ -421,6 +421,7 @@ describe("runCliInstaller", () => {
       expect(code).toBe(0)
       expect(messages.some((message) => message.includes("registered Wunderkind with OpenCode") && message.includes("does not bootstrap this repo"))).toBe(true)
       expect(messages.some((message) => message.includes("bunx @grant-vine/wunderkind init") && message.includes("repo-local readiness"))).toBe(true)
+      expect(messages.some((message) => message.includes("Legacy OMO config leftovers are separate") && message.includes("wunderkind migrate") && message.includes("~/.omo/omo.jsonc"))).toBe(true)
     } finally {
       console.log = origLog
     }
@@ -686,7 +687,7 @@ describe("runCliInstaller", () => {
         staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
         versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
         dualConfigWarning:
-          "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
+          "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified ~/.omo/omo.jsonc config chain.\nFix: Run `wunderkind migrate` to merge it into ~/.omo/omo.jsonc.",
       }),
     )
 
@@ -797,6 +798,23 @@ describe("runCliUpgrade", () => {
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(1)
     } finally {
       restore()
+    }
+  })
+
+  it("explains that upgrade keeps legacy OMO migration separate from native asset refresh", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const origLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+
+    try {
+      const code = await runCliUpgrade({ scope: "global" })
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("Legacy OMO config leftovers are separate") && message.includes("wunderkind migrate") && message.includes("~/.omo/omo.jsonc"))).toBe(true)
+    } finally {
+      console.log = origLog
     }
   })
 

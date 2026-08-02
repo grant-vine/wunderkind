@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import type { DetectedConfig, InstallConfig, InstallScope, OmoInstallReadiness } from "../../src/cli/types.js"
+import type {
+  DetectedConfig,
+  InstallConfig,
+  InstallScope,
+  OmoInstallReadiness,
+  WunderkindPathReadiness,
+} from "../../src/cli/types.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 const CONFIG_MANAGER_JS_URL = new URL("src/cli/config-manager/index.js", `file://${PROJECT_ROOT}`).href
@@ -40,6 +46,11 @@ const mockDetectOmoInstallReadiness = mock<() => OmoInstallReadiness>(() => ({
   interactiveInstallCommand: "bunx oh-my-openagent install",
   nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
   guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
+}))
+const mockDetectWunderkindPathReadiness = mock<() => WunderkindPathReadiness>(() => ({
+  available: false,
+  guidance:
+    "Direct `wunderkind` invocation is not available in the current shell PATH. Keep using `bunx @grant-vine/wunderkind ...`. Wunderkind does not auto-edit shell PATH.",
 }))
 const mockSpawnSync = mock(() => ({ status: 0, stdout: "", stderr: "" }))
 const mockAddPluginToOpenCodeConfig = mock(() => ({ success: true, configPath: "/tmp/opencode.json" }))
@@ -113,6 +124,7 @@ const configManagerFactory = () => ({
   readProjectWunderkindConfig: mockReadProjectWunderkindConfig,
   detectCurrentConfig: mockDetectCurrentConfig,
   detectOmoInstallReadiness: mockDetectOmoInstallReadiness,
+  detectWunderkindPathReadiness: mockDetectWunderkindPathReadiness,
   detectLegacyConfig: mockDetectLegacyConfig,
   detectGitHubWorkflowReadiness: () => ({
     isGitRepo: false,
@@ -249,6 +261,7 @@ describe("runTuiInstaller init handoff", () => {
     mockLogMessage.mockClear()
     mockAddPluginToOpenCodeConfig.mockClear()
     mockDetectOmoInstallReadiness.mockClear()
+    mockDetectWunderkindPathReadiness.mockClear()
     mockSpawnSync.mockClear()
     mockDetectLegacyConfig.mockClear()
     mockWriteWunderkindConfig.mockClear()
@@ -283,6 +296,11 @@ describe("runTuiInstaller init handoff", () => {
       interactiveInstallCommand: "bunx oh-my-openagent install",
       nonTuiInstallCommand: "bunx oh-my-openagent install --no-tui --claude=yes --gemini=no --copilot=yes",
       guidance: "Use oh-my-openagent for plugin entries, config basenames, and install commands.",
+    }))
+    mockDetectWunderkindPathReadiness.mockImplementation(() => ({
+      available: false,
+      guidance:
+        "Direct `wunderkind` invocation is not available in the current shell PATH. Keep using `bunx @grant-vine/wunderkind ...`. Wunderkind does not auto-edit shell PATH.",
     }))
     mockSpawnSync.mockImplementation(() => ({ status: 0, stdout: "", stderr: "" }))
     mockDetectLegacyConfig.mockImplementation(() => false)
@@ -350,6 +368,9 @@ describe("runTuiInstaller init handoff", () => {
       expect(mockText).toHaveBeenCalledTimes(0)
       const secondConfirmMsg = mockConfirm.mock.calls[1]?.[0] as { message: string }
       expect(secondConfirmMsg.message).toContain(".gitignore")
+      const installNoteBody = String(mockNote.mock.calls[0]?.[0] ?? "")
+      expect(installNoteBody).toContain("wunderkind migrate")
+      expect(installNoteBody).toContain("~/.omo/omo.jsonc")
       
       expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(1)
       expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(1)
@@ -742,9 +763,9 @@ describe("runTuiInstaller init handoff", () => {
       legacyConfigPath: "/tmp/oh-my-opencode.jsonc",
       staleOverrideWarning: "global oh-my-openagent 3.15.3 likely overrides newer cache 3.17.6",
       versionSkewWarning: "upstream get-local-version reports 3.17.6 but the loaded oh-my-openagent package is 3.15.3",
-      dualConfigWarning:
-        "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.jsonc. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
-      freshness: null,
+       dualConfigWarning:
+         "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.jsonc. It is not part of the unified ~/.omo/omo.jsonc config chain.\nFix: Run `wunderkind migrate` to merge it into ~/.omo/omo.jsonc.",
+       freshness: null,
       freshnessSummary: {
         state: "version-skew",
         guidance:

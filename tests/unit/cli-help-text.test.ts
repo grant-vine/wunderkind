@@ -104,7 +104,9 @@ describe("CLI help copy", () => {
     expect(output).toContain("Migrate legacy OMO config into the unified ~/.omo/omo.jsonc chain")
     expect(output).toContain("--dry-run")
     expect(output).toContain("--json")
-    expect(output).toContain("oh-my-openagent config migrate")
+    expect(output).toContain("oh-my-openagent.json")
+    expect(output).toContain("oh-my-opencode.json")
+    expect(output).toContain("Project artifacts stay manual-only and are not touched by this command.")
   })
 
   it("includes upgrade command help text", () => {

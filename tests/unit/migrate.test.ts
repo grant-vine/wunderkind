@@ -63,6 +63,7 @@ describe("runProjectArtifactMigration", () => {
       })
 
       expect(result.status).toBe(0)
+      expect(result.stdout).not.toContain(".sisyphus")
       expect(existsSync(join(legacyConfigDir, "oh-my-opencode.json"))).toBe(false)
       expect(JSON.parse(readFileSync(join(targetDir, "omo.jsonc"), "utf-8"))).toEqual({
         model: "openai/gpt-4.1",
@@ -128,6 +129,46 @@ describe("runProjectArtifactMigration", () => {
           conflicts: [],
         },
         message: `Dry run: would migrate ${join(legacyConfigDir, "oh-my-opencode.json")} into ~/.omo/omo.jsonc.`,
+      })
+    } finally {
+      rmSync(projectRoot, { recursive: true, force: true })
+    }
+  })
+
+  it("migrates legacy oh-my-openagent config files into ~/.omo/omo.jsonc too", () => {
+    const projectRoot = createProjectRoot()
+    const homeDir = join(projectRoot, "home")
+    const legacyConfigDir = join(homeDir, ".config", "opencode")
+    const targetDir = join(homeDir, ".omo")
+
+    try {
+      mkdirSync(legacyConfigDir, { recursive: true })
+      mkdirSync(targetDir, { recursive: true })
+      writeFileSync(join(legacyConfigDir, "oh-my-openagent.jsonc"), JSON.stringify({ agents: { legacy: true } }))
+      writeFileSync(join(targetDir, "omo.jsonc"), JSON.stringify({ existingOnly: "keep-me" }))
+
+      const result = spawnSync(process.execPath, [CLI_ENTRY, "migrate", "--json"], {
+        cwd: projectRoot,
+        encoding: "utf8",
+        env: { ...process.env, HOME: homeDir },
+      })
+
+      expect(result.status).toBe(0)
+      expect(existsSync(join(legacyConfigDir, "oh-my-openagent.jsonc"))).toBe(false)
+      expect(JSON.parse(readFileSync(join(targetDir, "omo.jsonc"), "utf-8"))).toEqual({
+        existingOnly: "keep-me",
+        agents: { legacy: true },
+      })
+      expect(JSON.parse(result.stdout)).toEqual({
+        status: "migrated",
+        legacyConfigPath: join(legacyConfigDir, "oh-my-openagent.jsonc"),
+        targetConfigPath: join(homeDir, ".omo", "omo.jsonc"),
+        preview: {
+          copiedPaths: ["agents"],
+          keptPaths: [],
+          conflicts: [],
+        },
+        message: `Migrated ${join(legacyConfigDir, "oh-my-openagent.jsonc")} into ~/.omo/omo.jsonc.`,
       })
     } finally {
       rmSync(projectRoot, { recursive: true, force: true })

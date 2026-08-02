@@ -828,6 +828,8 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(true)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(true)
       expect(messages.some((m) => m.includes("Project Health"))).toBe(true)
+      expect(messages.some((m) => m.includes("historical project artifacts present:"))).toBe(true)
+      expect(messages.some((m) => m.includes(".sisyphus"))).toBe(false)
       expect(messages.some((m) => m.includes("oh-my-openagent loaded package:"))).toBe(true)
       expect(messages.some((m) => m.includes("oh-my-openagent global package:"))).toBe(true)
     } finally {
@@ -1575,8 +1577,8 @@ describe("runDoctor", () => {
       registeredEntry: "oh-my-openagent@latest",
       registeredVersion: null,
       loadedVersion: "3.17.6",
-      configPath: "/tmp/oh-my-openagent.jsonc",
-      configSource: "oh-my-openagent.jsonc",
+      configPath: "/tmp/.omo/omo.jsonc",
+      configSource: "omo.jsonc",
       legacyConfigPath: "/tmp/oh-my-opencode.json",
       loadedPackagePath: "/tmp/node_modules/oh-my-openagent/package.json",
       registered: true,
@@ -1587,7 +1589,7 @@ describe("runDoctor", () => {
       staleOverrideWarning: null,
       versionSkewWarning: null,
       dualConfigWarning:
-        "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified OMO config chain.\nFix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc.",
+        "Legacy OMO configuration remains\nLegacy configuration remains at /tmp/oh-my-opencode.json. It is not part of the unified ~/.omo/omo.jsonc config chain.\nFix: Run `wunderkind migrate` to merge it into ~/.omo/omo.jsonc.",
       freshness: createOmoFreshness({
         status: "up-to-date",
         currentVersion: "3.17.6",
@@ -1599,10 +1601,7 @@ describe("runDoctor", () => {
 
     expect(code).toBe(0)
     expect(messages.some((m) => m.includes("oh-my-openagent warning:") && m.includes("Legacy OMO configuration remains"))).toBe(true)
-    expect(messages.some((m) => m.includes("It is not part of the unified OMO config chain."))).toBe(true)
-    expect(messages.some((m) => m.includes("Fix: Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc."))).toBe(true)
-    expect(messages.some((m) => m.includes("oh-my-openagent config source:") && m.includes("oh-my-openagent.jsonc"))).toBe(true)
-    expect(messages.some((m) => m.includes("oh-my-openagent legacy config:") && m.includes("/tmp/oh-my-opencode.json"))).toBe(true)
+    expect(messages.some((m) => m.includes("It is not part of the unified ~/.omo/omo.jsonc config chain."))).toBe(true)
   })
 
   it("shows Agent Personalities section in verbose mode", async () => {

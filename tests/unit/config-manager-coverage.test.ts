@@ -2,7 +2,7 @@ import { describe, expect, it, mock } from "bun:test"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
-import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
+import { WUNDERKIND_CANONICAL_MANIFEST, isShippedCanonicalSkill } from "../../src/agents/canonical-manifest.js"
 import { collectGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
 
 type ConfigManagerModule = typeof import("../../src/cli/config-manager/index.js")
@@ -201,7 +201,7 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("ignores legacy OMO config basenames until a canonical config exists", async () => {
+  it("treats legacy OMO config basenames as detection-only until ~/.omo/omo.jsonc exists", async () => {
     await withSandbox("omo-config-precedence", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
       writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@3.12.2"] }))
@@ -221,15 +221,21 @@ describe("config-manager coverage", () => {
       expect(mod.detectOmoVersionInfo().legacyConfigPath).toBe(legacyJson)
 
       writeFileSync(canonicalJsonc, JSON.stringify({ agents: {} }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJsonc)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(null)
+      expect(mod.detectOmoVersionInfo().legacyConfigPath).toBe(canonicalJsonc)
 
       writeFileSync(canonicalJson, JSON.stringify({ agents: {} }))
-      expect(mod.detectOmoVersionInfo().configPath).toBe(canonicalJson)
+      expect(mod.detectOmoVersionInfo().configPath).toBe(null)
+      expect(mod.detectOmoVersionInfo().legacyConfigPath).toBe(canonicalJson)
+
+      mkdirSync(join(sandbox.homeDir, ".omo"), { recursive: true })
+      writeFileSync(join(sandbox.homeDir, ".omo", "omo.jsonc"), JSON.stringify({ agents: { unified: true } }))
+      expect(mod.detectOmoVersionInfo().configPath).toBe(join(sandbox.homeDir, ".omo", "omo.jsonc"))
     })
   })
 
 
-  it("flags legacy OMO config leftovers with upstream-aligned migration guidance", async () => {
+  it("flags legacy OMO config leftovers with wunderkind migrate guidance", async () => {
     await withSandbox("omo-dual-config", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
       writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@latest"] }))
@@ -240,11 +246,11 @@ describe("config-manager coverage", () => {
       writeFileSync(legacyJson, JSON.stringify({ agents: {} }))
 
       const info = mod.detectOmoVersionInfo()
-      expect(info.configPath).toBe(canonicalJsonc)
-      expect(info.configSource).toBe("oh-my-openagent.jsonc")
-      expect(info.legacyConfigPath).toBe(legacyJson)
+      expect(info.configPath).toBe(null)
+      expect(info.configSource).toBe(null)
+      expect(info.legacyConfigPath).toBe(canonicalJsonc)
       expect(info.dualConfigWarning).toBe(
-        `Legacy OMO configuration remains\nLegacy configuration remains at ${legacyJson}. It is not part of the unified OMO config chain.\nFix: Run \`oh-my-openagent config migrate\` to move it into ~/.omo/omo.jsonc.`,
+        `Legacy OMO configuration remains\nLegacy configuration remains at ${canonicalJsonc}. It is not part of the unified ~/.omo/omo.jsonc config chain.\nFix: Run \`wunderkind migrate\` to merge it into ~/.omo/omo.jsonc.`,
       )
     })
   })
@@ -264,20 +270,26 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("migrates both legacy OMO config basenames in one run", async () => {
+  it("migrates all legacy OMO config basenames in one run", async () => {
     await withSandbox("omo-dual-legacy-migrate", async (sandbox, mod) => {
       mkdirSync(sandbox.globalConfigDir, { recursive: true })
-      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.json"), JSON.stringify({ profileA: { model: "openai/gpt-5" } }))
-      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.jsonc"), JSON.stringify({ profileB: { model: "openai/gpt-4.1" } }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-openagent.json"), JSON.stringify({ profileA: { model: "openai/gpt-5" } }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-openagent.jsonc"), JSON.stringify({ profileB: { model: "openai/gpt-4.1" } }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.json"), JSON.stringify({ profileC: { model: "openai/gpt-4.1-mini" } }))
+      writeFileSync(join(sandbox.globalConfigDir, "oh-my-opencode.jsonc"), JSON.stringify({ profileD: { model: "openai/gpt-4.1-nano" } }))
 
       const result = mod.migrateLegacyOmoConfig()
 
       expect(result.status).toBe("migrated")
+      expect(existsSync(join(sandbox.globalConfigDir, "oh-my-openagent.json"))).toBe(false)
+      expect(existsSync(join(sandbox.globalConfigDir, "oh-my-openagent.jsonc"))).toBe(false)
       expect(existsSync(join(sandbox.globalConfigDir, "oh-my-opencode.json"))).toBe(false)
       expect(existsSync(join(sandbox.globalConfigDir, "oh-my-opencode.jsonc"))).toBe(false)
       expect(JSON.parse(readFileSync(join(sandbox.homeDir, ".omo", "omo.jsonc"), "utf-8"))).toEqual({
         profileA: { model: "openai/gpt-5" },
         profileB: { model: "openai/gpt-4.1" },
+        profileC: { model: "openai/gpt-4.1-mini" },
+        profileD: { model: "openai/gpt-4.1-nano" },
       })
     })
   })
@@ -1027,7 +1039,8 @@ describe("config-manager coverage", () => {
       expect(writeResult.success).toBe(true)
 
       const installableSkills = WUNDERKIND_CANONICAL_MANIFEST.skills.filter(
-        (skill) => skill.bucket === "promoted" || skill.bucket === "wunderkind-specific",
+        (skill) =>
+          isShippedCanonicalSkill(skill) && (skill.bucket === "promoted" || skill.bucket === "wunderkind-specific"),
       )
       const blockedSkills = WUNDERKIND_CANONICAL_MANIFEST.skills.filter(
         (skill) => skill.bucket !== "promoted" && skill.bucket !== "wunderkind-specific",

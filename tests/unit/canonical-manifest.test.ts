@@ -5,6 +5,7 @@ import { WUNDERKIND_AGENT_DEFINITIONS } from "../../src/agents/manifest.js"
 import {
   WUNDERKIND_CANONICAL_MANIFEST,
   getCanonicalClaudePluginManifest,
+  isShippedCanonicalSkill,
   renderCanonicalOhMyOpenagentTemplate,
 } from "../../src/agents/canonical-manifest.js"
 import { renderNativeAgentMarkdown } from "../../src/agents/render-markdown.js"
@@ -160,7 +161,7 @@ describe("canonical manifest drift guards", () => {
 
   it("keeps skill frontmatter, owner lines, and bucket coverage aligned with the canonical manifest", () => {
     const expectedBuckets = {
-      promoted: 19,
+      promoted: 20,
       "wunderkind-specific": 4,
       deprecated: 1,
       internal: 0,
@@ -169,16 +170,36 @@ describe("canonical manifest drift guards", () => {
     const bucketCounts = new Map<string, number>(Object.keys(expectedBuckets).map((bucket) => [bucket, 0]))
 
     for (const skill of WUNDERKIND_CANONICAL_MANIFEST.skills) {
-      const markdown = readTextFile(new URL(`../../${skill.sourcePath}`, import.meta.url))
-      const frontmatter = parseMarkdownFrontmatter(markdown)
+      if (isShippedCanonicalSkill(skill)) {
+        const markdown = readTextFile(new URL(`../../${skill.sourcePath}`, import.meta.url))
+        const frontmatter = parseMarkdownFrontmatter(markdown)
 
-      expect(frontmatter.name).toBe(skill.id)
-      expect(frontmatter.description).toBe(normalizeWhitespace(skill.description))
-      expect(readOwnerLine(markdown)).toBe(`wunderkind:${skill.ownerAgentId}`)
+        expect(frontmatter.name).toBe(skill.id)
+        expect(frontmatter.description).toBe(normalizeWhitespace(skill.description))
+        expect(readOwnerLine(markdown)).toBe(`wunderkind:${skill.ownerAgentId}`)
+      }
+
       bucketCounts.set(skill.bucket, (bucketCounts.get(skill.bucket) ?? 0) + 1)
     }
 
+    expect(WUNDERKIND_CANONICAL_MANIFEST.skills).toHaveLength(25)
     expect(Object.fromEntries(bucketCounts)).toEqual(expectedBuckets)
+  })
+
+  it("ships supabase-architect as a promoted fullstack-owned public skill", () => {
+    const supabaseSkill = WUNDERKIND_CANONICAL_MANIFEST.skills.find((skill) => skill.id === "supabase-architect")
+
+    expect(supabaseSkill).toBeDefined()
+    if (supabaseSkill === undefined) {
+      throw new Error("Expected canonical manifest to include supabase-architect")
+    }
+
+    expect(supabaseSkill.bucket).toBe("promoted")
+    expect(supabaseSkill.sourceStatus).toBe("shipped")
+    expect(supabaseSkill.ownerAgentId).toBe("fullstack-wunderkind")
+    expect(supabaseSkill.description).toContain("Supabase auth architecture")
+    expect(supabaseSkill.description).toContain("broader app-data composition")
+    expect(supabaseSkill.description).toContain("Do not use for generic backend work")
   })
 
   it("keeps docs-output metadata aligned with the canonical manifest", () => {

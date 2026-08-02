@@ -4,7 +4,11 @@ import { homedir } from "node:os"
 import { basename, dirname, join, relative } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import { fileURLToPath } from "node:url"
-import { WUNDERKIND_CANONICAL_MANIFEST, type NativeAssetKind } from "../../agents/canonical-manifest.js"
+import {
+  WUNDERKIND_CANONICAL_MANIFEST,
+  isShippedCanonicalSkill,
+  type NativeAssetKind,
+} from "../../agents/canonical-manifest.js"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
 import { getCanonicalPackageVersion, readWunderkindAgentMarkdownVersion } from "../../agents/versioning.js"
@@ -56,7 +60,7 @@ const OMO_CANONICAL_PACKAGE_NAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.up
 const NATIVE_ASSET_VERSION_MARKER_FILENAME = WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.markerFilename
 const LEGACY_OMO_CONFIG_WARNING_TITLE = "Legacy OMO configuration remains" as const
 const LEGACY_OMO_CONFIG_WARNING_FIX =
-  "Run `oh-my-openagent config migrate` to move it into ~/.omo/omo.jsonc." as const
+  "Run `wunderkind migrate` to merge it into ~/.omo/omo.jsonc." as const
 
 function isDesignTool(value: unknown): value is DesignTool {
   return value === "none" || value === "google-stitch"
@@ -486,25 +490,15 @@ function resolveOmoConfigPath(): {
 } {
   const paths = resolveConfigManagerPaths()
   const unifiedJsoncExists = existsSync(paths.omoUnifiedConfigJsonc)
-
-  const canonicalJsonExists = existsSync(paths.omoConfigJson)
-  const canonicalJsoncExists = existsSync(paths.omoConfigJsonc)
-  const legacyJsonExists = existsSync(paths.omoLegacyConfigJson)
-  const legacyJsoncExists = existsSync(paths.omoLegacyConfigJsonc)
-  const legacyPath = legacyJsonExists
-    ? paths.omoLegacyConfigJson
-    : legacyJsoncExists
-      ? paths.omoLegacyConfigJsonc
-      : null
+  const legacyPath = [
+    paths.omoConfigJson,
+    paths.omoConfigJsonc,
+    paths.omoLegacyConfigJson,
+    paths.omoLegacyConfigJsonc,
+  ].find((filePath) => existsSync(filePath)) ?? null
 
   if (unifiedJsoncExists) {
     return { path: paths.omoUnifiedConfigJsonc, format: "jsonc", source: "omo.jsonc", legacyPath }
-  }
-  if (canonicalJsonExists) {
-    return { path: paths.omoConfigJson, format: "json", source: "oh-my-openagent.json", legacyPath }
-  }
-  if (canonicalJsoncExists) {
-    return { path: paths.omoConfigJsonc, format: "jsonc", source: "oh-my-openagent.jsonc", legacyPath }
   }
 
   return { path: null, format: "none", source: "default", legacyPath }
@@ -513,7 +507,7 @@ function resolveOmoConfigPath(): {
 function formatLegacyOmoConfigWarning(legacyPath: string): string {
   return [
     LEGACY_OMO_CONFIG_WARNING_TITLE,
-    `Legacy configuration remains at ${legacyPath}. It is not part of the unified OMO config chain.`,
+    `Legacy configuration remains at ${legacyPath}. It is not part of the unified ~/.omo/omo.jsonc config chain.`,
     `Fix: ${LEGACY_OMO_CONFIG_WARNING_FIX}`,
   ].join("\n")
 }
@@ -609,7 +603,12 @@ function mergeLegacyConfigIntoTarget(input: {
 
 export function migrateLegacyOmoConfig(options: { dryRun?: boolean } = {}): OmoConfigMigrationResult {
   const paths = resolveConfigManagerPaths()
-  const legacyConfigPaths = [paths.omoLegacyConfigJson, paths.omoLegacyConfigJsonc].filter((filePath) => existsSync(filePath))
+  const legacyConfigPaths = [
+    paths.omoConfigJson,
+    paths.omoConfigJsonc,
+    paths.omoLegacyConfigJson,
+    paths.omoLegacyConfigJsonc,
+  ].filter((filePath) => existsSync(filePath))
   const legacyConfigPath = legacyConfigPaths[0] ?? null
 
   if (legacyConfigPath === null) {
@@ -980,7 +979,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     registeredVersion: normalizeDependencyVersion(registeredCanonicalEntry),
     loadedVersion: packageInfo.loaded.version,
     configPath,
-    configSource: omoConfigResolution.source,
+    configSource: configPath === null ? null : omoConfigResolution.source,
     legacyConfigPath: omoConfigResolution.legacyPath,
     loadedPackagePath: packageInfo.loaded.packagePath,
     registered: registeredCanonicalEntry !== null,
@@ -1038,6 +1037,13 @@ export function summarizeOmoFreshness(versionInfo: PluginVersionInfo): OmoFreshn
       state: "version-skew",
       guidance:
         "oh-my-openagent reports a newer current version than the package OpenCode appears to have loaded — rerun `bunx oh-my-openagent install`, then restart OpenCode so the active plugin matches upstream.",
+    }
+  }
+
+  if (versionInfo.dualConfigWarning) {
+    return {
+      state: "not-verified",
+      guidance: "Run `wunderkind migrate` to merge the legacy config into ~/.omo/omo.jsonc.",
     }
   }
 
@@ -1799,7 +1805,10 @@ function collectFilesRecursively(rootDir: string): string[] {
 
 function getPackagedSkillDirectories(): string[] {
   return WUNDERKIND_CANONICAL_MANIFEST.skills
-    .filter((skill) => skill.bucket === "promoted" || skill.bucket === "wunderkind-specific")
+    .filter(
+      (skill) =>
+        isShippedCanonicalSkill(skill) && (skill.bucket === "promoted" || skill.bucket === "wunderkind-specific"),
+    )
     .map((skill) => fileURLToPath(new URL(`../../../${skill.sourcePath}`, import.meta.url)))
     .map((filePath) => dirname(filePath))
     .filter((dirPath, index, array) => array.indexOf(dirPath) === index)

@@ -493,7 +493,8 @@ program
     [
       "Migrate legacy OMO config into the unified ~/.omo/omo.jsonc chain.",
       "",
-      "This mirrors the upstream oh-my-openagent config-migration fix path for leftover legacy oh-my-opencode config files.",
+      "Migrates leftover legacy oh-my-openagent.json[c] and oh-my-opencode.json[c] files with no-clobber merge semantics.",
+      "Project artifacts stay manual-only and are not touched by this command.",
     ].join("\n"),
   )
   .option("--dry-run", "Preview the migration into ~/.omo/omo.jsonc without writing files")
@@ -508,7 +509,7 @@ program
       "  bunx @grant-vine/wunderkind migrate --json",
       "",
       "Use this when doctor reports 'Legacy OMO configuration remains'.",
-      "This command follows the same operator story as `oh-my-openagent config migrate`.",
+      "It migrates only legacy OMO config into ~/.omo/omo.jsonc and never moves project artifacts.",
     ].join("\n"),
   )
   .action(async (opts: { dryRun?: boolean | undefined; json?: boolean | undefined }) => {

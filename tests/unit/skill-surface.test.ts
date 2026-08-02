@@ -73,3 +73,36 @@ describe("runtime-context precedence regressions", () => {
     expect(prompt).not.toContain("first reading `region` and `primaryRegulation` from `.wunderkind/wunderkind.config.jsonc`")
   })
 })
+
+describe("supabase-architect boundaries", () => {
+  it("pins the retained owner and explicit neighboring-route boundaries in the eager router core", () => {
+    const skillPath = join(PROJECT_ROOT, "skills", "supabase-architect", "SKILL.md")
+    const skillContent = readFileSync(skillPath, "utf8")
+
+    expect(skillContent).toContain("**Owned by:** wunderkind:fullstack-wunderkind")
+    expect(skillContent).toContain("**Bucket:** promoted retained specialist")
+    expect(skillContent).toContain("broader app-data composition")
+    expect(skillContent).toContain("db-architect")
+    expect(skillContent).toContain("vercel-architect")
+    expect(skillContent).toContain("security-analyst")
+    expect(skillContent).toContain("compliance-officer")
+    expect(skillContent).toContain("improve-codebase-architecture")
+    expect(skillContent).toContain("Do not become a generic backend route")
+  })
+
+  it("keeps the companion reference aligned with the official-source and escalation boundary contract", () => {
+    const referencePath = join(PROJECT_ROOT, "skills", "supabase-architect", "REFERENCE.md")
+    const referenceContent = readFileSync(referencePath, "utf8")
+
+    expect(referenceContent).toContain("owner=fullstack-wunderkind")
+    expect(referenceContent).toContain("route: `supabase-architect`")
+    expect(referenceContent).toContain("https://supabase.com/docs/guides/auth/row-level-security")
+    expect(referenceContent).toContain("https://github.com/supabase/agent-skills")
+    expect(referenceContent).toContain("https://github.com/supabase/mcp")
+    expect(referenceContent).toContain("db-architect")
+    expect(referenceContent).toContain("vercel-architect")
+    expect(referenceContent).toContain("security-analyst")
+    expect(referenceContent).toContain("compliance-officer")
+    expect(referenceContent).toContain("improve-codebase-architecture")
+  })
+})

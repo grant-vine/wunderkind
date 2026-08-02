@@ -5,9 +5,10 @@ Last refreshed: 2026-07-28T00-00-00Z
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
-- **Plugin package**: `@opencode-ai/plugin@1.18.7`
-- **OMO dependency**: `oh-my-openagent@4.19.2`
-- **Current Wunderkind package version**: `0.25.2`
+- **Plugin package**: `@opencode-ai/plugin@1.18.10`
+- **SDK package**: `@opencode-ai/sdk@1.18.10`
+- **OMO dependency**: `oh-my-openagent@4.19.3`
+- **Current Wunderkind package version**: `0.25.3`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 
 ## Architecture decisions
@@ -26,7 +27,10 @@ Docs output is validated as a relative, project-local path with no parent traver
 This gives both bundle-level and per-agent installed-state visibility.
 
 ### Compatibility logic lives in config-manager/doctor/install surfaces
-Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade), with legacy names limited to detection-only warnings instead of fallback execution.
+Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade), with legacy names limited to `wunderkind migrate` guidance and detection warnings instead of fallback execution. `wunderkind migrate` migrates legacy OMO config into `~/.omo/omo.jsonc` with no-clobber semantics and does not migrate `.sisyphus/` project artifacts.
+
+### Supabase routing is a promoted engineering skill
+`supabase-architect` is the promoted `fullstack-wunderkind` route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The skill inventory is `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`.
 
 ### CONTEXT.md is part of project bootstrap
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
@@ -46,8 +50,9 @@ The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-con
 ## Dependency posture
 
 - Key direct dependencies are current for this upgrade cycle:
-  - `oh-my-openagent@4.19.2`
-  - `@opencode-ai/plugin@1.18.7`
+  - `oh-my-openagent@4.19.3`
+  - `@opencode-ai/plugin@1.18.10`
+  - `@opencode-ai/sdk@1.18.10`
 - Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
 - Patched transitive overrides currently pin:
   - `fast-uri@3.1.2`
