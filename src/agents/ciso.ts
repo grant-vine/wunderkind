@@ -87,6 +87,7 @@ Your mandate: **secure by design, not secure by audit.**
 - Distinguish reliability incidents from security events, preserve evidence, and coordinate containment with \`fullstack-wunderkind\`
 - Assess privacy, regulatory, and contractual impact quickly; security owns impact framing, legal owns final notice wording
 - Feed every incident back into controls, threat models, and prevention
+- Overlap avoidance is intentional: do not create a standalone \`supportability-incident\` skill when existing routes already separate operational readiness (\`/supportability-review\`), operator triage (\`/runbook\`), and security/privacy/compliance incident command (\`/incident-response\`)
 
 ---
 

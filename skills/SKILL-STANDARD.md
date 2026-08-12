@@ -159,10 +159,10 @@ The convergence release classifies every current skill into one bucket. These bu
 
 Bucket counts are frozen by `.omo/contracts/wunderkind-upstream-convergence.jsonc` for this release:
 
-- Promoted retained specialist skills: 20 (`promoted=20`)
+- Promoted retained specialist skills: 22 (`promoted=22`)
 - Wunderkind-specific skills: 4 (`wunderkind-specific=4`)
 - Deprecated skills: 1 (`deprecated=1`)
-- Public/deprecated listed total: 25 (`public/deprecated total=25`)
+- Public/deprecated listed total: 27 (`public/deprecated total=27`)
 - Internal skills: 0
 - Remove-now skills: 0
 
@@ -202,9 +202,11 @@ Deprecated aliases and routes are docs, routing-guidance, and detection-only sur
 | `oss-licensing-advisor` | `legal-counsel` | Keeps open source license compatibility and notice obligations under the retained legal owner. |
 | `pen-tester` | `ciso` | Keeps offensive security testing and exploitability framing under the retained security owner. |
 | `prd-pipeline` | `product-wunderkind` | Connects PRDs, work plans, and issue flow to Wunderkind's filesystem-first `.omo` workflow. |
+| `release-upgrade` | `product-wunderkind` | Keeps release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep under the retained product owner. |
 | `security-analyst` | `ciso` | Keeps defensive security review, OWASP analysis, and vulnerability assessment under the retained CISO owner. |
 | `social-media-maven` | `marketing-wunderkind` | Keeps channel strategy, content planning, and community growth inside the retained marketing owner. |
 | `supabase-architect` | `fullstack-wunderkind` | Keeps Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition under the retained engineering owner when Supabase materially changes the design. |
+| `platform-compatibility` | `fullstack-wunderkind` | Keeps host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions under the retained engineering owner. |
 | `tdd` | `fullstack-wunderkind` | Preserves the repo's Bun and strict TypeScript red-green-refactor execution loop under engineering stewardship. |
 | `technical-writer` | `marketing-wunderkind` | Keeps developer docs, launch guides, tutorials, and reference quality under the retained marketing and docs owner. |
 | `triage-issue` | `product-wunderkind` | Keeps support intake, reproduction clarity, acceptance criteria, and backlog handoff under product stewardship. |
@@ -234,6 +236,10 @@ None in this release.
 ### Remove-now skills
 
 None in this release. No additional skill names may be removed without explicit scope-change approval.
+
+### Explicit non-skill routes in this wave
+
+`supportability-incident` is intentionally **not** a standalone skill in this release. overlap avoidance is deliberate: route production-readiness and observability review through `/supportability-review`, operator alert triage and escalation steps through `/runbook`, and security, privacy, or compliance incidents through `/incident-response` instead of adding a generic overlapping skill.
 
 ## Change policy
 

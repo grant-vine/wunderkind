@@ -161,7 +161,7 @@ describe("canonical manifest drift guards", () => {
 
   it("keeps skill frontmatter, owner lines, and bucket coverage aligned with the canonical manifest", () => {
     const expectedBuckets = {
-      promoted: 20,
+      promoted: 22,
       "wunderkind-specific": 4,
       deprecated: 1,
       internal: 0,
@@ -182,7 +182,7 @@ describe("canonical manifest drift guards", () => {
       bucketCounts.set(skill.bucket, (bucketCounts.get(skill.bucket) ?? 0) + 1)
     }
 
-    expect(WUNDERKIND_CANONICAL_MANIFEST.skills).toHaveLength(25)
+    expect(WUNDERKIND_CANONICAL_MANIFEST.skills).toHaveLength(27)
     expect(Object.fromEntries(bucketCounts)).toEqual(expectedBuckets)
   })
 
@@ -200,6 +200,58 @@ describe("canonical manifest drift guards", () => {
     expect(supabaseSkill.description).toContain("Supabase auth architecture")
     expect(supabaseSkill.description).toContain("broader app-data composition")
     expect(supabaseSkill.description).toContain("Do not use for generic backend work")
+  })
+
+  it("ships release-upgrade as a promoted product-owned public skill", () => {
+    const releaseUpgradeSkill = WUNDERKIND_CANONICAL_MANIFEST.skills.find((skill) => skill.id === "release-upgrade")
+
+    expect(releaseUpgradeSkill).toBeDefined()
+    if (releaseUpgradeSkill === undefined) {
+      throw new Error("Expected canonical manifest to include release-upgrade")
+    }
+
+    expect(releaseUpgradeSkill.bucket).toBe("promoted")
+    expect(releaseUpgradeSkill.sourceStatus).toBe("shipped")
+    expect(releaseUpgradeSkill.ownerAgentId).toBe("product-wunderkind")
+    expect(releaseUpgradeSkill.description).toContain("release-note synthesis")
+    expect(releaseUpgradeSkill.description).toContain("version bump planning")
+    expect(releaseUpgradeSkill.description).toContain("rollback-conscious release prep")
+  })
+
+  it("ships platform-compatibility as a promoted fullstack-owned public skill", () => {
+    const platformCompatibilitySkill = WUNDERKIND_CANONICAL_MANIFEST.skills.find(
+      (skill) => skill.id === "platform-compatibility",
+    )
+
+    expect(platformCompatibilitySkill).toBeDefined()
+    if (platformCompatibilitySkill === undefined) {
+      throw new Error("Expected canonical manifest to include platform-compatibility")
+    }
+
+    expect(platformCompatibilitySkill.bucket).toBe("promoted")
+    expect(platformCompatibilitySkill.sourceStatus).toBe("shipped")
+    expect(platformCompatibilitySkill.ownerAgentId).toBe("fullstack-wunderkind")
+    expect(platformCompatibilitySkill.description).toContain("host/plugin/config-chain drift")
+    expect(platformCompatibilitySkill.description).toContain("OpenCode/OMO contract changes")
+    expect(platformCompatibilitySkill.description).toContain("migration-boundary decisions")
+  })
+
+  it("intentionally rejects supportability-incident as a shipped skill because existing routes already cover it", () => {
+    const skillIds: readonly string[] = WUNDERKIND_CANONICAL_MANIFEST.skills.map((skill) => skill.id)
+    const supportabilityReviewCommand = WUNDERKIND_CANONICAL_MANIFEST.commands.generated.find(
+      (command) => command.command === "/supportability-review <service>",
+    )
+    const runbookCommand = WUNDERKIND_CANONICAL_MANIFEST.commands.generated.find(
+      (command) => command.command === "/runbook <service> <alert>",
+    )
+    const incidentResponseCommand = WUNDERKIND_CANONICAL_MANIFEST.commands.generated.find(
+      (command) => command.command === "/incident-response <incident type>",
+    )
+
+    expect(skillIds.includes("supportability-incident")).toBe(false)
+    expect(supportabilityReviewCommand).toBeDefined()
+    expect(runbookCommand).toBeDefined()
+    expect(incidentResponseCommand).toBeDefined()
   })
 
   it("keeps docs-output metadata aligned with the canonical manifest", () => {

@@ -30,6 +30,30 @@ function readPackageJson(): Record<string, unknown> {
   return parsed
 }
 
+function getPublicSkillInventoryCounts(): {
+  readonly promoted: number
+  readonly wunderkindSpecific: number
+  readonly deprecated: number
+  readonly publicDeprecatedTotal: number
+} {
+  let promoted = 0
+  let wunderkindSpecific = 0
+  let deprecated = 0
+
+  for (const skill of WUNDERKIND_CANONICAL_MANIFEST.skills) {
+    if (skill.bucket === "promoted") promoted += 1
+    if (skill.bucket === "wunderkind-specific") wunderkindSpecific += 1
+    if (skill.bucket === "deprecated") deprecated += 1
+  }
+
+  return {
+    promoted,
+    wunderkindSpecific,
+    deprecated,
+    publicDeprecatedTotal: promoted + wunderkindSpecific + deprecated,
+  }
+}
+
 describe("manifest version sync", () => {
   it("keeps package and Claude plugin manifests in sync", () => {
     const packageVersion = readVersion(new URL("../../package.json", import.meta.url))
@@ -82,9 +106,30 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.10")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.10")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.16")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.16")
     expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
+  })
+
+  it("keeps the canonical public inventory counts aligned with the 27-route release surface", () => {
+    expect(getPublicSkillInventoryCounts()).toEqual({
+      promoted: 22,
+      wunderkindSpecific: 4,
+      deprecated: 1,
+      publicDeprecatedTotal: 27,
+    })
+  })
+
+  it("keeps README release notes aligned with the 0.26.0 stable baseline and added routes", () => {
+    const readmeBody = readText(new URL("../../README.md", import.meta.url))
+
+    expect(readmeBody).toContain("## What's new in 0.26.0")
+    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.16")
+    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.16")
+    expect(readmeBody).toContain("oh-my-openagent@4.19.4")
+    expect(readmeBody).toContain("release-upgrade")
+    expect(readmeBody).toContain("platform-compatibility")
+    expect(readmeBody).toContain("public/deprecated total=27")
   })
 })
 
@@ -231,9 +276,9 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.10")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.16")
     expect(docsReadmeBody).not.toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.10")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.16")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

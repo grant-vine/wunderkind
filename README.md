@@ -24,6 +24,27 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## Frozen next stable-upgrade wave
+
+This repository has frozen the next stable-upgrade and skill-governance contract before the code and version-pin work lands. The stable target for that wave is OpenCode `1.18.16` plus `oh-my-openagent` `4.19.4`.
+
+- OMO `v5.0.0-beta.6` is explicitly out of scope for this wave.
+- No provider/model-routing changes are included in this wave; `oh-my-openagent.jsonc` and the canonical manifest category routing stay unchanged.
+- Add the promoted `release-upgrade` route under `product-wunderkind`.
+- Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
+- Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep that work routed through `/supportability-review`, `/runbook`, and `/incident-response`.
+- Freeze the target public inventory for this wave at `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+
+## What's new in 0.26.0
+
+Wunderkind `0.26.0` aligns the stable upstream dependency baseline with `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`, and `oh-my-openagent@4.19.4`. It adds the promoted `release-upgrade` and `platform-compatibility` routes, keeps `supportability-incident` intentionally rejected as a standalone skill in favor of `/supportability-review`, `/runbook`, and `/incident-response`, and refreshes the bucketed public skill inventory to `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+
+- bump OpenCode plugin and SDK pins to `1.18.16`, and direct OMO to `4.19.4`
+- add `release-upgrade` for release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep
+- add `platform-compatibility` for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions
+- keep `supportability-incident` intentionally rejected as a standalone skill; route that work through `/supportability-review`, `/runbook`, and `/incident-response`
+- update repo truth surfaces for the 22 promoted skills and 27 public/deprecated routes
+
 ## What's new in 0.25.3
 
 Wunderkind `0.25.3` aligns the upstream dependency baseline with `@opencode-ai/plugin@1.18.10`, `@opencode-ai/sdk@1.18.10`, and `oh-my-openagent@4.19.3`. It keeps `wunderkind migrate` focused on no-clobber legacy OMO config migration into `~/.omo/omo.jsonc`, adds the promoted `supabase-architect` route, and refreshes the bucketed public skill inventory to `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`.
@@ -687,7 +708,9 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 
 Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, review gates, and the bucketed skill inventory.
 
-The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 20 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only. Current inventory anchors are `promoted=20`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=25`.
+The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 22 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only. Current inventory anchors are `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+
+`supportability-incident` is intentionally not a standalone first-class route. Overlap avoidance is deliberate: use `/supportability-review`, `/runbook`, and `/incident-response` instead of adding a generic overlapping incident skill.
 
 | Skill Name | Parent Agent | Domain |
 |---|---|---|
@@ -699,6 +722,7 @@ The public skill surface is intentionally bucketed, not a generic skill marketpl
 | `setup-wunderkind-workflow` | product-wunderkind | Repo-local workflow contract for issue flow, triage vocabulary, glossary/docs paths, and `.omo` conventions |
 | `ubiquitous-language` | product-wunderkind | Glossary maintenance, canonical terminology, and naming alignment |
 | `prd-pipeline` | product-wunderkind | PRD → plan → issues workflow |
+| `release-upgrade` | product-wunderkind | Release-note synthesis, version bump planning, compatibility checks, and rollback-conscious release prep |
 | `triage-issue` | product-wunderkind | Issue intake, repro shaping, acceptance clarity, and backlog-ready handoff |
 | `experimentation-analyst` | product-wunderkind | Product experiments, feature readouts, and statistical interpretation |
 | `write-a-skill` | product-wunderkind | Wunderkind-native skill authoring and adaptation |
@@ -706,6 +730,7 @@ The public skill surface is intentionally bucketed, not a generic skill marketpl
 | `db-architect` | fullstack-wunderkind | Drizzle ORM, PostgreSQL, Neon DB |
 | `diagnose` | fullstack-wunderkind | Deterministic defect isolation, ranked hypotheses, and proving regression surfaces |
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
+| `platform-compatibility` | fullstack-wunderkind | Host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
 | `supabase-architect` | fullstack-wunderkind | Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |

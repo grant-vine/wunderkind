@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+## 0.26.0
+
+- align Wunderkind's stable upstream dependency baseline to `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`, and `oh-my-openagent@4.19.4`
+- add the promoted `release-upgrade` route under `product-wunderkind` for release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep
+- add the promoted `platform-compatibility` route under `fullstack-wunderkind` for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions
+- keep `supportability-incident` intentionally rejected as a standalone skill; route that operator work through `/supportability-review`, `/runbook`, and `/incident-response`
+- update the public skill inventory to `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`
+
+
 ## 0.25.3
 
 - align Wunderkind's upstream dependency baseline to `@opencode-ai/plugin@1.18.10`, `@opencode-ai/sdk@1.18.10`, and `oh-my-openagent@4.19.3`

@@ -8,7 +8,7 @@
   //
   // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
   //
-  // Schema baseline metadata tracks oh-my-openagent 4.19.3, while the published
+  // Schema baseline metadata tracks oh-my-openagent 4.19.4, while the published
   // template continues to use the canonical upstream schema URL expected by the
   // current source/test contract.
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",

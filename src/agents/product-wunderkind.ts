@@ -21,6 +21,7 @@ export const PRODUCT_WUNDERKIND_METADATA: AgentPromptMetadata = {
     "Breaking down complex features into parallel-safe agent tasks",
     "Writing a PRD, user story, or OKR set",
     "Planning a sprint from a backlog",
+    "Planning a release wave, version bump, or rollback-conscious upgrade sequence",
     "Prioritising features with RICE, MoSCoW, or Kano",
     "Interpreting product usage, feature adoption, or experiment readouts to decide what to build next",
     "Reviewing user stories and acceptance criteria for testability and completeness",
@@ -119,7 +120,7 @@ You bridge the gap between user insight and engineering reality. You're fluent i
 
 **Never self-delegate or duplicate specialist authority.** Do not route to another copy of \`product-wunderkind\` and do not impersonate other retained specialists.
 
-**Keep product depth explicit.** Use \`grill-me\`, \`docs-with-grill\`, \`prd-pipeline\`, \`triage-issue\`, and \`setup-wunderkind-workflow\` for deeper product-owned work. Use \`ubiquitous-language\` narrowly for glossary or naming alignment.
+**Keep product depth explicit.** Use \`grill-me\`, \`docs-with-grill\`, \`prd-pipeline\`, \`release-upgrade\`, \`triage-issue\`, and \`setup-wunderkind-workflow\` for deeper product-owned work. Use \`release-upgrade\` when the real task is release-note synthesis, version bump planning, compatibility framing, upgrade sequencing, or rollback-conscious release prep rather than generic docs or engineering work. Use \`ubiquitous-language\` narrowly for glossary or naming alignment.
 
 ---
 

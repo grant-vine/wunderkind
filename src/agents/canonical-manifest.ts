@@ -72,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.25.3",
+    version: "0.26.0",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -104,7 +104,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     upstream: {
       omoCanonicalPackageName: "oh-my-openagent",
       omoLegacyPackageName: "oh-my-opencode",
-      omoTargetVersion: "4.19.3",
+      omoTargetVersion: "4.19.4",
     },
     configSchemaUrl: "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   },
@@ -261,6 +261,15 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       sourcePath: "skills/oss-licensing-advisor/SKILL.md",
     },
     {
+      id: "platform-compatibility",
+      bucket: "promoted",
+      sourceStatus: "shipped",
+      ownerAgentId: "fullstack-wunderkind",
+      description:
+        "USE FOR: host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions for the retained-agent overlay across repo-owned surfaces such as `src/agents/canonical-manifest.ts`, `oh-my-openagent.jsonc`, install/upgrade flows, and compatibility docs.",
+      sourcePath: "skills/platform-compatibility/SKILL.md",
+    },
+    {
       id: "pen-tester",
       bucket: "promoted",
       sourceStatus: "shipped",
@@ -275,6 +284,15 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       ownerAgentId: "product-wunderkind",
       description: "USE FOR: PRD workflow, product requirements, PRD to plan, PRD to issues, implementation planning, vertical slices, tracer bullets, filesystem workflow, GitHub workflow, product handoff, plan generation.",
       sourcePath: "skills/prd-pipeline/SKILL.md",
+    },
+    {
+      id: "release-upgrade",
+      bucket: "promoted",
+      sourceStatus: "shipped",
+      ownerAgentId: "product-wunderkind",
+      description:
+        "USE FOR: release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, changelog and release-surface sync, and rollback-conscious release prep across repo-owned files such as `README.md`, `CHANGELOG.md`, `package.json`, `.claude-plugin/plugin.json`, and manifest-linked docs.",
+      sourcePath: "skills/release-upgrade/SKILL.md",
     },
     {
       id: "security-analyst",
@@ -669,7 +687,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
         ownerAgentId: "product-wunderkind",
         heading: "Sub-Skill Delegation",
         items: [
-          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"docs-with-grill\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"triage-issue\")`, and `skill(name=\"setup-wunderkind-workflow\")` for deep product workflow setup, context-aware docs grilling, and discovery work. Use `skill(name=\"ubiquitous-language\")` narrowly for glossary maintenance and naming alignment.",
+          "Invoke via `skill(name=\"grill-me\")`, `skill(name=\"docs-with-grill\")`, `skill(name=\"prd-pipeline\")`, `skill(name=\"release-upgrade\")`, `skill(name=\"triage-issue\")`, and `skill(name=\"setup-wunderkind-workflow\")` for deep product workflow setup, context-aware docs grilling, release-wave shaping, and discovery work. Use `skill(name=\"ubiquitous-language\")` narrowly for glossary maintenance and naming alignment.",
           "Invoke via `skill(name=\"agile-pm\")` whenever the request needs sprint planning, backlog structuring, task decomposition, or file-conflict analysis.",
         ],
       },
@@ -690,6 +708,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
         items: [
           "Invoke via `skill(name=\"diagnose\")` for deterministic bug reproduction, ranked hypothesis testing, focused instrumentation, and regression-surface definition before implementation starts.",
           "Invoke via `skill(name=\"tdd\")` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
+          "Invoke via `skill(name=\"platform-compatibility\")` for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions for the retained-agent overlay.",
           "Invoke via `skill(name=\"vercel-architect\")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",
           "Invoke via `skill(name=\"db-architect\")` for schema design, query analysis, migrations, and index auditing.",
           "Invoke via `skill(name=\"improve-codebase-architecture\")` for deep-module RFCs, seam design, and structural refactoring plans.",
@@ -703,6 +722,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
           "Delegate via `task(...)` to `agent-browser` for browser automation, E2E capture, and page validation.",
           "Delegate via `task(...)` to `explore` for codebase mapping and `librarian` for external library/documentation research.",
           "Delegate via `task(...)` to `git-master` for git operations.",
+          "`supportability-incident` is intentionally not a standalone skill: overlap avoidance keeps readiness reviews on `/supportability-review`, operator alert triage on `/runbook`, and security/privacy incident command on `/incident-response`.",
           "Invoke via `skill(name=\"technical-writer\")` for external developer docs or tutorials.",
         ],
       },
@@ -718,7 +738,10 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       {
         ownerAgentId: "ciso",
         heading: "Delegation Patterns",
-        items: ["Delegate via `task(...)` to `legal-counsel` for OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work."],
+        items: [
+          "Delegate via `task(...)` to `legal-counsel` for OSS licensing, TOS/Privacy Policy, DPAs, CLAs, and contract-review work.",
+          "Do not introduce a generic `supportability-incident` route: overlap avoidance keeps non-security operator work on `/supportability-review` and `/runbook`, while security, privacy, or compliance incidents stay on `/incident-response`.",
+        ],
       },
       {
         ownerAgentId: "legal-counsel",

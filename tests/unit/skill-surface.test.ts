@@ -106,3 +106,87 @@ describe("supabase-architect boundaries", () => {
     expect(referenceContent).toContain("improve-codebase-architecture")
   })
 })
+
+describe("release-upgrade public route surface", () => {
+  it("pins the retained owner and explicit anti-trigger boundaries in the eager router core", () => {
+    const skillPath = join(PROJECT_ROOT, "skills", "release-upgrade", "SKILL.md")
+    const skillContent = readFileSync(skillPath, "utf8")
+
+    expect(skillContent).toContain("**Owned by:** wunderkind:product-wunderkind")
+    expect(skillContent).toContain("release-note synthesis")
+    expect(skillContent).toContain("version bump planning")
+    expect(skillContent).toContain("compatibility checks")
+    expect(skillContent).toContain("upgrade sequencing")
+    expect(skillContent).toContain("rollback-conscious release prep")
+    expect(skillContent).toContain("generic docs writing")
+    expect(skillContent).toContain("generic engineering implementation")
+    expect(skillContent).toContain("generic git/tag/publish execution")
+    expect(skillContent).toContain("technical-writer")
+    expect(skillContent).toContain("fullstack-wunderkind")
+    expect(skillContent).toContain("git-master")
+  })
+})
+
+describe("platform-compatibility public route surface", () => {
+  it("pins the retained owner and explicit host-drift boundaries in the eager router core", () => {
+    const skillPath = join(PROJECT_ROOT, "skills", "platform-compatibility", "SKILL.md")
+    const skillContent = readFileSync(skillPath, "utf8")
+
+    expect(skillContent).toContain("**Owned by:** wunderkind:fullstack-wunderkind")
+    expect(skillContent).toContain("host/plugin/config-chain drift")
+    expect(skillContent).toContain("OpenCode/OMO contract changes")
+    expect(skillContent).toContain("compatibility audits")
+    expect(skillContent).toContain("migration-boundary decisions")
+    expect(skillContent).toContain("generic library docs lookup")
+    expect(skillContent).toContain("generic debugging")
+    expect(skillContent).toContain("normal architecture work")
+    expect(skillContent).toContain("diagnose")
+    expect(skillContent).toContain("improve-codebase-architecture")
+    expect(skillContent).toContain("release-upgrade")
+  })
+})
+
+describe("supportability-incident rejection surface", () => {
+  it("keeps supportability-incident absent and routes operators to the existing command surfaces", () => {
+    const supportabilitySkillDir = join(PROJECT_ROOT, "skills", "supportability-incident")
+    const readmeContent = readFileSync(join(PROJECT_ROOT, "README.md"), "utf8")
+    const agentsContent = readFileSync(join(PROJECT_ROOT, "AGENTS.md"), "utf8")
+    const skillStandardContent = readFileSync(join(PROJECT_ROOT, "skills", "SKILL-STANDARD.md"), "utf8")
+
+    expect(existsSync(supportabilitySkillDir)).toBe(false)
+
+    for (const content of [readmeContent, agentsContent, skillStandardContent]) {
+      expect(content).toContain("supportability-incident")
+      expect(content).toContain("/supportability-review")
+      expect(content).toContain("/runbook")
+      expect(content).toContain("/incident-response")
+      expect(content).toContain("overlap avoidance")
+    }
+  })
+})
+
+describe("public inventory truth surfaces", () => {
+  it("keeps the 27-route public inventory and new route names mirrored across active docs surfaces", () => {
+    const mirroredTruthFiles = [
+      "README.md",
+      "AGENTS.md",
+      "CONTEXT.md",
+      "skills/SKILL-STANDARD.md",
+      "docs/README.md",
+      "docs/product-decisions.md",
+      "docs/engineering-decisions.md",
+      "docs/marketing-strategy.md",
+    ] as const
+
+    for (const relativePath of mirroredTruthFiles) {
+      const content = readFileSync(join(PROJECT_ROOT, relativePath), "utf8")
+
+      expect(content).toContain("promoted=22")
+      expect(content).toContain("wunderkind-specific=4")
+      expect(content).toContain("deprecated=1")
+      expect(content).toContain("public/deprecated total=27")
+      expect(content).toContain("release-upgrade")
+      expect(content).toContain("platform-compatibility")
+    }
+  })
+})
