@@ -24,9 +24,9 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## Frozen next stable-upgrade wave
+## Frozen current patch wave
 
-This repository has frozen the next stable-upgrade and skill-governance contract before the code and version-pin work lands. The stable target for that wave is OpenCode `1.18.16` plus `oh-my-openagent` `4.19.4`.
+This repository has frozen the current patch-wave and skill-governance contract. The stable target for this patch wave is OpenCode `1.18.18` plus `oh-my-openagent` `4.19.4`.
 
 - OMO `v5.0.0-beta.6` is explicitly out of scope for this wave.
 - No provider/model-routing changes are included in this wave; `oh-my-openagent.jsonc` and the canonical manifest category routing stay unchanged.
@@ -34,6 +34,14 @@ This repository has frozen the next stable-upgrade and skill-governance contract
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
 - Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep that work routed through `/supportability-review`, `/runbook`, and `/incident-response`.
 - Freeze the target public inventory for this wave at `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+
+## What's new in 0.26.1
+
+Wunderkind `0.26.1` is a narrow upstream patch alignment. It updates the OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.18` and `@opencode-ai/sdk@1.18.18`, keeps `oh-my-openagent@4.19.4`, and preserves the existing provider/model-routing contract unchanged.
+
+- bump OpenCode plugin and SDK pins to `1.18.18`
+- keep OMO pinned at `oh-my-openagent@4.19.4`
+- preserve the 0.26.x skill inventory and no provider/model-routing-change posture
 
 ## What's new in 0.26.0
 

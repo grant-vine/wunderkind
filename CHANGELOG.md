@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.26.1
+
+- align Wunderkind's OpenCode patch baseline to `@opencode-ai/plugin@1.18.18` and `@opencode-ai/sdk@1.18.18`
+- keep `oh-my-openagent@4.19.4` pinned for this patch wave
+- preserve the existing provider/model-routing contract with no `oh-my-openagent.jsonc` or canonical manifest routing changes
+
 ## 0.26.0
 
 - align Wunderkind's stable upstream dependency baseline to `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`, and `oh-my-openagent@4.19.4`

@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.26.0  
-**Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.18.16 · `oh-my-openagent` 4.19.4
+**Package:** `@grant-vine/wunderkind` v0.26.1  
+**Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.18.18 · `oh-my-openagent` 4.19.4
 
 oh-my-openagent addon that acts as a retained-agent overlay for OpenCode. It injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal), keeps `product-wunderkind` as the default front door, and anchors workflow state in `.omo`, docs output, and lifecycle commands instead of acting as a generic skills marketplace.
 
@@ -254,9 +254,9 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 
 ---
 
-## FROZEN NEXT STABLE-UPGRADE CONTRACT
+## FROZEN CURRENT PATCH-WAVE CONTRACT
 
-- Stable target for the next upstream wave: OpenCode `1.18.16` and `oh-my-openagent` `4.19.4`.
+- Stable target for the current patch wave: OpenCode `1.18.18` and `oh-my-openagent` `4.19.4`.
 - OMO `v5.0.0-beta.6` is explicitly out of scope for this wave.
 - Add `release-upgrade` under `product-wunderkind`.
 - Add `platform-compatibility` under `fullstack-wunderkind`.
@@ -280,7 +280,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **oh-my-openagent must be installed before wunderkind** — upstream uses `oh-my-openagent` for plugin entries, config basenames, and public install commands. Wunderkind centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead. Legacy `oh-my-opencode` config files are migration inputs for `wunderkind migrate` only.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — unified `~/.omo/omo.jsonc` is the active upstream config chain. Legacy `oh-my-openagent.{json,jsonc}` and `oh-my-opencode.{json,jsonc}` files are migration/detection surfaces only, with `wunderkind migrate` merging missing legacy OMO config keys into `~/.omo/omo.jsonc`.
-- **Published baseline vs next-wave contract** — the canonical stable baseline is now package `0.26.0` on OpenCode `1.18.16` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `release-upgrade` and `platform-compatibility` are the only added skill routes in this frozen wave, `supportability-incident` stays rejected, and provider/model routing remains unchanged.
+- **Published baseline vs patch-wave contract** — the canonical stable baseline is now package `0.26.1` on OpenCode `1.18.18` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `release-upgrade` and `platform-compatibility` remain the only added skill routes in this frozen wave, `supportability-incident` stays rejected, and provider/model routing remains unchanged.
 - **Team-mode entry stays upstream-compatible** — `/wunderkind-team` checks canonical `oh-my-openagent` config paths and `team_mode.enabled`; missing/disabled/unavailable states fall back to solo `product-wunderkind` orchestration instead of unsupported retained-agent team members.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.

@@ -5,12 +5,12 @@ Last refreshed: 2026-08-12T00-00-00Z
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
-- **Plugin package**: `@opencode-ai/plugin@1.18.16`
-- **SDK package**: `@opencode-ai/sdk@1.18.16`
+- **Plugin package**: `@opencode-ai/plugin@1.18.18`
+- **SDK package**: `@opencode-ai/sdk@1.18.18`
 - **OMO dependency**: `oh-my-openagent@4.19.4`
-- **Current Wunderkind package version**: `0.26.0`
+- **Current Wunderkind package version**: `0.26.1`
 - **Generated agent frontmatter version field**: `wunderkind_version`
-- **Frozen next stable-upgrade target**: OpenCode `1.18.16` + `oh-my-openagent` `4.19.4`, with OMO `v5.0.0-beta.6` explicitly out of scope
+- **Frozen current patch-wave target**: OpenCode `1.18.18` + `oh-my-openagent` `4.19.4`, with OMO `v5.0.0-beta.6` explicitly out of scope
 
 ## Architecture decisions
 
@@ -33,11 +33,11 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ### Platform routing remains specialized instead of generic
 `platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The skill inventory is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
 
-### The next stable-upgrade wave is not a provider/model-routing wave
-The frozen next stable-upgrade contract targets OpenCode `1.18.16` and OMO `4.19.4`, but it does not change provider/model routing. `oh-my-openagent.jsonc` category models and canonical manifest routing must stay unchanged in this wave.
+### The current patch wave is not a provider/model-routing wave
+The frozen patch-wave contract targets OpenCode `1.18.18` and OMO `4.19.4`, but it does not change provider/model routing. `oh-my-openagent.jsonc` category models and canonical manifest routing must stay unchanged in this wave.
 
-### The next skill-governance wave adds two routes and rejects the overlapping incident skill
-The frozen next-wave skill target is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27` by adding `release-upgrade` and `platform-compatibility`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
+### The current skill-governance wave adds two routes and rejects the overlapping incident skill
+The frozen skill target is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27` by adding `release-upgrade` and `platform-compatibility`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
 
 ### CONTEXT.md is part of project bootstrap
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
@@ -57,7 +57,7 @@ The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-con
 ## Dependency posture
 
 - Key direct dependencies are current for this upgrade cycle:
-  - published baseline: `oh-my-openagent@4.19.4`, `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`
+  - published baseline: `oh-my-openagent@4.19.4`, `@opencode-ai/plugin@1.18.18`, `@opencode-ai/sdk@1.18.18`
   - OMO `v5.0.0-beta.6` remains explicitly out of scope for this stable baseline wave
 - Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
 - Patched transitive overrides currently pin:

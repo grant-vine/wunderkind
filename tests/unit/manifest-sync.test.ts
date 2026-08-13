@@ -106,8 +106,8 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.16")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.16")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.18")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.18")
     expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
   })
 
@@ -120,12 +120,12 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.26.0 stable baseline and added routes", () => {
+  it("keeps README release notes aligned with the 0.26.1 stable baseline and added routes", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
-    expect(readmeBody).toContain("## What's new in 0.26.0")
-    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.16")
-    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.16")
+    expect(readmeBody).toContain("## What's new in 0.26.1")
+    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.18")
+    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.18")
     expect(readmeBody).toContain("oh-my-openagent@4.19.4")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
@@ -276,9 +276,9 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.16")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.18")
     expect(docsReadmeBody).not.toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.16")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.18")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

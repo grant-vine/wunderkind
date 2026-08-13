@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.26.0**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.26.1**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -27,7 +27,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
 - Generated native agents now embed **`wunderkind_version`** in frontmatter.
 - Install and upgrade guidance now use canonical **`oh-my-openagent`** naming only; legacy `oh-my-opencode` references remain detection-only warning/migration notes.
-- The upstream alignment target is `oh-my-openagent` `4.19.4` with OpenCode plugin/SDK `1.18.16`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
+- The upstream alignment target is `oh-my-openagent` `4.19.4` with OpenCode plugin/SDK `1.18.18`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary engine is now documented as one default-off multi-level prompt optimization engine, separate from `wunderkind token-audit` and still without a public optimize command.
@@ -49,7 +49,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docHistoryMode` remains `overwrite` for this repo.
 - Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override on the legacy compatibility profile until an explicit `promptOptimizationLevel` is chosen.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.26.0` and the 27-route public/deprecated inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.26.1` and the 27-route public/deprecated inventory.
 
 ## Primary local sources
 
@@ -76,7 +76,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - OpenCode agents: https://opencode.ai/docs/agents
 - OpenCode commands: https://opencode.ai/docs/commands
 - OpenCode changelog: https://opencode.ai/changelog
-- OpenCode release v1.18.16: https://github.com/anomalyco/opencode/releases/tag/v1.18.16
+- OpenCode release v1.18.18: https://github.com/anomalyco/opencode/releases/tag/v1.18.18
 - OpenCode package metadata: https://registry.npmjs.org/opencode-ai/latest
 - oh-my-openagent README: https://github.com/code-yeongyu/oh-my-openagent/blob/dev/README.md
 - oh-my-openagent installation guide: https://github.com/code-yeongyu/oh-my-openagent/blob/dev/docs/guide/installation.md

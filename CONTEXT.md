@@ -2,13 +2,13 @@
 
 Updated: 2026-08-12T00-00-00Z
 
-This repository is the source for **Wunderkind** `0.26.0`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current published upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.16` and `oh-my-openagent` `4.19.4`.
+This repository is the source for **Wunderkind** `0.26.1`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current published upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.18` and `oh-my-openagent` `4.19.4`.
 
 ## Product and domain summary
 - **What it is**: A retained-agent overlay for OpenCode built around orchestrator-first routing, generated native markdown agents, static skills, and project-local bootstrap artifacts.
 - **Primary users**: Developers and product teams already using OpenCode and often oh-my-openagent who want opinionated, domain-specialized retained agents instead of generic coding helpers.
 - **Current success criteria**: Keep install/upgrade/doctor trustworthy, preserve compatibility with current OpenCode and oh-my-openagent surfaces, and make project-local workflow/context artifacts (`AGENTS.md`, `CONTEXT.md`, `.omo/`, docs-output, and runtime prompt reports) easy to bootstrap and maintain.
-- **Frozen next-wave contract**: Keep OMO `v5.0.0-beta.6` out of scope, add `release-upgrade`, add `platform-compatibility`, reject `supportability-incident`, and make no provider/model-routing changes in this wave.
+- **Frozen patch-wave contract**: Keep OMO `v5.0.0-beta.6` out of scope, add `release-upgrade`, add `platform-compatibility`, reject `supportability-incident`, and make no provider/model-routing changes in this wave.
 
 ## Core workflows
 - Install Wunderkind into OpenCode globally or per-project.
