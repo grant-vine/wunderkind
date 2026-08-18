@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.26.2
+
+- fix `workflow-sync --apply` GitHub remote parsing so repository names containing dots (for example `grant-vine/autofind.ai`) keep the full repo slug
+- add a regression test for dotted GitHub repository names in workflow-sync readiness analysis
+
 ## 0.26.1
 
 - align Wunderkind's OpenCode patch baseline to `@opencode-ai/plugin@1.18.18` and `@opencode-ai/sdk@1.18.18`

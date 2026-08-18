@@ -57,7 +57,7 @@ function parseGitHubRemote(remoteList: string): { readonly slug: string | null; 
     .filter((line) => line !== "")
 
   for (const line of lines) {
-    const sshMatch = /github\.com:([^/\s]+)\/([^\s.]+)(?:\.git)?/i.exec(line)
+    const sshMatch = /github\.com:([^/\s]+)\/([^\s]+?)(?:\.git)?(?:\s|$)/i.exec(line)
     if (sshMatch?.[1] && sshMatch[2]) {
       return {
         slug: `${sshMatch[1]}/${sshMatch[2]}`,
@@ -65,7 +65,7 @@ function parseGitHubRemote(remoteList: string): { readonly slug: string | null; 
       }
     }
 
-    const httpsMatch = /https:\/\/github\.com\/([^/\s]+)\/([^\s.]+)(?:\.git)?/i.exec(line)
+    const httpsMatch = /https:\/\/github\.com\/([^/\s]+)\/([^\s]+?)(?:\.git)?(?:\s|$)/i.exec(line)
     if (httpsMatch?.[1] && httpsMatch[2]) {
       return {
         slug: `${httpsMatch[1]}/${httpsMatch[2]}`,

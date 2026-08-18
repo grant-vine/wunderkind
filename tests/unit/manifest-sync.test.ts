@@ -120,10 +120,10 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.26.1 stable baseline and added routes", () => {
+  it("keeps README release notes aligned with the 0.26.2 stable baseline and added routes", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
-    expect(readmeBody).toContain("## What's new in 0.26.1")
+    expect(readmeBody).toContain("## What's new in 0.26.2")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.18")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.18")
     expect(readmeBody).toContain("oh-my-openagent@4.19.4")

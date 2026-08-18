@@ -35,6 +35,13 @@ This repository has frozen the current patch-wave and skill-governance contract.
 - Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep that work routed through `/supportability-review`, `/runbook`, and `/incident-response`.
 - Freeze the target public inventory for this wave at `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
 
+## What's new in 0.26.2
+
+Wunderkind `0.26.2` is a narrow bugfix release for `workflow-sync`. It fixes GitHub remote parsing so repository names containing dots, such as `grant-vine/autofind.ai`, keep the full repo slug during readiness and `--apply` flows.
+
+- fix dotted GitHub repository names in `workflow-sync --apply` remote parsing
+- add regression coverage for dotted GitHub repo slugs in readiness analysis
+
 ## What's new in 0.26.1
 
 Wunderkind `0.26.1` is a narrow upstream patch alignment. It updates the OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.18` and `@opencode-ai/sdk@1.18.18`, keeps `oh-my-openagent@4.19.4`, and preserves the existing provider/model-routing contract unchanged.

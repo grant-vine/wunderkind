@@ -20,6 +20,33 @@ function createRunner(resolver: (command: string, args: readonly string[]) => Co
 }
 
 describe("analyzeGitHubIssuesReadiness", () => {
+  it("preserves dotted GitHub repository names from HTTPS remotes", () => {
+    const runner = createRunner((command, args) => {
+      if (command === "git" && args[2] === "rev-parse") {
+        return { status: 0, stdout: "true\n", stderr: "" }
+      }
+
+      if (command === "git" && args[2] === "remote") {
+        return {
+          status: 0,
+          stdout: "origin\thttps://github.com/grant-vine/autofind.ai.git (fetch)\n",
+          stderr: "",
+        }
+      }
+
+      if (command === "gh" && args[0] === "--version") {
+        return { status: 1, stdout: "", stderr: "not installed" }
+      }
+
+      return { status: 1, stdout: "", stderr: "unsupported" }
+    })
+
+    const result = analyzeGitHubIssuesReadiness("/tmp/project", { runCommand: runner.run })
+
+    expect(result.repoSlug).toBe("grant-vine/autofind.ai")
+    expect(result.repoRemoteUrl).toBe("https://github.com/grant-vine/autofind.ai")
+  })
+
   it("returns ready state when git, gh auth, and issues are available", () => {
     const runner = createRunner((command, args) => {
       if (command === "git" && args[0] === "-C" && args[2] === "rev-parse") {
