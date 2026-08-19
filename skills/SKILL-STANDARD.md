@@ -159,10 +159,10 @@ The convergence release classifies every current skill into one bucket. These bu
 
 Bucket counts are frozen by `.omo/contracts/wunderkind-upstream-convergence.jsonc` for this release:
 
-- Promoted retained specialist skills: 22 (`promoted=22`)
+- Promoted retained specialist skills: 23 (`promoted=23`)
 - Wunderkind-specific skills: 4 (`wunderkind-specific=4`)
 - Deprecated skills: 1 (`deprecated=1`)
-- Public/deprecated listed total: 27 (`public/deprecated total=27`)
+- Public/deprecated listed total: 28 (`public/deprecated total=28`)
 - Internal skills: 0
 - Remove-now skills: 0
 
@@ -205,6 +205,7 @@ Deprecated aliases and routes are docs, routing-guidance, and detection-only sur
 | `release-upgrade` | `product-wunderkind` | Keeps release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep under the retained product owner. |
 | `security-analyst` | `ciso` | Keeps defensive security review, OWASP analysis, and vulnerability assessment under the retained CISO owner. |
 | `social-media-maven` | `marketing-wunderkind` | Keeps channel strategy, content planning, and community growth inside the retained marketing owner. |
+| `supportability-review` | `fullstack-wunderkind` | Keeps observability, rollback-readiness, on-call ownership, and launch-blocker review under the retained engineering owner without collapsing into active incident handling. |
 | `supabase-architect` | `fullstack-wunderkind` | Keeps Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition under the retained engineering owner when Supabase materially changes the design. |
 | `platform-compatibility` | `fullstack-wunderkind` | Keeps host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions under the retained engineering owner. |
 | `tdd` | `fullstack-wunderkind` | Preserves the repo's Bun and strict TypeScript red-green-refactor execution loop under engineering stewardship. |

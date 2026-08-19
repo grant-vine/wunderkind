@@ -111,25 +111,27 @@ describe("manifest version sync", () => {
     expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
   })
 
-  it("keeps the canonical public inventory counts aligned with the 27-route release surface", () => {
+  it("keeps the canonical public inventory counts aligned with the 28-route repo surface", () => {
     expect(getPublicSkillInventoryCounts()).toEqual({
-      promoted: 22,
+      promoted: 23,
       wunderkindSpecific: 4,
       deprecated: 1,
-      publicDeprecatedTotal: 27,
+      publicDeprecatedTotal: 28,
     })
   })
 
-  it("keeps README release notes aligned with the 0.26.2 stable baseline and added routes", () => {
+  it("keeps README release notes aligned with the 0.26.3 stable baseline and current added routes", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
-    expect(readmeBody).toContain("## What's new in 0.26.2")
+    expect(readmeBody).not.toContain("## Unreleased")
+    expect(readmeBody).toContain("## What's new in 0.26.3")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.18")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.18")
     expect(readmeBody).toContain("oh-my-openagent@4.19.4")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
-    expect(readmeBody).toContain("public/deprecated total=27")
+    expect(readmeBody).toContain("supportability-review")
+    expect(readmeBody).toContain("public/deprecated total=28")
   })
 })
 

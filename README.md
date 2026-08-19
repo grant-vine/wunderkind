@@ -24,6 +24,12 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.26.3
+
+- add the promoted `supportability-review` route under `fullstack-wunderkind`
+- keep the stable dependency baseline at `@opencode-ai/plugin@1.18.18`, `@opencode-ai/sdk@1.18.18`, and `oh-my-openagent@4.19.4`
+- refresh repo truth surfaces and generated native agents for the `0.26.3` release cut without changing the stable dependency baseline
+
 ## Frozen current patch wave
 
 This repository has frozen the current patch-wave and skill-governance contract. The stable target for this patch wave is OpenCode `1.18.18` plus `oh-my-openagent` `4.19.4`.
@@ -32,8 +38,9 @@ This repository has frozen the current patch-wave and skill-governance contract.
 - No provider/model-routing changes are included in this wave; `oh-my-openagent.jsonc` and the canonical manifest category routing stay unchanged.
 - Add the promoted `release-upgrade` route under `product-wunderkind`.
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
+- Add the promoted `supportability-review` route under `fullstack-wunderkind`.
 - Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep that work routed through `/supportability-review`, `/runbook`, and `/incident-response`.
-- Freeze the target public inventory for this wave at `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+- Freeze the target public inventory for this wave at `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
 ## What's new in 0.26.2
 
@@ -52,12 +59,12 @@ Wunderkind `0.26.1` is a narrow upstream patch alignment. It updates the OpenCod
 
 ## What's new in 0.26.0
 
-Wunderkind `0.26.0` aligns the stable upstream dependency baseline with `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`, and `oh-my-openagent@4.19.4`. It adds the promoted `release-upgrade` and `platform-compatibility` routes, keeps `supportability-incident` intentionally rejected as a standalone skill in favor of `/supportability-review`, `/runbook`, and `/incident-response`, and refreshes the bucketed public skill inventory to `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+Wunderkind `0.26.0` aligns the stable upstream dependency baseline with `@opencode-ai/plugin@1.18.16`, `@opencode-ai/sdk@1.18.16`, and `oh-my-openagent@4.19.4`. It adds the promoted `release-upgrade` and `platform-compatibility` routes, keeps `supportability-incident` intentionally rejected as a standalone skill in favor of existing runbook and incident-response surfaces, and refreshes the bucketed public skill inventory to `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
 
 - bump OpenCode plugin and SDK pins to `1.18.16`, and direct OMO to `4.19.4`
 - add `release-upgrade` for release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep
 - add `platform-compatibility` for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions
-- keep `supportability-incident` intentionally rejected as a standalone skill; route that work through `/supportability-review`, `/runbook`, and `/incident-response`
+- keep `supportability-incident` intentionally rejected as a standalone skill; route that work through `/runbook` and `/incident-response`
 - update repo truth surfaces for the 22 promoted skills and 27 public/deprecated routes
 
 ## What's new in 0.25.3
@@ -723,7 +730,7 @@ Wunderkind agents are distributed as native OpenCode markdown agents. Their prom
 
 Skill authoring and review in this repo follow `skills/SKILL-STANDARD.md`. New or revised skills should use trigger-first descriptions, explicit surviving ownership, filesystem scope, anti-triggers, review gates, and the bucketed skill inventory.
 
-The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 22 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only. Current inventory anchors are `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+The public skill surface is intentionally bucketed, not a generic skill marketplace. Current first-class routes are the 23 promoted retained-specialist skills plus the 4 Wunderkind-specific workflow skills listed below. Deprecated skills are documented separately for migration history and replacement guidance only. Current inventory anchors are `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
 `supportability-incident` is intentionally not a standalone first-class route. Overlap avoidance is deliberate: use `/supportability-review`, `/runbook`, and `/incident-response` instead of adding a generic overlapping incident skill.
 
@@ -747,6 +754,7 @@ The public skill surface is intentionally bucketed, not a generic skill marketpl
 | `code-health` | fullstack-wunderkind | Severity-ranked code health audit reports (coupling, testability, dependency risk) |
 | `platform-compatibility` | fullstack-wunderkind | Host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions |
 | `vercel-architect` | fullstack-wunderkind | Vercel, Next.js App Router, Edge Runtime |
+| `supportability-review` | fullstack-wunderkind | Observability review, rollback readiness, on-call ownership, and launch blockers |
 | `supabase-architect` | fullstack-wunderkind | Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition |
 | `improve-codebase-architecture` | fullstack-wunderkind | Architecture RFCs, seam design, deep modules, and deletion-test reviews |
 | `tdd` | fullstack-wunderkind | Red-green-refactor loops for Bun + strict TypeScript |

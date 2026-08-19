@@ -72,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.26.2",
+    version: "0.26.3",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -326,6 +326,15 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       description:
         "USE FOR: Supabase auth architecture, RLS policy design, Realtime channels, Storage buckets, Edge Functions, branching, local dev, observability, and broader app-data composition where Supabase materially changes the system design. Do not use for generic backend work with no Supabase-specific architectural decision.",
       sourcePath: "skills/supabase-architect/SKILL.md",
+    },
+    {
+      id: "supportability-review",
+      bucket: "promoted",
+      sourceStatus: "shipped",
+      ownerAgentId: "fullstack-wunderkind",
+      description:
+        "USE FOR: observability review, rollback readiness, on-call ownership, launch blockers, and production supportability posture across repo-owned services, workflows, and release surfaces. Use when the question is whether a system is operable, supportable, and ready to launch without collapsing into active incident command or generic debugging.",
+      sourcePath: "skills/supportability-review/SKILL.md",
     },
     {
       id: "tdd",
@@ -707,6 +716,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
         heading: "Sub-Skill Delegation",
         items: [
           "Invoke via `skill(name=\"diagnose\")` for deterministic bug reproduction, ranked hypothesis testing, focused instrumentation, and regression-surface definition before implementation starts.",
+          "Invoke via `skill(name=\"supportability-review\")` for observability, rollback-readiness, on-call ownership, and launch-blocker review before or after rollout decisions.",
           "Invoke via `skill(name=\"tdd\")` for red-green-refactor loops, regression hardening, and defect-driven delivery.",
           "Invoke via `skill(name=\"platform-compatibility\")` for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions for the retained-agent overlay.",
           "Invoke via `skill(name=\"vercel-architect\")` for Vercel, App Router, Edge runtime, Neon branching, and performance work.",

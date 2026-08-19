@@ -1,6 +1,6 @@
 # Marketing Strategy
 
-Last refreshed: 2026-08-12T00-00-00Z
+Last refreshed: 2026-08-18T00-00-00Z
 
 ## Positioning
 
@@ -9,7 +9,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 ## Core narrative pillars
 
 1. **Retained specialist depth, not generic prompting**
-   - Wunderkind ships six opinionated retained agents with explicit role boundaries, 22 promoted retained-specialist skills, and 4 Wunderkind-specific workflow skills (`promoted=22`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=27`).
+   - Wunderkind ships six opinionated retained agents with explicit role boundaries, and the current repo head carries 23 promoted retained-specialist skills plus 4 Wunderkind-specific workflow skills (`promoted=23`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=28`).
 2. **Overlay, not platform lock-in**
    - Wunderkind stays a synchronous plugin/overlay on top of OpenCode and OMO instead of re-implementing an agent platform.
 3. **Bootstrap a high-context repo quickly**
@@ -45,6 +45,7 @@ Wunderkind is the **specialist-agent addon for OpenCode**: it gives product team
 - Position `/docs-index` as the managed docs refresh/bootstrap surface and `init-deep` as an upstream workflow concept that Wunderkind supports through local artifacts.
 - Position `release-upgrade` as the promoted product-owned route for release-note synthesis, version bump planning, compatibility checks, and rollback-conscious release prep.
 - Position `platform-compatibility` as the promoted fullstack-owned route for host/plugin/config-chain drift and OpenCode/OMO contract changes.
+- Position `supportability-review` as the promoted fullstack-owned route for observability review, rollback readiness, on-call ownership, and launch blockers.
 - Position `supabase-architect` as a promoted fullstack-owned skill for Supabase auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition.
 - Keep `supportability-incident` explicitly rejected as a standalone skill; overlap avoidance routes that work through `/supportability-review`, `/runbook`, and `/incident-response`.
 

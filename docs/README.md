@@ -1,12 +1,12 @@
 # Documentation Index
 
-Last refreshed: 2026-08-12T00-00-00Z
+Last refreshed: 2026-08-18T00-00-00Z
 History mode: `overwrite`
 Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind v0.26.1**, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind** after the `0.26.3` release cut, including the current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -21,7 +21,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 ## Latest documented feature highlights
 
 - `wunderkind init` now maintains **`CONTEXT.md`** alongside `AGENTS.md` and `.omo/`.
-- The public skill surface is bucketed into **22 promoted retained-specialist skills**, **4 Wunderkind-specific workflow skills**, and **1 deprecated docs-history route** (`promoted=22`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=27`), with `release-upgrade` and `platform-compatibility` now added to the promoted route surface.
+- The current repo-head public skill surface is bucketed into **23 promoted retained-specialist skills**, **4 Wunderkind-specific workflow skills**, and **1 deprecated docs-history route** (`promoted=23`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=28`), with `release-upgrade`, `platform-compatibility`, and `supportability-review` now part of the promoted route surface.
 - `supportability-incident` remains intentionally rejected as a standalone skill; overlap avoidance keeps that operator work routed through `/supportability-review`, `/runbook`, and `/incident-response`.
 - **`docs-with-grill`** is the repo-aware docs grilling skill adapted into Wunderkind’s filesystem-first workflow.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
@@ -49,7 +49,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docHistoryMode` remains `overwrite` for this repo.
 - Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override on the legacy compatibility profile until an explicit `promptOptimizationLevel` is chosen.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.26.1` and the 27-route public/deprecated inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.26.3` and the current 28-route public/deprecated inventory.
 
 ## Primary local sources
 

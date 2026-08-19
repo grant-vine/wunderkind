@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.26.1  
+**Package:** `@grant-vine/wunderkind` v0.26.3  
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.18.18 · `oh-my-openagent` 4.19.4
 
 oh-my-openagent addon that acts as a retained-agent overlay for OpenCode. It injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal), keeps `product-wunderkind` as the default front door, and anchors workflow state in `.omo`, docs output, and lifecycle commands instead of acting as a generic skills marketplace.
@@ -19,7 +19,7 @@ wunderkind/
 │   └── types/                 # Ambient type declarations (bun-sqlite.d.ts, opencode-plugin.d.ts)
 ├── agents/                    # GENERATED *.md — do not hand-edit; run `bun run build`
 ├── commands/                  # Shipped native command assets (docs-index, dream, design-md, workflow-sync, wunderkind-team)
-├── skills/                    # Static SKILL.md files: 22 promoted + 4 Wunderkind-specific public routes, 1 deprecated docs-history route, and SKILL-STANDARD.md
+├── skills/                    # Static SKILL.md files: 23 promoted + 4 Wunderkind-specific public routes, 1 deprecated docs-history route, and SKILL-STANDARD.md
 ├── tests/unit/                # Bun unit suite for CLI, docs, config, uninstall, and build flows
 ├── bin/wunderkind.js          # ESM shim with shebang — imports dist/cli/index.js
 ├── .claude-plugin/plugin.json # Claude/OpenCode plugin manifest (keep in sync with package.json)
@@ -210,7 +210,7 @@ No path aliases. No ESLint/Biome config — TypeScript strict mode is the sole l
 | `wunderkind:ciso` | Security architecture, OWASP, compliance | unspecified-high |
 | `wunderkind:legal-counsel` | Legal and regulatory compliance | writing |
 
-Sub-skills: first-class public routes are the frozen 22 promoted retained-specialist skills plus 4 Wunderkind-specific workflow skills from `skills/SKILL-STANDARD.md` (`promoted=22`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=27`): `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `docs-with-grill` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `release-upgrade` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `diagnose` + `code-health` + `platform-compatibility` + `vercel-architect` + `supabase-architect` + `improve-codebase-architecture` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel). Deprecated skill route: `design-an-interface` is documentation and detection-only; use `improve-codebase-architecture` for structural interface work, direct `fullstack-wunderkind` judgement for narrow engineering decisions, or product/frontend exploration when workflow or prototype evidence shapes the contract.
+Sub-skills: current repo-head public routes are the 23 promoted retained-specialist skills plus 4 Wunderkind-specific workflow skills from `skills/SKILL-STANDARD.md` (`promoted=23`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=28`): `social-media-maven` + `technical-writer` (marketing-wunderkind) · `visual-artist` (creative-director) · `agile-pm` + `grill-me` + `docs-with-grill` + `setup-wunderkind-workflow` + `ubiquitous-language` + `prd-pipeline` + `release-upgrade` + `triage-issue` + `experimentation-analyst` + `caveman` + `write-a-skill` (product-wunderkind) · `db-architect` + `diagnose` + `code-health` + `platform-compatibility` + `supportability-review` + `vercel-architect` + `supabase-architect` + `improve-codebase-architecture` + `tdd` (fullstack-wunderkind) · `security-analyst` + `pen-tester` + `compliance-officer` (ciso) · `oss-licensing-advisor` (legal-counsel). Deprecated skill route: `design-an-interface` is documentation and detection-only; use `improve-codebase-architecture` for structural interface work, direct `fullstack-wunderkind` judgement for narrow engineering decisions, or product/frontend exploration when workflow or prototype evidence shapes the contract.
 
 ---
 
@@ -260,6 +260,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - OMO `v5.0.0-beta.6` is explicitly out of scope for this wave.
 - Add `release-upgrade` under `product-wunderkind`.
 - Add `platform-compatibility` under `fullstack-wunderkind`.
+- Add `supportability-review` under `fullstack-wunderkind`.
 - Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep supportability/incident execution routed through `/supportability-review`, `/runbook`, and `/incident-response`.
 - Keep provider/model-routing unchanged in this wave; do not alter `oh-my-openagent.jsonc` category models or canonical manifest routing as part of this contract freeze.
 
@@ -280,7 +281,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **oh-my-openagent must be installed before wunderkind** — upstream uses `oh-my-openagent` for plugin entries, config basenames, and public install commands. Wunderkind centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead. Legacy `oh-my-opencode` config files are migration inputs for `wunderkind migrate` only.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — unified `~/.omo/omo.jsonc` is the active upstream config chain. Legacy `oh-my-openagent.{json,jsonc}` and `oh-my-opencode.{json,jsonc}` files are migration/detection surfaces only, with `wunderkind migrate` merging missing legacy OMO config keys into `~/.omo/omo.jsonc`.
-- **Published baseline vs patch-wave contract** — the canonical stable baseline is now package `0.26.1` on OpenCode `1.18.18` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `release-upgrade` and `platform-compatibility` remain the only added skill routes in this frozen wave, `supportability-incident` stays rejected, and provider/model routing remains unchanged.
+- **Published baseline vs patch-wave contract** — the canonical stable baseline is package `0.26.3` on OpenCode `1.18.18` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `supportability-review` is now part of the shipped promoted surface, and provider/model routing remains unchanged.
 - **Team-mode entry stays upstream-compatible** — `/wunderkind-team` checks canonical `oh-my-openagent` config paths and `team_mode.enabled`; missing/disabled/unavailable states fall back to solo `product-wunderkind` orchestration instead of unsupported retained-agent team members.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.

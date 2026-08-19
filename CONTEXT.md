@@ -1,14 +1,14 @@
 # Project Context
 
-Updated: 2026-08-12T00-00-00Z
+Updated: 2026-08-18T00-00-00Z
 
-This repository is the source for **Wunderkind** `0.26.1`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current published upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.18` and `oh-my-openagent` `4.19.4`.
+This repository is the source for **Wunderkind** `0.26.3`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current published upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.18` and `oh-my-openagent` `4.19.4`.
 
 ## Product and domain summary
 - **What it is**: A retained-agent overlay for OpenCode built around orchestrator-first routing, generated native markdown agents, static skills, and project-local bootstrap artifacts.
 - **Primary users**: Developers and product teams already using OpenCode and often oh-my-openagent who want opinionated, domain-specialized retained agents instead of generic coding helpers.
 - **Current success criteria**: Keep install/upgrade/doctor trustworthy, preserve compatibility with current OpenCode and oh-my-openagent surfaces, and make project-local workflow/context artifacts (`AGENTS.md`, `CONTEXT.md`, `.omo/`, docs-output, and runtime prompt reports) easy to bootstrap and maintain.
-- **Frozen patch-wave contract**: Keep OMO `v5.0.0-beta.6` out of scope, add `release-upgrade`, add `platform-compatibility`, reject `supportability-incident`, and make no provider/model-routing changes in this wave.
+- **Frozen patch-wave contract**: Keep OMO `v5.0.0-beta.6` out of scope, add `release-upgrade`, add `platform-compatibility`, add `supportability-review`, reject `supportability-incident`, and make no provider/model-routing changes in this wave.
 
 ## Core workflows
 - Install Wunderkind into OpenCode globally or per-project.
@@ -33,6 +33,7 @@ This repository is the source for **Wunderkind** `0.26.1`, an OpenCode/oh-my-ope
 - **supabase-architect**: the promoted `fullstack-wunderkind` route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and broader app-data composition when Supabase materially changes the design.
 - **release-upgrade**: the promoted `product-wunderkind` route for release-note synthesis, version bump planning, compatibility checks, upgrade sequencing, and rollback-conscious release prep.
 - **platform-compatibility**: the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions.
+- **supportability-review**: the promoted `fullstack-wunderkind` route for observability review, rollback readiness, on-call ownership, and launch-blocker posture.
 
 ## Important constraints
 - Wunderkind must remain a **zero-daemon synchronous overlay**; no scheduler, no queue, no MCP lifecycle ownership.
@@ -52,7 +53,7 @@ This repository is the source for **Wunderkind** `0.26.1`, an OpenCode/oh-my-ope
 - The project-local prompt optimization override is enabled with `promptOptimizationMode: active`, `promptOptimizationReportingMode: summary`, `promptOptimizationTokenBudget: 120000`, and `promptOptimizationByteBudget: 1200`.
 - `promptOptimizationLevel` is intentionally omitted in this repo-local override, so the current local posture resolves through the frozen legacy compatibility profile until an operator explicitly selects a concrete level.
 - Current latest-only runtime-report artifacts live at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
-- Current published skill inventory truth is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`; `release-upgrade` and `platform-compatibility` are now part of the promoted public surface while `supportability-incident` remains intentionally rejected in favor of `/supportability-review`, `/runbook`, and `/incident-response`.
+- Current repo-head skill inventory truth is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`; `release-upgrade`, `platform-compatibility`, and `supportability-review` are part of the current promoted surface while `supportability-incident` remains intentionally rejected in favor of `/supportability-review`, `/runbook`, and `/incident-response`.
 
 ## Open questions
 - Whether docs output should stay on `overwrite` for this repo long-term or move to `append-dated` for richer history.

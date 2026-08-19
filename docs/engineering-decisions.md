@@ -1,6 +1,6 @@
 # Engineering Decisions
 
-Last refreshed: 2026-08-12T00-00-00Z
+Last refreshed: 2026-08-18T00-00-00Z
 
 ## Current technical baseline
 
@@ -8,7 +8,7 @@ Last refreshed: 2026-08-12T00-00-00Z
 - **Plugin package**: `@opencode-ai/plugin@1.18.18`
 - **SDK package**: `@opencode-ai/sdk@1.18.18`
 - **OMO dependency**: `oh-my-openagent@4.19.4`
-- **Current Wunderkind package version**: `0.26.1`
+- **Current Wunderkind package version**: `0.26.3`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 - **Frozen current patch-wave target**: OpenCode `1.18.18` + `oh-my-openagent` `4.19.4`, with OMO `v5.0.0-beta.6` explicitly out of scope
 
@@ -31,13 +31,13 @@ This gives both bundle-level and per-agent installed-state visibility.
 Canonical/legacy OMO naming behavior should concentrate in operational seams (`config-manager`, `doctor`, installer/upgrade), with legacy names limited to `wunderkind migrate` guidance and detection warnings instead of fallback execution. `wunderkind migrate` migrates legacy OMO config into `~/.omo/omo.jsonc` with no-clobber semantics and does not migrate `.sisyphus/` project artifacts.
 
 ### Platform routing remains specialized instead of generic
-`platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The skill inventory is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27`.
+`platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supportability-review` is the promoted fullstack-owned route for observability, rollback-readiness, on-call ownership, and launch blockers. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The current repo-head skill inventory is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
 ### The current patch wave is not a provider/model-routing wave
 The frozen patch-wave contract targets OpenCode `1.18.18` and OMO `4.19.4`, but it does not change provider/model routing. `oh-my-openagent.jsonc` category models and canonical manifest routing must stay unchanged in this wave.
 
-### The current skill-governance wave adds two routes and rejects the overlapping incident skill
-The frozen skill target is `promoted=22`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=27` by adding `release-upgrade` and `platform-compatibility`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
+### The current skill-governance wave adds a narrow supportability route and rejects the overlapping incident skill
+The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28` by adding `release-upgrade`, `platform-compatibility`, and `supportability-review`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
 
 ### CONTEXT.md is part of project bootstrap
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.

@@ -146,6 +146,23 @@ describe("platform-compatibility public route surface", () => {
   })
 })
 
+describe("supportability-review public route surface", () => {
+  it("pins the retained owner and explicit readiness-vs-response boundaries in the eager router core", () => {
+    const skillPath = join(PROJECT_ROOT, "skills", "supportability-review", "SKILL.md")
+    const skillContent = readFileSync(skillPath, "utf8")
+
+    expect(skillContent).toContain("**Owned by:** wunderkind:fullstack-wunderkind")
+    expect(skillContent).toContain("observability review")
+    expect(skillContent).toContain("rollback readiness")
+    expect(skillContent).toContain("on-call ownership")
+    expect(skillContent).toContain("launch blockers")
+    expect(skillContent).toContain("incident-response")
+    expect(skillContent).toContain("/runbook")
+    expect(skillContent).toContain("diagnose")
+    expect(skillContent).toContain("technical-writer")
+  })
+})
+
 describe("supportability-incident rejection surface", () => {
   it("keeps supportability-incident absent and routes operators to the existing command surfaces", () => {
     const supportabilitySkillDir = join(PROJECT_ROOT, "skills", "supportability-incident")
@@ -166,7 +183,7 @@ describe("supportability-incident rejection surface", () => {
 })
 
 describe("public inventory truth surfaces", () => {
-  it("keeps the 27-route public inventory and new route names mirrored across active docs surfaces", () => {
+  it("keeps the 28-route public inventory and new route names mirrored across active docs surfaces", () => {
     const mirroredTruthFiles = [
       "README.md",
       "AGENTS.md",
@@ -181,12 +198,13 @@ describe("public inventory truth surfaces", () => {
     for (const relativePath of mirroredTruthFiles) {
       const content = readFileSync(join(PROJECT_ROOT, relativePath), "utf8")
 
-      expect(content).toContain("promoted=22")
+      expect(content).toContain("promoted=23")
       expect(content).toContain("wunderkind-specific=4")
       expect(content).toContain("deprecated=1")
-      expect(content).toContain("public/deprecated total=27")
+      expect(content).toContain("public/deprecated total=28")
       expect(content).toContain("release-upgrade")
       expect(content).toContain("platform-compatibility")
+      expect(content).toContain("supportability-review")
     }
   })
 })

@@ -161,7 +161,7 @@ describe("canonical manifest drift guards", () => {
 
   it("keeps skill frontmatter, owner lines, and bucket coverage aligned with the canonical manifest", () => {
     const expectedBuckets = {
-      promoted: 22,
+      promoted: 23,
       "wunderkind-specific": 4,
       deprecated: 1,
       internal: 0,
@@ -182,7 +182,7 @@ describe("canonical manifest drift guards", () => {
       bucketCounts.set(skill.bucket, (bucketCounts.get(skill.bucket) ?? 0) + 1)
     }
 
-    expect(WUNDERKIND_CANONICAL_MANIFEST.skills).toHaveLength(27)
+    expect(WUNDERKIND_CANONICAL_MANIFEST.skills).toHaveLength(28)
     expect(Object.fromEntries(bucketCounts)).toEqual(expectedBuckets)
   })
 
@@ -200,6 +200,24 @@ describe("canonical manifest drift guards", () => {
     expect(supabaseSkill.description).toContain("Supabase auth architecture")
     expect(supabaseSkill.description).toContain("broader app-data composition")
     expect(supabaseSkill.description).toContain("Do not use for generic backend work")
+  })
+
+  it("ships supportability-review as a promoted fullstack-owned public skill", () => {
+    const supportabilityReviewSkill = WUNDERKIND_CANONICAL_MANIFEST.skills.find(
+      (skill) => skill.id === "supportability-review",
+    )
+
+    expect(supportabilityReviewSkill).toBeDefined()
+    if (supportabilityReviewSkill === undefined) {
+      throw new Error("Expected canonical manifest to include supportability-review")
+    }
+
+    expect(supportabilityReviewSkill.bucket).toBe("promoted")
+    expect(supportabilityReviewSkill.sourceStatus).toBe("shipped")
+    expect(supportabilityReviewSkill.ownerAgentId).toBe("fullstack-wunderkind")
+    expect(supportabilityReviewSkill.description).toContain("observability review")
+    expect(supportabilityReviewSkill.description).toContain("rollback readiness")
+    expect(supportabilityReviewSkill.description).toContain("on-call ownership")
   })
 
   it("ships release-upgrade as a promoted product-owned public skill", () => {
