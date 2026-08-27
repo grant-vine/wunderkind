@@ -27,9 +27,9 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.27.2
+## What's new in 0.27.3
 
-Wunderkind `0.27.2` adds a conservative Codex lean-response convention for the shipped Codex edition.
+Wunderkind `0.27.3` refines the conservative Codex lean-response convention for the shipped Codex edition.
 
 - default Wunderkind Codex agents to concise answers unless detail is required by risk, evidence, or an explicit user request
 - add lean-response guidance to Codex project bootstrap output without adding prompt rewriting, transcript rewriting, or tool-output compaction

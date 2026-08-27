@@ -74,7 +74,8 @@ describe("Codex capability manifest", () => {
     for (const agent of CODEX_CAPABILITY_MANIFEST.agents) {
       const source = sourceText(agent.sourcePath)
       expect(source).toContain("Lean response mode:")
-      expect(source).toContain("expand only when the user asks or risk requires it")
+      expect(source).toContain("use encoded local constraints first")
+      expect(source).toContain("current-version-sensitive or potentially stale")
     }
   })
 

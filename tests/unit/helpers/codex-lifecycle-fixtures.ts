@@ -7,7 +7,7 @@ import { __resetCodexInstallStateWriterForTests } from "../../../src/cli/codex/s
 
 const PROJECT_ROOT = new URL("../../../", import.meta.url).pathname
 
-export const PACKAGE_VERSION = "0.27.2"
+export const PACKAGE_VERSION = "0.27.3"
 export const AGENT_NAMES = ["wunderkind-marketing", "wunderkind-creative-director", "wunderkind-product", "wunderkind-architecture", "wunderkind-ciso", "wunderkind-legal"] as const
 
 export interface FakeCodex {

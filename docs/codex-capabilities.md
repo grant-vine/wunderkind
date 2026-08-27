@@ -21,7 +21,7 @@ Start a new Codex task after `install` or `upgrade`: Codex loads custom agents a
 
 ## Lean response mode
 
-Wunderkind Codex agents default to concise answers: lead with the decision, summarize evidence compactly, and expand only when the user asks or risk requires it. This is an instruction-level convention, not automatic prompt rewriting, transcript rewriting, or tool-output compaction.
+Wunderkind Codex agents default to concise answers: lead with the decision, use encoded local constraints first, and expand only when the user asks, risk requires it, or the relevant facts are current-version-sensitive or potentially stale. This is an instruction-level convention, not automatic prompt rewriting, transcript rewriting, or tool-output compaction.
 
 ## Retained surface
 
