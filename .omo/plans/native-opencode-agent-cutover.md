@@ -1,5 +1,7 @@
 # Native OpenCode Agent Cutover
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented through generated native agents and current OpenCode asset installation. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Goal
 
 Migrate Wunderkind from unsupported OMO-config-based agent registration to native OpenCode agent registration while preserving:

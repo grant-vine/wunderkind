@@ -1,5 +1,7 @@
 # CLI Doctor v2 — Verbose Mode
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and covered by the current doctor test surface. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Evolve `doctor` to provide a concise default output while offering an expanded `--verbose` mode for maintainers and advanced users.

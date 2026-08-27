@@ -1,0 +1,27 @@
+{
+  "name": "wunderkind",
+  "version": "0.27.0",
+  "description": "Retained specialist skills and custom agents for software product teams.",
+  "author": {
+    "name": "Grant Vine",
+    "url": "https://github.com/grant-vine"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/grant-vine/wunderkind",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Wunderkind",
+    "shortDescription": "Retained specialists for product teams.",
+    "longDescription": "Skills and custom agents for product, marketing, creative, architecture, security, and legal judgment.",
+    "developerName": "Grant Vine",
+    "category": "Productivity",
+    "capabilities": [
+      "Skills",
+      "Custom Agents"
+    ],
+    "websiteURL": "https://github.com/grant-vine/wunderkind",
+    "defaultPrompt": [
+      "Route this product-team decision to the right Wunderkind specialist."
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, realpathSync, writeFileSync } from "node:fs"
+import { lstatSync, mkdirSync, realpathSync, renameSync, writeFileSync } from "node:fs"
 import { isAbsolute, join, normalize, relative, resolve } from "node:path"
 import type { DocHistoryMode } from "./types.js"
 
@@ -92,13 +92,23 @@ export function ensureDocsPathHasNoSymlinkSegments(docsPath: string, cwd: string
   for (const segment of segments) {
     currentPath = join(currentPath, segment)
 
-    if (!existsSync(currentPath)) {
+    const stat = lstatOrMissing(currentPath)
+    if (stat === undefined) {
       return
     }
 
-    if (lstatSync(currentPath).isSymbolicLink()) {
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
       throw new Error("docs-output lane must not include symlinked segments")
     }
+  }
+}
+
+function lstatOrMissing(path: string): ReturnType<typeof lstatSync> | undefined {
+  try {
+    return lstatSync(path)
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return undefined
+    throw error
   }
 }
 
@@ -128,20 +138,55 @@ export function resolveProjectLocalDocsPath(docsPath: string, cwd: string): {
   }
 }
 
+export function validateProjectLocalDocsPath(docsPath: string, cwd: string): { readonly valid: boolean; readonly error?: string } {
+  const lexicalValidation = validateDocsPath(docsPath)
+  if (!lexicalValidation.valid) return lexicalValidation
+
+  try {
+    const resolvedDocsPath = resolveProjectLocalDocsPath(docsPath, cwd).docsPath
+    if (resolvedDocsPath === "DESIGN.md" || resolvedDocsPath.startsWith("DESIGN.md/")) {
+      return { valid: false, error: "docsPath is invalid for docs-output because DESIGN.md is reserved for design-md" }
+    }
+  } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : "Invalid docsPath" }
+  }
+
+  return { valid: true }
+}
+
+export function validateDocsBootstrapLane(docsPath: string, cwd: string): void {
+  const resolved = resolveProjectLocalDocsPath(docsPath, cwd)
+  const docsDirectory = lstatOrMissing(resolved.absolutePath)
+  if (docsDirectory !== undefined && (docsDirectory.isSymbolicLink() || !docsDirectory.isDirectory())) {
+    throw new Error("docs-output lane must be a physical directory")
+  }
+  const readme = lstatOrMissing(join(resolved.absolutePath, "README.md"))
+  if (readme !== undefined && (readme.isSymbolicLink() || !readme.isFile())) {
+    throw new Error("docs-output README must be a physical regular file")
+  }
+}
+
 export function validateDocHistoryMode(mode: string): mode is DocHistoryMode {
   return DOC_HISTORY_MODES.includes(mode as DocHistoryMode)
 }
 
 export function bootstrapDocsReadme(docsPath: string, cwd: string): void {
+  validateDocsBootstrapLane(docsPath, cwd)
   const normalizedDocsPath = resolveProjectLocalDocsPath(docsPath, cwd).docsPath
   const docsDir = join(cwd, normalizedDocsPath)
   const readmePath = join(docsDir, "README.md")
 
   mkdirSync(docsDir, { recursive: true })
+  validateDocsBootstrapLane(docsPath, cwd)
 
-  if (!existsSync(readmePath)) {
-    writeFileSync(readmePath, README_CONTENT)
+  const readme = lstatOrMissing(readmePath)
+  if (readme !== undefined) {
+    if (readme.isSymbolicLink() || !readme.isFile()) throw new Error("docs-output README must be a physical regular file")
+    return
   }
+  const temporary = `${readmePath}.wunderkind-${process.pid}-${Date.now()}.tmp`
+  writeFileSync(temporary, README_CONTENT, { encoding: "utf8", flag: "wx" })
+  renameSync(temporary, readmePath)
 }
 
 export function getDocsEnabledPromptMessage(): string {

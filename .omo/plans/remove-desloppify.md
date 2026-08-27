@@ -1,5 +1,7 @@
 # Remove Desloppify And Replace Code-Health Safely
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented; automated cleanup was removed and `code-health` is audit-only. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Remove Desloppify from Wunderkind's runtime, CLI, config, docs, and uninstall contract, while preserving `code-health` as a safer audit-only skill inspired by Matt Pocock's architecture-review workflow.
 > **Deliverables**:

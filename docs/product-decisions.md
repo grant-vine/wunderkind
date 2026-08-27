@@ -5,7 +5,7 @@ Last refreshed: 2026-08-18T00-00-00Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.26.3`
+- **Current version**: `0.27.0`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 

@@ -1,5 +1,7 @@
 # Upgrade Wunderkind for New oh-my-openagent and OpenCode Capabilities
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. Replaced by the later stable upstream-alignment and hard-cut convergence waves. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Upgrade Wunderkind from its current oh-my-openagent/OpenCode baseline to the latest compatible upstream surfaces, harden canonical naming and compatibility seams, then selectively integrate major new capabilities like richer plugin hooks, MCP-aware flows, ACP/editor-awareness, and agent guidance for LSP/AST-grep/background work — without violating Wunderkind’s synchronous overlay strategy.
 > **Deliverables**:

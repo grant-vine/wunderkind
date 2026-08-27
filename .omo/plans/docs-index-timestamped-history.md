@@ -1,5 +1,7 @@
 # docs-index timestamped history standard
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented through shared UTC timestamp, collision, managed-family, and history-mode helpers with regression coverage. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Replace vague date-only docs-history guidance with one canonical UTC timestamp contract that works for both `append-dated` section headers and `new-dated-file` filenames, without migrating legacy date-only artifacts.
 > **Deliverables**:

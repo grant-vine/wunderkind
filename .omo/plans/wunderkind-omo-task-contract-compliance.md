@@ -1,5 +1,7 @@
 # Wunderkind OMO Task Contract Compliance
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in retained-agent prompts, generated assets, maintainer guidance, and contract-scanner tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Align Wunderkind’s retained-agent guidance with the current oh-my-openagent task contract so agents stop emitting invalid delegation calls. The fix is prompt-contract work: add one canonical delegation section, tighten task-vs-skill wording, update runtime routing guidance, regenerate native agents, and pin the behavior with TDD-first regression tests.
 > **Deliverables**:

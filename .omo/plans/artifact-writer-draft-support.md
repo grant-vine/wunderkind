@@ -1,5 +1,7 @@
 # Add Explicit Draft Support to wunderkind_write_artifact
 
+> **Lifecycle:** `closed-rejected` — audited 2026-08-26. Not implemented by design. The later hard-cut `.omo` contract restricts the durable writer to `.omo/notepads/` and `.omo/evidence/`; ordinary drafts and plans use normal file tools. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Add a first-class `draft` durable-artifact kind so `product-wunderkind` can write `.sisyphus/drafts/*.md` through a bounded lane, without weakening existing `notepad` or other artifact security rules.
 > **Deliverables**:

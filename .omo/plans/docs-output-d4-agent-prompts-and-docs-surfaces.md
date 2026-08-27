@@ -1,5 +1,7 @@
 # Docs Output D4 — Agent Prompts and Docs Surfaces
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented across retained-agent prompts, docs ownership, and managed lanes. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Define the docs-output conventions agents should follow, propagate them into eligible agent prompts, regenerate generated prompts, and document the feature coherently in README and the root AGENTS knowledge base.

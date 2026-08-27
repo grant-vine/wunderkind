@@ -1,5 +1,7 @@
 # Native Commands, Skills, and Real Upgrade
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in install/upgrade asset writers and freshness diagnostics. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Goal
 
 Expand Wunderkind's native OpenCode registration from agents-only to agents + commands + skills, and replace the current upgrade no-op with a real, safe, scope-aware asset refresh flow.

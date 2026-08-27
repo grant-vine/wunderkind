@@ -1,5 +1,7 @@
 # CLI Docs Orchestration W8A — Invocation Contract
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. Replaced by the lightweight `/docs-index` refresh/bootstrap contract and the later canonical-manifest convergence. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Identify and formalize the invocation surface for the centralized documentation orchestration plugin slash command `/wunderkind:docs-index`. This workstream now focuses on packaging, command naming, coordinator routing, and the background-agent invocation contract rather than a speculative local CLI/runtime interceptor.

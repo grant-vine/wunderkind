@@ -1,5 +1,7 @@
 # Persistent Documentation Output System
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented; later docs-index plans refined its operational contract. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 > **Hub plan:** This file is the docs-output plan of record. It defines scope, ordering, guardrails, and final integration checks. Implementation work should happen from the child plans linked below.
 
 ## TL;DR

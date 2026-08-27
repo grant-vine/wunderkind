@@ -1,5 +1,7 @@
 # Wunderkind Openagent Brand Migration, Default Inheritance Alignment, and Plan Decomposition
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. Replaced by the later canonical `oh-my-openagent` convergence and stable-upgrade plans. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 > **Historical note:** The decomposition of `.sisyphus/plans/docs-output-system.md` described in this plan is no longer the active execution path. The full `docs-output-system.md` plan has been restored and should be treated as the active docs-output execution source.
 
 ## TL;DR

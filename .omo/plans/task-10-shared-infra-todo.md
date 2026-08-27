@@ -1,5 +1,7 @@
 # Task 10 -> Task 13 shared infrastructure cleanup
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Completed by the six-agent topology consolidation. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 Do not apply these changes in Task 10. This file records the exact shared-file cleanup Task 13 must perform after the domain-scoped merges are already in place.
 
 ## Remove retired base-agent registrations

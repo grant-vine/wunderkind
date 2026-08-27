@@ -1,5 +1,7 @@
 # Orchestrator-First Topology Decision
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Decision implemented in the six retained agents with product-wunderkind as front door. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 This document defines the fixed target topology for the Wunderkind agent harness. It is the implementation contract for prompt rewrites, routing behavior, personality-key cleanup, and later manifest/docs pruning work.
 
 ## Decision

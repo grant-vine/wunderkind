@@ -1,5 +1,7 @@
 # CLI Config Contract W2 — Project-Local Souls
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and covered by current config, init, runtime, and doctor tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Formalize the split between global and project-local configuration. Establish that all personality and "soul" definitions belong exclusively to the project scope, while global config remains a baseline for defaults only.

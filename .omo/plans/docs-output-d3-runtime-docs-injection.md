@@ -1,5 +1,7 @@
 # Docs Output D3 — Runtime Docs Injection
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in the plugin system-transform runtime. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Inject a runtime docs-output guidance block into the Wunderkind plugin system prompt when docs output is enabled, while keeping the behavior idempotent and compatible with static agent prompt guidance.

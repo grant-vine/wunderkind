@@ -1,5 +1,7 @@
 # CLI Evolution and Audit Roadmap
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. All workstreams landed; later plans refined the docs-orchestration contract. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 > **Hub plan:** This file is the plan of record for the next CLI/product-audit wave. It covers command-surface changes, config contract changes, docs orchestration, and the repository-wide audit requested by the user.
 
 ## TL;DR

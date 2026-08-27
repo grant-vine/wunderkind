@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { basename, dirname, join, relative } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
@@ -1326,6 +1326,34 @@ function ensureConfigDir(configDir: string, configPath: string): ConfigMergeResu
     return null
   } catch (err) {
     return { success: false, configPath, error: String(err) }
+  }
+}
+
+export function validateProjectWunderkindConfigWriteTarget(): ConfigMergeResult | null {
+  const paths = resolveConfigManagerPaths()
+
+  try {
+    try {
+      const directory = lstatSync(paths.wunderkindDir)
+      if (!directory.isDirectory() || directory.isSymbolicLink()) {
+        return { success: false, configPath: paths.wunderkindConfig, error: "Project config directory must be a physical directory" }
+      }
+    } catch (err) {
+      if (!(err instanceof Error) || !("code" in err) || err.code !== "ENOENT") throw err
+    }
+
+    try {
+      const config = lstatSync(paths.wunderkindConfig)
+      if (!config.isFile() || config.isSymbolicLink()) {
+        return { success: false, configPath: paths.wunderkindConfig, error: "Project config must be a physical regular file" }
+      }
+    } catch (err) {
+      if (!(err instanceof Error) || !("code" in err) || err.code !== "ENOENT") throw err
+    }
+
+    return null
+  } catch (err) {
+    return { success: false, configPath: paths.wunderkindConfig, error: String(err) }
   }
 }
 

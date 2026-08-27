@@ -1,5 +1,7 @@
 # CLI Evolution Review Bundle
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Completed as the review input for the CLI evolution wave. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Review Target
 
 This file is an aggregate review target for the CLI evolution planning set.

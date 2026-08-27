@@ -2,6 +2,9 @@
 
 Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents covering marketing, design, product, engineering, security, and legal, then anchors their work in `.omo` notepads, evidence, docs output, and lifecycle commands.
 
+> [!NOTE]
+> **Codex edition.** Wunderkind also ships a separate nested `wunderkind codex` lifecycle for Codex plus LazyCodex. It does not change the existing OpenCode product. The documented path is `npx @grant-vine/wunderkind codex <verb>`; local packed QA uses `node package/bin/wunderkind.js codex <verb>`. See [Codex edition capabilities](docs/codex-capabilities.md) for its exact six-agent, eleven-skill boundary, ownership model, and optional companion routes. Codex prompt/token optimization is deferred for a future host-native design revisit.
+
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
 > [!IMPORTANT]
@@ -23,6 +26,16 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 > - The `code-health` skill is now an audit/reporting tool only — it does not install or invoke any automated cleanup tool.
 
 ---
+
+## What's new in 0.27.0
+
+Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle while preserving the existing OpenCode edition.
+
+- add `wunderkind codex install`, `upgrade`, `doctor`, `uninstall`, `init`, and `cleanup`
+- ship exactly six Codex custom agents and eleven Wunderkind Codex skills
+- require LazyCodex (`omo@sisyphuslabs >=4.19.4 <5`) as the only hard Codex dependency
+- keep companion integrations advisory and non-owned
+- defer Codex prompt/token optimization to a future host-native design pass
 
 ## What's new in 0.26.3
 

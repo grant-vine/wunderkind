@@ -1,5 +1,7 @@
 # SOUL Architecture Decision
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Decision implemented through project-local SOUL creation and runtime overlay handling. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Decision
 
 Wunderkind will replace static, duplicated personality prose with optional per-persona SOUL files that live inside the project-local `.wunderkind/` directory and are injected at runtime by `src/index.ts`.

@@ -1,5 +1,7 @@
 # Improvements: Personality UX, OMO Project Bug Fix, Doctor Verbose, Test Coverage, README
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented; later convergence work updated naming and project-artifact contracts. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Six targeted improvements: add human-readable hint text to all personality select options, surface personality config in doctor verbose, fix the project-scope bug where `.opencode/oh-my-opencode.jsonc` is never written, convert docs history mode prompt from text to select, expand test coverage to catch the bug class, and update README with full personality reference.
 > **Deliverables**:

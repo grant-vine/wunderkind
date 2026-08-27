@@ -1,5 +1,7 @@
 # Wunderkind Agent Harness Optimization Audit
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and verified; the six-agent retained topology and governance surface are current. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 > Historical note: this plan was completed under the harness-era contract. Some Desloppify-specific deliverables were later intentionally superseded by `.sisyphus/plans/remove-desloppify.md`; the checked items in this file reflect completion at the time of this plan, not the current post-removal product contract.
 
 ## TL;DR

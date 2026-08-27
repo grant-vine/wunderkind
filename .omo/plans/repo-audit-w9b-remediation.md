@@ -1,5 +1,7 @@
 # Repo Audit W9B — Remediation
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Completed; accepted high-priority findings were remediated. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Remediate the accepted findings from the baseline audit (W9A) within a defined budget and scope.

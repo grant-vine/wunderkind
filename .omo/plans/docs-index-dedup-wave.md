@@ -1,5 +1,7 @@
 # Docs Index Simplification and Prompt Deduplication
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. The topology assumptions and strict docs protocol were replaced by the six-agent lightweight refresh/bootstrap design. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Goal
 
 Ship a safe focused wave that:

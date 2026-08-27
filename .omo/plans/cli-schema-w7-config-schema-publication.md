@@ -1,5 +1,7 @@
 # CLI Schema W7 — Config Schema Publication
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented; schema publication and config references are covered by tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Publish a formal JSON Schema for Wunderkind's configuration files and integrate it into the generated config via the `$schema` field.

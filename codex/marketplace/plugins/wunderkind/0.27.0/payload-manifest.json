@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "agents/wunderkind-architecture.toml",
+      "sha256": "d313d1404d9561a9c2be9846d98e713c895d99e835651622af6627f4b42226e2"
+    },
+    {
+      "path": "agents/wunderkind-ciso.toml",
+      "sha256": "456f79a1eb928a2dffdde7cde0ec1fa0e8fa7c8249aca142eb9b5aabd7079dfb"
+    },
+    {
+      "path": "agents/wunderkind-creative-director.toml",
+      "sha256": "0c4324c19b837c8e373d2a513acf50584860cff37ba814ca6650286c26c07d06"
+    },
+    {
+      "path": "agents/wunderkind-legal.toml",
+      "sha256": "5d096bb16487ee2f6e85e3373b5dabcda6c56928433ac0eaa81048ff13d21211"
+    },
+    {
+      "path": "agents/wunderkind-marketing.toml",
+      "sha256": "e8b6a1b94952eb72bbb177c11e2f814526aa61beb5e7e548a16a8ab529aa4c09"
+    },
+    {
+      "path": "agents/wunderkind-product.toml",
+      "sha256": "b6afa9f4b9280aeb6883a7c670f1e05303cd4fd363fc4892c01f89320b19b0ab"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/.codex-plugin/plugin.json",
+      "sha256": "eb924f3ca234de1e804f6e139bafc87604070bffc2c4521e23ade33f74b9fca3"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/compliance-officer/SKILL.md",
+      "sha256": "7131ff8f299d10e877b28c48668bcfff80a1463b692bee66db2d7b72c5db62a6"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/docs-index/SKILL.md",
+      "sha256": "c0ccc65ff13f86679bacfa1f67f06b015656e66b4441b5395dc4cd101c66d4db"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/experimentation-analyst/SKILL.md",
+      "sha256": "0800ba7af3a8a0a496241eaad51c81bb5477f3823389c75c27595dd7af216dc6"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/oss-licensing-advisor/SKILL.md",
+      "sha256": "aac6a362523ce0594b7034a9aa045b34b995433b1ec6a71f8254771460fb90b4"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/prd-pipeline/SKILL.md",
+      "sha256": "efa162418735bcb24077bffa1b2ad556742c0d321c5d2f4a1a41251a7fe4a52f"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/release-upgrade/SKILL.md",
+      "sha256": "c5e614a14ee1530e47f378035b06a71425567efe2755daadcbe559f8779d5312"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/setup-wunderkind-workflow/SKILL.md",
+      "sha256": "639f483b815517a57370b4ed567fd5a2c2cf7eca7dcef6225e8f7e4db05644bc"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/social-media-maven/SKILL.md",
+      "sha256": "74d3867edec0d030378672d419951dfc5afed650edeb80f500d27a8fb7589458"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/supportability-review/SKILL.md",
+      "sha256": "87594205773ae3e46e0e360f60243cb9c0ff3e94fdd81c36ec4194334991e2b8"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/technical-writer/SKILL.md",
+      "sha256": "46a2e263b85b0627846db276349c088ca100bd561588c971ef6e38e87a75b347"
+    },
+    {
+      "path": "marketplace/plugins/wunderkind/0.27.0/skills/wunderkind/SKILL.md",
+      "sha256": "84038da7b6e67de5aa2e5568382f7aca00e8855ee7b5b03eee1425389319a111"
+    }
+  ]
+}

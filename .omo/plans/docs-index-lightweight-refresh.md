@@ -1,5 +1,7 @@
 # docs-index lightweight refresh/bootstrap redesign
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented as the current `/docs-index` command contract. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Explicit product decision
 
 `/docs-index` becomes a **lightweight refresh/bootstrap command**.

@@ -1,5 +1,7 @@
 # Docs Output D1 — Foundation and Config
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in config, schema, and docs-output helpers. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Establish the foundational config contract for docs output: correct the config-path bug everywhere it matters, add the docs-output config fields to the install/config types, and expose a shared reader that runtime code can consume safely.

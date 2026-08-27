@@ -1,5 +1,7 @@
 # Google Stitch MCP + DESIGN.md Integration
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented through design helpers, MCP adapters, init flows, command assets, and tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Add project-scoped Google Stitch support to Wunderkind by extending `init` and diagnostics, registering a remote MCP server through an adapter-oriented helper, and making a strict root-level `DESIGN.md` the canonical design artifact for both greenfield and existing-app workflows.
 > **Deliverables**:

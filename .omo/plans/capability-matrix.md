@@ -1,5 +1,7 @@
 # Capability Preservation Matrix
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Completed as a retained-topology decision and audit artifact. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 This matrix is the single authoritative inventory for the six-agent target topology.
 
 Sources used: `src/agents/manifest.ts`, `oh-my-opencode.jsonc`, `src/index.ts`, `src/agents/*.ts`, and `skills/SKILL-STANDARD.md`.

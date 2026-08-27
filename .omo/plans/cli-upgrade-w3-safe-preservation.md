@@ -1,5 +1,7 @@
 # CLI Upgrade W3 — Safe Preservation
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and covered by installer/config preservation tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Implement the `upgrade` command to update the Wunderkind plugin registration and global configuration safely while preserving all existing user customizations.

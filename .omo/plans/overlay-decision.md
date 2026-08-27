@@ -1,5 +1,7 @@
 # OMO Overlay vs Adjacent-Runtime Decision Memo
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Decision adopted: remain a zero-daemon synchronous overlay. Its runtime inventory is historical; current hooks are authoritative in `src/index.ts`. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 **Decision date**: 2026-03-19  
 **Status**: CURRENT — overlay, migration gates defined below
 

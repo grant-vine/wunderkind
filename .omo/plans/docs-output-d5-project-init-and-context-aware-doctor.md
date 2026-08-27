@@ -1,5 +1,7 @@
 # Docs Output D5 — Project Init and Context-Aware Doctor
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in project init and doctor diagnostics. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Make project bootstrap a first-class part of the docs-output solution: add `wunderkind init`, let interactive install optionally initialize the current project when run inside a project folder, move project-local personality and docs-output questions behind init, provision project-local soul files, and add `wunderkind doctor` that always shows install info and adds project checks when run inside a project.

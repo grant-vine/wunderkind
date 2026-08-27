@@ -1,5 +1,7 @@
 # CLI Lifecycle W1 — Command Surface
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in the current Commander CLI surface. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Evolve the CLI command surface to support explicit lifecycle semantics. This includes removing the implicit default `install` behavior and adding the `upgrade` command entry point (plumbing only, logic follows in W3).

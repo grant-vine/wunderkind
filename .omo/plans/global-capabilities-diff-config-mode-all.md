@@ -1,5 +1,7 @@
 # Global capabilities + diff-only project config + mode-all specialists
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented through sparse project config, global native assets, and retained-agent mode configuration. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Assumption
 
 Until the user narrows the scope, treat **all 12 shipped Wunderkind specialists** as the allowlist for `mode: all`.

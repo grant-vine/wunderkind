@@ -1,5 +1,7 @@
 # CLI TUI Refresh W5 — Look and Feel
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and covered by installer/TUI tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Review and refine the TUI layout, palette, and overall operator experience for install and init flows. Improve the summary cards and add the context-aware gitignore prompt.

@@ -1,5 +1,7 @@
 # CLI Docs Orchestration W8B — Normalization Engine
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. Its strict orchestration protocol was replaced by the lightweight `/docs-index` managed-lane model. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Build the engine behind `/wunderkind:docs-index` that delegates documentation generation/audit tasks to individual eligible agents in parallel while normalizing existing documents into canonical filenames.

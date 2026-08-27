@@ -10,6 +10,11 @@ import { DEFAULT_WUNDERKIND_TEAM_NAME, runTeamBootstrap } from "./team-bootstrap
 import { runTokenAudit } from "./token-audit.js"
 import { runTuiInstaller } from "./tui-installer.js"
 import { runUninstall } from "./uninstall.js"
+import { getCodexGlobalInstallReadiness, installCodexWunderkind } from "./codex/install.js"
+import { runCodexProjectCleanup, runCodexProjectInit } from "./codex/project-lifecycle.js"
+import { upgradeCodexWunderkind } from "./codex/upgrade.js"
+import { runCodexDoctor } from "./codex/doctor.js"
+import { uninstallCodexWunderkind } from "./codex/uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import {
   PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS,
@@ -33,6 +38,27 @@ function parseYesNoOption(flagName: string, value: string): boolean {
   if (normalized === "no" || normalized === "n" || normalized === "false") return false
   console.error(`Error: ${flagName} must be yes|no, got: "${value}"`)
   process.exit(1)
+}
+
+function parseCodexDocHistoryMode(value: string): DocHistoryMode {
+  if (value === "overwrite" || value === "append-dated" || value === "new-dated-file" || value === "overwrite-archive") return value
+  console.error(`Error: --doc-history-mode must be "overwrite", "append-dated", "new-dated-file", or "overwrite-archive", got: "${value}"`)
+  process.exit(1)
+}
+
+function parseCodexPrdPipelineMode(value: string): "filesystem" | "github" {
+  if (value === "filesystem" || value === "github") return value
+  console.error(`Error: --prd-pipeline-mode must be "filesystem" or "github", got: "${value}"`)
+  process.exit(1)
+}
+
+async function runCodexCommand(action: () => number | Promise<number>): Promise<void> {
+  try {
+    process.exit(await action())
+  } catch (error) {
+    console.error(`Error: ${String(error)}`)
+    process.exit(1)
+  }
 }
 
 const program = new Command()
@@ -598,6 +624,98 @@ program
     const exitCode = await runUninstall(uninstallOptions)
     process.exit(exitCode)
   })
+
+const codexProgram = program
+  .command("codex")
+  .description(
+    [
+      "Manage the unreleased/local Wunderkind Codex edition.",
+      "",
+      "Requires Codex plus enabled LazyCodex (omo@sisyphuslabs >=4.19.4 <5).",
+      "The existing top-level commands continue to manage the OpenCode edition.",
+    ].join("\n"),
+  )
+  .addHelpText(
+    "after",
+    [
+      "",
+      "Lifecycle:",
+      "  1. wunderkind codex install",
+      "  2. wunderkind codex init",
+      "  3. start a new Codex task so custom agents and skills are loaded",
+      "",
+      "After upgrade, start a new Codex task before using refreshed agents or skills.",
+    ].join("\n"),
+  )
+
+codexProgram
+  .command("install")
+  .description("Install the hash-owned Wunderkind Codex plugin, marketplace payload, and six custom agents.")
+  .addHelpText("after", "\nRequires Codex on PATH and enabled LazyCodex. Start a new Codex task after success.")
+  .action(() => runCodexCommand(() => {
+    const result = installCodexWunderkind()
+    console.log(`Installed Wunderkind Codex ${result.packageVersion} with ${result.agentPaths.length} custom agents.`)
+    console.log("Start a new Codex task to load Wunderkind custom agents and skills.")
+    return 0
+  }))
+
+codexProgram
+  .command("upgrade")
+  .description("Refresh only hash-owned Wunderkind Codex payloads and custom agents.")
+  .addHelpText("after", "\nPreserves modified or unowned files. Start a new Codex task after success.")
+  .action(() => runCodexCommand(() => {
+    const result = upgradeCodexWunderkind()
+    console.log(result.upgraded ? `Upgraded Wunderkind Codex to ${result.packageVersion}.` : `Wunderkind Codex is already current at ${result.packageVersion}.`)
+    console.log("Start a new Codex task to load refreshed Wunderkind custom agents and skills.")
+    return 0
+  }))
+
+codexProgram
+  .command("doctor")
+  .description("Run read-only diagnostics for the Wunderkind Codex installation and optional companions.")
+  .option("--json", "Print the versioned machine-readable report")
+  .option("-v, --verbose", "Include sanitized installation path detail")
+  .action((opts: { json?: boolean | undefined; verbose?: boolean | undefined }) => runCodexCommand(
+    () => runCodexDoctor({ json: opts.json === true, verbose: opts.verbose === true }),
+  ))
+
+codexProgram
+  .command("uninstall")
+  .description("Remove only hash-owned Wunderkind Codex agents, payloads, and registration.")
+  .addHelpText("after", "\nPreserves modified agents, LazyCodex, and all optional companion assets.")
+  .action(() => runCodexCommand(() => {
+    const result = uninstallCodexWunderkind()
+    console.log(`Removed ${result.removedAgents.length} Codex agents; preserved ${result.preservedAgents.length} modified agents.`)
+    if (result.recoveryRequired === true) console.error("Recovery required: retained Wunderkind-owned artifacts remain. Restore or remove only the reported modified files, then retry uninstall.")
+    return result.recoveryRequired === true ? 1 : 0
+  }))
+
+codexProgram
+  .command("init")
+  .description("Attach the current project to a healthy Wunderkind Codex installation.")
+  .option("--docs-enabled <yes|no>", "Enable docs output during project attachment")
+  .option("--docs-path <path>", "Docs output path relative to the current project")
+  .option("--doc-history-mode <mode>", "Doc history mode: overwrite | append-dated | new-dated-file | overwrite-archive")
+  .option("--prd-pipeline-mode <mode>", "PRD pipeline mode: filesystem | github")
+  .action((opts: { docsEnabled?: string | undefined; docsPath?: string | undefined; docHistoryMode?: string | undefined; prdPipelineMode?: string | undefined }) => runCodexCommand(() => {
+    const docsEnabled = opts.docsEnabled === undefined ? undefined : parseYesNoOption("--docs-enabled", opts.docsEnabled)
+    const docHistoryMode = opts.docHistoryMode === undefined ? undefined : parseCodexDocHistoryMode(opts.docHistoryMode)
+    const prdPipelineMode = opts.prdPipelineMode === undefined ? undefined : parseCodexPrdPipelineMode(opts.prdPipelineMode)
+    return runCodexProjectInit({
+      globalInstall: getCodexGlobalInstallReadiness(),
+      packageVersion: WUNDERKIND_CANONICAL_MANIFEST.package.version,
+      ...(docsEnabled !== undefined ? { docsEnabled } : {}),
+      ...(opts.docsPath !== undefined ? { docsPath: opts.docsPath } : {}),
+      ...(docHistoryMode !== undefined ? { docHistoryMode } : {}),
+      ...(prdPipelineMode !== undefined ? { prdPipelineMode } : {}),
+    })
+  }))
+
+codexProgram
+  .command("cleanup")
+  .description("Remove only hash-owned Codex project attachment files from the current project.")
+  .addHelpText("after", "\nPreserves shared Wunderkind config, AGENTS.md, CONTEXT.md, .omo/, docs output, OpenCode state, and companions.")
+  .action(() => runCodexCommand(() => runCodexProjectCleanup()))
 
 if (process.argv.length <= 2) {
   program.outputHelp()

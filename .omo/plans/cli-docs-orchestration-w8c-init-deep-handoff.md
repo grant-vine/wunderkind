@@ -1,5 +1,7 @@
 # CLI Docs Orchestration W8C — `init-deep` Handoff
 
+> **Lifecycle:** `closed-superseded` — audited 2026-08-26. The mandatory handoff was intentionally replaced by an optional post-refresh `init-deep` follow-up. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Ensure that `/wunderkind:docs-index` completes with a final `init-deep` call to refresh all agent knowledge of the updated documentation structure.

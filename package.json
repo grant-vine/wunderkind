@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.26.3",
+  "version": "0.27.0",
   "description": "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -20,13 +20,14 @@
     "commands/",
     "schemas/",
     "skills/",
+    "codex/",
     ".claude-plugin/",
     "bin/",
     "oh-my-openagent.jsonc",
     "wunderkind.config.jsonc"
   ],
   "scripts": {
-    "build": "tsc && bun run dist/build-agents.js",
+    "build": "tsc && bun run dist/build-agents.js && bun run dist/build-codex.js",
     "dev": "tsc --watch",
     "prepublishOnly": "bun run build",
     "test": "bun test tests/unit/",

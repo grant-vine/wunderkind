@@ -1,5 +1,7 @@
 # Implement `/dream` Command and Doctor Capability Detection
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented as a shipped native command with lifecycle freshness detection. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## TL;DR
 > **Summary**: Add a shipped static `/dream` native command for `product-wunderkind` that coordinates a mixed ideation + SOUL-synthesis + exploration workflow across all 6 retained agents, then extend `wunderkind doctor` so project-local runs explicitly report whether `/dream` is available and whether the install is stale.
 > **Deliverables**:

@@ -1,5 +1,7 @@
 # CLI Uninstall v2 — Global Cleanup
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented and covered by uninstall lifecycle tests. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Enhance the `uninstall` command to remove the global Wunderkind configuration file when applicable, while ensuring that project-local bootstrap artifacts remain untouched.

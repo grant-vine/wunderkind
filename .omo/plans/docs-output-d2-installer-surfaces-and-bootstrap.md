@@ -1,5 +1,7 @@
 # Docs Output D2 — Init Prompts and Docs Bootstrap
 
+> **Lifecycle:** `closed-completed` — audited 2026-08-26. Implemented in interactive/non-interactive init and docs bootstrap flows. Any remaining unchecked boxes are retained as historical execution bookkeeping and do not represent active work.
+
 ## Objective
 
 Own the docs-output customization surfaces used by project init paths, plus bootstrap behavior that creates `<docsPath>/README.md` only when docs output is enabled.
