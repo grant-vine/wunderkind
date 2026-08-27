@@ -16,7 +16,7 @@ import {
   __setCodexProjectMarkerWriterForTests,
 } from "../../src/cli/codex/project-marker.js"
 
-const PACKAGE_VERSION = "0.27.1"
+const PACKAGE_VERSION = "0.27.2"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -101,6 +101,8 @@ describe("Codex project lifecycle", () => {
       expect(guidance).toContain("$init-deep")
       expect(guidance).toContain("$ulw-plan")
       expect(guidance).toContain("$start-work")
+      expect(guidance).toContain("Lean response mode is the default")
+      expect(guidance).toContain("detailed expansion only when asked or risk requires it")
     })
   })
 

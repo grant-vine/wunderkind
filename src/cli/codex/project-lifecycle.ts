@@ -45,6 +45,7 @@ const RUNTIME_FILENAME = "workflow-guidance.md"
 const CODEX_WORKFLOW_GUIDANCE = `# Wunderkind Codex workflow
 
 - Start with $wunderkind for retained-specialist routing.
+- Lean response mode is the default: concise answers first, detailed expansion only when asked or risk requires it.
 - Use $docs-index for Wunderkind-managed documentation lanes.
 - Use OMO $init-deep to establish durable repository context, $ulw-plan to agree an implementation plan, and $start-work to execute it.
 - Optional companion routes can add focused GitHub, Figma, Vercel, Sentry, Codex Security, analytics, Matt Pocock, or Supabase support when they are already installed.

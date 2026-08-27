@@ -19,6 +19,10 @@ Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wun
 
 Start a new Codex task after `install` or `upgrade`: Codex loads custom agents and plugin skills at task start.
 
+## Lean response mode
+
+Wunderkind Codex agents default to concise answers: lead with the decision, summarize evidence compactly, and expand only when the user asks or risk requires it. This is an instruction-level convention, not automatic prompt rewriting, transcript rewriting, or tool-output compaction.
+
 ## Retained surface
 
 The package provides exactly six global custom agents and exactly eleven plugin skills.

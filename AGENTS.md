@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.27.1
+**Package:** `@grant-vine/wunderkind` v0.27.2
 **Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.18.18 · `oh-my-openagent` 4.19.4
 
 > **Codex edition status:** a nested `wunderkind codex` surface ships alongside the unchanged OpenCode edition. It has exactly six Codex agents and eleven skills, requires LazyCodex (`omo@sisyphuslabs >=4.19.4 <5`), and defers Codex prompt/token optimization to a future host-native design pass. See `docs/codex-capabilities.md`.
@@ -283,7 +283,7 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **oh-my-openagent must be installed before wunderkind** — upstream uses `oh-my-openagent` for plugin entries, config basenames, and public install commands. Wunderkind centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead. Legacy `oh-my-opencode` config files are migration inputs for `wunderkind migrate` only.
 - **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — unified `~/.omo/omo.jsonc` is the active upstream config chain. Legacy `oh-my-openagent.{json,jsonc}` and `oh-my-opencode.{json,jsonc}` files are migration/detection surfaces only, with `wunderkind migrate` merging missing legacy OMO config keys into `~/.omo/omo.jsonc`.
-- **Published baseline vs patch-wave contract** — the canonical stable baseline is package `0.27.1` on OpenCode `1.18.18` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `supportability-review` is now part of the shipped promoted surface, and provider/model routing remains unchanged.
+- **Published baseline vs patch-wave contract** — the canonical stable baseline is package `0.27.2` on OpenCode `1.18.18` / OMO `4.19.4`. OMO `v5.0.0-beta.6` stays out of scope, `supportability-review` is now part of the shipped promoted surface, and provider/model routing remains unchanged.
 - **Team-mode entry stays upstream-compatible** — `/wunderkind-team` checks canonical `oh-my-openagent` config paths and `team_mode.enabled`; missing/disabled/unavailable states fall back to solo `product-wunderkind` orchestration instead of unsupported retained-agent team members.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.

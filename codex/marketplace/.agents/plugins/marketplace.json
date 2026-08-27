@@ -8,7 +8,7 @@
       "name": "wunderkind",
       "source": {
         "source": "local",
-        "path": "./plugins/wunderkind/0.27.1"
+        "path": "./plugins/wunderkind/0.27.2"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -70,6 +70,14 @@ describe("Codex capability manifest", () => {
     }
   })
 
+  it("keeps lean response mode on every retained Codex agent", () => {
+    for (const agent of CODEX_CAPABILITY_MANIFEST.agents) {
+      const source = sourceText(agent.sourcePath)
+      expect(source).toContain("Lean response mode:")
+      expect(source).toContain("expand only when the user asks or risk requires it")
+    }
+  })
+
   it("parses every retained skill frontmatter with the available YAML parser", () => {
     for (const skill of CODEX_CAPABILITY_MANIFEST.skills) {
       const document = parseDocument(skillFrontmatter(sourceText(skill.sourcePath)))
