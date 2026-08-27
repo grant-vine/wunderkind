@@ -27,6 +27,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.27.1
+
+Wunderkind `0.27.1` is a documentation and CLI-copy patch for the newly shipped Codex edition.
+
+- replace stale unreleased/local Codex edition wording with published `0.27.x` guidance
+- keep the public `npx @grant-vine/wunderkind codex <verb>` path explicit while retaining packed QA wording for maintainers
+- update the nested `wunderkind codex` command description to describe the shipped Codex edition
+
 ## What's new in 0.27.0
 
 Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle while preserving the existing OpenCode edition.

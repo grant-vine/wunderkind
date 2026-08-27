@@ -66,15 +66,16 @@ describe("Codex CLI help", () => {
   })
 
   it("documents the released npx lifecycle while retaining the local packed equivalent", () => {
-    // Given: the public Codex capability guide for the unreleased local surface.
+    // Given: the public Codex capability guide for the released Codex surface.
     const guide = readFileSync(fileURLToPath(new URL("../../docs/codex-capabilities.md", import.meta.url)), "utf8")
 
-    // When: a future released operator follows the documented install path.
+    // When: a released operator follows the documented install path.
     const releasedInstall = "npx @grant-vine/wunderkind codex install"
 
-    // Then: the guide distinguishes the post-release command from today's packed local QA form.
+    // Then: the guide distinguishes the published command from the maintainer packed QA form.
     expect(guide).toContain(releasedInstall)
     expect(guide).toContain("node package/bin/wunderkind.js codex <verb>")
-    expect(guide).toContain("unreleased, local package surface")
+    expect(guide).toContain("ships in `@grant-vine/wunderkind` `0.27.0` and later")
+    expect(guide).not.toContain("unreleased, local package surface")
   })
 })

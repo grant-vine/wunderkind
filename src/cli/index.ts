@@ -629,7 +629,7 @@ const codexProgram = program
   .command("codex")
   .description(
     [
-      "Manage the unreleased/local Wunderkind Codex edition.",
+      "Manage the Wunderkind Codex edition.",
       "",
       "Requires Codex plus enabled LazyCodex (omo@sisyphuslabs >=4.19.4 <5).",
       "The existing top-level commands continue to manage the OpenCode edition.",

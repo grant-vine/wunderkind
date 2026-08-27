@@ -1172,7 +1172,7 @@ describe("Codex lifecycle upgrade and uninstall", () => {
   })
 
   it("rejects malformed internally-equal package and plugin versions before external mutation", () => {
-    for (const version of ["../../operator-version", "0.27.0-beta.1", "0.027.0"] as const) {
+    for (const version of ["../../operator-version", "0.27.1-beta.1", "0.027.1"] as const) {
       const paths = sandbox(); const fake = createFakeCodex(); configure(paths, fake)
       try {
         installCodexWunderkind()

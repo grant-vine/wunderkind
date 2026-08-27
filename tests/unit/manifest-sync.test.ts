@@ -120,11 +120,12 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.27.0 stable baseline and current Codex edition", () => {
+  it("keeps README release notes aligned with the 0.27.1 stable baseline and current Codex edition", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.27.0")
+    expect(readmeBody).toContain("## What's new in 0.27.1")
+    expect(readmeBody).toContain("stale unreleased/local Codex edition wording")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.18")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.18")
     expect(readmeBody).toContain("oh-my-openagent@4.19.4")

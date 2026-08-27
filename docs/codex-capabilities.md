@@ -1,12 +1,12 @@
 # Codex edition capabilities
 
-The Codex edition is an unreleased, local package surface in this checkout. It is not a claim of published availability. It complements Codex and LazyCodex; it does not replace the existing OpenCode edition.
+The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex; it does not replace the existing OpenCode edition.
 
 ## Prerequisites and lifecycle
 
 LazyCodex (`omo@sisyphuslabs` version `>=4.19.4 <5`) is the sole hard dependency. Codex must be on `PATH`. Wunderkind never installs, enables, updates, or removes LazyCodex or any companion.
 
-After a release, use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). This checkout remains unreleased/local: its working packed equivalent today is `node package/bin/wunderkind.js codex <verb>`.
+Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). Maintainer packed QA can still use the extracted-package equivalent `node package/bin/wunderkind.js codex <verb>`.
 
 | Command | Behavior |
 | --- | --- |

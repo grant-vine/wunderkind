@@ -8,7 +8,7 @@ Last refreshed: 2026-08-18T00-00-00Z
 - **Plugin package**: `@opencode-ai/plugin@1.18.18`
 - **SDK package**: `@opencode-ai/sdk@1.18.18`
 - **OMO dependency**: `oh-my-openagent@4.19.4`
-- **Current Wunderkind package version**: `0.27.0`
+- **Current Wunderkind package version**: `0.27.1`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 - **Frozen current patch-wave target**: OpenCode `1.18.18` + `oh-my-openagent` `4.19.4`, with OMO `v5.0.0-beta.6` explicitly out of scope
 
