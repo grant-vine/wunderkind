@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.27.3",
+  "version": "0.27.5",
   "description": "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -40,18 +40,18 @@
     "eval:prompt-answer-quality:live": "bun tests/unit/helpers/run-prompt-answer-quality-eval.mjs --provider command"
   },
   "dependencies": {
-    "@clack/prompts": "^1.5.1",
-    "@opencode-ai/plugin": "1.18.18",
-    "@opencode-ai/sdk": "1.18.18",
+    "@clack/prompts": "^1.8.1",
+    "@opencode-ai/plugin": "1.18.31",
+    "@opencode-ai/sdk": "1.18.31",
     "commander": "^15.0.0",
     "js-tiktoken": "1.0.21",
     "jsonc-parser": "^3.3.1",
-    "oh-my-openagent": "4.19.4",
+    "oh-my-openagent": "5.0.0-beta.62",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@types/node": "^22.19.21",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
   },
   "keywords": [
     "oh-my-openagent",
@@ -71,12 +71,12 @@
     "node": ">=22.12.0"
   },
   "overrides": {
-    "picomatch": "4.0.4",
-    "@hono/node-server": "1.19.13",
-    "hono": "4.12.18",
+    "picomatch": "4.0.7",
+    "@hono/node-server": "2.1.1",
+    "hono": "4.13.8",
     "path-to-regexp": "8.4.2",
-    "fast-uri": "3.1.2",
-    "ip-address": "10.2.0",
-    "uuid": "13.0.2"
+    "fast-uri": "4.1.5",
+    "ip-address": "10.7.1",
+    "uuid": "14.0.2"
   }
 }

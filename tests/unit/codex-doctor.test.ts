@@ -61,15 +61,15 @@ describe("Codex doctor", () => {
     }
   })
 
-  it("accepts installer-supported LazyCodex build metadata as healthy", () => {
+  it("accepts installer-supported LazyCodex beta build metadata as healthy", () => {
     const paths = sandbox()
-    const fake = createFakeCodex({ lazyPlugin: createLazyCodexEnvelope("4.19.4+build.9") })
+    const fake = createFakeCodex({ lazyPlugin: createLazyCodexEnvelope("5.0.0-beta.62+build.9") })
     configure(paths, fake)
     try {
       installCodexWunderkind()
       const report = getCodexDoctorReport()
       expect(report.core.healthy).toBe(true)
-      expect(report.core.lazyCodex.version).toBe("4.19.4+build.9")
+      expect(report.core.lazyCodex.version).toBe("5.0.0-beta.62+build.9")
       expect(report.remediation).toEqual([])
     } finally {
       cleanup(paths)
@@ -77,7 +77,7 @@ describe("Codex doctor", () => {
   })
 
   it("rejects LazyCodex versions the installer rejects", () => {
-    for (const version of ["04.19.4", "4.19.4-beta.1", "4.19.4+", "5.0.0"] as const) {
+    for (const version of ["04.19.4", "4.19.4", "5.0.0-beta.61", "5.0.0-alpha.1", "5.0.0+", "6.0.0"] as const) {
       const paths = sandbox()
       const fake = createFakeCodex()
       configure(paths, fake)
@@ -86,7 +86,7 @@ describe("Codex doctor", () => {
         Reflect.set(installedPlugin(fake, "omo@sisyphuslabs"), "version", version)
         const report = getCodexDoctorReport()
         expect(report.core.healthy).toBe(false)
-        expect(report.remediation).toContain("Install LazyCodex (`omo@sisyphuslabs`) at version `>=4.19.4 <5`, then rerun `wunderkind codex doctor`.")
+        expect(report.remediation).toContain("Upgrade LazyCodex (`omo@sisyphuslabs`) to version `>=5.0.0-beta.62 <6`, then rerun `wunderkind codex doctor`.")
       } finally {
         cleanup(paths)
       }
@@ -108,6 +108,28 @@ describe("Codex doctor", () => {
       expect(readFileSync(markerPath, "utf8")).toBe(marker)
     } finally {
       process.chdir(originalCwd)
+      cleanup(paths)
+    }
+  })
+
+  it("reports current package drift as a Wunderkind Codex upgrade", () => {
+    const paths = sandbox()
+    const fake = createFakeCodex()
+    configure(paths, fake)
+    try {
+      installCodexWunderkind()
+      const statePath = join(paths.wunderkindHome, "codex", "install-state.json")
+      const state = JSON.parse(readFileSync(statePath, "utf8"))
+      state.packageVersion = "0.27.3"
+      state.plugin.version = "0.27.3"
+      writeFileSync(statePath, `${JSON.stringify(state)}\n`)
+      Reflect.set(installedPlugin(fake, "wunderkind@grant-vine"), "version", "0.27.3")
+
+      const report = getCodexDoctorReport()
+
+      expect(report.core.healthy).toBe(false)
+      expect(report.remediation).toContain("Run `wunderkind codex upgrade` to refresh Wunderkind Codex assets to the current package version, then rerun `wunderkind codex doctor`.")
+    } finally {
       cleanup(paths)
     }
   })
@@ -201,7 +223,7 @@ describe("Codex doctor", () => {
     const fake = createFakeCodex({
       lazyPlugin: {
         installed: [
-          { pluginId: "omo@sisyphuslabs", version: "4.19.4", installed: true, enabled: true },
+          { pluginId: "omo@sisyphuslabs", version: "5.0.0-beta.62", installed: true, enabled: true },
           { pluginId: "github@openai-curated", version: "1.0.0", installed: true, enabled: false },
           { pluginId: "figma@openai-curated", version: "1.0.0", installed: true, enabled: true },
         ],
@@ -214,7 +236,8 @@ describe("Codex doctor", () => {
       mkdirSync(join(paths.codexHome, "skills", "grill-me"), { recursive: true })
       mkdirSync(join(paths.codexHome, "skills", "supabase"), { recursive: true })
       mkdirSync(join(paths.codexHome, "skills", "supabase-postgres-best-practices"), { recursive: true })
-      mkdirSync(join(paths.codexHome, "skills", "vercel"), { recursive: true })
+      mkdirSync(join(paths.root, ".agents", "skills", "deploy-to-vercel"), { recursive: true })
+      writeFileSync(join(paths.root, ".agents", "skills", "deploy-to-vercel", "SKILL.md"), "---\nname: deploy-to-vercel\n---\n", "utf8")
       const report = getCodexDoctorReport()
       if ("unavailable" in report.optional) throw new Error("Expected companion report")
       expect(report.optional.plugins["github@openai-curated"]).toBe("installed")
@@ -223,8 +246,9 @@ describe("Codex doctor", () => {
       expect(report.optional.plugins["sentry@openai-curated"]).toBe("absent")
       expect(report.optional.matt).toBe("absent")
       expect(report.optional.supabasePack).toBe("absent")
-      expect(report.optional.vercelPack).toBe("absent")
+      expect(report.optional.vercelPack).toBe("installed")
       expect(existsSync(join(paths.codexHome, "skills", "grill-me"))).toBe(true)
+      expect(existsSync(join(paths.root, ".agents", "skills", "deploy-to-vercel", "SKILL.md"))).toBe(true)
     } finally {
       cleanup(paths)
     }
@@ -236,8 +260,13 @@ describe("Codex doctor", () => {
     try {
       installCodexWunderkind()
       const root = join(paths.codexHome, "skills")
-      for (const name of [...CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills, ...CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills, "vercel"]) {
+      for (const name of [...CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills, ...CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills]) {
         const directory = join(root, name)
+        mkdirSync(directory, { recursive: true })
+        writeFileSync(join(directory, "SKILL.md"), "---\nname: test\n---\n", "utf8")
+      }
+      for (const name of CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills) {
+        const directory = join(paths.root, ".agents", "skills", name)
         mkdirSync(directory, { recursive: true })
         writeFileSync(join(directory, "SKILL.md"), "---\nname: test\n---\n", "utf8")
       }
@@ -297,7 +326,7 @@ describe("Codex doctor", () => {
     configure(paths, createFakeCodex())
     try {
       const externalCodex = join(paths.root, "external-codex")
-      for (const name of [...CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills, "vercel"]) {
+      for (const name of [...CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills, ...CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills]) {
         const directory = join(externalCodex, "skills", name)
         mkdirSync(directory, { recursive: true })
         writeFileSync(join(directory, "SKILL.md"), "---\nname: external\n---\n", "utf8")
@@ -307,7 +336,7 @@ describe("Codex doctor", () => {
       if ("unavailable" in report.optional) throw new Error("Expected companion report")
       expect(report.optional.supabasePack).toBe("absent")
       expect(report.optional.vercelPack).toBe("absent")
-      expect(readFileSync(join(externalCodex, "skills", "vercel", "SKILL.md"), "utf8")).toContain("external")
+      expect(readFileSync(join(externalCodex, "skills", "deploy-to-vercel", "SKILL.md"), "utf8")).toContain("external")
     } finally {
       cleanup(paths)
     }
@@ -328,7 +357,7 @@ describe("Codex doctor", () => {
           const id = kind === "lazy" ? "omo@sisyphuslabs" : "wunderkind@grant-vine"
           const entry = installed.find((candidate) => typeof candidate === "object" && candidate !== null && Reflect.get(candidate, "pluginId") === id)
           if (entry === undefined || typeof entry !== "object" || entry === null) throw new Error("Expected installed plugin")
-          Reflect.set(entry, "version", kind === "lazy" ? "5.0.0" : "0.1.0")
+          Reflect.set(entry, "version", kind === "lazy" ? "5.0.0-beta.61" : "0.1.0")
         } else if (kind === "marketplace") {
           const entry = fake.marketplaces.find((candidate) => typeof candidate === "object" && candidate !== null && Reflect.get(candidate, "name") === "grant-vine")
           if (entry === undefined || typeof entry !== "object" || entry === null) throw new Error("Expected marketplace fixture")
@@ -365,7 +394,7 @@ describe("Codex doctor", () => {
       {
         name: "missing LazyCodex",
         setup: (_paths, fixture) => { removeInstalledPlugin(fixture, "omo@sisyphuslabs") },
-        remediation: "Install LazyCodex (`omo@sisyphuslabs`) at version `>=4.19.4 <5`, enable it in Codex, then rerun `wunderkind codex doctor`.",
+        remediation: "Install LazyCodex (`omo@sisyphuslabs`) at version `>=5.0.0-beta.62 <6`, enable it in Codex, then rerun `wunderkind codex doctor`.",
       },
       {
         name: "disabled LazyCodex",
@@ -374,8 +403,8 @@ describe("Codex doctor", () => {
       },
       {
         name: "incompatible LazyCodex",
-        setup: (_paths, fixture) => { Reflect.set(installedPlugin(fixture, "omo@sisyphuslabs"), "version", "5.0.0") },
-        remediation: "Install LazyCodex (`omo@sisyphuslabs`) at version `>=4.19.4 <5`, then rerun `wunderkind codex doctor`.",
+        setup: (_paths, fixture) => { Reflect.set(installedPlugin(fixture, "omo@sisyphuslabs"), "version", "5.0.0-beta.61") },
+        remediation: "Upgrade LazyCodex (`omo@sisyphuslabs`) to version `>=5.0.0-beta.62 <6`, then rerun `wunderkind codex doctor`.",
       },
       {
         name: "missing Wunderkind plugin",

@@ -1,16 +1,16 @@
 # Project Context
 
-Updated: 2026-08-18T00-00-00Z
+Updated: 2026-09-08T00-00-00Z
 
-This repository is the source for **Wunderkind** `0.27.3`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current published upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.18` and `oh-my-openagent` `4.19.4`.
+This repository is the source for **Wunderkind** `0.27.5`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.31` and `oh-my-openagent` `5.0.0-beta.62`.
 
-The repository also contains the Codex edition: six custom agents, eleven plugin skills, and the nested `wunderkind codex` lifecycle. It requires LazyCodex (`omo@sisyphuslabs >=4.19.4 <5`) as its only hard dependency, keeps third-party companions optional and non-owned, and defers Codex prompt/token optimization to a later host-native design revisit.
+The repository also contains the Codex edition: six custom agents, eleven plugin skills, and the nested `wunderkind codex` lifecycle. It requires LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as its only hard dependency, keeps third-party companions optional and non-owned, and defers Codex prompt/token optimization to a later host-native design revisit.
 
 ## Product and domain summary
 - **What it is**: A retained-agent overlay for OpenCode built around orchestrator-first routing, generated native markdown agents, static skills, and project-local bootstrap artifacts.
 - **Primary users**: Developers and product teams already using OpenCode and often oh-my-openagent who want opinionated, domain-specialized retained agents instead of generic coding helpers.
 - **Current success criteria**: Keep install/upgrade/doctor trustworthy, preserve compatibility with current OpenCode and oh-my-openagent surfaces, and make project-local workflow/context artifacts (`AGENTS.md`, `CONTEXT.md`, `.omo/`, docs-output, and runtime prompt reports) easy to bootstrap and maintain.
-- **Frozen patch-wave contract**: Keep OMO `v5.0.0-beta.6` out of scope, add `release-upgrade`, add `platform-compatibility`, add `supportability-review`, reject `supportability-incident`, and make no provider/model-routing changes in this wave.
+- **Current beta compatibility contract**: Move OMO v5 beta into scope, target `oh-my-openagent@5.0.0-beta.62`, add `release-upgrade`, add `platform-compatibility`, add `supportability-review`, reject `supportability-incident`, and route high-capability work through GPT-6 Astra.
 
 ## Core workflows
 - Install Wunderkind into OpenCode globally or per-project.
@@ -40,7 +40,7 @@ The repository also contains the Codex edition: six custom agents, eleven plugin
 ## Important constraints
 - Wunderkind must remain a **zero-daemon synchronous overlay**; no scheduler, no queue, no MCP lifecycle ownership.
 - Compatibility should use canonical `oh-my-openagent` naming only; any legacy `oh-my-opencode` mention is migration guidance for `wunderkind migrate` into `~/.omo/omo.jsonc` and must not imply active fallback execution.
-- The next stable-upgrade wave is stable-only: OMO `v5.0.0-beta.6` remains out of scope until a separate compatibility wave is explicitly started.
+- The current compatibility wave intentionally tracks the OMO v5 beta stream for LazyCodex/Astra support.
 - Generated `agents/*.md` are build artifacts; `skills/` are source.
 - Docs output must stay project-local and respect the configured docs path/history mode.
 - The public product contract keeps prompt optimization **supplementary and default-off**; this repo's active/summary optimization settings are a local project override, not a product default.

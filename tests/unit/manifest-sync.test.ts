@@ -65,7 +65,7 @@ describe("manifest version sync", () => {
   })
 
   it("keeps the plugin manifest in the minimal currently-supported shape", () => {
-    const pluginManifest = JSON.parse(readText(new URL("../../.claude-plugin/plugin.json", import.meta.url))) as unknown
+    const pluginManifest: unknown = JSON.parse(readText(new URL("../../.claude-plugin/plugin.json", import.meta.url)))
 
     expect(isRecord(pluginManifest)).toBe(true)
     if (!isRecord(pluginManifest)) {
@@ -106,8 +106,8 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.18")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.18")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.31")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.31")
     expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
   })
 
@@ -120,15 +120,15 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.27.3 stable baseline and current Codex edition", () => {
+  it("keeps README release notes aligned with the 0.27.5 beta baseline and current Codex edition", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.27.3")
-    expect(readmeBody).toContain("Codex lean-response convention")
-    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.18")
-    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.18")
-    expect(readmeBody).toContain("oh-my-openagent@4.19.4")
+    expect(readmeBody).toContain("## What's new in 0.27.5")
+    expect(readmeBody).toContain("GPT-6 Astra")
+    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.31")
+    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.31")
+    expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.62")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
     expect(readmeBody).toContain("supportability-review")
@@ -279,9 +279,9 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.18")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.31")
     expect(docsReadmeBody).not.toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.18")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.31")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

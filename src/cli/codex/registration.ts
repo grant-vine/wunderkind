@@ -34,7 +34,14 @@ function parsePlugins(value: unknown): readonly CodexPluginRecord[] {
   })
 }
 
-function parseVersion(version: string): readonly [number, number, number, boolean] | undefined {
+interface ParsedVersion {
+  readonly major: number
+  readonly minor: number
+  readonly patch: number
+  readonly prerelease: string | undefined
+}
+
+function parseVersion(version: string): ParsedVersion | undefined {
   const numeric = "(0|[1-9]\\d*)"
   const prerelease = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)"
   const match = new RegExp(`^${numeric}\\.${numeric}\\.${numeric}(?:-(${prerelease}(?:\\.${prerelease})*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`, "u").exec(version)
@@ -43,13 +50,19 @@ function parseVersion(version: string): readonly [number, number, number, boolea
   const minor = Number(match[2])
   const patch = Number(match[3])
   if (!Number.isSafeInteger(major) || !Number.isSafeInteger(minor) || !Number.isSafeInteger(patch)) return undefined
-  return [major, minor, patch, match[4] !== undefined]
+  return { major, minor, patch, prerelease: match[4] }
+}
+
+function isCompatibleV5Beta(prerelease: string | undefined): boolean {
+  if (prerelease === undefined) return true
+  const match = /^beta\.(0|[1-9]\d*)$/u.exec(prerelease)
+  return match !== null && Number(match[1]) >= 62
 }
 
 export function isCompatibleLazyCodexVersion(version: string | undefined): boolean {
   if (version === undefined) return false
   const parsed = parseVersion(version)
-  return parsed !== undefined && !parsed[3] && parsed[0] === 4 && (parsed[1] > 19 || (parsed[1] === 19 && parsed[2] >= 4))
+  return parsed !== undefined && parsed.major === 5 && isCompatibleV5Beta(parsed.prerelease)
 }
 
 export function discoverCodexPlugins(): readonly CodexPluginRecord[] {
@@ -61,7 +74,7 @@ export function requireCompatibleLazyCodex(plugins: readonly CodexPluginRecord[]
   if (lazy === undefined || !lazy.installed) throw new CodexInstallError("LazyCodex is required. Install `omo@sisyphuslabs` with Codex, enable it, then retry `wunderkind codex install`.")
   if (!lazy.enabled) throw new CodexInstallError("LazyCodex is disabled. Enable `omo@sisyphuslabs`, then retry `wunderkind codex install`.")
   if (!isCompatibleLazyCodexVersion(lazy.version)) {
-    throw new CodexInstallError("LazyCodex 4.19.4 through 4.x is required; install a compatible `omo@sisyphuslabs` release, then retry `wunderkind codex install`.")
+    throw new CodexInstallError("LazyCodex 5.0.0-beta.62 or later v5 is required; install a compatible `omo@sisyphuslabs` release, then retry `wunderkind codex install`.")
   }
 }
 

@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync } from "node:fs"
-import { join, relative, resolve, sep } from "node:path"
+import { dirname, join, relative, resolve, sep } from "node:path"
 import { CODEX_CAPABILITY_MANIFEST } from "../../codex/capability-manifest.js"
 import { resolveCodexPaths } from "./paths.js"
 import { requireCodexJson } from "./process.js"
@@ -62,6 +62,7 @@ function installedSkillNames(): readonly string[] {
   const paths = resolveCodexPaths()
   const roots = [
     confinedSkillsRoot(paths.codexHome, ["skills"]),
+    confinedSkillsRoot(dirname(paths.codexHome), [".agents", "skills"]),
     confinedSkillsRoot(process.cwd(), [".codex", "skills"]),
   ]
   return roots.flatMap((root) => {
@@ -83,6 +84,6 @@ export function getCodexCompanionReport(): CodexCompanionReport {
     plugins,
     matt: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills),
     supabasePack: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills),
-    vercelPack: skillPackStatus(skillNames, ["vercel"]),
+    vercelPack: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills),
   }
 }

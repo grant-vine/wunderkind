@@ -27,6 +27,16 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.27.5
+
+Wunderkind `0.27.5` moves the LazyCodex/OMO support contract onto the v5 beta stream for current ChatGPT model support, including GPT-6 Astra.
+
+- require LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as the hard Codex dependency
+- bump OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.31` and `@opencode-ai/sdk@1.18.31`
+- pin `oh-my-openagent@5.0.0-beta.62` for the beta-channel OMO stream
+- route the high-capability OpenCode category through `openai/gpt-6-astra`
+- keep the six Codex agents, eleven Codex skills, and 28 public/deprecated route inventory unchanged
+
 ## What's new in 0.27.3
 
 Wunderkind `0.27.3` refines the conservative Codex lean-response convention for the shipped Codex edition.
@@ -59,12 +69,12 @@ Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle
 - keep the stable dependency baseline at `@opencode-ai/plugin@1.18.18`, `@opencode-ai/sdk@1.18.18`, and `oh-my-openagent@4.19.4`
 - refresh repo truth surfaces and generated native agents for the `0.26.3` release cut without changing the stable dependency baseline
 
-## Frozen current patch wave
+## Current beta compatibility wave
 
-This repository has frozen the current patch-wave and skill-governance contract. The stable target for this patch wave is OpenCode `1.18.18` plus `oh-my-openagent` `4.19.4`.
+This repository now targets the LazyCodex/OMO v5 beta stream for Astra-ready compatibility. The current target is OpenCode `1.18.31` plus `oh-my-openagent` `5.0.0-beta.62`.
 
-- OMO `v5.0.0-beta.6` is explicitly out of scope for this wave.
-- No provider/model-routing changes are included in this wave; `oh-my-openagent.jsonc` and the canonical manifest category routing stay unchanged.
+- OMO v5 beta is in scope for this wave.
+- Provider/model routing changes are limited to the high-capability OpenCode category using `openai/gpt-6-astra`.
 - Add the promoted `release-upgrade` route under `product-wunderkind`.
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
 - Add the promoted `supportability-review` route under `fullstack-wunderkind`.

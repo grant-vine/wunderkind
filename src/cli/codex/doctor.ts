@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs"
 import { join } from "node:path"
+import { getCanonicalPackageVersion } from "../../agents/versioning.js"
 import { CODEX_CAPABILITY_MANIFEST } from "../../codex/capability-manifest.js"
 import { isCompatibleLazyCodexVersion } from "./registration.js"
 import { getCodexCompanionReport, type CodexCompanionReport } from "./companions.js"
@@ -121,6 +122,7 @@ function remediationFor(
   pluginManifest: CodexSkillHealth,
   skills: Readonly<Record<string, CodexSkillHealth>>,
   packageVersion: string | undefined,
+  currentPackageVersion: string,
 ): readonly string[] {
   if (state === "invalid") return ["Repair or restore `~/.wunderkind/codex/install-state.json`; do not overwrite existing `wunderkind-*` agents. Then run `wunderkind codex install`."]
   if (state === "missing") return ["Run `wunderkind codex install` only when no existing `wunderkind-*` agents need preservation; otherwise recover `~/.wunderkind/codex/install-state.json` first."]
@@ -129,9 +131,11 @@ function remediationFor(
   if (codex.status === "unavailable") remediation.push("Install Codex and ensure `codex` is on PATH, then rerun `wunderkind codex doctor`.")
 
   if (lazyCodex.status === "unavailable") remediation.push("Repair Codex plugin discovery for LazyCodex (`omo@sisyphuslabs`), then rerun `wunderkind codex doctor`.")
-  else if (lazyCodex.status === "missing") remediation.push("Install LazyCodex (`omo@sisyphuslabs`) at version `>=4.19.4 <5`, enable it in Codex, then rerun `wunderkind codex doctor`.")
+  else if (lazyCodex.status === "missing") remediation.push("Install LazyCodex (`omo@sisyphuslabs`) at version `>=5.0.0-beta.62 <6`, enable it in Codex, then rerun `wunderkind codex doctor`.")
   else if (lazyCodex.status === "installed") remediation.push("Enable LazyCodex (`omo@sisyphuslabs`) in Codex, then rerun `wunderkind codex doctor`.")
-  else if (!isCompatibleLazyCodexVersion(lazyCodex.version)) remediation.push("Install LazyCodex (`omo@sisyphuslabs`) at version `>=4.19.4 <5`, then rerun `wunderkind codex doctor`.")
+  else if (!isCompatibleLazyCodexVersion(lazyCodex.version)) remediation.push("Upgrade LazyCodex (`omo@sisyphuslabs`) to version `>=5.0.0-beta.62 <6`, then rerun `wunderkind codex doctor`.")
+
+  if (packageVersion !== currentPackageVersion) remediation.push("Run `wunderkind codex upgrade` to refresh Wunderkind Codex assets to the current package version, then rerun `wunderkind codex doctor`.")
 
   if (plugin.status === "unavailable") remediation.push("Repair Codex plugin discovery for `wunderkind@grant-vine`, then rerun `wunderkind codex doctor`.")
   else if (plugin.status === "missing") remediation.push("Run `wunderkind codex install` to add `wunderkind@grant-vine`, then rerun `wunderkind codex doctor`.")
@@ -174,8 +178,9 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   const projectBootstrap = { ready: resolveCodexProjectMarker(join(process.cwd(), ".wunderkind", "codex-project.json")).kind === "ready" }
   let optional: CodexCompanionReport | { readonly unavailable: true }
   try { optional = getCodexCompanionReport() } catch { optional = { unavailable: true } }
-  const healthy = stateStatus === "present" && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
-  const remediation = healthy ? [] : remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version)
+  const currentPackageVersion = getCanonicalPackageVersion()
+  const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
+  const remediation = healthy ? [] : remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion)
   return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap }, optional, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
 }
 

@@ -7,7 +7,7 @@ import { __resetCodexInstallStateWriterForTests } from "../../../src/cli/codex/s
 
 const PROJECT_ROOT = new URL("../../../", import.meta.url).pathname
 
-export const PACKAGE_VERSION = "0.27.3"
+export const PACKAGE_VERSION = "0.27.5"
 export const AGENT_NAMES = ["wunderkind-marketing", "wunderkind-creative-director", "wunderkind-product", "wunderkind-architecture", "wunderkind-ciso", "wunderkind-legal"] as const
 
 export interface FakeCodex {
@@ -68,7 +68,7 @@ export function createFakeCodex(overrides: Partial<Omit<FakeCodex, "calls">> = {
     marketplaceAddOutput: overrides.marketplaceAddOutput ?? undefined,
     marketplaceRemoveOutput: overrides.marketplaceRemoveOutput ?? { marketplaceName: "grant-vine", installedRoot: null },
     pluginRemoveOutput: overrides.pluginRemoveOutput ?? { pluginId: "wunderkind@grant-vine", name: "wunderkind", marketplaceName: "grant-vine" },
-    lazyPlugin: overrides.lazyPlugin ?? { installed: [{ pluginId: "omo@sisyphuslabs", version: "4.19.4", installed: true, enabled: true, marketplaceSource: "sisyphuslabs" }], available: [] },
+    lazyPlugin: overrides.lazyPlugin ?? { installed: [{ pluginId: "omo@sisyphuslabs", version: "5.0.0-beta.62", installed: true, enabled: true, marketplaceSource: "sisyphuslabs" }], available: [] },
     marketplaces: Array.isArray(overrides.marketplaces) ? [...overrides.marketplaces] : [],
     ...(overrides.onRun === undefined ? {} : { onRun: overrides.onRun }),
   }

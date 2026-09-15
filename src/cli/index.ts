@@ -56,7 +56,8 @@ async function runCodexCommand(action: () => number | Promise<number>): Promise<
   try {
     process.exit(await action())
   } catch (error) {
-    console.error(`Error: ${String(error)}`)
+    if (error instanceof Error) console.error(`Error: ${error.message}`)
+    else console.error(`Error: ${String(error)}`)
     process.exit(1)
   }
 }
@@ -631,7 +632,7 @@ const codexProgram = program
     [
       "Manage the Wunderkind Codex edition.",
       "",
-      "Requires Codex plus enabled LazyCodex (omo@sisyphuslabs >=4.19.4 <5).",
+      "Requires Codex plus enabled LazyCodex (omo@sisyphuslabs >=5.0.0-beta.62 <6).",
       "The existing top-level commands continue to manage the OpenCode edition.",
     ].join("\n"),
   )

@@ -35,6 +35,7 @@ export interface CodexCapabilityManifest {
     readonly mattSkills: readonly string[]
     readonly skillPacks: readonly string[]
     readonly supabaseSkills: readonly string[]
+    readonly vercelSkills: readonly string[]
     readonly plugins: readonly string[]
   }
   readonly deferredCapabilities: readonly string[]
@@ -118,7 +119,7 @@ const EXPECTED_GENERATED_COMMAND_DISPOSITIONS: readonly CodexCommandDisposition[
 export const CODEX_CAPABILITY_MANIFEST: CodexCapabilityManifest = {
   marketplace: { id: "grant-vine" },
   plugin: { id: "wunderkind" },
-  lazyCodex: { pluginId: "omo@sisyphuslabs", versionRange: ">=4.19.4 <5" },
+  lazyCodex: { pluginId: "omo@sisyphuslabs", versionRange: ">=5.0.0-beta.62 <6" },
   agents: EXPECTED_AGENT_IDS.map((id) => ({
     id,
     sourcePath: `codex-src/agents/${id}.md`,
@@ -137,6 +138,17 @@ export const CODEX_CAPABILITY_MANIFEST: CodexCapabilityManifest = {
     mattSkills: ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling"],
     skillPacks: ["supabase/agent-skills", "vercel-labs/agent-skills"],
     supabaseSkills: ["supabase", "supabase-postgres-best-practices"],
+    vercelSkills: [
+      "vercel-composition-patterns",
+      "deploy-to-vercel",
+      "vercel-react-best-practices",
+      "vercel-react-native-skills",
+      "vercel-react-view-transitions",
+      "vercel-cli-with-tokens",
+      "vercel-optimize",
+      "web-design-guidelines",
+      "writing-guidelines",
+    ],
     plugins: ["github@openai-curated", "figma@openai-curated", "vercel@openai-curated", "sentry@openai-curated", "codex-security@openai-curated", "posthog@openai-curated", "mixpanel@openai-curated"],
   },
   deferredCapabilities: ["codex-prompt-token-optimization-revisit", "no-token-audit-port"],
@@ -178,11 +190,22 @@ export function validateCodexCapabilityManifest(manifest: CodexCapabilityManifes
   ensureSingleFrontDoor(manifest.agents)
   ensureCrossReferences(manifest)
   if (manifest.marketplace.id !== "grant-vine" || manifest.plugin.id !== "wunderkind") throw new CodexCapabilityValidationError("Expected frozen marketplace and plugin IDs")
-  if (manifest.lazyCodex.pluginId !== "omo@sisyphuslabs" || manifest.lazyCodex.versionRange !== ">=4.19.4 <5") throw new CodexCapabilityValidationError("Expected frozen LazyCodex requirement")
+  if (manifest.lazyCodex.pluginId !== "omo@sisyphuslabs" || manifest.lazyCodex.versionRange !== ">=5.0.0-beta.62 <6") throw new CodexCapabilityValidationError("Expected frozen LazyCodex requirement")
   ensureExactIds("deferred capability", manifest.deferredCapabilities, ["codex-prompt-token-optimization-revisit", "no-token-audit-port"])
   ensureExactIds("optional Matt skill", manifest.optionalCompanions.mattSkills, ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling"])
   ensureExactIds("optional skill pack", manifest.optionalCompanions.skillPacks, ["supabase/agent-skills", "vercel-labs/agent-skills"])
   ensureExactIds("optional Supabase skill", manifest.optionalCompanions.supabaseSkills, ["supabase", "supabase-postgres-best-practices"])
+  ensureExactIds("optional Vercel skill", manifest.optionalCompanions.vercelSkills, [
+    "vercel-composition-patterns",
+    "deploy-to-vercel",
+    "vercel-react-best-practices",
+    "vercel-react-native-skills",
+    "vercel-react-view-transitions",
+    "vercel-cli-with-tokens",
+    "vercel-optimize",
+    "web-design-guidelines",
+    "writing-guidelines",
+  ])
   ensureExactIds("optional plugin", manifest.optionalCompanions.plugins, ["github@openai-curated", "figma@openai-curated", "vercel@openai-curated", "sentry@openai-curated", "codex-security@openai-curated", "posthog@openai-curated", "mixpanel@openai-curated"])
 }
 

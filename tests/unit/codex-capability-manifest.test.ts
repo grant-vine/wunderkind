@@ -34,7 +34,8 @@ function captureError(action: () => void): unknown {
     action()
     return undefined
   } catch (error) {
-    return error
+    if (error instanceof Error) return error
+    throw error
   }
 }
 
@@ -50,7 +51,7 @@ describe("Codex capability manifest", () => {
     expect(CODEX_CAPABILITY_MANIFEST.marketplace.id).toBe("grant-vine")
     expect(CODEX_CAPABILITY_MANIFEST.plugin.id).toBe("wunderkind")
     expect(CODEX_CAPABILITY_MANIFEST.lazyCodex.pluginId).toBe("omo@sisyphuslabs")
-    expect(CODEX_CAPABILITY_MANIFEST.lazyCodex.versionRange).toBe(">=4.19.4 <5")
+    expect(CODEX_CAPABILITY_MANIFEST.lazyCodex.versionRange).toBe(">=5.0.0-beta.62 <6")
     expect(CODEX_CAPABILITY_MANIFEST.deferredCapabilities).toEqual([
       "codex-prompt-token-optimization-revisit",
       "no-token-audit-port",
@@ -146,6 +147,26 @@ describe("Codex capability manifest", () => {
       optionalCompanions: {
         ...CODEX_CAPABILITY_MANIFEST.optionalCompanions,
         supabaseSkills: ["supabase"],
+      },
+    }
+
+    expect(captureError(() => validateCodexCapabilityManifest(changed)) instanceof CodexCapabilityValidationError).toBe(true)
+    expect(captureError(() => validateCodexCapabilityManifest(missing)) instanceof CodexCapabilityValidationError).toBe(true)
+  })
+
+  it("rejects changed or missing Vercel companion skill identifiers", () => {
+    const changed: CodexCapabilityManifest = {
+      ...CODEX_CAPABILITY_MANIFEST,
+      optionalCompanions: {
+        ...CODEX_CAPABILITY_MANIFEST.optionalCompanions,
+        vercelSkills: ["unexpected-vercel-skill", ...CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills.slice(1)],
+      },
+    }
+    const missing: CodexCapabilityManifest = {
+      ...CODEX_CAPABILITY_MANIFEST,
+      optionalCompanions: {
+        ...CODEX_CAPABILITY_MANIFEST.optionalCompanions,
+        vercelSkills: CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills.slice(1),
       },
     }
 

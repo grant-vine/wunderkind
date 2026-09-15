@@ -332,11 +332,11 @@ describe("Codex lifecycle install", () => {
     }
   })
 
-  it("blocks absent, disabled, old, OMO 5, and malformed LazyCodex discovery", () => {
+  it("blocks absent, disabled, old stable, and malformed LazyCodex discovery", () => {
     const fixtures: readonly unknown[] = [
       { installed: [], available: [] },
-      { installed: [{ pluginId: "omo@sisyphuslabs", version: "4.19.4", installed: true, enabled: false }], available: [] }, createLazyCodexEnvelope("4.19.3"), createLazyCodexEnvelope("5.0.0"),
-      createLazyCodexEnvelope("4.19.4junk"), createLazyCodexEnvelope("4.19.4-beta.1"), createLazyCodexEnvelope("04.019.004"), createLazyCodexEnvelope("4.19.04"),
+      { installed: [{ pluginId: "omo@sisyphuslabs", version: "5.0.0-beta.62", installed: true, enabled: false }], available: [] }, createLazyCodexEnvelope("4.19.4"), createLazyCodexEnvelope("5.0.0-beta.61"),
+      createLazyCodexEnvelope("5.0.0junk"), createLazyCodexEnvelope("5.0.0-alpha.1"), createLazyCodexEnvelope("05.000.000"), createLazyCodexEnvelope("5.0.00"),
       { invalid: true },
     ]
 
@@ -351,8 +351,8 @@ describe("Codex lifecycle install", () => {
     }
   })
 
-  it("accepts the stable minimum and build metadata", () => {
-    for (const version of ["4.19.4", "4.19.4+build.9"]) {
+  it("accepts the beta minimum, build metadata, and later v5 versions", () => {
+    for (const version of ["5.0.0-beta.62", "5.0.0-beta.62+build.9", "5.0.0-beta.63", "5.0.0", "5.1.0"]) {
       const paths = sandbox(); configure(paths, createFakeCodex({ lazyPlugin: createLazyCodexEnvelope(version) }))
       try { expect(installCodexWunderkind().packageVersion).toBe(PACKAGE_VERSION) } finally { cleanup(paths) }
     }
@@ -1172,7 +1172,7 @@ describe("Codex lifecycle upgrade and uninstall", () => {
   })
 
   it("rejects malformed internally-equal package and plugin versions before external mutation", () => {
-    for (const version of ["../../operator-version", "0.27.3-beta.1", "0.027.3"] as const) {
+    for (const version of ["../../operator-version", "0.27.5-beta.1", "0.027.4"] as const) {
       const paths = sandbox(); const fake = createFakeCodex(); configure(paths, fake)
       try {
         installCodexWunderkind()

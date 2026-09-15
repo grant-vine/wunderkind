@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.27.5
+
+- align the beta-channel compatibility wave to OpenCode `1.18.31`, `@opencode-ai/plugin@1.18.31`, `@opencode-ai/sdk@1.18.31`, and `oh-my-openagent@5.0.0-beta.62`
+- raise the LazyCodex Codex requirement to `omo@sisyphuslabs >=5.0.0-beta.62 <6`, keeping stable and later v5 releases accepted
+- refresh the current direct dependency and security override stack, including `@clack/prompts@1.8.1`, TypeScript `7.0.2`, Node types `26.5.1`, Hono `4.13.8`, and updated patched override versions
+- refresh repo truth surfaces, docs, tests, lockfile, generated agents, and Codex marketplace payloads for the `0.27.5` cut
+
+## 0.27.4
+
+- move the LazyCodex/OMO support contract onto the v5 beta stream for current ChatGPT model support, including GPT-6 Astra
+- require LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.48 <6`) as the hard Codex dependency
+- bump OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.29` and `@opencode-ai/sdk@1.18.29`
+- pin `oh-my-openagent@5.0.0-beta.48` for the beta-channel OMO stream
+- route the high-capability OpenCode category through `openai/gpt-6-astra`
+
 ## 0.26.3
 
 - add the promoted `supportability-review` route under `fullstack-wunderkind` for observability review, rollback readiness, on-call ownership, and launch blockers

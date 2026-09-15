@@ -4,7 +4,7 @@ The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It compl
 
 ## Prerequisites and lifecycle
 
-LazyCodex (`omo@sisyphuslabs` version `>=4.19.4 <5`) is the sole hard dependency. Codex must be on `PATH`. Wunderkind never installs, enables, updates, or removes LazyCodex or any companion.
+LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency. Codex must be on `PATH`. Wunderkind never installs, enables, updates, or removes LazyCodex or any companion.
 
 Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). Maintainer packed QA can still use the extracted-package equivalent `node package/bin/wunderkind.js codex <verb>`.
 

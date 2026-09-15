@@ -26,10 +26,10 @@ Canonical `oh-my-openagent` naming is the only active path. Legacy `oh-my-openco
 Recent audit work for this repo found that the installed resolved versions are already on patched transitive versions for the reported packages, even though `bun audit` still reports advisories in its output. Treat this as an audit-tool mismatch to keep watching, not as permission to stop reviewing dependency drift.
 
 Resolved patched versions currently present in the dependency graph:
-- `fast-uri@3.1.2`
-- `ip-address@10.2.0`
-- `hono@4.12.18`
-- `uuid@13.0.2`
+- `fast-uri@4.1.5`
+- `ip-address@10.7.1`
+- `hono@4.13.8`
+- `uuid@14.0.2`
 
 ## Operational safeguards worth documenting
 

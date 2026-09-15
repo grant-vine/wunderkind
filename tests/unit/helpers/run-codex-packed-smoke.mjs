@@ -104,17 +104,17 @@ function checkSkills(pluginRoot) {
 
 function createOmoFixture(root) {
   const marketplaceRoot = join(root, "omo-marketplace")
-  const pluginRoot = join(marketplaceRoot, "plugins", "omo", "4.19.4")
+  const pluginRoot = join(marketplaceRoot, "plugins", "omo", "5.0.0-beta.62")
   mkdirSync(join(marketplaceRoot, ".agents", "plugins"), { recursive: true })
   mkdirSync(join(pluginRoot, ".codex-plugin"), { recursive: true })
   mkdirSync(join(pluginRoot, "skills", "fixture"), { recursive: true })
   writeFileSync(join(marketplaceRoot, ".agents", "plugins", "marketplace.json"), `${JSON.stringify({
     name: "sisyphuslabs",
-    plugins: [{ name: "omo", source: { source: "local", path: "./plugins/omo/4.19.4" } }],
+    plugins: [{ name: "omo", source: { source: "local", path: "./plugins/omo/5.0.0-beta.62" } }],
   }, null, 2)}\n`)
   writeFileSync(join(pluginRoot, ".codex-plugin", "plugin.json"), `${JSON.stringify({
     name: "omo",
-    version: "4.19.4",
+    version: "5.0.0-beta.62",
     description: "Offline LazyCodex smoke fixture.",
     author: { name: "Wunderkind smoke" },
     license: "MIT",
@@ -158,10 +158,10 @@ function seedLazyCodex(root, env, cwd) {
   assert(marketplace.marketplaceName === "sisyphuslabs", "OMO fixture marketplace registration used an unexpected name")
   const pluginResult = requireSuccess(runCodex(env, ["plugin", "add", "omo@sisyphuslabs", "--json"], cwd), "seed OMO plugin")
   const plugin = json(pluginResult, "seed OMO plugin")
-  assert(plugin.pluginId === "omo@sisyphuslabs" && plugin.version === "4.19.4", "OMO fixture plugin did not install the required version")
+  assert(plugin.pluginId === "omo@sisyphuslabs" && plugin.version === "5.0.0-beta.62", "OMO fixture plugin did not install the required version")
   const installed = json(requireSuccess(runCodex(env, ["plugin", "list", "--json"], cwd), "verify OMO fixture"), "verify OMO fixture")
   const omo = Array.isArray(installed.installed) ? installed.installed.find((entry) => entry?.pluginId === "omo@sisyphuslabs") : undefined
-  assert(omo?.installed === true && omo?.enabled === true && omo?.version === "4.19.4", "OMO fixture is not installed and enabled")
+  assert(omo?.installed === true && omo?.enabled === true && omo?.version === "5.0.0-beta.62", "OMO fixture is not installed and enabled")
 }
 
 function packAndExtract(root) {
