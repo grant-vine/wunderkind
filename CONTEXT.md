@@ -2,7 +2,7 @@
 
 Updated: 2026-09-08T00-00-00Z
 
-This repository is the source for **Wunderkind** `0.27.5`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.31` and `oh-my-openagent` `5.0.0-beta.62`.
+This repository is the source for **Wunderkind** `0.27.6`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The current upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.31` and `oh-my-openagent` `5.0.0-beta.62`.
 
 The repository also contains the Codex edition: six custom agents, eleven plugin skills, and the nested `wunderkind codex` lifecycle. It requires LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as its only hard dependency, keeps third-party companions optional and non-owned, and defers Codex prompt/token optimization to a later host-native design revisit.
 

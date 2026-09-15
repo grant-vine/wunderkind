@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.6
+
+- switch the GitHub Actions npm release job to trusted publishing/OIDC by removing the legacy `NPM_TOKEN` publish environment
+- refresh release metadata and generated Codex payloads for the retry release after the token-backed `0.27.5` publish failed before npm created that version
+
 ## 0.27.5
 
 - align the beta-channel compatibility wave to OpenCode `1.18.31`, `@opencode-ai/plugin@1.18.31`, `@opencode-ai/sdk@1.18.31`, and `oh-my-openagent@5.0.0-beta.62`
