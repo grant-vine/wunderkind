@@ -120,11 +120,11 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.27.7 beta baseline and current Codex edition", () => {
+  it("keeps README release notes aligned with the 0.27.8 beta baseline and current Codex edition", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.27.7")
+    expect(readmeBody).toContain("## What's new in 0.27.8")
     expect(readmeBody).toContain("GPT-6 Astra")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.31")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.31")

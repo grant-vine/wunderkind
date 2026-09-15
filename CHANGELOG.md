@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.8
+
+- run the npm release job on Node 24 so trusted publishing has npm CLI 11.5.1+ OIDC support
+- restore npm registry setup without token env and let trusted publishing generate provenance automatically
+
 ## 0.27.7
 
 - remove `actions/setup-node` npm registry auth wiring from the release workflow so trusted publishing can use GitHub OIDC without token-backed npm config

@@ -27,9 +27,9 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
-## What's new in 0.27.7
+## What's new in 0.27.8
 
-Wunderkind `0.27.7` moves the LazyCodex/OMO support contract onto the v5 beta stream for current ChatGPT model support, including GPT-6 Astra, and switches npm release publishing to trusted publishing.
+Wunderkind `0.27.8` moves the LazyCodex/OMO support contract onto the v5 beta stream for current ChatGPT model support, including GPT-6 Astra, and switches npm release publishing to trusted publishing.
 
 - require LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as the hard Codex dependency
 - bump OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.31` and `@opencode-ai/sdk@1.18.31`

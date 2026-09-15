@@ -8,7 +8,7 @@ Last refreshed: 2026-09-08T00-00-00Z
 - **Plugin package**: `@opencode-ai/plugin@1.18.31`
 - **SDK package**: `@opencode-ai/sdk@1.18.31`
 - **OMO dependency**: `oh-my-openagent@5.0.0-beta.62`
-- **Current Wunderkind package version**: `0.27.7`
+- **Current Wunderkind package version**: `0.27.8`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 - **Current beta compatibility target**: OpenCode `1.18.31` + `oh-my-openagent` `5.0.0-beta.62`, with OMO v5 beta explicitly in scope
 
