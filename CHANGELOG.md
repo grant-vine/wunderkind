@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.9
+
+- update release workflow actions to current Node 24-based majors so trusted publishing completes without GitHub Actions deprecation or unsupported-input warnings
+
 ## 0.27.8
 
 - run the npm release job on Node 24 so trusted publishing has npm CLI 11.5.1+ OIDC support

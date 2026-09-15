@@ -1,7 +1,7 @@
 ---
 description: >
   CISO — Security and compliance lead for threat modeling, controls, and risk decisions.
-wunderkind_version: "0.27.8"
+wunderkind_version: "0.27.9"
 mode: all
 temperature: 0.1
 permission:
