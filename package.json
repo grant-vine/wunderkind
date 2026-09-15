@@ -1,6 +1,6 @@
 {
   "name": "@grant-vine/wunderkind",
-  "version": "0.27.6",
+  "version": "0.27.7",
   "description": "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
   "type": "module",
   "main": "dist/index.js",
@@ -65,7 +65,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/grant-vine/wunderkind"
+    "url": "git+https://github.com/grant-vine/wunderkind.git"
   },
   "engines": {
     "node": ">=22.12.0"

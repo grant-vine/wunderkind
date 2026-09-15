@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.27.7
+
+- remove `actions/setup-node` npm registry auth wiring from the release workflow so trusted publishing can use GitHub OIDC without token-backed npm config
+- normalize the package repository URL to the npm canonical git URL before publishing
+
 ## 0.27.6
 
 - switch the GitHub Actions npm release job to trusted publishing/OIDC by removing the legacy `NPM_TOKEN` publish environment
