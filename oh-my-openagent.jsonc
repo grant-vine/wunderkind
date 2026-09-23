@@ -8,7 +8,7 @@
   //
   // All agent names are namespaced as "wunderkind:<agent-name>" by the plugin loader.
   //
-  // Schema baseline metadata tracks oh-my-openagent 5.0.0-beta.62, while the published
+  // Schema baseline metadata tracks oh-my-openagent 5.0.0-beta.86, while the published
   // template continues to use the canonical upstream schema URL expected by the
   // current source/test contract.
   //

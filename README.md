@@ -27,6 +27,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.28.2
+
+Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairable on a local Codex/LazyCodex installation.
+
+- `wunderkind codex doctor` detects configured Astra assignments and any Sol/Luna policy drift without changing local files
+- `wunderkind codex doctor --apply-model-policy` explicitly writes the local Sol/Luna model policy, so it can be rerun after a LazyCodex upgrade that changes role files
+- update the supported beta baseline to `@opencode-ai/plugin@1.18.32`, `@opencode-ai/sdk@1.18.32`, and `oh-my-openagent@5.0.0-beta.86`
+
 ## What's new in 0.28.1
 
 Wunderkind `0.28.1` realigns its managed OMO template to the current GPT-6 cost tiers.
@@ -89,10 +97,10 @@ Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle
 
 ## Current beta compatibility wave
 
-This repository targets the LazyCodex/OMO v5 beta stream with OpenCode `1.18.31` plus `oh-my-openagent` `5.0.0-beta.62`.
+This repository targets the LazyCodex/OMO v5 beta stream with OpenCode `1.18.32` plus `oh-my-openagent` `5.0.0-beta.86`.
 
 - OMO v5 beta is in scope for this wave.
-- Wunderkind's managed OMO template uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work. It emits no Astra category. Astra remains available only when an operator adds it in a user-owned OMO override; installed OMO bundle defaults are upstream behavior and should be verified separately.
+- Wunderkind's managed OMO template uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work. It emits no Astra category. `wunderkind codex doctor` detects local Codex/LazyCodex drift, and its explicit `--apply-model-policy` action restores the Sol/Luna mapping after an upstream harness update.
 - Add the promoted `release-upgrade` route under `product-wunderkind`.
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
 - Add the promoted `supportability-review` route under `fullstack-wunderkind`.

@@ -4,12 +4,13 @@ import { getCanonicalPackageVersion } from "../../agents/versioning.js"
 import { CODEX_CAPABILITY_MANIFEST } from "../../codex/capability-manifest.js"
 import { isCompatibleLazyCodexVersion } from "./registration.js"
 import { getCodexCompanionReport, type CodexCompanionReport } from "./companions.js"
+import { applyCodexModelPolicy, inspectCodexModelPolicy, type CodexModelPolicyReport } from "./model-policy.js"
 import { resolveCodexPaths } from "./paths.js"
 import { resolveCodexProjectMarker } from "./project-marker.js"
 import { runCodex } from "./process.js"
 import { readCodexInstallState, requireCanonicalCodexInstallState, sha256File, type CodexInstallState } from "./state.js"
 
-export interface CodexDoctorOptions { readonly json?: boolean; readonly verbose?: boolean }
+export interface CodexDoctorOptions { readonly json?: boolean; readonly verbose?: boolean; readonly applyModelPolicy?: boolean }
 export type CodexAgentHealth = "current" | "missing" | "stale-owned" | "modified-unowned"
 export type CodexSkillHealth = "current" | "missing" | "modified"
 export type CodexPluginHealth = "enabled" | "installed" | "missing" | "unavailable"
@@ -28,6 +29,7 @@ export interface CodexDoctorReport {
     readonly projectBootstrap: { readonly ready: boolean }
   }
   readonly optional: CodexCompanionReport | { readonly unavailable: true }
+  readonly modelPolicy: CodexModelPolicyReport
   readonly remediation: readonly string[]
   readonly paths?: { readonly codexHome: string; readonly ownershipRoot: string }
 }
@@ -123,6 +125,7 @@ function remediationFor(
   skills: Readonly<Record<string, CodexSkillHealth>>,
   packageVersion: string | undefined,
   currentPackageVersion: string,
+  modelPolicy: CodexModelPolicyReport,
 ): readonly string[] {
   if (state === "invalid") return ["Repair or restore `~/.wunderkind/codex/install-state.json`; do not overwrite existing `wunderkind-*` agents. Then run `wunderkind codex install`."]
   if (state === "missing") return ["Run `wunderkind codex install` only when no existing `wunderkind-*` agents need preservation; otherwise recover `~/.wunderkind/codex/install-state.json` first."]
@@ -151,11 +154,14 @@ function remediationFor(
   else if (agentStatuses.some((status) => status === "stale-owned" || status === "modified-unowned")) remediation.push("Restore modified Wunderkind agent files from a trusted package copy before running `wunderkind codex upgrade`.")
 
   if (pluginManifest !== "current" || Object.values(skills).some((status) => status === "missing" || status === "modified")) remediation.push("Restore modified Wunderkind payload files from a trusted package copy, then rerun `wunderkind codex doctor`.")
+  if (modelPolicy.status === "drifted") remediation.push("Run `wunderkind codex doctor --apply-model-policy` to write the local GPT-6 Sol/Luna policy, then rerun `wunderkind codex doctor`.")
+  if (modelPolicy.status === "unsafe") remediation.push("Resolve the non-regular Codex model-policy file before applying the local GPT-6 Sol/Luna policy.")
   return remediation
 }
 
 export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoctorReport {
   const paths = resolveCodexPaths()
+  const modelPolicy = inspectCodexModelPolicy(paths)
   let state: CodexInstallState | undefined
   let stateStatus: "missing" | "invalid" | "present" = "present"
   try {
@@ -179,12 +185,13 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   let optional: CodexCompanionReport | { readonly unavailable: true }
   try { optional = getCodexCompanionReport() } catch { optional = { unavailable: true } }
   const currentPackageVersion = getCanonicalPackageVersion()
-  const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
-  const remediation = healthy ? [] : remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion)
-  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap }, optional, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
+  const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current") && modelPolicy.status === "compliant"
+  const remediation = healthy ? [] : remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion, modelPolicy)
+  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
 }
 
 export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
+  if (options.applyModelPolicy === true) applyCodexModelPolicy()
   const report = getCodexDoctorReport(options)
   if (options.json === true) console.log(JSON.stringify(report))
   else {
@@ -192,6 +199,8 @@ export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
     console.log(`Codex: ${report.core.codex.status}${report.core.codex.version === undefined ? "" : ` (${report.core.codex.version})`}`)
     console.log(`LazyCodex: ${report.core.lazyCodex.status}${report.core.lazyCodex.version === undefined ? "" : ` (${report.core.lazyCodex.version})`}`)
     console.log(`Marketplace/plugin: ${report.core.marketplace.status}/${report.core.plugin.status}`)
+    const modelPolicyDetail = report.modelPolicy.astraAssignments.length > 0 ? `; Astra assigned to ${report.modelPolicy.astraAssignments.join(", ")}` : ""
+    console.log(`Model policy: ${report.modelPolicy.status}${modelPolicyDetail}`)
     for (const [name, status] of Object.entries(report.core.agents)) console.log(`- agent ${name}: ${status}`)
     console.log(`- plugin manifest: ${report.core.pluginManifest}`)
     for (const [name, status] of Object.entries(report.core.skills)) console.log(`- skill ${name}: ${status}`)

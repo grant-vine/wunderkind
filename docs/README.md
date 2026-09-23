@@ -6,7 +6,7 @@ Managed docs path: `docs/`
 
 ## Overview
 
-This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind** after the `0.28.0` release cut, including the opt-in hybrid-memory capability, current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
+This directory is the Wunderkind-managed documentation lane for this repository. It summarizes the current shipped product surface for **Wunderkind** after the `0.28.2` release cut, including the opt-in hybrid-memory capability, current local workflow posture, project-local bootstrap state, and upstream sources that validate integration claims.
 
 ## Managed documents
 
@@ -27,7 +27,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `wunderkind doctor` now reports **native asset freshness** and **native agent markdown version drift**.
 - Generated native agents now embed **`wunderkind_version`** in frontmatter.
 - Install and upgrade guidance now use canonical **`oh-my-openagent`** naming only; legacy `oh-my-opencode` references remain detection-only warning/migration notes.
-- The upstream alignment target is `oh-my-openagent` `5.0.0-beta.62` with OpenCode plugin/SDK `1.18.31`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
+- The upstream alignment target is `oh-my-openagent` `5.0.0-beta.86` with OpenCode plugin/SDK `1.18.32`; Goal terminology replaces active wording where Ralph Loop is historical only, while Ultrawork remains an active upstream workflow concept.
 - `/wunderkind-team` and `wunderkind team-bootstrap` document the team-mode setup path, canonical `team_mode.enabled` detection, and fallback to solo `product-wunderkind` orchestration when team mode is disabled, the spec is missing, or team tools are unavailable.
 - `wunderkind token-audit` documents the prompt-runtime v1 contract as `audit-only`: no live prompt packing, no model-token truth claims, and no OpenToken dependency.
 - The supplementary engine is now documented as one default-off multi-level prompt optimization engine, separate from `wunderkind token-audit` and still without a public optimize command.
@@ -37,7 +37,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - The `latest-user` level still fail-closes with whole-message passthrough for low-confidence or safety-risk cases, with passthrough reason visibility limited to runtime reports and not summary metadata guidance.
 - Project memory is a separate, default-off local capability; configuration alone never starts its worker.
 - The approved hybrid memory contract is a project-scoped SQLite/WAL ledger with explicit `memory start` / `memory stop` lifecycle, separately enabled bounded query-aware injection, redaction-before-persistence, deletion/tombstone and raw-excerpt retention rules, and raw-excerpt-free exports. Jev/Kev remain eval-only interfaces, not installed providers.
-- Memory migration is explicit: `wunderkind migrate` handles legacy OMO config only and does not import memory ledgers or `.sisyphus/` artifacts. Wunderkind's managed model policy uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work; Astra is absent from the shipped template and requires a user-owned OMO override.
+- Memory migration is explicit: `wunderkind migrate` handles legacy OMO config only and does not import memory ledgers or `.sisyphus/` artifacts. Wunderkind's managed model policy uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work; Astra is absent from the shipped template. `wunderkind codex doctor` reports local policy drift, and the explicit `--apply-model-policy` action repairs the supported local mapping.
 - `promptOptimizationReportingMode` now documents the opt-in separate runtime-report surface (`off`, `persist`, `summary`), where sanitized/redacted latest-report artifacts or summaries back `system-transform.latest.json` and `session-compacting.latest.json`, and `doctor --verbose` exposes existence/status rather than claiming runtime savings.
 - This repo currently keeps a **project-local** prompt optimization override enabled: `active` mode, `summary` reporting, `120000` token budget, and `1200` byte budget. That is local repo state for this explicitly enabled repo context, not the published product default.
 - `doctor --verbose` is the operator surface for current runtime-report posture and latest-artifact presence in this repo; that repo-local override must not be read as proof of a global always-on product posture.
@@ -51,7 +51,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - `docHistoryMode` remains `overwrite` for this repo.
 - Project-local prompt optimization remains enabled for this repo and should be treated as a maintained local override on the legacy compatibility profile until an explicit `promptOptimizationLevel` is chosen.
 - `CONTEXT.md` has been bootstrapped for this repository.
-- `AGENTS.md` has been refreshed to reflect package version `0.28.0` and the current 28-route public/deprecated inventory.
+- `AGENTS.md` has been refreshed to reflect package version `0.28.2` and the current 28-route public/deprecated inventory.
 
 ## Primary local sources
 
@@ -78,7 +78,7 @@ This directory is the Wunderkind-managed documentation lane for this repository.
 - OpenCode agents: https://opencode.ai/docs/agents
 - OpenCode commands: https://opencode.ai/docs/commands
 - OpenCode changelog: https://opencode.ai/changelog
-- OpenCode release v1.18.31: https://github.com/anomalyco/opencode/releases/tag/v1.18.31
+- OpenCode release v1.18.32: https://github.com/anomalyco/opencode/releases/tag/v1.18.32
 - OpenCode package metadata: https://registry.npmjs.org/opencode-ai/latest
 - oh-my-openagent README: https://github.com/code-yeongyu/oh-my-openagent/blob/dev/README.md
 - oh-my-openagent installation guide: https://github.com/code-yeongyu/oh-my-openagent/blob/dev/docs/guide/installation.md

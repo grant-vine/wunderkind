@@ -734,11 +734,12 @@ codexProgram
 
 codexProgram
   .command("doctor")
-  .description("Run read-only diagnostics for the Wunderkind Codex installation and optional companions.")
+  .description("Run diagnostics for the Wunderkind Codex installation and optional companions.")
   .option("--json", "Print the versioned machine-readable report")
   .option("-v, --verbose", "Include sanitized installation path detail")
-  .action((opts: { json?: boolean | undefined; verbose?: boolean | undefined }) => runCodexCommand(
-    () => runCodexDoctor({ json: opts.json === true, verbose: opts.verbose === true }),
+  .option("--apply-model-policy", "Replace detected Astra/default drift with the local GPT-6 Sol/Luna policy")
+  .action((opts: { json?: boolean | undefined; verbose?: boolean | undefined; applyModelPolicy?: boolean | undefined }) => runCodexCommand(
+    () => runCodexDoctor({ json: opts.json === true, verbose: opts.verbose === true, applyModelPolicy: opts.applyModelPolicy === true }),
   ))
 
 codexProgram

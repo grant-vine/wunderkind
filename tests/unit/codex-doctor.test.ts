@@ -33,6 +33,25 @@ function removeInstalledPlugin(fixture: ReturnType<typeof createFakeCodex>, plug
 }
 
 describe("Codex doctor", () => {
+  it("reports Astra routing drift and offers the explicit local model-policy repair", () => {
+    const paths = sandbox()
+    configure(paths, createFakeCodex())
+    try {
+      installCodexWunderkind()
+      mkdirSync(paths.codexHome, { recursive: true })
+      writeFileSync(join(paths.codexHome, "config.toml"), 'model = "gpt-6-astra"\n', "utf8")
+
+      const report = getCodexDoctorReport()
+
+      expect(report.modelPolicy.status).toBe("drifted")
+      expect(report.modelPolicy.astraAssignments).toEqual(["root"])
+      expect(report.core.healthy).toBe(false)
+      expect(report.remediation.some((action) => action.includes("--apply-model-policy"))).toBe(true)
+    } finally {
+      cleanup(paths)
+    }
+  })
+
   it("reports a versioned, redacted JSON health result without mutating a current install", () => {
     const paths = sandbox()
     configure(paths, createFakeCodex())

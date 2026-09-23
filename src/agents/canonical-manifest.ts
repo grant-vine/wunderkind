@@ -72,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.28.1",
+    version: "0.28.2",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -105,7 +105,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     upstream: {
       omoCanonicalPackageName: "oh-my-openagent",
       omoLegacyPackageName: "oh-my-opencode",
-      omoTargetVersion: "5.0.0-beta.62",
+      omoTargetVersion: "5.0.0-beta.86",
     },
     configSchemaUrl: "https://raw.githubusercontent.com/grant-vine/wunderkind/main/schemas/wunderkind.config.schema.json",
   },

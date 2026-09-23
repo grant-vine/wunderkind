@@ -5,12 +5,12 @@ Last refreshed: 2026-09-08T00-00-00Z
 ## Current technical baseline
 
 - **Language/runtime**: TypeScript + Bun + ESM
-- **Plugin package**: `@opencode-ai/plugin@1.18.31`
-- **SDK package**: `@opencode-ai/sdk@1.18.31`
-- **OMO dependency**: `oh-my-openagent@5.0.0-beta.62`
-- **Current Wunderkind package version**: `0.28.1`
+- **Plugin package**: `@opencode-ai/plugin@1.18.32`
+- **SDK package**: `@opencode-ai/sdk@1.18.32`
+- **OMO dependency**: `oh-my-openagent@5.0.0-beta.86`
+- **Current Wunderkind package version**: `0.28.2`
 - **Generated agent frontmatter version field**: `wunderkind_version`
-- **Current beta compatibility target**: OpenCode `1.18.31` + `oh-my-openagent` `5.0.0-beta.62`, with OMO v5 beta explicitly in scope
+- **Current beta compatibility target**: OpenCode `1.18.32` + `oh-my-openagent` `5.0.0-beta.86`, with OMO v5 beta explicitly in scope
 
 ## Architecture decisions
 
@@ -34,7 +34,7 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 `platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supportability-review` is the promoted fullstack-owned route for observability, rollback-readiness, on-call ownership, and launch blockers. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The current repo-head skill inventory is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
 ### The current compatibility wave uses GPT-6 Sol/Luna cost tiers
-The beta compatibility contract targets OpenCode `1.18.31` and OMO `5.0.0-beta.62`. The exact managed-template mapping is: `quick` stays Haiku, `writing` and `visual-engineering` retain their existing providers, `unspecified-low` uses `openai/gpt-6-luna`, `unspecified-high` uses `openai/gpt-6-sol`, and Astra absent from the shipped template requires user-owned configuration. The installed OMO bundle may define Astra defaults independently; that upstream behavior is not a Wunderkind default.
+The beta compatibility contract targets OpenCode `1.18.32` and OMO `5.0.0-beta.86`. The exact managed-template mapping is: `quick` stays Haiku, `writing` and `visual-engineering` retain their existing providers, `unspecified-low` uses `openai/gpt-6-luna`, `unspecified-high` uses `openai/gpt-6-sol`, and Astra absent from the shipped template requires user-owned configuration. `wunderkind codex doctor` reports a live local Astra assignment or any policy drift; `--apply-model-policy` is an explicit operator-controlled repair and never runs during ordinary doctor checks.
 
 ### The current skill-governance wave adds a narrow supportability route and rejects the overlapping incident skill
 The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28` by adding `release-upgrade`, `platform-compatibility`, and `supportability-review`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
@@ -46,7 +46,7 @@ The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `d
 The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-contract.ts`, `src/cli/prompt-optimization-runtime-reporting.ts`, and `src/runtime-prompt-sections.ts`. It is deliberately separate from `src/cli/token-audit.ts`, keeps `token-audit` audit-only, and persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`. The operator contract is one default-off multi-level prompt optimization engine with capability-based settings, cumulative levels, and a mandatory security-safe baseline when enabled.
 
 ### Project memory has a version-locked capture and lifecycle seam
-The `@opencode-ai/plugin` 1.18.31 declaration exposes `chat.message`, so automatic capture may use only that event while an explicitly started local worker is running. The fallback is synchronous `memory capture`; no untracked background promise is allowed. `memory.enabled`, capture, injection, fixed Ollama extraction, loopback URL validation, and bounded queue/provider limits are locked in `src/cli/memory-contract.ts` and the config schema. Task implementation must retain the redaction-before-persistence boundary, a single serialized writer, temporal/tombstone deletion rules, migration backup/read-only failure behavior, and normal-chat fail-closed behavior.
+The `@opencode-ai/plugin` 1.18.32 declaration exposes `chat.message`, so automatic capture may use only that event while an explicitly started local worker is running. The fallback is synchronous `memory capture`; no untracked background promise is allowed. `memory.enabled`, capture, injection, fixed Ollama extraction, loopback URL validation, and bounded queue/provider limits are locked in `src/cli/memory-contract.ts` and the config schema. Task implementation must retain the redaction-before-persistence boundary, a single serialized writer, temporal/tombstone deletion rules, migration backup/read-only failure behavior, and normal-chat fail-closed behavior.
 
 ## Current operational notes
 
@@ -60,9 +60,9 @@ The `@opencode-ai/plugin` 1.18.31 declaration exposes `chat.message`, so automat
 ## Dependency posture
 
 - Key direct dependencies are current for this upgrade cycle:
-  - published baseline: `oh-my-openagent@5.0.0-beta.62`, `@opencode-ai/plugin@1.18.31`, `@opencode-ai/sdk@1.18.31`
+  - published baseline: `oh-my-openagent@5.0.0-beta.86`, `@opencode-ai/plugin@1.18.32`, `@opencode-ai/sdk@1.18.32`
   - OMO v5 beta is in scope for the supported GPT-5.6 Sol/Luna routing fallback; no newer beta is adopted without release-specific OpenCode/plugin compatibility proof.
-- Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
+- Remaining direct dependencies were checked for this release; only the compatible Node type patch required an update to `@types/node@26.6.2`.
 - Patched transitive overrides currently pin:
   - `fast-uri@4.1.5`
   - `ip-address@10.7.1`

@@ -5,7 +5,7 @@ Last refreshed: 2026-09-08T00-00-00Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.28.1`
+- **Current version**: `0.28.2`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -39,7 +39,7 @@ Active upstream continuation/goal behavior should use Goal terminology. Ralph Lo
 Senpi task/orchestration docs are valid upstream context, but Wunderkind’s OpenCode-facing team-mode work should follow the OpenCode/OMO team model. Operator-facing local-model guidance that mentions Ollama tool-using agents must include the upstream `stream: false` workaround instead of promising streaming tool-call support.
 
 ### 10. Keep the stable upstream-alignment targets explicit
-The current beta-channel baseline is `oh-my-openagent` `5.0.0-beta.62` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.31`. Docs/help/doctor surfaces should cite those targets when explaining the current compatibility contract.
+The current beta-channel baseline is `oh-my-openagent` `5.0.0-beta.86` with `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.32`. Docs/help/doctor surfaces should cite those targets when explaining the current compatibility contract.
 
 ### 11. Keep `wunderkind migrate` scoped to legacy OMO config
 `wunderkind migrate` now owns no-clobber legacy OMO config migration into `~/.omo/omo.jsonc`. It must not be described as a `.sisyphus/` project-artifact migration surface, and it must not restore active legacy fallback execution.
@@ -56,8 +56,11 @@ Project memory is separate from prompt optimization and `token-audit`. `memory.e
 ### 14. Treat this repo's active prompt optimization posture as local repo state, not product default
 This repository currently keeps a project-local prompt optimization override enabled (`active`, `summary`, `120000` token budget, `1200` byte budget). That posture should be documented as local operating state for this explicitly enabled repo context, not as a claim that Wunderkind defaults to active optimization for all users. The final contract also freezes that omitting `promptOptimizationLevel` in legacy enabled repos preserves the current shipped behavior until an operator explicitly chooses one of the supported capability-based levels.
 
-### 15. Move the current compatibility wave to OpenCode 1.18.31 and OMO 5 beta
-The current upstream-alignment wave intentionally targets the LazyCodex/OMO v5 beta stream for Astra support: OpenCode `1.18.31` and `oh-my-openagent` `5.0.0-beta.62`.
+### 15. Keep the current compatibility wave on OpenCode 1.18.32 and OMO 5 beta
+The current upstream-alignment wave targets OpenCode `1.18.32` and `oh-my-openagent` `5.0.0-beta.86`. Wunderkind's template selects Sol/Luna tiers; Astra is an operator decision rather than a package default.
+
+### 16. Make local Astra drift explicit and repairable
+`wunderkind codex doctor` inspects the root Codex model and known LazyCodex role files. It reports drift without mutating user configuration. Operators may choose `--apply-model-policy` to write the supported Sol/Luna mapping after an upstream harness update.
 
 ### 16. Add the narrow supportability route without adding an overlapping incident skill
 The current repo-head skill-governance wave adds `release-upgrade` under `product-wunderkind`, plus `platform-compatibility` and `supportability-review` under `fullstack-wunderkind`. It explicitly rejects `supportability-incident` as a standalone skill because that operator work already has sufficient coverage through `/supportability-review`, `/runbook`, and `/incident-response`.

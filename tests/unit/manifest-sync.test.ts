@@ -106,8 +106,8 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.31")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.31")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.32")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.32")
     expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
   })
 
@@ -120,18 +120,18 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.28.1 cost-tier policy release", () => {
+  it("keeps README release notes aligned with the 0.28.2 model-policy and dependency release", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.28.1")
+    expect(readmeBody).toContain("## What's new in 0.28.2")
     expect(readmeBody).toContain("project-local hybrid memory capability")
     expect(readmeBody).toContain("SQLite/WAL ledger")
     expect(readmeBody).toContain("configuration alone does not start a worker")
     expect(readmeBody).toContain("Astra is not emitted by any Wunderkind category")
-    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.31")
-    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.31")
-    expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.62")
+    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.32")
+    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.32")
+    expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.86")
     expect(readmeBody).toContain("openai/gpt-6-sol")
     expect(readmeBody).toContain("openai/gpt-6-luna")
     expect(readmeBody).toContain("release-upgrade")
@@ -298,9 +298,9 @@ describe("design-md command asset", () => {
   it("keeps the docs index aligned with the final OpenCode release reference", () => {
     const docsReadmeBody = readText(docsReadmeFile)
 
-    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.31")
+    expect(docsReadmeBody).toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.32")
     expect(docsReadmeBody).not.toContain("https://github.com/anomalyco/opencode/releases/tag/v1.18.7")
-    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.31")
+    expect(docsReadmeBody).not.toContain("https://github.com/sst/opencode/releases/tag/v1.18.32")
   })
 
   it("ships wunderkind-team as a product-owned static command asset with canonical fallback guidance", () => {

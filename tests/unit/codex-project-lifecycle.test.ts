@@ -16,7 +16,7 @@ import {
   __setCodexProjectMarkerWriterForTests,
 } from "../../src/cli/codex/project-marker.js"
 
-const PACKAGE_VERSION = "0.28.1"
+const PACKAGE_VERSION = "0.28.2"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)

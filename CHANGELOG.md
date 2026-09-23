@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.2
+
+- add `wunderkind codex doctor` model-policy inspection that identifies Astra assignments and Sol/Luna drift without mutating user configuration
+- add the explicit `wunderkind codex doctor --apply-model-policy` local repair action for root and managed LazyCodex role model assignments
+- update the direct OpenCode plugin/SDK dependencies to `1.18.32`, OMO to `5.0.0-beta.86`, and Node types to `26.6.2`
+
 ## 0.28.1
 
 - realign Wunderkind's managed OMO template to `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work
