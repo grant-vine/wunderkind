@@ -27,6 +27,14 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.28.1
+
+Wunderkind `0.28.1` realigns its managed OMO template to the current GPT-6 cost tiers.
+
+- standard/high-capability work uses `openai/gpt-6-sol`
+- routine/background work uses `openai/gpt-6-luna`
+- Astra is not emitted by any Wunderkind category; an operator must add it in a user-owned OMO override
+
 ## What's new in 0.28.0
 
 Wunderkind `0.28.0` adds an opt-in, project-local hybrid memory capability while preserving the normal zero-daemon overlay posture.
@@ -35,7 +43,7 @@ Wunderkind `0.28.0` adds an opt-in, project-local hybrid memory capability while
 - expose explicit `memory start`, `memory stop`, `capture`, `recall`, `forget`, `rebuild`, and `export` lifecycle controls; configuration alone does not start a worker
 - use bounded prompt-derived retrieval only when separately enabled; all provider, storage, and worker faults leave normal chat unchanged
 - keep Ollama loopback-only, Jev/Kev eval-only, and all cloud/provider installation out of the package
-- use Wunderkind's supported `openai/gpt-5.6-sol`/`openai/gpt-5.6-luna` managed routing with Astra explicit opt-in; exact GPT-6 IDs remain future upstream capability triggers
+- use Wunderkind's then-supported `openai/gpt-5.6-sol`/`openai/gpt-5.6-luna` managed routing; it is superseded by the GPT-6 policy in `0.28.1`
 
 ## What's new in 0.27.9
 
@@ -84,8 +92,7 @@ Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle
 This repository targets the LazyCodex/OMO v5 beta stream with OpenCode `1.18.31` plus `oh-my-openagent` `5.0.0-beta.62`.
 
 - OMO v5 beta is in scope for this wave.
-- Wunderkind's managed OMO template routes standard/high-capability work through supported `openai/gpt-5.6-sol` and routine/background work through `openai/gpt-5.6-luna`. The installed OMO bundle may define its own Astra defaults; that upstream behavior is distinct from Wunderkind's managed routing policy. Wunderkind does not promise unsupported GPT-6 Sol/Luna IDs and does not overwrite user-owned OMO overrides; operators must verify their effective upstream config when Astra behavior matters.
-- `gpt-6-sol` and `gpt-6-luna` are not currently published OpenAI or OMO model IDs. Revisit that routing only when official OpenAI documentation and the installed OMO catalog publish exact supported GPT-6 Sol/Luna IDs.
+- Wunderkind's managed OMO template uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work. It emits no Astra category. Astra remains available only when an operator adds it in a user-owned OMO override; installed OMO bundle defaults are upstream behavior and should be verified separately.
 - Add the promoted `release-upgrade` route under `product-wunderkind`.
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
 - Add the promoted `supportability-review` route under `fullstack-wunderkind`.
@@ -929,7 +936,7 @@ Project memory is a separate, default-off capability. When enabled, each project
 - `memory capture` is the bounded synchronous fallback. The v1 extractor is loopback-only Ollama with an explicit model and bounded queue/response limits; there is no provider install step.
 - Query-aware context injection is separately enabled; memory injection is separately enabled from capture, bounded, source-attributed, and fail-closed. It never replaces the normal system prompt when disabled or when the ledger is unavailable.
 - redaction precedes every downstream interface. Raw excerpts expire after 30 days; fact/source deletion writes non-rebuild tombstones; exports contain redacted facts and provenance, never raw excerpts. Treat stored values as untrusted data and never persist secrets or instruction-like content.
-- Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-5.6-sol`, routine/background work uses `openai/gpt-5.6-luna`, and Astra remains explicit opt-in in that managed template. The installed OMO bundle may define its own Astra defaults; Wunderkind preserves user-owned OMO configuration.
+- Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-6-sol`, routine/background work uses `openai/gpt-6-luna`, and Astra is absent from the managed template unless an operator configures it in a user-owned OMO override.
 - `wunderkind migrate` migrates legacy OMO configuration into `~/.omo/omo.jsonc`; wunderkind migrate does not import memory ledgers, `.sisyphus/` artifacts, or provider/cloud state. Back up or export a project ledger explicitly before any project-local cleanup.
 
 ---

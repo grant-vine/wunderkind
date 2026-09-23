@@ -1,4 +1,4 @@
-type OmoCategoryId = "quick" | "unspecified-low" | "unspecified-high" | "writing" | "visual-engineering" | "unspecified-astra"
+type OmoCategoryId = "quick" | "unspecified-low" | "unspecified-high" | "writing" | "visual-engineering"
 
 export interface CanonicalPackageMetadata {
   readonly name: string
@@ -72,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.28.0",
+    version: "0.28.1",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -809,23 +809,18 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     namespacePrefix: "wunderkind",
     categories: [
       { id: "quick", model: "anthropic/claude-haiku-4-5" },
-      { id: "unspecified-low", model: "openai/gpt-5.6-luna", variant: "low" },
-      { id: "unspecified-high", model: "openai/gpt-5.6-sol", variant: "high" },
+      { id: "unspecified-low", model: "openai/gpt-6-luna", variant: "low" },
+      { id: "unspecified-high", model: "openai/gpt-6-sol", variant: "high" },
       { id: "writing", model: "google/gemini-3-flash" },
       { id: "visual-engineering", model: "google/gemini-3.1-pro", variant: "high" },
-      { id: "unspecified-astra", model: "openai/gpt-6-astra", variant: "high" },
     ],
   },
   modelRouting: {
-    supportedFallback: {
-      standardAndHigh: "openai/gpt-5.6-sol",
-      routineAndBackground: "openai/gpt-5.6-luna",
+    managedDefaults: {
+      standardAndHigh: "openai/gpt-6-sol",
+      routineAndBackground: "openai/gpt-6-luna",
     },
-    astraOptIn: {
-      model: "openai/gpt-6-astra",
-      enabledByDefault: false,
-    },
-    futureGpt6SolLunaTrigger: "Use GPT-6 Sol/Luna only after official OpenAI documentation and the installed OMO catalog publish exact supported IDs.",
+    astraRequiresExplicitUserConfiguration: true,
   },
   legacySurfaces: {
     contractPath: ".omo/contracts/wunderkind-upstream-convergence.jsonc",
@@ -879,15 +874,11 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     }[]
   }
   readonly modelRouting: {
-    readonly supportedFallback: {
+    readonly managedDefaults: {
       readonly standardAndHigh: string
       readonly routineAndBackground: string
     }
-    readonly astraOptIn: {
-      readonly model: string
-      readonly enabledByDefault: boolean
-    }
-    readonly futureGpt6SolLunaTrigger: string
+    readonly astraRequiresExplicitUserConfiguration: boolean
   }
   readonly legacySurfaces: {
     readonly contractPath: string

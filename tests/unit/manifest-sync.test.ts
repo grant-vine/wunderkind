@@ -120,23 +120,20 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.28.0 hybrid-memory release", () => {
+  it("keeps README release notes aligned with the 0.28.1 cost-tier policy release", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.28.0")
+    expect(readmeBody).toContain("## What's new in 0.28.1")
     expect(readmeBody).toContain("project-local hybrid memory capability")
     expect(readmeBody).toContain("SQLite/WAL ledger")
     expect(readmeBody).toContain("configuration alone does not start a worker")
-    expect(readmeBody).toContain("Astra explicit opt-in")
+    expect(readmeBody).toContain("Astra is not emitted by any Wunderkind category")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.31")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.31")
     expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.62")
-    expect(readmeBody).toContain("openai/gpt-5.6-sol")
-    expect(readmeBody).toContain("openai/gpt-5.6-luna")
-    expect(readmeBody).toContain("installed OMO bundle may define its own Astra defaults")
-    expect(readmeBody).toContain("gpt-6-sol")
-    expect(readmeBody).toContain("gpt-6-luna")
+    expect(readmeBody).toContain("openai/gpt-6-sol")
+    expect(readmeBody).toContain("openai/gpt-6-luna")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
     expect(readmeBody).toContain("supportability-review")

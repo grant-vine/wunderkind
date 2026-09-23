@@ -5,7 +5,7 @@ Last refreshed: 2026-09-08T00-00-00Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.28.0`
+- **Current version**: `0.28.1`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
@@ -63,7 +63,7 @@ The current upstream-alignment wave intentionally targets the LazyCodex/OMO v5 b
 The current repo-head skill-governance wave adds `release-upgrade` under `product-wunderkind`, plus `platform-compatibility` and `supportability-review` under `fullstack-wunderkind`. It explicitly rejects `supportability-incident` as a standalone skill because that operator work already has sufficient coverage through `/supportability-review`, `/runbook`, and `/incident-response`.
 
 ### 17. Keep Wunderkind routing distinct from installed OMO bundle defaults
-The current compatibility wave keeps category identities unchanged and makes Wunderkind's managed template use `openai/gpt-5.6-sol` for standard/high-capability work plus `openai/gpt-5.6-luna` for low-cost routine/background work. The installed OMO bundle may define its own Astra defaults; that upstream behavior is not a claim about Wunderkind's managed template. Wunderkind does not overwrite user-owned OMO configuration or promise unsupported GPT-6 Sol/Luna IDs. The requested `gpt-6-sol` and `gpt-6-luna` names are not current official OpenAI or OMO catalog IDs, so future GPT-6 Sol/Luna routing requires exact supported IDs in both sources.
+The current compatibility wave keeps category identities unchanged and makes Wunderkind's managed template use `openai/gpt-6-sol` for standard/high-capability work plus `openai/gpt-6-luna` for low-cost routine/background work. The shipped template has no Astra category. The installed OMO bundle may define Astra defaults; that upstream behavior is not a claim about Wunderkind's managed template. Wunderkind does not overwrite user-owned OMO configuration.
 
 ## Current feature set to highlight
 

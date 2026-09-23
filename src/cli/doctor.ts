@@ -39,7 +39,7 @@ export interface DoctorOptions {
 }
 
 export const MODEL_ROUTING_ADVISORY =
-  "template defaults: quick=Haiku; unspecified-low=openai/gpt-5.6-luna; unspecified-high=openai/gpt-5.6-sol (high); writing/visual-engineering unchanged; unspecified-astra=openai/gpt-6-astra is explicit opt-in only; doctor does not modify user-owned OMO overrides"
+  "template defaults: quick=Haiku; unspecified-low=openai/gpt-6-luna; unspecified-high=openai/gpt-6-sol (high); writing/visual-engineering unchanged; Astra is absent unless an operator adds it in a user-owned OMO override; doctor does not modify user-owned OMO overrides"
 
 interface OpenCodeConfig {
   mcp?: Record<string, unknown>

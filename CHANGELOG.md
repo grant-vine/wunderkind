@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.1
+
+- realign Wunderkind's managed OMO template to `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work
+- remove Astra from all shipped Wunderkind categories; Astra now requires an explicit user-owned OMO override
+- update the doctor routing advisory and published compatibility guidance for the available GPT-6 Sol/Luna IDs
+
 ## 0.28.0
 
 - add an opt-in, project-local SQLite/WAL memory ledger with redaction, retention, explicit deletion/tombstones, and inspectable provenance

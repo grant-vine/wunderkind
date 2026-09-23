@@ -8,7 +8,7 @@ Last refreshed: 2026-09-08T00-00-00Z
 - **Plugin package**: `@opencode-ai/plugin@1.18.31`
 - **SDK package**: `@opencode-ai/sdk@1.18.31`
 - **OMO dependency**: `oh-my-openagent@5.0.0-beta.62`
-- **Current Wunderkind package version**: `0.28.0`
+- **Current Wunderkind package version**: `0.28.1`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 - **Current beta compatibility target**: OpenCode `1.18.31` + `oh-my-openagent` `5.0.0-beta.62`, with OMO v5 beta explicitly in scope
 
@@ -33,8 +33,8 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ### Platform routing remains specialized instead of generic
 `platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supportability-review` is the promoted fullstack-owned route for observability, rollback-readiness, on-call ownership, and launch blockers. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The current repo-head skill inventory is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
-### The current compatibility wave uses supported Sol/Luna cost tiers
-The beta compatibility contract targets OpenCode `1.18.31` and OMO `5.0.0-beta.62`. Task 5 applies the exact managed-template mapping: `quick` stays Haiku, `writing` and `visual-engineering` retain their existing providers, `unspecified-low` becomes `openai/gpt-5.6-luna`, `unspecified-high` becomes `openai/gpt-5.6-sol`, and unused `unspecified-astra` remains explicit opt-in in Wunderkind's template. The installed OMO bundle may define Astra defaults independently. OMO parses model fields as strings but its installed catalog exposes GPT-5.6 Sol/Luna, not `gpt-6-sol`/`gpt-6-luna`; change that fallback only when official OpenAI docs and the installed OMO catalog publish exact GPT-6 IDs.
+### The current compatibility wave uses GPT-6 Sol/Luna cost tiers
+The beta compatibility contract targets OpenCode `1.18.31` and OMO `5.0.0-beta.62`. The exact managed-template mapping is: `quick` stays Haiku, `writing` and `visual-engineering` retain their existing providers, `unspecified-low` uses `openai/gpt-6-luna`, `unspecified-high` uses `openai/gpt-6-sol`, and Astra absent from the shipped template requires user-owned configuration. The installed OMO bundle may define Astra defaults independently; that upstream behavior is not a Wunderkind default.
 
 ### The current skill-governance wave adds a narrow supportability route and rejects the overlapping incident skill
 The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28` by adding `release-upgrade`, `platform-compatibility`, and `supportability-review`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.

@@ -784,7 +784,7 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
-      expect(messages.some((m) => m.includes("model routing advisory:") && m.includes("unspecified-astra=openai/gpt-6-astra is explicit opt-in only"))).toBe(true)
+      expect(messages.some((m) => m.includes("model routing advisory:") && m.includes("unspecified-low=openai/gpt-6-luna") && m.includes("Astra is absent unless an operator adds it"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError

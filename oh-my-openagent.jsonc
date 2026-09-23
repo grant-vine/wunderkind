@@ -12,22 +12,17 @@
   // template continues to use the canonical upstream schema URL expected by the
   // current source/test contract.
   //
-  // Cost-tier policy: OpenAI and this OMO release currently support the GPT-5.6
-  // IDs below, not `gpt-6-sol` or `gpt-6-luna`. Sol is the standard/high-capability
-  // default and Luna is the low-cost routine/background tier. Astra is deliberately
-  // unassigned to a retained agent: opt in only by selecting its explicit category
-  // in a user-owned OMO override. Future GPT-6 Sol/Luna routing requires exact IDs
-  // in both official OpenAI docs and OMO's
-  // installed model catalog.
+  // Cost-tier policy: GPT-6 Sol is the standard/high-capability default and GPT-6
+  // Luna is the low-cost routine/background tier. This template never assigns
+  // Astra; operators who need it must configure it in their own OMO override.
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
 
   "categories": {
     "quick": { "model": "anthropic/claude-haiku-4-5" },
-    "unspecified-low": { "model": "openai/gpt-5.6-luna", "variant": "low" },
-    "unspecified-high": { "model": "openai/gpt-5.6-sol", "variant": "high" },
+    "unspecified-low": { "model": "openai/gpt-6-luna", "variant": "low" },
+    "unspecified-high": { "model": "openai/gpt-6-sol", "variant": "high" },
     "writing": { "model": "google/gemini-3-flash" },
-    "visual-engineering": { "model": "google/gemini-3.1-pro", "variant": "high" },
-    "unspecified-astra": { "model": "openai/gpt-6-astra", "variant": "high" }
+    "visual-engineering": { "model": "google/gemini-3.1-pro", "variant": "high" }
   },
 
   "agents": {

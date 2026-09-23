@@ -90,14 +90,13 @@ function readOwnerLine(markdown: string): string {
 }
 
 describe("canonical manifest drift guards", () => {
-  it("keeps the existing OMO category identities assigned to their retained agents", () => {
+  it("keeps the cost-tier OMO category identities assigned to their retained agents", () => {
     expect(WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.categories.map((category) => category.id)).toEqual([
       "quick",
       "unspecified-low",
       "unspecified-high",
       "writing",
       "visual-engineering",
-      "unspecified-astra",
     ])
     expect(WUNDERKIND_CANONICAL_MANIFEST.agents.map((agent) => [agent.id, agent.omoCategory])).toEqual([
       ["marketing-wunderkind", "writing"],
@@ -109,29 +108,24 @@ describe("canonical manifest drift guards", () => {
     ])
   })
 
-  it("routes published defaults through supported Sol and Luna tiers while keeping Astra opt-in", () => {
+  it("routes published defaults through GPT-6 Sol and Luna without assigning Astra", () => {
     const categories = Object.fromEntries(
       WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.categories.map((category) => [category.id, category]),
     )
 
     expect(categories.quick).toEqual({ id: "quick", model: "anthropic/claude-haiku-4-5" })
-    expect(categories["unspecified-low"]).toEqual({ id: "unspecified-low", model: "openai/gpt-5.6-luna", variant: "low" })
-    expect(categories["unspecified-high"]).toEqual({ id: "unspecified-high", model: "openai/gpt-5.6-sol", variant: "high" })
+    expect(categories["unspecified-low"]).toEqual({ id: "unspecified-low", model: "openai/gpt-6-luna", variant: "low" })
+    expect(categories["unspecified-high"]).toEqual({ id: "unspecified-high", model: "openai/gpt-6-sol", variant: "high" })
     expect(categories.writing).toEqual({ id: "writing", model: "google/gemini-3-flash" })
     expect(categories["visual-engineering"]).toEqual({ id: "visual-engineering", model: "google/gemini-3.1-pro", variant: "high" })
-    expect(categories["unspecified-astra"]).toEqual({ id: "unspecified-astra", model: "openai/gpt-6-astra", variant: "high" })
-    expect(WUNDERKIND_CANONICAL_MANIFEST.agents.map((agent) => agent.omoCategory)).not.toContain("unspecified-astra")
+    expect(Object.values(categories).map((category) => category.model)).not.toContain("openai/gpt-6-astra")
     const manifestEntries = new Map(Object.entries(WUNDERKIND_CANONICAL_MANIFEST))
     expect(manifestEntries.get("modelRouting")).toEqual({
-      supportedFallback: {
-        standardAndHigh: "openai/gpt-5.6-sol",
-        routineAndBackground: "openai/gpt-5.6-luna",
+      managedDefaults: {
+        standardAndHigh: "openai/gpt-6-sol",
+        routineAndBackground: "openai/gpt-6-luna",
       },
-      astraOptIn: {
-        model: "openai/gpt-6-astra",
-        enabledByDefault: false,
-      },
-      futureGpt6SolLunaTrigger: "Use GPT-6 Sol/Luna only after official OpenAI documentation and the installed OMO catalog publish exact supported IDs.",
+      astraRequiresExplicitUserConfiguration: true,
     })
   })
 
