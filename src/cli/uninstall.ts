@@ -12,6 +12,7 @@ import {
   removePluginFromOpenCodeConfig,
 } from "./config-manager/index.js"
 import { GOOGLE_STITCH_ADAPTER } from "./mcp-adapters.js"
+import { stopProjectMemoryWorker } from "./memory-lifecycle.js"
 import type { DesignMcpOwnership, InstallRegistrationScope, InstallScope } from "./types.js"
 
 type RemoveMcpMode = "ask" | "yes" | "no"
@@ -164,6 +165,13 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
     }
 
     for (const target of targets) {
+      if (target === "project") {
+        const memoryStop = await stopProjectMemoryWorker(process.cwd())
+        if (memoryStop === "failed") {
+          console.error("Failed to stop project memory worker; no uninstall changes were made.")
+          return 1
+        }
+      }
       const result = removePluginFromOpenCodeConfig(target)
       if (!result.success) {
         console.error(`Failed to remove plugin from ${target} OpenCode config: ${result.error}`)

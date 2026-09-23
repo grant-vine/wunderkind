@@ -45,6 +45,7 @@ const DEFAULT_DETECTED_CONFIG: DetectedConfig = {
   designTool: "none" as const,
   designPath: "./DESIGN.md",
   designMcpOwnership: "none" as const,
+  memory: { enabled: false, captureEnabled: false, injectionEnabled: false, extraction: { provider: "ollama" as const, ollama: { baseUrl: "http://127.0.0.1:11434", timeoutMs: 5000, enqueueTimeoutMs: 75, maxQueue: 64, maxResponseBytes: 32768 } } },
 }
 
 mock.module("@clack/prompts", () => ({

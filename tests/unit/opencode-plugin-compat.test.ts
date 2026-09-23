@@ -48,13 +48,14 @@ describe("OpenCode plugin compatibility shim", () => {
     expect(pluginSource).toContain("maybePersistPromptOptimizationRuntimeReport")
   })
 
-  it("keeps operator surfaces explicit that unsupported optimization features stay out of contract", () => {
+  it("keeps memory separate from prompt optimization and exposes its opt-in doctor posture", () => {
     const cliSource = readFileSync(new URL("../../src/cli/index.ts", import.meta.url), "utf8")
     const doctorSource = readFileSync(new URL("../../src/cli/doctor.ts", import.meta.url), "utf8")
+    const tokenAuditSource = readFileSync(new URL("../../src/cli/token-audit.ts", import.meta.url), "utf8")
 
-    expect(cliSource).toContain("no persistent cross-session memory writes")
-    expect(cliSource).toContain("no automatic context injection")
-    expect(doctorSource).toContain("no persistent cross-session memory writes")
-    expect(doctorSource).toContain("no automatic context injection")
+    expect(cliSource).toContain("default-off multi-level prompt optimization engine")
+    expect(doctorSource).toContain("memory enabled:")
+    expect(doctorSource).toContain("memory Ollama endpoint:")
+    expect(tokenAuditSource).not.toContain("memory capture")
   })
 })

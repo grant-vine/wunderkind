@@ -10,6 +10,45 @@ export type PromptOptimizationMode = "off" | "advisory" | "active"
 export type PromptOptimizationLevel = "latest-user" | "runtime-and-tools" | "contextual" | "transcript"
 export type PromptOptimizationLevelSource = "explicit" | "legacy-compatibility" | "malformed-persisted"
 export type PromptOptimizationReportingMode = "off" | "persist" | "summary"
+export type MemoryProvider = "ollama"
+
+export interface MemoryOllamaConfig {
+  baseUrl?: string | undefined
+  model?: string | undefined
+  timeoutMs?: number | undefined
+  enqueueTimeoutMs?: number | undefined
+  maxQueue?: number | undefined
+  maxResponseBytes?: number | undefined
+}
+
+export interface MemoryExtractionConfig {
+  provider?: MemoryProvider | undefined
+  ollama?: MemoryOllamaConfig | undefined
+}
+
+export interface MemoryConfig {
+  enabled?: boolean | undefined
+  captureEnabled?: boolean | undefined
+  injectionEnabled?: boolean | undefined
+  extraction?: MemoryExtractionConfig | undefined
+}
+
+export interface ResolvedMemoryConfig {
+  enabled: boolean
+  captureEnabled: boolean
+  injectionEnabled: boolean
+  extraction: {
+    provider: MemoryProvider
+    ollama: {
+      baseUrl: string
+      model?: string | undefined
+      timeoutMs: number
+      enqueueTimeoutMs: number
+      maxQueue: number
+      maxResponseBytes: number
+    }
+  }
+}
 
 export type TeamCulture = "formal-strict" | "pragmatic-balanced" | "experimental-informal"
 export type OrgStructure = "flat" | "hierarchical"
@@ -50,6 +89,7 @@ export interface ProjectConfig {
   promptOptimizationReportingMode?: PromptOptimizationReportingMode | undefined
   promptOptimizationTokenBudget?: number | undefined
   promptOptimizationByteBudget?: number | undefined
+  memory?: MemoryConfig | undefined
 }
 
 export interface InstallArgs {
@@ -123,6 +163,8 @@ export interface DetectedConfig {
   promptOptimizationReportingMode?: PromptOptimizationReportingMode | undefined
   promptOptimizationTokenBudget?: number | undefined
   promptOptimizationByteBudget?: number | undefined
+  memory: ResolvedMemoryConfig
+  memoryConfigError?: string | undefined
 }
 
 export type OmoFreshnessStatus = "up-to-date" | "outdated" | "local-dev" | "pinned" | "error" | "unknown"

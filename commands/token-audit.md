@@ -29,7 +29,7 @@ This command is invoked as `/token-audit`.
 - Any supplementary prompt optimization engine is config-driven, multi-level, and separate from this audit-only report.
 - The separate engine supports `latest-user`, `runtime-and-tools`, `contextual`, and `transcript`, but those levels remain outside this audit-only report.
 - Do not expose latest-user passthrough reasons as summary metadata guidance from `/token-audit`; reason visibility belongs to runtime reports only.
-- No persistent cross-session memory writes or automatic context injection are supported by this command or by the separate engine.
+- Project memory is separately opt-in and is not supported by this command or the prompt-optimization engine.
 - Runtime prompt-optimization posture and latest-report artifact status belong to `bunx @grant-vine/wunderkind doctor --verbose`, not `/token-audit`.
 - Use the existing `bunx @grant-vine/wunderkind token-audit [--surface <surface>] [--format <format>]` CLI surface as the reporting boundary.
 - Report deterministic bytes, lines, and file counts only. Do not claim model-specific token truth unless the underlying CLI explicitly adds a tokenizer-aware mode.

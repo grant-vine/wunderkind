@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import type { InstallConfig } from "../../src/cli/types.js"
+import type { ResolvedMemoryConfig } from "../../src/cli/types.js"
 import { createProductWunderkindAgent } from "../../src/agents/index.js"
 import {
   buildPromptOptimizationRuntimePublicPayload,
@@ -30,14 +31,24 @@ const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
 const ORIGINAL_CWD = process.cwd()
 const HELPER_PATH = new URL("./helpers/run-prompt-optimization-fixture.mjs", import.meta.url)
 const realConfigManager = (await import(REAL_CONFIG_MANAGER_MODULE_URL)) as RealConfigManagerModule
+const realDetectCurrentConfig = realConfigManager.detectCurrentConfig
 
 const mockReadWunderkindConfig = mock<() => Partial<InstallConfig> | null>(() => null)
+const MEMORY_CONFIG_OVERRIDE_KEY = Symbol.for("wunderkind.memoryPluginHookConfigOverride")
+
+function readMemoryConfigOverride(): { readonly memory: ResolvedMemoryConfig } | null {
+  const value = (globalThis as Record<PropertyKey, unknown>)[MEMORY_CONFIG_OVERRIDE_KEY]
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null
+  const memory = Reflect.get(value, "memory")
+  if (typeof memory !== "object" || memory === null || Array.isArray(memory)) return null
+  return { memory: memory as ResolvedMemoryConfig }
+}
 
 function registerConfigManagerMock(): void {
   const factory = () => ({
     ...realConfigManager,
     readWunderkindConfig: mockReadWunderkindConfig,
-    detectCurrentConfig: realConfigManager.detectCurrentConfig,
+    detectCurrentConfig: () => readMemoryConfigOverride() ?? realDetectCurrentConfig(),
     detectOmoInstallReadiness: () => ({
       installed: false,
       registered: false,
@@ -115,7 +126,7 @@ type CompactionOutput = {
   metadata?: (input: TestMetadataEvent) => void
 }
 
-type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "experimental.session.compacting"?: (input: unknown, output: CompactionOutput) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
+type PluginModule = { default: (...args: unknown[]) => Promise<{ "experimental.chat.system.transform"?: (input: unknown, output: TestOutput) => Promise<void>; "experimental.session.compacting"?: (input: unknown, output: CompactionOutput) => Promise<void>; "chat.message"?: (input: { sessionID: string; messageID?: string }, output: { message: unknown; parts: readonly unknown[] }) => Promise<void>; "permission.ask"?: (input: { type: string; pattern?: string | string[]; metadata: Record<string, unknown> }, output: { status: "ask" | "allow" | "deny" }) => Promise<void>; tool?: Record<string, unknown> }> }
 
 let cachedTransform: ((input: unknown, output: TestOutput) => Promise<void>) | null = null
 let cachedCompaction: ((input: unknown, output: CompactionOutput) => Promise<void>) | null = null

@@ -459,6 +459,91 @@ describe("config-manager coverage", () => {
     })
   })
 
+  it("keeps memory capture and injection default-off with bounded local defaults", async () => {
+    await withSandbox("memory-default-off", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+
+      const detected = mod.detectCurrentConfig()
+
+      expect(detected.memory.enabled).toBe(false)
+      expect(detected.memory.captureEnabled).toBe(false)
+      expect(detected.memory.injectionEnabled).toBe(false)
+      expect(detected.memory.extraction.provider).toBe("ollama")
+      expect(detected.memory.extraction.ollama.baseUrl).toBe("http://127.0.0.1:11434")
+      expect(detected.memory.extraction.ollama.timeoutMs).toBe(5000)
+    })
+  })
+
+  it("fails closed for malformed or escaping persisted memory settings", async () => {
+    await withSandbox("memory-malformed-and-escaping", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+      mkdirSync(join(sandbox.projectDir, ".wunderkind"), { recursive: true })
+      writeFileSync(
+        sandbox.projectConfigPath,
+        `{
+  "memory": {
+    "enabled": true,
+    "captureEnabled": true,
+    "extraction": { "provider": "unknown-provider", "ollama": { "baseUrl": "http://example.test:11434", "timeoutMs": 0 } }
+  }
+}`,
+      )
+
+      const detected = mod.detectCurrentConfig()
+
+      expect(detected.memory.enabled).toBe(false)
+      expect(detected.memory.captureEnabled).toBe(false)
+      expect(detected.memory.extraction.provider).toBe("ollama")
+      expect(detected).toHaveProperty("memoryConfigError")
+    })
+  })
+
+  it("does not accept a non-loopback memory provider endpoint", async () => {
+    await withSandbox("memory-non-loopback", async (sandbox, mod) => {
+      writeFileSync(sandbox.projectOpenCodePath, JSON.stringify({ plugin: ["@grant-vine/wunderkind"] }))
+      mkdirSync(join(sandbox.projectDir, ".wunderkind"), { recursive: true })
+      writeFileSync(
+        sandbox.projectConfigPath,
+        `{
+  "memory": { "enabled": true, "extraction": { "ollama": { "baseUrl": "http://remote.test:11434" } } }
+}`,
+      )
+
+      const detected = mod.detectCurrentConfig()
+
+      expect(detected.memory.enabled).toBe(false)
+      expect(detected.memoryConfigError).toContain("loopback")
+    })
+  })
+
+  it("writes only explicit non-default memory settings and reads them back", async () => {
+    await withSandbox("memory-sparse-write", async (sandbox, mod) => {
+      const configured = mod.writeProjectWunderkindConfig({
+        ...mod.getDefaultProjectConfig(),
+        memory: {
+          enabled: true,
+          captureEnabled: true,
+          injectionEnabled: true,
+          extraction: { provider: "ollama", ollama: { model: "qwen3", timeoutMs: 7000 } },
+        },
+      })
+
+      expect(configured.success).toBe(true)
+      const written = readFileSync(sandbox.projectConfigPath, "utf-8")
+      expect(written).toContain('"memory": {')
+      expect(written).toContain('"captureEnabled": true')
+      expect(written).toContain('"model": "qwen3"')
+      expect(mod.readProjectWunderkindConfig()?.memory?.enabled).toBe(true)
+      expect(mod.readProjectWunderkindConfig()?.memory?.injectionEnabled).toBe(true)
+
+      const sparse = mod.writeProjectWunderkindConfig(mod.getDefaultProjectConfig())
+
+      expect(sparse.success).toBe(true)
+      const sparseWritten = readFileSync(sandbox.projectConfigPath, "utf-8")
+      expect(sparseWritten).not.toContain('"memory":')
+    })
+  })
+
   it("rejects non-positive prompt optimization budgets deterministically", async () => {
     await withSandbox("prompt-optimization-invalid-budget", async (_sandbox, mod) => {
       const result = mod.writeWunderkindConfig(
@@ -560,6 +645,14 @@ describe("config-manager coverage", () => {
     expect(properties?.promptOptimizationTokenBudget?.minimum).toBe(1)
     expect(properties?.promptOptimizationByteBudget?.type).toBe("integer")
     expect(properties?.promptOptimizationByteBudget?.minimum).toBe(1)
+    const memory = properties?.memory as { type?: string; properties?: Record<string, unknown> } | undefined
+    const memoryProperties = memory?.properties as Record<string, { default?: boolean; properties?: Record<string, unknown> }> | undefined
+    const extraction = memoryProperties?.extraction?.properties as Record<string, { const?: string }> | undefined
+    expect(memory?.type).toBe("object")
+    expect(memoryProperties?.enabled?.default).toBe(false)
+    expect(memoryProperties?.captureEnabled?.default).toBe(false)
+    expect(memoryProperties?.injectionEnabled?.default).toBe(false)
+    expect(extraction?.provider?.const).toBe("ollama")
   })
 
   it("returns null when neither global nor project config exists", async () => {

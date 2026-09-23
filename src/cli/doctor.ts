@@ -16,6 +16,7 @@ import {
   detectWunderkindPathReadiness,
   detectWunderkindVersionInfo,
   getPromptOptimizationHookBudgetBasis,
+  getDefaultMemoryConfig,
   getNativeCommandFilePaths,
   getProjectOverrideMarker,
   readProjectWunderkindConfig,
@@ -36,6 +37,9 @@ import { resolveWunderkindTeamEntryState } from "./team-mode-entry.js"
 export interface DoctorOptions {
   verbose?: boolean
 }
+
+export const MODEL_ROUTING_ADVISORY =
+  "template defaults: quick=Haiku; unspecified-low=openai/gpt-5.6-luna; unspecified-high=openai/gpt-5.6-sol (high); writing/visual-engineering unchanged; unspecified-astra=openai/gpt-6-astra is explicit opt-in only; doctor does not modify user-owned OMO overrides"
 
 interface OpenCodeConfig {
   mcp?: Record<string, unknown>
@@ -326,6 +330,10 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     line("oh-my-openagent freshness:", omoFreshness.label)
     const versionAdvice = omoFreshness.guidance
     line("upgrade guidance:", color.dim(versionAdvice))
+    line(
+      "model routing advisory:",
+      color.dim(MODEL_ROUTING_ADVISORY),
+    )
 
     if (options.verbose) {
       section("Resolved Paths")
@@ -425,6 +433,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const promptOptimizationReportingMode = detected.promptOptimizationReportingMode ?? "off"
       const promptOptimizationTokenBudget = projectConfig?.promptOptimizationTokenBudget ?? detected.promptOptimizationTokenBudget
       const promptOptimizationByteBudget = projectConfig?.promptOptimizationByteBudget ?? detected.promptOptimizationByteBudget
+      const memory = detected.memory ?? getDefaultMemoryConfig()
+      const memoryConfigError = detected.memoryConfigError
       line("prompt optimization enabled:", status(promptOptimizationEnabled))
       line("prompt optimization mode:", color.cyan(promptOptimizationMode))
       line(
@@ -462,8 +472,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         color.dim("whole-message passthrough on safety risk or low confidence; reason visibility is runtime-report-only, not summary metadata guidance"),
       )
       line(
-        "unsupported optimization features:",
-        color.dim("no persistent cross-session memory writes and no automatic context injection"),
+        "prompt optimization boundary:",
+        color.dim("persistent memory and context injection are separate opt-in capabilities, not prompt-optimization behavior"),
       )
       line(
         "prompt optimization runtime reporting:",
@@ -499,6 +509,21 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
             `${status(existsSync(join(cwd, artifact.filePath)))} ${color.dim(artifact.filePath)}`,
           )
         }
+
+      line("memory enabled:", status(memory.enabled))
+      line("memory capture enabled:", status(memory.captureEnabled))
+      line("memory injection enabled:", status(memory.injectionEnabled))
+      line("memory provider:", `${color.cyan(memory.extraction.provider)} ${color.dim("(configuration only; doctor makes no provider calls)")}`)
+      line("memory Ollama endpoint:", color.cyan(memory.extraction.ollama.baseUrl))
+      line("memory Ollama model:", color.cyan(memory.extraction.ollama.model ?? "(not set)"))
+      line("memory timeout / enqueue timeout:", color.cyan(`${memory.extraction.ollama.timeoutMs}ms / ${memory.extraction.ollama.enqueueTimeoutMs}ms`))
+      if (memoryConfigError !== undefined) {
+        line("memory configuration:", `${color.red("invalid; capture and injection fail closed")} ${color.dim(memoryConfigError)}`)
+      }
+      line(
+        "memory lifecycle:",
+        color.dim("project-local only; cleanup removes .wunderkind state, while uninstall and migrate preserve it"),
+      )
 
       const githubReadiness = detectGitHubWorkflowReadiness(cwd)
       line("git repository:", status(githubReadiness.isGitRepo))

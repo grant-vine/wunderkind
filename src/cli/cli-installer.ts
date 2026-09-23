@@ -28,6 +28,9 @@ export const SYMBOLS = {
 const LEGACY_OMO_MIGRATION_NOTE =
   "Legacy OMO config leftovers are separate from install/upgrade. If doctor reports `Legacy OMO configuration remains`, run `bunx @grant-vine/wunderkind migrate` to merge them into ~/.omo/omo.jsonc." as const
 
+const OMO_MODEL_OVERRIDE_ADVISORY =
+  "Model routing advisory: user-owned OMO model overrides are preserved; Wunderkind upgrade refreshes native assets and does not rewrite OMO configuration." as const
+
 export function printHeader(isUpdate: boolean): void {
   const mode = isUpdate ? "Update" : "Install"
   console.log()
@@ -356,6 +359,7 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
 
   printHeader(true)
   printOmoReadinessWarnings(omoReadiness)
+  printInfo(OMO_MODEL_OVERRIDE_ADVISORY)
 
   const defaults = getDefaultGlobalConfig()
   const persisted = readWunderkindConfigForScope(args.scope) ?? {}

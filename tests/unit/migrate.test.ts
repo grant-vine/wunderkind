@@ -81,10 +81,13 @@ describe("runProjectArtifactMigration", () => {
     const homeDir = join(projectRoot, "home")
     const legacyConfigDir = join(homeDir, ".config", "opencode")
     const targetDir = join(homeDir, ".omo")
+    const memoryDatabasePath = join(projectRoot, ".wunderkind", "memory", "ledger.sqlite")
 
     try {
       mkdirSync(legacyConfigDir, { recursive: true })
       mkdirSync(targetDir, { recursive: true })
+      mkdirSync(join(projectRoot, ".wunderkind", "memory"), { recursive: true })
+      writeFileSync(memoryDatabasePath, "project-memory")
       writeFileSync(join(legacyConfigDir, "oh-my-opencode.json"), JSON.stringify({ model: "openai/gpt-5" }))
       writeFileSync(join(targetDir, "omo.jsonc"), JSON.stringify({ model: "openai/gpt-4.1" }))
 
@@ -98,6 +101,7 @@ describe("runProjectArtifactMigration", () => {
       expect(result.stdout + result.stderr).toContain("~/.omo/omo.jsonc")
       expect(existsSync(join(legacyConfigDir, "oh-my-opencode.json"))).toBe(true)
       expect(JSON.parse(readFileSync(join(targetDir, "omo.jsonc"), "utf-8"))).toEqual({ model: "openai/gpt-4.1" })
+      expect(readFileSync(memoryDatabasePath, "utf-8")).toBe("project-memory")
     } finally {
       rmSync(projectRoot, { recursive: true, force: true })
     }

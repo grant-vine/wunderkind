@@ -120,15 +120,23 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.27.9 beta baseline and current Codex edition", () => {
+  it("keeps README release notes aligned with the 0.28.0 hybrid-memory release", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
-    expect(readmeBody).toContain("## What's new in 0.27.9")
-    expect(readmeBody).toContain("GPT-6 Astra")
+    expect(readmeBody).toContain("## What's new in 0.28.0")
+    expect(readmeBody).toContain("project-local hybrid memory capability")
+    expect(readmeBody).toContain("SQLite/WAL ledger")
+    expect(readmeBody).toContain("configuration alone does not start a worker")
+    expect(readmeBody).toContain("Astra explicit opt-in")
     expect(readmeBody).toContain("@opencode-ai/plugin@1.18.31")
     expect(readmeBody).toContain("@opencode-ai/sdk@1.18.31")
     expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.62")
+    expect(readmeBody).toContain("openai/gpt-5.6-sol")
+    expect(readmeBody).toContain("openai/gpt-5.6-luna")
+    expect(readmeBody).toContain("installed OMO bundle may define its own Astra defaults")
+    expect(readmeBody).toContain("gpt-6-sol")
+    expect(readmeBody).toContain("gpt-6-luna")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
     expect(readmeBody).toContain("supportability-review")
@@ -226,7 +234,7 @@ describe("design-md command asset", () => {
     expect(tokenAuditBody).toContain("multi-level")
     expect(tokenAuditBody).toContain("`latest-user`, `runtime-and-tools`, `contextual`, and `transcript`")
     expect(tokenAuditBody).toContain("runtime reports only")
-    expect(tokenAuditBody).toContain("No persistent cross-session memory writes or automatic context injection")
+    expect(tokenAuditBody).toContain("Project memory is separately opt-in")
   })
 
   it("keeps README and docs wording aligned around audit-only token-audit versus the supplementary engine", () => {
@@ -240,8 +248,7 @@ describe("design-md command asset", () => {
     expect(readmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
     expect(readmeBody).toContain("separate runtime-report surface")
     expect(readmeBody).toContain("Breaking change (pre-v1)")
-    expect(readmeBody).toContain("no persistent cross-session memory writes")
-    expect(readmeBody).toContain("no automatic context injection")
+    expect(readmeBody).toContain("opt-in project memory remains separate")
     expect(readmeBody).not.toContain("configured `500000`-byte budget")
 
     expect(docsReadmeBody).toContain("default-off multi-level prompt optimization engine")
@@ -250,8 +257,7 @@ describe("design-md command asset", () => {
     expect(docsReadmeBody).toContain("security-safe baseline")
     expect(docsReadmeBody).toContain("sanitized/redacted latest-report artifacts or summaries")
     expect(docsReadmeBody).toContain("separate runtime-report surface")
-    expect(docsReadmeBody).toContain("no persistent cross-session memory writes")
-    expect(docsReadmeBody).toContain("no automatic context injection")
+    expect(docsReadmeBody).toContain("Project memory is a separate, default-off local capability")
   })
 
   it("documents sparse default-off guidance, promptOptimizationReportingMode, and the latest runtime-report artifact paths", () => {
@@ -274,6 +280,22 @@ describe("design-md command asset", () => {
     expect(schemaBody).toContain('"enum": ["off", "persist", "summary"]')
     expect(schemaBody).toContain("sanitized/redacted latest-report artifacts or summaries")
     expect(schemaBody).toContain("audit-only token-audit surface")
+  })
+
+  it("keeps the hybrid memory contract synchronized across public docs and generated agent source", () => {
+    const readmeBody = readText(new URL("../../README.md", import.meta.url))
+    const docsReadmeBody = readText(docsReadmeFile)
+    const sharedPromptBody = readText(new URL("../../src/agents/shared-prompt-sections.ts", import.meta.url))
+
+    expect(readmeBody).toMatch(/## Opt-in hybrid project memory[\s\S]+project-scoped SQLite\/WAL ledger/u)
+    expect(readmeBody).toMatch(/memory\.enabled[\s\S]+memory\.captureEnabled[\s\S]+memory\.injectionEnabled/u)
+    expect(readmeBody).toMatch(/memory start[\s\S]+memory stop/u)
+    expect(readmeBody).toMatch(/memory injection is separately enabled[\s\S]+fail-closed/u)
+    expect(readmeBody).toMatch(/redaction[\s\S]+tombstones[\s\S]+raw excerpts/u)
+    expect(readmeBody).toMatch(/Jev\/Kev[\s\S]+eval-only interfaces/u)
+    expect(readmeBody).toMatch(/wunderkind migrate[\s\S]+does not import memory ledgers/u)
+    expect(docsReadmeBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+memory start/u)
+    expect(sharedPromptBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+Jev\/Kev/u)
   })
 
   it("keeps the docs index aligned with the final OpenCode release reference", () => {

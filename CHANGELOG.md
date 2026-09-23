@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.28.0
+
+- add an opt-in, project-local SQLite/WAL memory ledger with redaction, retention, explicit deletion/tombstones, and inspectable provenance
+- add explicit local memory lifecycle and CLI operations, with default-off capture and bounded prompt-derived retrieval that fail closed
+- add local Ollama extraction boundaries, deterministic System One behavior, and disabled Jev/Kev evaluation interfaces without bundled providers or cloud sync
+- route Wunderkind's managed OMO template through supported GPT-5.6 Sol/Luna cost tiers while keeping Astra explicit opt-in; exact GPT-6 IDs remain future capability triggers
+- add full lifecycle, privacy, failure, and release-readiness coverage; consumer-side LazyCodex/OMO installation remains a post-publish operator action
+
 ## 0.27.9
 
 - update release workflow actions to current Node 24-based majors so trusted publishing completes without GitHub Actions deprecation or unsupported-input warnings

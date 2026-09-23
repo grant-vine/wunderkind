@@ -19,6 +19,9 @@ Managed docs, `AGENTS.md`, `CONTEXT.md`, and `.omo/` work should remain inside t
 ### Runtime prompt reports must stay sanitized and local
 The supplementary prompt-optimization reporting surface persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`. Those reports must remain scalar-first, redact secret-shaped `modelId` values, and never be described as general proof of savings beyond the local repo/run that produced them.
 
+### Project memory crosses a redaction boundary before persistence
+Memory source input is transient until canonical structural redaction completes. Unredacted source content must never enter the queue, provider payload, SQLite/WAL ledger, Markdown view, export, diagnostic, or test artifact. The enabled worker is same-user filesystem IPC only (`0600` Unix socket), never TCP. Raw excerpts expire after 30 days; fact/source deletion writes a permanent non-rebuild tombstone; export contains accepted redacted facts and provenance only. A newer schema fails read-only rather than downgrading.
+
 ### Compatibility guidance should be explicit, not silent
 Canonical `oh-my-openagent` naming is the only active path. Legacy `oh-my-opencode` references remain detection-only warning and migration surfaces so operators can diagnose stale installs without believing fallback execution still exists.
 

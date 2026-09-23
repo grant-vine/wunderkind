@@ -5,14 +5,14 @@ Last refreshed: 2026-09-08T00-00-00Z
 ## Product snapshot
 
 - **Package**: `@grant-vine/wunderkind`
-- **Current version**: `0.27.9`
+- **Current version**: `0.28.0`
 - **Host ecosystem**: OpenCode + oh-my-openagent
 - **Operating posture**: orchestrator-first, retained-specialist model, filesystem-first workflow support
 
 ## Current product decisions
 
 ### 1. Keep Wunderkind as a synchronous overlay
-Wunderkind should extend OpenCode/OMO instead of becoming its own runtime system. That means no daemon, queue, scheduler, or MCP lifecycle ownership.
+Wunderkind should extend OpenCode/OMO instead of becoming its own always-on runtime system. The normal overlay has no daemon, queue, scheduler, or MCP lifecycle ownership. The separate, default-off project-memory contract is the narrow exception: on supported POSIX hosts, an operator may explicitly start the same-user local worker through `memory start`; it is not created by configuration, installation, prompt optimization, or ordinary overlay execution.
 
 ### 2. Prefer canonical OMO naming
 Docs and current flows should use `oh-my-openagent` as the canonical name. Any legacy `oh-my-opencode` mention is warning-only migration guidance and must not imply active support or fallback execution.
@@ -48,7 +48,10 @@ The current beta-channel baseline is `oh-my-openagent` `5.0.0-beta.62` with `@op
 Wunderkind team mode is a thin upstream-compatible layer: `wunderkind team-bootstrap` writes canonical `.omo/teams/<name>/config.json` specs, `/wunderkind-team` checks canonical `oh-my-openagent` config paths plus `team_mode.enabled`, and disabled or missing-spec states fall back to solo `product-wunderkind` orchestration.
 
 ### 13. Keep `token-audit` audit-only while allowing one separate supplementary multi-level engine
-`token-audit` stays `audit-only`: no live prompt packing, no model-token truth claims, no OpenToken adoption, and no daemon or sidecar runtime. Separately, the supplementary prompt optimization engine may be enabled per project through config; it remains distinct from `token-audit`, does not introduce a public optimize command, and stays product-default-off. Its public setting model is capability-based: existing keys stay frozen, `promptOptimizationLevel` selects `latest-user`, `runtime-and-tools`, `contextual`, or `transcript`, and version-labelled config keys are out of contract. The levels are cumulative, the security-safe baseline applies whenever optimization is enabled, and unsupported features stay out of contract: no persistent cross-session memory writes and no automatic context injection. The `latest-user` seam remains latest-user-message-only, preserves immutable content byte-exact, and fail-closes with whole-message passthrough. Passthrough reason codes belong to runtime reports only, not summary metadata guidance.
+`token-audit` stays `audit-only`: no live prompt packing, no model-token truth claims, no OpenToken adoption, and no daemon or sidecar runtime. Separately, the supplementary prompt optimization engine may be enabled per project through config; it remains distinct from `token-audit`, does not introduce a public optimize command, and stays product-default-off. Its public setting model is capability-based: existing keys stay frozen, `promptOptimizationLevel` selects `latest-user`, `runtime-and-tools`, `contextual`, or `transcript`, and version-labelled config keys are out of contract. The levels are cumulative, the security-safe baseline applies whenever optimization is enabled. The `latest-user` seam remains latest-user-message-only, preserves immutable content byte-exact, and fail-closes with whole-message passthrough. Passthrough reason codes belong to runtime reports only, not summary metadata guidance.
+
+### 18. Offer local-first project memory only through explicit enablement
+Project memory is separate from prompt optimization and `token-audit`. `memory.enabled`, `memory.captureEnabled`, and `memory.injectionEnabled` default to false; capture and injection require enabled. Configuration never starts a worker. On supported POSIX hosts, `memory start` is the only route that may start a same-user, `0600` Unix-socket worker; `memory capture` remains a bounded synchronous fallback. The v1 extractor is loopback-only Ollama with an explicit model and bounded limits. The storage lifecycle is redaction before any downstream interface, 30-day raw-excerpt retention, durable facts until explicit deletion, non-rebuild tombstones, raw-excerpt-free exports, migration backups, and read-only failure on a newer schema. Jev/Kev are disabled experimental interfaces, not installed providers.
 
 ### 14. Treat this repo's active prompt optimization posture as local repo state, not product default
 This repository currently keeps a project-local prompt optimization override enabled (`active`, `summary`, `120000` token budget, `1200` byte budget). That posture should be documented as local operating state for this explicitly enabled repo context, not as a claim that Wunderkind defaults to active optimization for all users. The final contract also freezes that omitting `promptOptimizationLevel` in legacy enabled repos preserves the current shipped behavior until an operator explicitly chooses one of the supported capability-based levels.
@@ -59,8 +62,8 @@ The current upstream-alignment wave intentionally targets the LazyCodex/OMO v5 b
 ### 16. Add the narrow supportability route without adding an overlapping incident skill
 The current repo-head skill-governance wave adds `release-upgrade` under `product-wunderkind`, plus `platform-compatibility` and `supportability-review` under `fullstack-wunderkind`. It explicitly rejects `supportability-incident` as a standalone skill because that operator work already has sufficient coverage through `/supportability-review`, `/runbook`, and `/incident-response`.
 
-### 17. Route high-capability work to GPT-6 Astra in the current wave
-The current compatibility wave updates the `unspecified-high` category to `openai/gpt-6-astra` while keeping other category routing unchanged.
+### 17. Keep Wunderkind routing distinct from installed OMO bundle defaults
+The current compatibility wave keeps category identities unchanged and makes Wunderkind's managed template use `openai/gpt-5.6-sol` for standard/high-capability work plus `openai/gpt-5.6-luna` for low-cost routine/background work. The installed OMO bundle may define its own Astra defaults; that upstream behavior is not a claim about Wunderkind's managed template. Wunderkind does not overwrite user-owned OMO configuration or promise unsupported GPT-6 Sol/Luna IDs. The requested `gpt-6-sol` and `gpt-6-luna` names are not current official OpenAI or OMO catalog IDs, so future GPT-6 Sol/Luna routing requires exact supported IDs in both sources.
 
 ## Current feature set to highlight
 
@@ -89,7 +92,7 @@ The current compatibility wave updates the `unspecified-high` category to `opena
 - Keep public install/upgrade/doctor docs aligned with current OMO/OpenCode naming.
 - Keep project-local bootstrap artifacts (`AGENTS.md`, `CONTEXT.md`, docs lane, `.omo`) fresh enough that an init-deep style workflow can start from repo truth.
 - Keep Goal, Ultrawork, Senpi, and Ollama `stream: false` guidance aligned with the upstream evidence in `.omo/evidence/upstream-team-runtime/`.
-- Keep team-mode fallback and audit-only token-audit wording aligned with `.omo/evidence/upstream-team-runtime/`: no live prompt packing, no model-token truth claims, no persistent cross-session memory writes, no automatic context injection, and fallback rather than unsupported retained-agent team members.
+- Keep team-mode fallback and audit-only token-audit wording aligned with `.omo/evidence/upstream-team-runtime/`: no live prompt packing, no model-token truth claims, separately opt-in project memory, and fallback rather than unsupported retained-agent team members.
 
 ## Source map
 

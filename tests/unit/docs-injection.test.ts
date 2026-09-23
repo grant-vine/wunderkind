@@ -11,13 +11,22 @@ const INDEX_TEST_MODULE_URL = new URL(`src/index.ts?docs-injection=${Date.now()}
 const DOCS_OUTPUT_SENTINEL = "<!-- wunderkind:docs-output-start -->"
 const RUNTIME_CONTEXT_SENTINEL = "<!-- wunderkind:runtime-context-start -->"
 const NATIVE_AGENTS_SENTINEL = "<!-- wunderkind:native-agents-start -->"
+const MEMORY_CONFIG_OVERRIDE_KEY = Symbol.for("wunderkind.memoryPluginHookConfigOverride")
 
 const mockReadWunderkindConfig = mock<() => Partial<ProjectConfig> | null>(() => null)
+
+function readMemoryConfigOverride(): Record<string, unknown> | null {
+  const value = Reflect.get(globalThis, MEMORY_CONFIG_OVERRIDE_KEY)
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null
+  const memory = Reflect.get(value, "memory")
+  if (typeof memory !== "object" || memory === null || Array.isArray(memory)) return null
+  return { memory }
+}
 
 function registerConfigManagerMock(): void {
   const factory = () => ({
     readWunderkindConfig: mockReadWunderkindConfig,
-    detectCurrentConfig: () => ({ isInstalled: false }),
+    detectCurrentConfig: () => ({ isInstalled: false, ...readMemoryConfigOverride() }),
     detectOmoInstallReadiness: () => ({
       installed: false,
       registered: false,

@@ -31,6 +31,8 @@ import type {
   InstallRegistrationScope,
   InstallScope,
   LegalPersonality,
+  MemoryProvider,
+  ResolvedMemoryConfig,
   OmoConfigMigrationConflict,
   OmoConfigMigrationPreview,
   OmoConfigMigrationResult,
@@ -89,6 +91,43 @@ function isPromptOptimizationReportingMode(value: unknown): value is PromptOptim
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+}
+
+const DEFAULT_MEMORY_PROVIDER: MemoryProvider = "ollama"
+const DEFAULT_MEMORY_OLLAMA_BASE_URL = "http://127.0.0.1:11434" as const
+const DEFAULT_MEMORY_TIMEOUT_MS = 5000 as const
+const DEFAULT_MEMORY_ENQUEUE_TIMEOUT_MS = 75 as const
+const DEFAULT_MEMORY_MAX_QUEUE = 64 as const
+const DEFAULT_MEMORY_MAX_RESPONSE_BYTES = 32768 as const
+
+function isMemoryProvider(value: unknown): value is MemoryProvider {
+  return value === "ollama"
+}
+
+function hasMemoryConfigFields(source: Record<string, unknown>): boolean {
+  return "memory" in source
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isBoundedInteger(value: unknown, minimum: number, maximum: number): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= minimum && value <= maximum
+}
+
+function isLoopbackHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== "http:" || url.username !== "" || url.password !== "") return false
+    if (url.hostname === "::1") return true
+    const octets = url.hostname.split(".")
+    return octets.length === 4
+      && octets[0] === "127"
+      && octets.every((octet) => /^\d{1,3}$/.test(octet) && Number(octet) <= 255)
+  } catch {
+    return false
+  }
 }
 
 function formatMalformedPromptOptimizationLevel(value: unknown): string | undefined {
@@ -239,6 +278,133 @@ interface ConfigManagerPathOverride {
   home?: string
 }
 
+export function getDefaultMemoryConfig(): ResolvedMemoryConfig {
+  return {
+    enabled: false,
+    captureEnabled: false,
+    injectionEnabled: false,
+    extraction: {
+      provider: DEFAULT_MEMORY_PROVIDER,
+      ollama: {
+        baseUrl: DEFAULT_MEMORY_OLLAMA_BASE_URL,
+        timeoutMs: DEFAULT_MEMORY_TIMEOUT_MS,
+        enqueueTimeoutMs: DEFAULT_MEMORY_ENQUEUE_TIMEOUT_MS,
+        maxQueue: DEFAULT_MEMORY_MAX_QUEUE,
+        maxResponseBytes: DEFAULT_MEMORY_MAX_RESPONSE_BYTES,
+      },
+    },
+  }
+}
+
+function getMemoryConfigError(source: Record<string, unknown>): string | undefined {
+  if (!hasMemoryConfigFields(source)) {
+    return undefined
+  }
+
+  const memory = source["memory"]
+  if (!isRecord(memory)) return "memory must be an object"
+
+  const enabled = memory["enabled"]
+  const captureEnabled = memory["captureEnabled"]
+  const injectionEnabled = memory["injectionEnabled"]
+  if (
+    (enabled !== undefined && typeof enabled !== "boolean") ||
+    (captureEnabled !== undefined && typeof captureEnabled !== "boolean") ||
+    (injectionEnabled !== undefined && typeof injectionEnabled !== "boolean")
+  ) {
+    return "memory enabled, captureEnabled, and injectionEnabled must be booleans"
+  }
+  if ((captureEnabled === true || injectionEnabled === true) && enabled !== true) {
+    return "memory captureEnabled and injectionEnabled require memory.enabled: true"
+  }
+
+  const extraction = memory["extraction"]
+  if (extraction !== undefined && !isRecord(extraction)) return "memory.extraction must be an object"
+  const provider = extraction?.["provider"]
+  if (provider !== undefined && !isMemoryProvider(provider)) return "memory.extraction.provider must be ollama"
+  const ollama = extraction?.["ollama"]
+  if (ollama !== undefined && !isRecord(ollama)) return "memory.extraction.ollama must be an object"
+  const baseUrl = ollama?.["baseUrl"]
+  const model = ollama?.["model"]
+  const timeoutMs = ollama?.["timeoutMs"]
+  const enqueueTimeoutMs = ollama?.["enqueueTimeoutMs"]
+  const maxQueue = ollama?.["maxQueue"]
+  const maxResponseBytes = ollama?.["maxResponseBytes"]
+  if (baseUrl !== undefined && (typeof baseUrl !== "string" || !isLoopbackHttpUrl(baseUrl))) {
+    return "memory.extraction.ollama.baseUrl must be a loopback-only HTTP URL"
+  }
+  if (model !== undefined && (typeof model !== "string" || model.trim() === "")) {
+    return "memory.extraction.ollama.model must be a non-empty string"
+  }
+  if (timeoutMs !== undefined && !isBoundedInteger(timeoutMs, 100, 30000)) {
+    return "memory.extraction.ollama.timeoutMs must be an integer from 100 to 30000"
+  }
+  if (enqueueTimeoutMs !== undefined && !isBoundedInteger(enqueueTimeoutMs, 10, 1000)) {
+    return "memory.extraction.ollama.enqueueTimeoutMs must be an integer from 10 to 1000"
+  }
+  if (maxQueue !== undefined && !isBoundedInteger(maxQueue, 1, 256)) {
+    return "memory.extraction.ollama.maxQueue must be an integer from 1 to 256"
+  }
+  if (maxResponseBytes !== undefined && !isBoundedInteger(maxResponseBytes, 1024, 1048576)) {
+    return "memory.extraction.ollama.maxResponseBytes must be an integer from 1024 to 1048576"
+  }
+  if (captureEnabled === true && (typeof model !== "string" || model.trim() === "")) {
+    return "memory.extraction.ollama.model is required when automatic capture is enabled"
+  }
+
+  return undefined
+}
+
+function resolveMemoryConfig(source: Record<string, unknown>): ResolvedMemoryConfig {
+  const fallback = getDefaultMemoryConfig()
+
+  if (getMemoryConfigError(source) !== undefined) {
+    return fallback
+  }
+
+  const memory = source["memory"]
+  if (!isRecord(memory)) return fallback
+  const extraction = isRecord(memory["extraction"]) ? memory["extraction"] : {}
+  const ollama = isRecord(extraction["ollama"]) ? extraction["ollama"] : {}
+
+  return {
+    enabled: memory["enabled"] === true,
+    captureEnabled: memory["captureEnabled"] === true,
+    injectionEnabled: memory["injectionEnabled"] === true,
+    extraction: {
+      provider: isMemoryProvider(extraction["provider"]) ? extraction["provider"] : fallback.extraction.provider,
+      ollama: {
+        baseUrl: typeof ollama["baseUrl"] === "string" ? ollama["baseUrl"] : fallback.extraction.ollama.baseUrl,
+        ...(typeof ollama["model"] === "string" ? { model: ollama["model"] } : {}),
+        timeoutMs: isBoundedInteger(ollama["timeoutMs"], 100, 30000)
+          ? ollama["timeoutMs"]
+          : fallback.extraction.ollama.timeoutMs,
+        enqueueTimeoutMs: isBoundedInteger(ollama["enqueueTimeoutMs"], 10, 1000)
+          ? ollama["enqueueTimeoutMs"]
+          : fallback.extraction.ollama.enqueueTimeoutMs,
+        maxQueue: isBoundedInteger(ollama["maxQueue"], 1, 256)
+          ? ollama["maxQueue"]
+          : fallback.extraction.ollama.maxQueue,
+        maxResponseBytes: isBoundedInteger(ollama["maxResponseBytes"], 1024, 1048576)
+          ? ollama["maxResponseBytes"]
+          : fallback.extraction.ollama.maxResponseBytes,
+      },
+    },
+  }
+}
+
+function validateMemoryConfig(config: Partial<ProjectConfig>): string | null {
+  return getMemoryConfigError({ ...(config.memory === undefined ? {} : { memory: config.memory }) }) ?? null
+}
+
+export function getMemoryExplicitCaptureError(memory: ResolvedMemoryConfig): string | null {
+  if (!memory.enabled) return "memory.enabled must be true before explicit capture"
+  if (memory.extraction.ollama.model === undefined || memory.extraction.ollama.model.trim() === "") {
+    return "memory.extraction.ollama.model is required for explicit capture"
+  }
+  return null
+}
+
 export type WunderkindTeamMemberKind = "category" | "subagent_type"
 export type WunderkindTeamSubagentType = "sisyphus" | "atlas" | "sisyphus-junior" | "hephaestus"
 
@@ -359,6 +525,7 @@ const PROJECT_CONFIG_KEYS = [
   "promptOptimizationReportingMode",
   "promptOptimizationTokenBudget",
   "promptOptimizationByteBudget",
+  "memory",
 ] as const
 
 type ProjectConfigKey = (typeof PROJECT_CONFIG_KEYS)[number]
@@ -1229,6 +1396,18 @@ function coerceProjectConfig(source: Record<string, unknown>): Partial<ProjectCo
     result.promptOptimizationByteBudget = source["promptOptimizationByteBudget"]
   }
 
+  if (hasMemoryConfigFields(source) && getMemoryConfigError(source) === undefined) {
+    const memory = source["memory"]
+    if (isRecord(memory)) {
+      result.memory = {
+        ...(memory["enabled"] !== undefined ? { enabled: memory["enabled"] as boolean } : {}),
+        ...(memory["captureEnabled"] !== undefined ? { captureEnabled: memory["captureEnabled"] as boolean } : {}),
+        ...(memory["injectionEnabled"] !== undefined ? { injectionEnabled: memory["injectionEnabled"] as boolean } : {}),
+        ...(isRecord(memory["extraction"]) ? { extraction: memory["extraction"] } : {}),
+      }
+    }
+  }
+
   return result
 }
 
@@ -1384,6 +1563,7 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
   })
   const promptOptimizationReportingMode = config.promptOptimizationReportingMode ?? "off"
   const promptOptimizationBudgets = getValidatedPromptOptimizationBudgets(config)
+  const omitMemoryFields = config.memory === undefined
   const omitPromptOptimizationFields =
     resolvedPromptOptimization.enabled === false &&
     resolvedPromptOptimization.mode === "off" &&
@@ -1459,7 +1639,7 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
     ``,
   )
 
-    if (!omitPromptOptimizationFields) {
+  if (!omitPromptOptimizationFields) {
       lines.push(
         `  // Supplementary prompt optimization engine settings`,
         `  // Omit these keys to keep the shipped product posture default-off; set them only for explicitly enabled project-local runtime contexts`,
@@ -1498,6 +1678,15 @@ function renderProjectWunderkindConfig(config: ProjectConfig & Partial<GlobalCon
       lines.push(`  "promptOptimizationByteBudget": ${JSON.stringify(promptOptimizationBudgets.promptOptimizationByteBudget)},`)
     }
 
+    lines.push(``)
+  }
+
+  if (!omitMemoryFields) {
+    lines.push(
+      `  // Project-local memory is opt-in. Configuration never starts a worker.`,
+      `  // Capture and context injection are independent and require memory.enabled: true.`,
+      `  "memory": ${JSON.stringify(config.memory, null, 2).replaceAll("\n", "\n  ")},`,
+    )
     lines.push(``)
   }
 
@@ -1544,6 +1733,11 @@ export function writeProjectWunderkindConfig(config: ProjectConfig & Partial<Glo
     return { success: false, configPath: paths.wunderkindConfig, error: promptOptimizationValidationError }
   }
 
+  const memoryValidationError = validateMemoryConfig(config)
+  if (memoryValidationError !== null) {
+    return { success: false, configPath: paths.wunderkindConfig, error: memoryValidationError }
+  }
+
   try {
     const baseline = {
       ...DEFAULT_GLOBAL_CONFIG,
@@ -1588,6 +1782,7 @@ export function detectCurrentConfig(): DetectedConfig {
     designTool: defaults.designTool ?? DEFAULT_PROJECT_CONFIG.designTool,
     designPath: defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
     designMcpOwnership: defaults.designMcpOwnership ?? DEFAULT_PROJECT_CONFIG.designMcpOwnership,
+    memory: getDefaultMemoryConfig(),
   }
 
   const registration = detectRegistration()
@@ -1604,6 +1799,8 @@ export function detectCurrentConfig(): DetectedConfig {
   const projectConfig = existsSync(paths.wunderkindConfig) ? parseWunderkindConfig(paths.wunderkindConfig) : null
   const projectGlobalSafe = coerceGlobalConfig(projectConfig ?? {})
   const projectLocal = readProjectWunderkindConfig()
+  const resolvedMemory = resolveMemoryConfig(projectConfig ?? {})
+  const memoryConfigError = getMemoryConfigError(projectConfig ?? {})
   const malformedPromptOptimizationLevel = getMalformedPersistedPromptOptimizationLevel(projectConfig)
   const resolvedPromptOptimization = resolvePromptOptimizationState({
     promptOptimizationEnabled: projectLocal?.promptOptimizationEnabled,
@@ -1641,6 +1838,8 @@ export function detectCurrentConfig(): DetectedConfig {
     designPath: projectLocal?.designPath ?? defaults.designPath ?? DEFAULT_PROJECT_CONFIG.designPath,
     designMcpOwnership: projectLocal?.designMcpOwnership ?? defaults.designMcpOwnership ?? DEFAULT_PROJECT_CONFIG.designMcpOwnership,
     cavemanEnabled: projectLocal?.cavemanEnabled ?? defaults.cavemanEnabled ?? false,
+    memory: resolvedMemory,
+    ...(memoryConfigError !== undefined ? { memoryConfigError } : {}),
     promptOptimizationEnabled: resolvedPromptOptimization.enabled,
     promptOptimizationMode: resolvedPromptOptimization.mode,
     ...(resolvedPromptOptimization.level !== undefined

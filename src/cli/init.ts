@@ -632,6 +632,7 @@ export async function runInit(options: InitOptions): Promise<number> {
         "promptOptimizationTokenBudget" in persisted ||
         "promptOptimizationByteBudget" in persisted
       )
+    const hasPersistedMemoryFields = persisted?.memory !== undefined
     let designTool: DesignTool = persisted?.designTool ?? detected.designTool
     let designPath = normalizeDesignPath(options.designPath ?? persisted?.designPath ?? detected.designPath)
     let designMcpOwnership: DesignMcpOwnership = persisted?.designMcpOwnership ?? detected.designMcpOwnership
@@ -657,6 +658,7 @@ export async function runInit(options: InitOptions): Promise<number> {
     const promptOptimizationByteBudget = hasPersistedPromptOptimizationFields
       ? persisted?.promptOptimizationByteBudget
       : detected.promptOptimizationByteBudget
+    const memory = hasPersistedMemoryFields ? persisted?.memory : undefined
 
     const config: InstallConfig = {
       region: persisted?.region ?? detected.region,
@@ -685,6 +687,7 @@ export async function runInit(options: InitOptions): Promise<number> {
       ...(promptOptimizationReportingMode !== undefined ? { promptOptimizationReportingMode } : {}),
       ...(promptOptimizationTokenBudget !== undefined ? { promptOptimizationTokenBudget } : {}),
       ...(promptOptimizationByteBudget !== undefined ? { promptOptimizationByteBudget } : {}),
+      ...(memory !== undefined ? { memory } : {}),
     }
 
     if (!noTui) {

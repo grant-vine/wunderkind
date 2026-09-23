@@ -2,12 +2,19 @@ import color from "picocolors"
 import { existsSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { detectCurrentConfig, removePluginFromOpenCodeConfig } from "./config-manager/index.js"
+import { stopProjectMemoryWorker } from "./memory-lifecycle.js"
 
 export async function runProjectCleanup(): Promise<number> {
   try {
     const cwd = process.cwd()
     const detected = detectCurrentConfig()
     let changed = false
+
+    const memoryStop = await stopProjectMemoryWorker(cwd)
+    if (memoryStop === "failed") {
+      console.error("Failed to stop project memory worker; no cleanup changes were made.")
+      return 1
+    }
 
     if (detected.projectInstalled === true || detected.registrationScope === "project" || detected.registrationScope === "both") {
       const result = removePluginFromOpenCodeConfig("project")

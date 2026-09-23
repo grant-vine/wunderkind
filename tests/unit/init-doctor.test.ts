@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
@@ -41,6 +41,7 @@ function createDetectedConfig(overrides: Partial<DetectedConfig> = {}): Detected
     designTool: "none",
     designPath: "./DESIGN.md",
     designMcpOwnership: "none",
+    memory: { enabled: false, captureEnabled: false, injectionEnabled: false, extraction: { provider: "ollama", ollama: { baseUrl: "http://127.0.0.1:11434", timeoutMs: 5000, enqueueTimeoutMs: 75, maxQueue: 64, maxResponseBytes: 32768 } } },
     ...overrides,
   }
 }
@@ -783,6 +784,7 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
+      expect(messages.some((m) => m.includes("model routing advisory:") && m.includes("unspecified-astra=openai/gpt-6-astra is explicit opt-in only"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError
@@ -1066,9 +1068,9 @@ describe("runDoctor", () => {
     expect(
       messages.some(
         (m) =>
-          m.includes("unsupported optimization features:") &&
-          m.includes("no persistent cross-session memory writes") &&
-          m.includes("no automatic context injection"),
+          m.includes("prompt optimization boundary:") &&
+          m.includes("separate opt-in capabilities") &&
+          m.includes("not prompt-optimization behavior"),
       ),
     ).toBe(true)
     expect(
@@ -1110,6 +1112,63 @@ describe("runDoctor", () => {
     } finally {
       process.chdir(originalCwd)
       rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("reports a disabled local memory posture without creating state or contacting a provider", async () => {
+    const { code, messages } = await captureDoctorOutput({ verbose: true })
+
+    expect(code).toBe(0)
+    expect(messages.some((message) => message.includes("memory enabled:") && message.includes("✗ no"))).toBe(true)
+    expect(messages.some((message) => message.includes("memory capture enabled:") && message.includes("✗ no"))).toBe(true)
+    expect(messages.some((message) => message.includes("memory injection enabled:") && message.includes("✗ no"))).toBe(true)
+    expect(messages.some((message) => message.includes("memory provider:") && message.includes("ollama"))).toBe(true)
+    expect(messages.some((message) => message.includes("memory Ollama endpoint:") && message.includes("127.0.0.1:11434"))).toBe(true)
+    expect(messages.some((message) => message.includes("memory timeout / enqueue timeout:") && message.includes("5000ms / 75ms"))).toBe(true)
+  })
+
+  it("preserves explicit memory configuration through non-interactive init without creating memory state", async () => {
+    const restore = silenceConsole()
+    const originalCwd = process.cwd()
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-init-memory-"))
+    writeFileSync(join(tempProject, "package.json"), "{}")
+    process.chdir(tempProject)
+    mockDetectCurrentConfig.mockImplementation(() =>
+      createDetectedConfig({
+        isInstalled: true,
+        scope: "global",
+        projectInstalled: false,
+        globalInstalled: true,
+        registrationScope: "global",
+        projectOpenCodeConfigPath: `${process.cwd()}/opencode.json`,
+        globalOpenCodeConfigPath: "/tmp/opencode.json",
+      }),
+    )
+    mockReadWunderkindConfig.mockImplementation(() => ({
+      memory: {
+        enabled: true,
+        captureEnabled: true,
+        injectionEnabled: true,
+        extraction: { provider: "ollama", ollama: { model: "qwen3" } },
+      },
+    }))
+    mockWriteWunderkindConfig.mockClear()
+
+    try {
+      const code = await runInit({ noTui: true })
+      const [writtenConfig, writtenScope] = mockWriteWunderkindConfig.mock.calls.at(-1) ?? []
+
+      expect(code).toBe(0)
+      expect(writtenScope).toBe("project")
+      expect(writtenConfig).toHaveProperty("memory.enabled", true)
+      expect(writtenConfig).toHaveProperty("memory.captureEnabled", true)
+      expect(writtenConfig).toHaveProperty("memory.injectionEnabled", true)
+      expect(writtenConfig).toHaveProperty("memory.extraction.ollama.model", "qwen3")
+      expect(existsSync(join(tempProject, ".wunderkind", "memory", "ledger.sqlite"))).toBe(false)
+    } finally {
+      process.chdir(originalCwd)
+      rmSync(tempProject, { recursive: true, force: true })
+      restore()
     }
   })
 

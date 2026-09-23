@@ -16,6 +16,8 @@ import { upgradeCodexWunderkind } from "./codex/upgrade.js"
 import { runCodexDoctor } from "./codex/doctor.js"
 import { uninstallCodexWunderkind } from "./codex/uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
+import { detectCurrentConfig } from "./config-manager/index.js"
+import type { MemoryCommandAction } from "./memory-commands.js"
 import {
   PROMPT_OPTIMIZATION_COUNT_STATE_DEFINITIONS,
   PROMPT_OPTIMIZATION_RUNTIME_REPORT_ARTIFACTS,
@@ -62,6 +64,38 @@ async function runCodexCommand(action: () => number | Promise<number>): Promise<
   }
 }
 
+async function runMemoryCli(action: MemoryCommandAction, options: {
+  readonly filePath?: string
+  readonly sourceId?: string
+  readonly query?: string
+  readonly factId?: string
+  readonly outputPath?: string
+  readonly force?: boolean
+}): Promise<void> {
+  const { executeMemoryCommand } = await import("./memory-commands.js")
+  const detected = detectCurrentConfig()
+  if (detected.memoryConfigError !== undefined) {
+    console.error(`Error: ${detected.memoryConfigError}`)
+    process.exit(1)
+  }
+  const result = await executeMemoryCommand({
+    action,
+    projectRoot: process.cwd(),
+    memory: detected.memory,
+    ...(options.filePath !== undefined ? { filePath: options.filePath } : {}),
+    ...(options.sourceId !== undefined ? { sourceId: options.sourceId } : {}),
+    ...(options.query !== undefined ? { query: options.query } : {}),
+    ...(options.factId !== undefined ? { factId: options.factId } : {}),
+    ...(options.outputPath !== undefined ? { outputPath: options.outputPath } : {}),
+    ...(options.force === true ? { force: true } : {}),
+  })
+  if (!result.ok) {
+    console.error(`Error: ${result.code}`)
+    process.exit(1)
+  }
+  console.log(JSON.stringify(result.value))
+}
+
 const program = new Command()
 
 program
@@ -79,7 +113,7 @@ program
        "promptOptimizationLevel is the capability-based surface selector: latest-user, runtime-and-tools, contextual, or transcript.",
        "Whenever optimization is enabled, the security-safe baseline stays on: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.",
        "Legacy enabled repos without a level stay on the current shipped behavior until an operator explicitly chooses one.",
-       "Unsupported surfaces stay out of contract: no persistent cross-session memory writes and no automatic context injection.",
+       "Project memory is a separate, default-off capability: configuration never starts a worker, and capture and injection are independently enabled.",
        `Opt-in runtime reporting uses promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for sanitized/redacted latest-report artifacts or summaries on the separate runtime-report surface.`,
       "Direct `wunderkind ...` is supported when the current shell already exposes it on PATH.",
       "`bunx @grant-vine/wunderkind ...` remains the safe fallback. Wunderkind does not auto-edit shell PATH.",
@@ -266,6 +300,33 @@ program
       console.log("Nothing to add — all AI trace entries already present.")
     }
   })
+
+const memoryProgram = program
+  .command("memory")
+  .description("Manage explicitly enabled project-local memory (SQLite/WAL ledger). Configuration never starts a worker; injection is separately enabled and bounded.")
+
+memoryProgram.command("status").description("Show opt-in state, worker status, and ledger counts without contacting a provider.").option("--format <format>", "Output format: json", "json").action((opts: { format: string }) => {
+  if (opts.format !== "json") {
+    console.error('Error: --format must be "json"')
+    process.exit(1)
+  }
+  void runMemoryCli("status", {})
+})
+memoryProgram.command("start").description("Explicitly start the same-user local worker; no normal startup path starts it.").action(() => void runMemoryCli("start", {}))
+memoryProgram.command("stop").description("Stop the project-local worker.").action(() => void runMemoryCli("stop", {}))
+memoryProgram.command("capture").description("Capture through the bounded synchronous fallback and redaction boundary.").requiredOption("--file <path>").option("--source-id <id>").action((opts: { file: string; sourceId?: string }) => void runMemoryCli("capture", { filePath: opts.file, ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}) }))
+memoryProgram.command("recall").description("Recall bounded, query-aware facts from the local ledger.").requiredOption("--query <text>").option("--format <format>", "Output format: json", "json").action((opts: { query: string; format: string }) => {
+  if (opts.format !== "json") {
+    console.error('Error: --format must be "json"')
+    process.exit(1)
+  }
+  void runMemoryCli("recall", { query: opts.query })
+})
+memoryProgram.command("rebuild").description("Rebuild the redacted local markdown view.").command("views").action(() => void runMemoryCli("rebuild", {}))
+const forgetProgram = memoryProgram.command("forget")
+forgetProgram.command("fact").requiredOption("--id <fact-id>").action((opts: { id: string }) => void runMemoryCli("forget-fact", { factId: opts.id }))
+forgetProgram.command("source").requiredOption("--id <source-id>").action((opts: { id: string }) => void runMemoryCli("forget-source", { sourceId: opts.id }))
+memoryProgram.command("export").description("Export redacted facts and provenance without raw excerpts.").requiredOption("--output <path>").option("--force").action((opts: { output: string; force?: boolean }) => void runMemoryCli("export", { outputPath: opts.output, force: opts.force === true }))
 
 program
   .command("init")
@@ -487,7 +548,7 @@ program
        "  - the separate multi-level prompt optimization engine stays config-driven and separate from this audit-only report",
        "  - latest-user, runtime-and-tools, contextual, and transcript stay on that separate engine rather than token-audit",
        "  - latest-user passthrough reasons are runtime-report-only, not summary metadata guidance",
-       "  - unsupported features remain out of contract: no persistent cross-session memory writes and no automatic context injection",
+       "  - project memory is separately opt-in and does not change this audit-only surface",
        `  - supplementary prompt optimization count states stay frozen: ${PROMPT_OPTIMIZATION_COUNT_STATE_HELP_TEXT}`,
       "  - phase-1 hook-effective budget basis stays configured-bytes or budget-unavailable only",
       "  - reports deterministic bytes, lines, and file counts rather than model-specific token truth",
@@ -576,7 +637,7 @@ program
         "  - promptOptimizationLevel is the capability-based surface selector: latest-user, runtime-and-tools, contextual, or transcript",
         "  - legacy enabled repos without a level stay on the current shipped behavior until operators explicitly choose one",
         "  - when enabled, the security-safe baseline applies: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift",
-        "  - unsupported features remain out of contract: no persistent cross-session memory writes and no automatic context injection",
+        "  - project memory remains separately opt-in and does not change this audit-only surface",
         "  - latest-user passthrough reason visibility is runtime-report-only, not summary metadata guidance",
        `  - --verbose surfaces promptOptimizationReportingMode (${PROMPT_OPTIMIZATION_RUNTIME_REPORTING_MODE_HELP_TEXT}) for the separate runtime-report surface`,
       `  - --verbose checks sanitized/redacted latest-report artifact status for ${PROMPT_OPTIMIZATION_RUNTIME_REPORT_PATHS[0]}`,

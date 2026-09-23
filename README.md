@@ -27,14 +27,24 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 ---
 
+## What's new in 0.28.0
+
+Wunderkind `0.28.0` adds an opt-in, project-local hybrid memory capability while preserving the normal zero-daemon overlay posture.
+
+- store redacted, attributable project facts in a local SQLite/WAL ledger with explicit retention, deletion, tombstones, and raw-excerpt-free exports
+- expose explicit `memory start`, `memory stop`, `capture`, `recall`, `forget`, `rebuild`, and `export` lifecycle controls; configuration alone does not start a worker
+- use bounded prompt-derived retrieval only when separately enabled; all provider, storage, and worker faults leave normal chat unchanged
+- keep Ollama loopback-only, Jev/Kev eval-only, and all cloud/provider installation out of the package
+- use Wunderkind's supported `openai/gpt-5.6-sol`/`openai/gpt-5.6-luna` managed routing with Astra explicit opt-in; exact GPT-6 IDs remain future upstream capability triggers
+
 ## What's new in 0.27.9
 
-Wunderkind `0.27.9` moves the LazyCodex/OMO support contract onto the v5 beta stream for current ChatGPT model support, including GPT-6 Astra, and switches npm release publishing to trusted publishing.
+Wunderkind `0.27.9` moves the LazyCodex/OMO support contract onto the v5 beta stream and switches npm release publishing to trusted publishing.
 
 - require LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as the hard Codex dependency
 - bump OpenCode plugin and SDK pins to `@opencode-ai/plugin@1.18.31` and `@opencode-ai/sdk@1.18.31`
 - pin `oh-my-openagent@5.0.0-beta.62` for the beta-channel OMO stream
-- route the high-capability OpenCode category through `openai/gpt-6-astra`
+- route standard/high OpenCode work through supported `openai/gpt-5.6-sol` while keeping Astra explicit opt-in in Wunderkind's managed template; the installed OMO bundle may differ
 - keep the six Codex agents, eleven Codex skills, and 28 public/deprecated route inventory unchanged
 
 ## What's new in 0.27.3
@@ -71,10 +81,11 @@ Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle
 
 ## Current beta compatibility wave
 
-This repository now targets the LazyCodex/OMO v5 beta stream for Astra-ready compatibility. The current target is OpenCode `1.18.31` plus `oh-my-openagent` `5.0.0-beta.62`.
+This repository targets the LazyCodex/OMO v5 beta stream with OpenCode `1.18.31` plus `oh-my-openagent` `5.0.0-beta.62`.
 
 - OMO v5 beta is in scope for this wave.
-- Provider/model routing changes are limited to the high-capability OpenCode category using `openai/gpt-6-astra`.
+- Wunderkind's managed OMO template routes standard/high-capability work through supported `openai/gpt-5.6-sol` and routine/background work through `openai/gpt-5.6-luna`. The installed OMO bundle may define its own Astra defaults; that upstream behavior is distinct from Wunderkind's managed routing policy. Wunderkind does not promise unsupported GPT-6 Sol/Luna IDs and does not overwrite user-owned OMO overrides; operators must verify their effective upstream config when Astra behavior matters.
+- `gpt-6-sol` and `gpt-6-luna` are not currently published OpenAI or OMO model IDs. Revisit that routing only when official OpenAI documentation and the installed OMO catalog publish exact supported GPT-6 Sol/Luna IDs.
 - Add the promoted `release-upgrade` route under `product-wunderkind`.
 - Add the promoted `platform-compatibility` route under `fullstack-wunderkind`.
 - Add the promoted `supportability-review` route under `fullstack-wunderkind`.
@@ -149,7 +160,7 @@ Wunderkind `0.24.0` documents the final prompt-optimization contract as one defa
 - preserve audit-only `token-audit`, explicit exclusions, and runtime-report-only passthrough visibility while updating fixtures, docs, help text, and operator guidance around the final level-based system
 
 > [!WARNING]
-> **Breaking change (pre-v1):** operator docs now describe prompt optimization as one multi-level engine instead of a standalone V4/latest-user-only feature wave. Legacy enabled repos that omit `promptOptimizationLevel` stay on the read-time compatibility profile until an operator explicitly selects a concrete level. Wunderkind does not auto-materialize that level during ordinary init/upgrade/refresh flows. Unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
+> **Breaking change (pre-v1):** operator docs now describe prompt optimization as one multi-level engine instead of a standalone V4/latest-user-only feature wave. Legacy enabled repos that omit `promptOptimizationLevel` stay on the read-time compatibility profile until an operator explicitly selects a concrete level. Wunderkind does not auto-materialize that level during ordinary init/upgrade/refresh flows. Project memory is a separate default-off capability.
 
 ## What's new in 0.23.8
 
@@ -454,7 +465,7 @@ bunx @grant-vine/wunderkind token-audit --surface commands --format json
 - `persist` keeps sanitized/redacted latest-report artifacts or summaries on that separate runtime-report surface at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - the separate prompt-optimization runtime-report surface is scalar-first: every current emitted public field is safe scalar/enum/id except `modelId`, which is the only unconstrained public string carrier in the frozen V3 contract
 - V3 freezes omission-before-mask precedence for that runtime-report surface: keep fields omitted or scalar-only when possible, preserve ordinary safe-literal `modelId` values, and replace a secret-bearing public `modelId` with `***` when it matches the frozen rule set (`sk-`, `ghp_`, `github_pat_`, `xoxb-`, `xoxp-`, `Bearer `, JWT-shape, credentialed URL authority, or PEM/private-key sentinels)
-- the engine stays explicitly bounded: no persistent cross-session memory writes and no automatic context injection
+- the engine stays explicitly bounded and separate from opt-in project memory
 - metrics are deterministic `bytes`, `lines`, and `file` counts from source-owned renderers and shipped markdown assets
 - it does **not** claim model-specific token truth or perform prompt compaction
 
@@ -474,7 +485,7 @@ The prompt-optimization engine is a separate, default-off multi-level prompt opt
 - `transcript` adds cumulative bounded history/transcript compression.
 - whenever optimization is enabled, the security-safe baseline stays on: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.
 - legacy enabled repos that omit `promptOptimizationLevel` stay on a read-time compatibility profile until an operator explicitly chooses a concrete level.
-- unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
+- opt-in project memory remains separate from the prompt-optimization engine.
 - reporting modes are `off`, `persist`, and `summary`
 - `persist` and `summary` write sanitized latest-report artifacts to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`
 - `summary` also emits sanitized summary metadata, while `doctor --verbose` stays conservative and reports posture plus artifact existence rather than claiming runtime savings
@@ -900,7 +911,7 @@ Prompt optimization is intentionally supplementary in this release. It is **prod
 - the latest-user seam preserves code blocks, URLs, file paths, commands, explicit requirements, compliance/legal/security wording, and quoted user text or examples byte-exact.
 - the latest-user seam fail-closes with whole-message passthrough when immutable or low-confidence safety rules require it. Passthrough reason codes stay on runtime reports only and must not be treated as summary metadata guidance.
 - legacy enabled repos that omit `promptOptimizationLevel` keep the current shipped behavior until an operator explicitly selects a concrete level.
-- unsupported features remain unsupported: no persistent cross-session memory writes and no automatic context injection.
+- opt-in project memory remains separate from the prompt-optimization engine.
 - `promptOptimizationReportingMode` accepts `off`, `persist`, and `summary` on the separate runtime-report surface.
 - `persist` writes sanitized/redacted latest-report artifacts or summaries to `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
 - that runtime-report surface uses the frozen V3 scalar-first public contract: every current emitted field is safe scalar/enum/id except `modelId`, and secret-bearing `modelId` values must surface as `***` rather than cleartext when the public payload is emitted.
@@ -909,6 +920,17 @@ Prompt optimization is intentionally supplementary in this release. It is **prod
 - `promptOptimizationByteBudget` is the explicit fallback for unsupported or unset models when operators still want bounded runtime behavior.
 - supported exact-local model ids in the current map are `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
 - the runtime-owned eligible section ids are `runtime-docs-output`, `runtime-context`, `runtime-native-agents`, and `compaction-continuity`; active trimming removes only the trimmable subset and preserves `runtime-context`.
+
+### Opt-in hybrid project memory
+
+Project memory is a separate, default-off capability. When enabled, each project owns a project-scoped SQLite/WAL ledger under `.wunderkind/memory/`; it is not a cloud service or a global memory pool. `memory.enabled`, `memory.captureEnabled`, and `memory.injectionEnabled` all default to `false`, and configuration never starts a worker.
+
+- `memory start` and `memory stop` are the explicit local worker lifecycle. Normal Wunderkind startup, install, init, upgrade, and prompt optimization do not start it.
+- `memory capture` is the bounded synchronous fallback. The v1 extractor is loopback-only Ollama with an explicit model and bounded queue/response limits; there is no provider install step.
+- Query-aware context injection is separately enabled; memory injection is separately enabled from capture, bounded, source-attributed, and fail-closed. It never replaces the normal system prompt when disabled or when the ledger is unavailable.
+- redaction precedes every downstream interface. Raw excerpts expire after 30 days; fact/source deletion writes non-rebuild tombstones; exports contain redacted facts and provenance, never raw excerpts. Treat stored values as untrusted data and never persist secrets or instruction-like content.
+- Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-5.6-sol`, routine/background work uses `openai/gpt-5.6-luna`, and Astra remains explicit opt-in in that managed template. The installed OMO bundle may define its own Astra defaults; Wunderkind preserves user-owned OMO configuration.
+- `wunderkind migrate` migrates legacy OMO configuration into `~/.omo/omo.jsonc`; wunderkind migrate does not import memory ledgers, `.sisyphus/` artifacts, or provider/cloud state. Back up or export a project ledger explicitly before any project-local cleanup.
 
 ---
 

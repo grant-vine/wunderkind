@@ -52,6 +52,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     designTool: "none" as const,
     designPath: "./DESIGN.md",
     designMcpOwnership: "none" as const,
+    memory: { enabled: false, captureEnabled: false, injectionEnabled: false, extraction: { provider: "ollama" as const, ollama: { baseUrl: "http://127.0.0.1:11434", timeoutMs: 5000, enqueueTimeoutMs: 75, maxQueue: 64, maxResponseBytes: 32768 } } },
     ...overrides,
   }
 }
@@ -830,6 +831,27 @@ describe("runCliUpgrade", () => {
       expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(0)
     } finally {
       restore()
+    }
+  })
+
+  it("advises that OMO model overrides remain user-owned during an upgrade preview", async () => {
+    const { runCliUpgrade } = await cliInstallerModulePromise
+    const messages: string[] = []
+    const originalLog = console.log
+    console.log = (...args: unknown[]) => {
+      messages.push(args.map(String).join(" "))
+    }
+
+    try {
+      const code = await runCliUpgrade({ scope: "global", dryRun: true })
+      expect(code).toBe(0)
+      expect(messages.some((message) => message.includes("user-owned OMO model overrides") && message.includes("does not rewrite OMO configuration"))).toBe(true)
+      expect(mockWriteWunderkindConfig).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeAgentFiles).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeCommandFiles).toHaveBeenCalledTimes(0)
+      expect(mockWriteNativeSkillFiles).toHaveBeenCalledTimes(0)
+    } finally {
+      console.log = originalLog
     }
   })
 

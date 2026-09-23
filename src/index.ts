@@ -9,7 +9,12 @@ import {
   type PromptOptimizationRuntimeReport,
 } from "./cli/prompt-optimization-runtime-reporting.js"
 import { buildPromptOptimizationRuntimePublicPayload } from "./cli/prompt-optimization-runtime-public-payload.js"
-import { readWunderkindConfig } from "./cli/config-manager/index.js"
+import { detectCurrentConfig, readWunderkindConfig } from "./cli/config-manager/index.js"
+import { MEMORY_AUTOMATIC_CAPTURE_CONTRACT } from "./cli/memory-contract.js"
+import { appendMemoryContextToSystem } from "./memory/hook-integration.js"
+import { createAutomaticCaptureAdapter } from "./memory/capture-adapter.js"
+import { memoryWorkerSocketPath } from "./memory/worker-socket.js"
+import { readMemoryQuery, rememberMemoryQuery } from "./memory/session-query.js"
 import {
   applyWunderkindSystemTransform,
   buildCompactionContextResult,
@@ -157,6 +162,18 @@ function shouldDenyShellMutation(pattern: string | string[] | undefined, metadat
   return SHELL_FILE_MUTATION_PATTERNS.some((regex) => regex.test(normalized))
 }
 
+function textFromParts(parts: readonly unknown[]): string | null {
+  const text = parts
+    .flatMap((part) => {
+      if (typeof part !== "object" || part === null || Array.isArray(part)) return []
+      const value = Reflect.get(part, "text")
+      return typeof value === "string" ? [value] : []
+    })
+    .join("\n")
+    .trim()
+  return text === "" ? null : text
+}
+
 const WunderkindPlugin: Plugin = async (_input) => {
   applyAstGrepMacOsEnvOverride()
 
@@ -207,6 +224,15 @@ const WunderkindPlugin: Plugin = async (_input) => {
       const compactionResult = buildCompactionContextResult(wunderkindConfig)
       output.context.push(...compactionResult.context)
 
+      const memory = detectCurrentConfig()
+      if (memory.memoryConfigError === undefined && memory.memory?.enabled && memory.memory.injectionEnabled) {
+        output.context.push(...appendMemoryContextToSystem({
+          system: output.context,
+          enabled: true,
+          query: readMemoryQuery(_input.sessionID),
+        }).slice(output.context.length))
+      }
+
       const runtimeReport = buildPromptOptimizationRuntimeReport({
         hookPath: "experimental.session.compacting",
         modelId: readPromptOptimizationModelId(_input),
@@ -239,6 +265,15 @@ const WunderkindPlugin: Plugin = async (_input) => {
         v4UserPromptOptimizationSurface,
       })
 
+      const memory = detectCurrentConfig()
+      if (memory.memoryConfigError === undefined && memory.memory?.enabled && memory.memory.injectionEnabled) {
+        output.system.push(...appendMemoryContextToSystem({
+          system: output.system,
+          enabled: true,
+          query: readMemoryQuery(_input.sessionID),
+        }).slice(output.system.length))
+      }
+
       const runtimeReport = buildPromptOptimizationRuntimeReport({
         hookPath: "experimental.chat.system.transform",
         modelId: readPromptOptimizationModelId(_input),
@@ -261,6 +296,27 @@ const WunderkindPlugin: Plugin = async (_input) => {
         runtimeReport,
         output,
       )
+    },
+    "chat.message": async (input, output) => {
+      const memory = detectCurrentConfig()
+      if (memory.memoryConfigError !== undefined || !memory.memory?.enabled) return
+      const excerpt = textFromParts(output.parts)
+      if (excerpt === null) return
+      if (memory.memory.injectionEnabled) rememberMemoryQuery(input.sessionID, excerpt)
+      if (!memory.memory.captureEnabled) return
+      const capture = createAutomaticCaptureAdapter({
+        enabled: true,
+        declaredHook: MEMORY_AUTOMATIC_CAPTURE_CONTRACT.mode,
+        socketPath: memoryWorkerSocketPath(process.cwd()),
+        enqueueTimeoutMs: memory.memory.extraction.ollama.enqueueTimeoutMs,
+      })
+      await capture.capture({
+        eventId: input.messageID ?? input.sessionID,
+        source: "opencode.chat.message",
+        occurredAt: Date.now(),
+        excerpt,
+        sensitivity: "internal",
+      }, output)
     },
   }
 }

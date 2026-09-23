@@ -36,6 +36,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     designTool: "none" as const,
     designPath: "./DESIGN.md",
     designMcpOwnership: "none" as const,
+    memory: { enabled: false, captureEnabled: false, injectionEnabled: false, extraction: { provider: "ollama" as const, ollama: { baseUrl: "http://127.0.0.1:11434", timeoutMs: 5000, enqueueTimeoutMs: 75, maxQueue: 64, maxResponseBytes: 32768 } } },
     ...overrides,
   }
 }
@@ -223,6 +224,32 @@ describe("runProjectCleanup", () => {
       expect(existsSync(wunderkindDir)).toBe(false)
       expect(existsSync(teamConfigPath)).toBe(true)
       expect(readFileSync(teamConfigPath, "utf-8")).toBe(originalTeamConfig)
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
+    }
+  })
+
+  it("removes every existing file inside the project-local Wunderkind state boundary", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-cleanup-state-boundary-"))
+    const databasePath = join(tempProject, ".wunderkind", "memory", "ledger.sqlite")
+
+    mkdirSync(join(tempProject, ".wunderkind", "memory"), { recursive: true })
+    writeFileSync(databasePath, "pre-existing-state")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runProjectCleanup()
+
+      expect(code).toBe(0)
+      expect(existsSync(databasePath)).toBe(false)
     } finally {
       process.chdir(originalCwd)
       console.log = originalLog

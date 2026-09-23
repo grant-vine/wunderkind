@@ -1,0 +1,1 @@
+fixture memory lifecycle records an attributable local fact

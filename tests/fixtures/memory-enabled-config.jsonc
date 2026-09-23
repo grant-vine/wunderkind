@@ -1,0 +1,18 @@
+{
+  "memory": {
+    "enabled": true,
+    "captureEnabled": false,
+    "injectionEnabled": true,
+    "extraction": {
+      "provider": "ollama",
+      "ollama": {
+        "baseUrl": "http://127.0.0.1:11434",
+        "model": "fake-memory",
+        "timeoutMs": 5000,
+        "enqueueTimeoutMs": 75,
+        "maxQueue": 64,
+        "maxResponseBytes": 32768
+      }
+    }
+  }
+}

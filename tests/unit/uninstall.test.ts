@@ -47,6 +47,7 @@ function makeDetectedConfig(overrides: Partial<DetectedConfig> = {}): DetectedCo
     designTool: "none" as const,
     designPath: "./DESIGN.md",
     designMcpOwnership: "none" as const,
+    memory: { enabled: false, captureEnabled: false, injectionEnabled: false, extraction: { provider: "ollama" as const, ollama: { baseUrl: "http://127.0.0.1:11434", timeoutMs: 5000, enqueueTimeoutMs: 75, maxQueue: 64, maxResponseBytes: 32768 } } },
     ...overrides,
   }
 }
@@ -346,6 +347,31 @@ describe("runUninstall", () => {
     } finally {
       console.log = originalLog
       console.error = originalError
+    }
+  })
+
+  it("preserves project-local memory state during project uninstall", async () => {
+    const originalCwd = process.cwd()
+    const originalLog = console.log
+    const originalError = console.error
+    const tempProject = mkdtempSync(join(tmpdir(), "wk-uninstall-memory-"))
+    const databasePath = join(tempProject, ".wunderkind", "memory", "ledger.sqlite")
+    mkdirSync(join(tempProject, ".wunderkind", "memory"), { recursive: true })
+    writeFileSync(databasePath, "project-memory")
+    process.chdir(tempProject)
+    console.log = () => {}
+    console.error = () => {}
+
+    try {
+      const code = await runUninstall({ scope: "project" })
+
+      expect(code).toBe(0)
+      expect(readFileSync(databasePath, "utf-8")).toBe("project-memory")
+    } finally {
+      process.chdir(originalCwd)
+      console.log = originalLog
+      console.error = originalError
+      rmSync(tempProject, { recursive: true, force: true })
     }
   })
 

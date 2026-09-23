@@ -8,7 +8,7 @@ Last refreshed: 2026-09-08T00-00-00Z
 - **Plugin package**: `@opencode-ai/plugin@1.18.31`
 - **SDK package**: `@opencode-ai/sdk@1.18.31`
 - **OMO dependency**: `oh-my-openagent@5.0.0-beta.62`
-- **Current Wunderkind package version**: `0.27.9`
+- **Current Wunderkind package version**: `0.28.0`
 - **Generated agent frontmatter version field**: `wunderkind_version`
 - **Current beta compatibility target**: OpenCode `1.18.31` + `oh-my-openagent` `5.0.0-beta.62`, with OMO v5 beta explicitly in scope
 
@@ -33,8 +33,8 @@ Canonical/legacy OMO naming behavior should concentrate in operational seams (`c
 ### Platform routing remains specialized instead of generic
 `platform-compatibility` is the promoted `fullstack-wunderkind` route for host/plugin/config-chain drift, OpenCode/OMO contract changes, compatibility audits, and migration-boundary decisions. `supportability-review` is the promoted fullstack-owned route for observability, rollback-readiness, on-call ownership, and launch blockers. `supabase-architect` remains the promoted fullstack-owned route for Supabase-specific auth, RLS, Realtime, Storage, Edge Functions, branching, local dev, observability, and app-data composition when Supabase materially changes the design. The current repo-head skill inventory is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`.
 
-### The current compatibility wave adopts Astra for high-capability routing
-The beta compatibility contract targets OpenCode `1.18.31` and OMO `5.0.0-beta.62`. `oh-my-openagent.jsonc` and the canonical manifest route the `unspecified-high` category through `openai/gpt-6-astra`; other category routing remains unchanged in this wave.
+### The current compatibility wave uses supported Sol/Luna cost tiers
+The beta compatibility contract targets OpenCode `1.18.31` and OMO `5.0.0-beta.62`. Task 5 applies the exact managed-template mapping: `quick` stays Haiku, `writing` and `visual-engineering` retain their existing providers, `unspecified-low` becomes `openai/gpt-5.6-luna`, `unspecified-high` becomes `openai/gpt-5.6-sol`, and unused `unspecified-astra` remains explicit opt-in in Wunderkind's template. The installed OMO bundle may define Astra defaults independently. OMO parses model fields as strings but its installed catalog exposes GPT-5.6 Sol/Luna, not `gpt-6-sol`/`gpt-6-luna`; change that fallback only when official OpenAI docs and the installed OMO catalog publish exact GPT-6 IDs.
 
 ### The current skill-governance wave adds a narrow supportability route and rejects the overlapping incident skill
 The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28` by adding `release-upgrade`, `platform-compatibility`, and `supportability-review`. `supportability-incident` is explicitly rejected because supportability and incident execution already route through `/supportability-review`, `/runbook`, and `/incident-response`.
@@ -43,7 +43,10 @@ The current repo-head skill target is `promoted=23`, `wunderkind-specific=4`, `d
 `wunderkind init` now ensures `CONTEXT.md`, making the bootstrap artifacts: `.wunderkind/`, `AGENTS.md`, `CONTEXT.md`, `.omo/`, and optional docs scaffolding.
 
 ### Prompt optimization reporting is a separate operational seam
-The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-contract.ts`, `src/cli/prompt-optimization-runtime-reporting.ts`, and `src/runtime-prompt-sections.ts`. It is deliberately separate from `src/cli/token-audit.ts`, keeps `token-audit` audit-only, and persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`. The operator contract is now one default-off multi-level prompt optimization engine with capability-based settings, cumulative levels, a mandatory security-safe baseline when enabled, and explicit exclusions for persistent cross-session memory writes and automatic context injection.
+The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-contract.ts`, `src/cli/prompt-optimization-runtime-reporting.ts`, and `src/runtime-prompt-sections.ts`. It is deliberately separate from `src/cli/token-audit.ts`, keeps `token-audit` audit-only, and persists latest-only local artifacts under `.wunderkind/runtime/prompt-optimization/`. The operator contract is one default-off multi-level prompt optimization engine with capability-based settings, cumulative levels, and a mandatory security-safe baseline when enabled.
+
+### Project memory has a version-locked capture and lifecycle seam
+The `@opencode-ai/plugin` 1.18.31 declaration exposes `chat.message`, so automatic capture may use only that event while an explicitly started local worker is running. The fallback is synchronous `memory capture`; no untracked background promise is allowed. `memory.enabled`, capture, injection, fixed Ollama extraction, loopback URL validation, and bounded queue/provider limits are locked in `src/cli/memory-contract.ts` and the config schema. Task implementation must retain the redaction-before-persistence boundary, a single serialized writer, temporal/tombstone deletion rules, migration backup/read-only failure behavior, and normal-chat fail-closed behavior.
 
 ## Current operational notes
 
@@ -58,7 +61,7 @@ The live prompt-optimization reporting path lives in `src/cli/prompt-runtime-con
 
 - Key direct dependencies are current for this upgrade cycle:
   - published baseline: `oh-my-openagent@5.0.0-beta.62`, `@opencode-ai/plugin@1.18.31`, `@opencode-ai/sdk@1.18.31`
-  - OMO v5 beta is explicitly in scope for this Astra support wave
+  - OMO v5 beta is in scope for the supported GPT-5.6 Sol/Luna routing fallback; no newer beta is adopted without release-specific OpenCode/plugin compatibility proof.
 - Remaining direct dependencies are not fully latest (`@clack/prompts`, `commander`, `typescript`, `@types/node`) and should be treated as a separate modernization pass if desired.
 - Patched transitive overrides currently pin:
   - `fast-uri@4.1.5`
