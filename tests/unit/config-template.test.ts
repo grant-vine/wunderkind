@@ -2,6 +2,8 @@ import { describe, it, expect } from "bun:test"
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { parse } from "jsonc-parser"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
 import { WUNDERKIND_AGENT_IDS } from "../../src/agents/manifest.js"
 import { GOOGLE_STITCH_ADAPTER } from "../../src/cli/mcp-adapters.js"
 import {
@@ -111,6 +113,48 @@ describe("OMO template assets", () => {
     expect(canonical).toContain("Wunderkind OMO configuration template")
     expect(canonical).toContain('"$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json"')
     expect(canonical).toContain('"wunderkind:product-wunderkind"')
+  })
+})
+
+describe("shipped cost routing", () => {
+  it("covers the literal reviewed OpenCode categories and supported OMO built-in roles", () => {
+    const template = parse(readFileSync(new URL("../../oh-my-openagent.jsonc", import.meta.url), "utf8"))
+    const categories = {
+      quick: ["luna", "low"], "unspecified-low": ["luna", "low"], writing: ["luna", "medium"],
+      "unspecified-high": ["sol", "high"], "deep-low": ["sol", "high"], "deep-high": ["sol", "high"],
+      ultrabrain: ["sol", "high"], "visual-engineering": ["sol", "medium"], git: ["luna", "low"],
+    }
+    const roles = {
+      build: ["sol", "medium"], "OpenCode-Builder": ["sol", "medium"], sisyphus: ["sol", "medium"], atlas: ["sol", "medium"],
+      hephaestus: ["sol", "high"], "sisyphus-junior": ["sol", "high"], plan: ["sol", "high"], prometheus: ["sol", "high"],
+      metis: ["sol", "high"], momus: ["sol", "high"], oracle: ["sol", "high"], "multimodal-looker": ["sol", "medium"],
+      explore: ["luna", "medium"], librarian: ["luna", "medium"],
+    }
+    for (const [id, [model, variant]] of Object.entries(categories)) {
+      expect(template.categories[id]).toEqual({ model: `openai/gpt-6-${model}`, ...(variant ? { variant } : {}) })
+    }
+    for (const [id, [model, variant]] of Object.entries(roles)) {
+      expect(template.agents[id]).toEqual({ model: `openai/gpt-6-${model}`, variant })
+    }
+    expect(WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.builtinAgents).toHaveLength(Object.keys(roles).length)
+    for (const { id, model, variant } of WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.builtinAgents) {
+      expect(template.agents[id]).toEqual({ model, variant })
+    }
+  })
+
+  it("resolves retained specialist categories to the approved models in the parsed template", () => {
+    // Given
+    const template = parse(readFileSync(new URL("../../oh-my-openagent.jsonc", import.meta.url), "utf8"))
+    const expected: Readonly<Record<string, string>> = { quick: "openai/gpt-6-luna", "unspecified-low": "openai/gpt-6-luna", "unspecified-high": "openai/gpt-6-sol", writing: "openai/gpt-6-luna", "visual-engineering": "openai/gpt-6-sol", "deep-low": "openai/gpt-6-sol", "deep-high": "openai/gpt-6-sol", ultrabrain: "openai/gpt-6-sol", git: "openai/gpt-6-luna" }
+    // When / Then: check both generated metadata and the independently shipped template
+    for (const category of WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.categories) {
+      expect(template.categories[category.id].model).toBe(expected[category.id])
+      expect(category.model).toBe(expected[category.id])
+    }
+    expect(template.categories["visual-engineering"].variant).toBe("medium")
+    expect(template.agents["wunderkind:product-wunderkind"].category).toBe("unspecified-high")
+    expect(template.agents["wunderkind:legal-counsel"].category).toBe("unspecified-high")
+    for (const agent of WUNDERKIND_CANONICAL_MANIFEST.agents) expect(template.agents[`wunderkind:${agent.id}`].category).toBe(agent.omoCategory)
   })
 })
 

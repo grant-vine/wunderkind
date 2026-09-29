@@ -33,7 +33,7 @@ function removeInstalledPlugin(fixture: ReturnType<typeof createFakeCodex>, plug
 }
 
 describe("Codex doctor", () => {
-  it("reports Astra routing drift and offers the explicit local model-policy repair", () => {
+  it("reports an unreceipted operator root assignment as advisory", () => {
     const paths = sandbox()
     configure(paths, createFakeCodex())
     try {
@@ -43,10 +43,11 @@ describe("Codex doctor", () => {
 
       const report = getCodexDoctorReport()
 
-      expect(report.modelPolicy.status).toBe("drifted")
+      expect(report.modelPolicy.status).toBe("advisory")
       expect(report.modelPolicy.astraAssignments).toEqual(["root"])
-      expect(report.core.healthy).toBe(false)
-      expect(report.remediation.some((action) => action.includes("--apply-model-policy"))).toBe(true)
+      expect(report.core.healthy).toBe(true)
+      expect(report.modelPolicy.userOwnedAssignments).toContain("root")
+      expect(report.remediation).toEqual([])
     } finally {
       cleanup(paths)
     }

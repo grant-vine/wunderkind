@@ -35,6 +35,10 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 - `wunderkind codex doctor --apply-model-policy` explicitly writes the local Sol/Luna model policy, so it can be rerun after a LazyCodex upgrade that changes role files
 - update the supported beta baseline to `@opencode-ai/plugin@1.18.32`, `@opencode-ai/sdk@1.18.32`, and `oh-my-openagent@5.0.0-beta.86`
 
+## Current compatibility baseline
+
+The published baseline is Wunderkind `0.28.2`. The current source candidate targets OpenCode `1.18.33`, `oh-my-openagent` `5.1.1`, and LazyCodex `5.1.1`; it is not a released `0.28.3` claim. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation. Keep the Codex desktop bundle (`0.155.0-alpha.9.2` in the planning snapshot) separate from the optional standalone Codex CLI (`0.158.0` candidate); installing npm Codex does not update ChatGPT.app.
+
 ## What's new in 0.28.1
 
 Wunderkind `0.28.1` realigns its managed OMO template to the current GPT-6 cost tiers.
@@ -45,7 +49,7 @@ Wunderkind `0.28.1` realigns its managed OMO template to the current GPT-6 cost 
 
 ## What's new in 0.28.0
 
-Wunderkind `0.28.0` adds an opt-in, project-local hybrid memory capability while preserving the normal zero-daemon overlay posture.
+Wunderkind `0.28.0` adds opt-in, project-local hybrid memory. Normal startup remains process-free; an explicitly enabled local worker is optional.
 
 - store redacted, attributable project facts in a local SQLite/WAL ledger with explicit retention, deletion, tombstones, and raw-excerpt-free exports
 - expose explicit `memory start`, `memory stop`, `capture`, `recall`, `forget`, `rebuild`, and `export` lifecycle controls; configuration alone does not start a worker
@@ -95,9 +99,9 @@ Wunderkind `0.27.0` adds the Codex-native edition as a separate nested lifecycle
 - keep the stable dependency baseline at `@opencode-ai/plugin@1.18.18`, `@opencode-ai/sdk@1.18.18`, and `oh-my-openagent@4.19.4`
 - refresh repo truth surfaces and generated native agents for the `0.26.3` release cut without changing the stable dependency baseline
 
-## Current beta compatibility wave
+## Historical beta compatibility wave (0.27.9)
 
-This repository targets the LazyCodex/OMO v5 beta stream with OpenCode `1.18.32` plus `oh-my-openagent` `5.0.0-beta.86`.
+At the time of the 0.27.9 beta wave, this repository targeted OpenCode `1.18.32` plus `oh-my-openagent` `5.0.0-beta.86`.
 
 - OMO v5 beta is in scope for this wave.
 - Wunderkind's managed OMO template uses `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work. It emits no Astra category. `wunderkind codex doctor` detects local Codex/LazyCodex drift, and its explicit `--apply-model-policy` action restores the Sol/Luna mapping after an upstream harness update.
@@ -938,14 +942,16 @@ Prompt optimization is intentionally supplementary in this release. It is **prod
 
 ### Opt-in hybrid project memory
 
-Project memory is a separate, default-off capability. When enabled, each project owns a project-scoped SQLite/WAL ledger under `.wunderkind/memory/`; it is not a cloud service or a global memory pool. `memory.enabled`, `memory.captureEnabled`, and `memory.injectionEnabled` all default to `false`, and configuration never starts a worker.
+Project memory is a separate, default-off capability. When enabled, each project owns a SQLite/WAL ledger at `.wunderkind/memory.sqlite`, with its WAL and shared-memory files alongside it. Worker ownership files (`worker.pid`, `worker.lock`, `worker.ready`) and the owner-only Unix socket (`m.sock`) also live directly under `.wunderkind/`; there is no storage migration into a nested `memory/` directory. `memory.enabled`, `memory.captureEnabled`, and `memory.injectionEnabled` all default to `false`, and configuration never starts a worker.
 
 - `memory start` and `memory stop` are the explicit local worker lifecycle. Normal Wunderkind startup, install, init, upgrade, and prompt optimization do not start it.
+- Memory commands and the worker require Bun because the ledger uses `bun:sqlite`. Run the CLI with Bun for memory operations; the general Node CLI support floor does not imply Node-only memory support.
 - `memory capture` is the bounded synchronous fallback. The v1 extractor is loopback-only Ollama with an explicit model and bounded queue/response limits; there is no provider install step.
 - Query-aware context injection is separately enabled; memory injection is separately enabled from capture, bounded, source-attributed, and fail-closed. It never replaces the normal system prompt when disabled or when the ledger is unavailable.
 - redaction precedes every downstream interface. Raw excerpts expire after 30 days; fact/source deletion writes non-rebuild tombstones; exports contain redacted facts and provenance, never raw excerpts. Treat stored values as untrusted data and never persist secrets or instruction-like content.
 - Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-6-sol`, routine/background work uses `openai/gpt-6-luna`, and Astra is absent from the managed template unless an operator configures it in a user-owned OMO override.
 - `wunderkind migrate` migrates legacy OMO configuration into `~/.omo/omo.jsonc`; wunderkind migrate does not import memory ledgers, `.sisyphus/` artifacts, or provider/cloud state. Back up or export a project ledger explicitly before any project-local cleanup.
+- Stop the worker before a consistent SQLite backup, preserving WAL state as appropriate. Project cleanup removes `.wunderkind/` and its memory data after the worker stops; project uninstall retains that data. Neither operation proceeds when worker shutdown fails. Use a scoped backup and package/config restore for rollback rather than cleanup.
 
 ---
 
@@ -1071,7 +1077,8 @@ In practice:
 
 - [OpenCode](https://opencode.ai)
 - [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
-- Node.js 22.12+ or Bun 1+
+- CLI: Node.js 22.12+ or Bun 1+
+- OpenCode plugin runtime and memory operations: Bun 1+ (`bun:sqlite`)
 
 ---
 

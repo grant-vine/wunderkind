@@ -10,7 +10,7 @@ import { resolveCodexProjectMarker } from "./project-marker.js"
 import { runCodex } from "./process.js"
 import { readCodexInstallState, requireCanonicalCodexInstallState, sha256File, type CodexInstallState } from "./state.js"
 
-export interface CodexDoctorOptions { readonly json?: boolean; readonly verbose?: boolean; readonly applyModelPolicy?: boolean }
+export interface CodexDoctorOptions { readonly json?: boolean; readonly verbose?: boolean; readonly applyModelPolicy?: boolean; readonly resetModelPolicy?: boolean }
 export type CodexAgentHealth = "current" | "missing" | "stale-owned" | "modified-unowned"
 export type CodexSkillHealth = "current" | "missing" | "modified"
 export type CodexPluginHealth = "enabled" | "installed" | "missing" | "unavailable"
@@ -185,13 +185,14 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   let optional: CodexCompanionReport | { readonly unavailable: true }
   try { optional = getCodexCompanionReport() } catch { optional = { unavailable: true } }
   const currentPackageVersion = getCanonicalPackageVersion()
-  const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current") && modelPolicy.status === "compliant"
-  const remediation = healthy ? [] : remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion, modelPolicy)
+  const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
+  const remediation = remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion, modelPolicy)
   return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
 }
 
 export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
-  if (options.applyModelPolicy === true) applyCodexModelPolicy()
+  if (options.resetModelPolicy === true && options.applyModelPolicy !== true) throw new Error("--reset-model-policy requires --apply-model-policy")
+  if (options.applyModelPolicy === true) applyCodexModelPolicy(resolveCodexPaths(), options.resetModelPolicy === true ? { resetManagedKeys: true } : {})
   const report = getCodexDoctorReport(options)
   if (options.json === true) console.log(JSON.stringify(report))
   else {
@@ -205,9 +206,9 @@ export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
     console.log(`- plugin manifest: ${report.core.pluginManifest}`)
     for (const [name, status] of Object.entries(report.core.skills)) console.log(`- skill ${name}: ${status}`)
     console.log(`Project bootstrap: ${report.core.projectBootstrap.ready ? "ready" : "not attached"}`)
-    if (!report.core.healthy) for (const action of report.remediation) console.log(action)
+    for (const action of report.remediation) console.log(action)
     if ("unavailable" in report.optional) console.log("Optional companions: unavailable (advisory; doctor makes no changes).")
     else console.log(`Optional companions: Matt ${report.optional.matt}; Supabase ${report.optional.supabasePack}; Vercel ${report.optional.vercelPack}; plugins ${Object.entries(report.optional.plugins).map(([id, status]) => `${id}=${status}`).join(", ")}. Advisory only; doctor makes no changes.`)
   }
-  return report.core.healthy ? 0 : 1
+  return report.core.healthy && report.modelPolicy.status !== "unsafe" && report.modelPolicy.status !== "drifted" ? 0 : 1
 }

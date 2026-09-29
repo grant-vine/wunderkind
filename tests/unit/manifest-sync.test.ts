@@ -106,9 +106,9 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.32")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.32")
-    expect(dependencies["oh-my-openagent"]).toBe(WUNDERKIND_CANONICAL_MANIFEST.nativeAssets.upstream.omoTargetVersion)
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.33")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.33")
+    expect(dependencies["oh-my-openagent"]).toBe("5.1.1")
   })
 
   it("keeps the canonical public inventory counts aligned with the 28-route repo surface", () => {
@@ -120,18 +120,17 @@ describe("manifest version sync", () => {
     })
   })
 
-  it("keeps README release notes aligned with the 0.28.2 model-policy and dependency release", () => {
+  it("keeps README release history and current compatibility candidate distinct", () => {
     const readmeBody = readText(new URL("../../README.md", import.meta.url))
 
     expect(readmeBody).not.toContain("## Unreleased")
     expect(readmeBody).toContain("## What's new in 0.28.2")
-    expect(readmeBody).toContain("project-local hybrid memory capability")
-    expect(readmeBody).toContain("SQLite/WAL ledger")
-    expect(readmeBody).toContain("configuration alone does not start a worker")
-    expect(readmeBody).toContain("Astra is not emitted by any Wunderkind category")
-    expect(readmeBody).toContain("@opencode-ai/plugin@1.18.32")
-    expect(readmeBody).toContain("@opencode-ai/sdk@1.18.32")
-    expect(readmeBody).toContain("oh-my-openagent@5.0.0-beta.86")
+    expect(readmeBody).toContain("## Current compatibility baseline")
+    expect(readmeBody).toContain("published baseline is Wunderkind `0.28.2`")
+    expect(readmeBody).toContain("source candidate targets OpenCode `1.18.33`")
+    expect(readmeBody).toContain("oh-my-openagent` `5.1.1`")
+    expect(readmeBody).toContain("it is not a released `0.28.3` claim")
+    expect(readmeBody).toContain("update the supported beta baseline to `@opencode-ai/plugin@1.18.32`")
     expect(readmeBody).toContain("openai/gpt-6-sol")
     expect(readmeBody).toContain("openai/gpt-6-luna")
     expect(readmeBody).toContain("release-upgrade")
@@ -284,15 +283,15 @@ describe("design-md command asset", () => {
     const docsReadmeBody = readText(docsReadmeFile)
     const sharedPromptBody = readText(new URL("../../src/agents/shared-prompt-sections.ts", import.meta.url))
 
-    expect(readmeBody).toMatch(/## Opt-in hybrid project memory[\s\S]+project-scoped SQLite\/WAL ledger/u)
-    expect(readmeBody).toMatch(/memory\.enabled[\s\S]+memory\.captureEnabled[\s\S]+memory\.injectionEnabled/u)
-    expect(readmeBody).toMatch(/memory start[\s\S]+memory stop/u)
-    expect(readmeBody).toMatch(/memory injection is separately enabled[\s\S]+fail-closed/u)
-    expect(readmeBody).toMatch(/redaction[\s\S]+tombstones[\s\S]+raw excerpts/u)
-    expect(readmeBody).toMatch(/Jev\/Kev[\s\S]+eval-only interfaces/u)
-    expect(readmeBody).toMatch(/wunderkind migrate[\s\S]+does not import memory ledgers/u)
-    expect(docsReadmeBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+memory start/u)
-    expect(sharedPromptBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+Jev\/Kev/u)
+    expect(readmeBody).toMatch(/### Opt-in hybrid project memory[\s\S]+SQLite\/WAL ledger at `\.wunderkind\/memory\.sqlite`/u)
+    expect(readmeBody).toMatch(/`memory\.enabled`, `memory\.captureEnabled`, and `memory\.injectionEnabled` all default to `false`/u)
+    expect(readmeBody).toMatch(/`memory start` and `memory stop` are the explicit local worker lifecycle/u)
+    expect(readmeBody).toMatch(/Query-aware context injection is separately enabled[\s\S]+fail-closed/u)
+    expect(readmeBody).toMatch(/redaction precedes every downstream interface[\s\S]+non-rebuild tombstones[\s\S]+never raw excerpts/u)
+    expect(readmeBody).toMatch(/Jev\/Kev are eval-only interfaces, not installed providers/u)
+    expect(readmeBody).toMatch(/`wunderkind migrate` migrates legacy OMO configuration[\s\S]+does not import memory ledgers/u)
+    expect(docsReadmeBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+explicit `memory start` \/ `memory stop` lifecycle/u)
+    expect(sharedPromptBody).toMatch(/project-scoped SQLite\/WAL ledger[\s\S]+Jev\/Kev are eval-only interfaces/u)
   })
 
   it("keeps the docs index aligned with the final OpenCode release reference", () => {

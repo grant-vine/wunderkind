@@ -1,13 +1,14 @@
-import { cpSync, mkdtempSync, rmSync } from "node:fs"
+import { cpSync, mkdtempSync, realpathSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { __resetCodexPathOverrideForTests, __setCodexPathOverrideForTests, type CodexPathOverride } from "../../../src/cli/codex/paths.js"
 import { __resetCodexProcessRunnerForTests, __setCodexProcessRunnerForTests, type CodexProcessResult } from "../../../src/cli/codex/process.js"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../../../src/agents/canonical-manifest.js"
 import { __resetCodexInstallStateWriterForTests } from "../../../src/cli/codex/state.js"
 
 const PROJECT_ROOT = new URL("../../../", import.meta.url).pathname
 
-export const PACKAGE_VERSION = "0.28.2"
+export const PACKAGE_VERSION = WUNDERKIND_CANONICAL_MANIFEST.package.version
 export const AGENT_NAMES = ["wunderkind-marketing", "wunderkind-creative-director", "wunderkind-product", "wunderkind-architecture", "wunderkind-ciso", "wunderkind-legal"] as const
 
 export interface FakeCodex {
@@ -113,10 +114,10 @@ function installRunner(fake: FakeCodex): void {
 }
 
 export function sandbox(): CodexSandbox {
-  const root = mkdtempSync(join(tmpdir(), "wunderkind codex lifecycle "))
+  const root = mkdtempSync(join(realpathSync(tmpdir()), "wunderkind codex lifecycle "))
   const payloadRoot = join(root, "payload")
   cpSync(join(PROJECT_ROOT, "codex"), payloadRoot, { recursive: true })
-  return { root, codexHome: join(root, "codex home"), wunderkindHome: join(root, "wunderkind home"), payloadRoot }
+  return { root, home: root, codexHome: join(root, "codex home"), wunderkindHome: join(root, "wunderkind home"), payloadRoot }
 }
 
 export function configure(paths: CodexSandbox, fake: FakeCodex): void {

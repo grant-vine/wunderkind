@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import { readFileSync } from "node:fs"
+import { createOpencodeClient } from "@opencode-ai/sdk"
+import { tool } from "@opencode-ai/plugin/tool"
 
 type PluginPackageJson = {
   readonly exports?: Record<string, unknown>
@@ -8,6 +10,30 @@ type PluginPackageJson = {
 }
 
 describe("OpenCode plugin compatibility shim", () => {
+  it("executes a structured tool result through the installed plugin tool API", async () => {
+    // Given an SDK client and tool using the installed public APIs.
+    const client = createOpencodeClient({ baseUrl: "http://127.0.0.1:1" })
+    const definition = tool({
+      description: "Compatibility fixture",
+      args: { text: tool.schema.string() },
+      execute: async ({ text }, context) => ({ output: text, metadata: { directory: context.directory } }),
+    })
+    const context = {
+      sessionID: "fixture-session", messageID: "fixture-message", agent: "fixture",
+      directory: "/fixture", worktree: "/fixture", abort: new AbortController().signal,
+      metadata: () => {}, ask: async () => {},
+    }
+
+    // When a parsed argument is executed without a network request.
+    const parsed = tool.schema.object(definition.args).parse({ text: "fixture output" })
+    const result = await definition.execute(parsed, context)
+
+    // Then the installed tool API preserves structured output and the SDK exposes its session adapter.
+    expect(result).toEqual({ output: "fixture output", metadata: { directory: "/fixture" } })
+    expect(typeof client.session.prompt).toBe("function")
+    expect(tool.schema.object(definition.args).safeParse({ text: 42 }).success).toBe(false)
+  })
+
   it("keeps the local tool shim aligned with the current @opencode-ai/plugin export surface", () => {
     const pluginPackage = JSON.parse(
       readFileSync(new URL("../../node_modules/@opencode-ai/plugin/package.json", import.meta.url), "utf8"),

@@ -355,8 +355,8 @@ describe("runUninstall", () => {
     const originalLog = console.log
     const originalError = console.error
     const tempProject = mkdtempSync(join(tmpdir(), "wk-uninstall-memory-"))
-    const databasePath = join(tempProject, ".wunderkind", "memory", "ledger.sqlite")
-    mkdirSync(join(tempProject, ".wunderkind", "memory"), { recursive: true })
+    const databasePath = join(tempProject, ".wunderkind", "memory.sqlite")
+    mkdirSync(join(tempProject, ".wunderkind"), { recursive: true })
     writeFileSync(databasePath, "project-memory")
     process.chdir(tempProject)
     console.log = () => {}

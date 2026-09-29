@@ -1,4 +1,4 @@
-type OmoCategoryId = "quick" | "unspecified-low" | "unspecified-high" | "writing" | "visual-engineering"
+type OmoCategoryId = "quick" | "unspecified-low" | "unspecified-high" | "writing" | "visual-engineering" | "deep-low" | "deep-high" | "ultrabrain" | "git"
 
 export interface CanonicalPackageMetadata {
   readonly name: string
@@ -72,7 +72,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.28.2",
+    version: "0.28.3",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -135,7 +135,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       roleLabel: "Product Wunderkind",
       summary: "Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.",
       factoryKey: "product-wunderkind",
-      omoCategory: "writing",
+      omoCategory: "unspecified-high",
       omoColor: "#3B82F6",
       omoMode: "primary",
       omoDescription: "Default orchestrator and front door for all Wunderkind requests. Routes mixed-domain and ambiguous work. VP Product authority: roadmaps, OKRs, PRDs, issue intake, acceptance review, sprint planning, and decomposition.",
@@ -165,7 +165,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
       roleLabel: "Legal Counsel",
       summary: "Legal and regulatory advisor for contracts, licensing, and compliance posture.",
       factoryKey: "legal-counsel",
-      omoCategory: "writing",
+      omoCategory: "unspecified-high",
       omoColor: "#6366F1",
       omoMode: "primary",
       omoDescription: "OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA compliance obligations.",
@@ -808,11 +808,31 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     schemaUrl: "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/dev/assets/oh-my-opencode.schema.json",
     namespacePrefix: "wunderkind",
     categories: [
-      { id: "quick", model: "anthropic/claude-haiku-4-5" },
+      { id: "quick", model: "openai/gpt-6-luna", variant: "low" },
       { id: "unspecified-low", model: "openai/gpt-6-luna", variant: "low" },
       { id: "unspecified-high", model: "openai/gpt-6-sol", variant: "high" },
-      { id: "writing", model: "google/gemini-3-flash" },
-      { id: "visual-engineering", model: "google/gemini-3.1-pro", variant: "high" },
+      { id: "writing", model: "openai/gpt-6-luna", variant: "medium" },
+      { id: "visual-engineering", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "deep-low", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "deep-high", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "ultrabrain", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "git", model: "openai/gpt-6-luna", variant: "low" },
+    ],
+    builtinAgents: [
+      { id: "build", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "OpenCode-Builder", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "sisyphus", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "atlas", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "hephaestus", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "sisyphus-junior", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "plan", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "prometheus", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "metis", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "momus", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "oracle", model: "openai/gpt-6-sol", variant: "high" },
+      { id: "multimodal-looker", model: "openai/gpt-6-sol", variant: "medium" },
+      { id: "explore", model: "openai/gpt-6-luna", variant: "medium" },
+      { id: "librarian", model: "openai/gpt-6-luna", variant: "medium" },
     ],
   },
   modelRouting: {
@@ -867,6 +887,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
   readonly omoTemplates: {
     readonly schemaUrl: string
     readonly namespacePrefix: string
+    readonly builtinAgents: readonly { readonly id: string; readonly model: string; readonly variant: string }[]
     readonly categories: readonly {
       readonly id: OmoCategoryId
       readonly model: string
@@ -930,7 +951,10 @@ export function renderCanonicalOhMyOpenagentTemplate(): string {
     {
       $schema: WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.schemaUrl,
       categories,
-      agents,
+      agents: {
+        ...Object.fromEntries(WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.builtinAgents.map(({ id, model, variant }) => [id, { model, variant }])),
+        ...agents,
+      },
     },
     null,
     2,

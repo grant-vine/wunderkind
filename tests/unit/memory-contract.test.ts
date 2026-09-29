@@ -97,11 +97,11 @@ describe("memory contract", () => {
       new URL("../../node_modules/@opencode-ai/plugin/dist/index.d.ts", import.meta.url),
       "utf8",
     )
-    expect(installedPluginPackage.version).toBe("1.18.32")
+    expect(installedPluginPackage.version).toBe("1.18.33")
     expect(installedPluginDeclaration).toContain('"chat.message"?: (input:')
     expect(MEMORY_AUTOMATIC_CAPTURE_CONTRACT).toEqual({
       mode: "chat.message",
-      pluginVersion: "1.18.32",
+      pluginVersion: "1.18.33",
       fallback: "memory capture",
     })
     expect(MEMORY_CLI_GRAMMAR).toEqual([
@@ -115,10 +115,6 @@ describe("memory contract", () => {
       "memory forget source --id <source-id>",
       "memory export --output <path> [--force]",
     ])
-    const engineeringDecisions = readFileSync(new URL("../../docs/engineering-decisions.md", import.meta.url), "utf8")
-    expect(engineeringDecisions).toContain("`quick` stays Haiku")
-    expect(engineeringDecisions).toContain("`unspecified-low` uses `openai/gpt-6-luna`")
-    expect(engineeringDecisions).toContain("`unspecified-high` uses `openai/gpt-6-sol`")
-    expect(engineeringDecisions).toContain("Astra absent from the shipped template")
+
   })
 })

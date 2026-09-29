@@ -1,6 +1,6 @@
 export const MEMORY_AUTOMATIC_CAPTURE_CONTRACT = {
   mode: "chat.message",
-  pluginVersion: "1.18.32",
+  pluginVersion: "1.18.33",
   fallback: "memory capture",
 } as const
 

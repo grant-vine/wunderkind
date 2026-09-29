@@ -97,14 +97,18 @@ describe("canonical manifest drift guards", () => {
       "unspecified-high",
       "writing",
       "visual-engineering",
+      "deep-low",
+      "deep-high",
+      "ultrabrain",
+      "git",
     ])
     expect(WUNDERKIND_CANONICAL_MANIFEST.agents.map((agent) => [agent.id, agent.omoCategory])).toEqual([
       ["marketing-wunderkind", "writing"],
       ["creative-director", "visual-engineering"],
-      ["product-wunderkind", "writing"],
+      ["product-wunderkind", "unspecified-high"],
       ["fullstack-wunderkind", "unspecified-high"],
       ["ciso", "unspecified-high"],
-      ["legal-counsel", "writing"],
+      ["legal-counsel", "unspecified-high"],
     ])
   })
 
@@ -113,11 +117,11 @@ describe("canonical manifest drift guards", () => {
       WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.categories.map((category) => [category.id, category]),
     )
 
-    expect(categories.quick).toEqual({ id: "quick", model: "anthropic/claude-haiku-4-5" })
+    expect(categories.quick).toEqual({ id: "quick", model: "openai/gpt-6-luna", variant: "low" })
     expect(categories["unspecified-low"]).toEqual({ id: "unspecified-low", model: "openai/gpt-6-luna", variant: "low" })
     expect(categories["unspecified-high"]).toEqual({ id: "unspecified-high", model: "openai/gpt-6-sol", variant: "high" })
-    expect(categories.writing).toEqual({ id: "writing", model: "google/gemini-3-flash" })
-    expect(categories["visual-engineering"]).toEqual({ id: "visual-engineering", model: "google/gemini-3.1-pro", variant: "high" })
+    expect(categories.writing).toEqual({ id: "writing", model: "openai/gpt-6-luna", variant: "medium" })
+    expect(categories["visual-engineering"]).toEqual({ id: "visual-engineering", model: "openai/gpt-6-sol", variant: "medium" })
     expect(Object.values(categories).map((category) => category.model)).not.toContain("openai/gpt-6-astra")
     const manifestEntries = new Map(Object.entries(WUNDERKIND_CANONICAL_MANIFEST))
     expect(manifestEntries.get("modelRouting")).toEqual({

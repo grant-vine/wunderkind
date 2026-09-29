@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
 export interface CodexPaths {
+  readonly home: string
   readonly codexHome: string
   readonly agentsDir: string
   readonly wunderkindHome: string
@@ -45,6 +46,7 @@ export function resolveCodexPaths(): CodexPaths {
   const ownershipRoot = join(wunderkindHome, "codex")
   const marketplaceRoot = join(ownershipRoot, "marketplace")
   return {
+    home,
     codexHome,
     agentsDir: join(codexHome, "agents"),
     wunderkindHome,
