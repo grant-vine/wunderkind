@@ -123,6 +123,7 @@ export interface ConfigMergeResult {
   success: boolean
   configPath: string
   changed?: boolean
+  heldPaths?: readonly string[]
   error?: string
 }
 
@@ -180,6 +181,8 @@ export interface OmoFreshnessInfo {
 export interface PluginVersionInfo {
   packageName: string
   currentVersion: string | null
+  packagedVersion?: string | null
+  latestKnownVersion?: string | null
   registeredEntry: string | null
   registeredVersion: string | null
   loadedVersion: string | null

@@ -1,7 +1,8 @@
+import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { basename, dirname, join, relative } from "node:path"
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { parse as parseJsonc } from "jsonc-parser"
 import { fileURLToPath } from "node:url"
 import {
@@ -1015,7 +1016,55 @@ function detectLoadedPackageSources(packageName: string): {
   }
 }
 
-function getOmoLoadedPackageInfo(): {
+function getExactPackagePin(entry: string | null, packageName: string): string | null {
+  if (entry === null || !entry.startsWith(`${packageName}@`)) return null
+
+  const version = entry.slice(packageName.length + 1)
+  return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(version)
+    ? version
+    : null
+}
+
+function detectSelectedModernPackageVersion(packageName: string, registeredEntry: string | null): {
+  version: string | null
+  packagePath: string | null
+} {
+  const pinnedVersion = getExactPackagePin(registeredEntry, packageName)
+  if (pinnedVersion === null) return { version: null, packagePath: null }
+
+  const paths = resolveConfigManagerPaths()
+  const cachePackageRoot = join(paths.globalCacheDir, "packages", `${packageName}@${pinnedVersion}`)
+  const packageRoot = join(cachePackageRoot, "node_modules", packageName)
+  const packagePath = join(packageRoot, "package.json")
+  const trustedDirectories = [
+    paths.globalCacheDir,
+    join(paths.globalCacheDir, "packages"),
+    cachePackageRoot,
+    join(cachePackageRoot, "node_modules"),
+    packageRoot,
+  ]
+
+  try {
+    if (trustedDirectories.some((directory) => {
+      const stat = lstatSync(directory)
+      return !stat.isDirectory() || stat.isSymbolicLink()
+    })) {
+      return { version: null, packagePath: null }
+    }
+
+    const manifest = lstatSync(packagePath)
+    if (!manifest.isFile() || manifest.isSymbolicLink()) return { version: null, packagePath: null }
+
+    const version = readJsonVersion(packagePath)
+    return version === pinnedVersion
+      ? { version, packagePath }
+      : { version: null, packagePath: null }
+  } catch {
+    return { version: null, packagePath: null }
+  }
+}
+
+function getOmoLoadedPackageInfo(registeredEntry: string | null): {
   loaded: { version: string | null; packagePath: string | null }
   loadedSources: {
     global: { version: string | null; packagePath: string | null }
@@ -1023,12 +1072,11 @@ function getOmoLoadedPackageInfo(): {
   }
   packageNameUsed: string | null
 } {
-  const loaded = detectLoadedPackageVersion(OMO_CANONICAL_PACKAGE_NAME)
   const loadedSources = detectLoadedPackageSources(OMO_CANONICAL_PACKAGE_NAME)
-  const hasLoadedPackage = loaded.version !== null || loaded.packagePath !== null
   const hasSources = loadedSources.global.packagePath !== null || loadedSources.cache.packagePath !== null
+  const loaded = detectSelectedModernPackageVersion(OMO_CANONICAL_PACKAGE_NAME, registeredEntry)
 
-  if (hasLoadedPackage || hasSources) {
+  if (registeredEntry !== null || hasSources) {
     return {
       loaded,
       loadedSources,
@@ -1070,20 +1118,6 @@ function compareVersions(left: string, right: string): number | null {
   return 0
 }
 
-function buildStaleOverrideWarning(options: {
-  packageName: string
-  globalVersion: string | null
-  cacheVersion: string | null
-}): string | null {
-  const { packageName, globalVersion, cacheVersion } = options
-  if (!globalVersion || !cacheVersion) return null
-
-  const comparison = compareVersions(globalVersion, cacheVersion)
-  if (comparison === null || comparison >= 0) return null
-
-  return `global ${packageName} ${globalVersion} likely overrides newer cache ${cacheVersion}`
-}
-
 export function detectPluginVersionInfo(packageName: string): PluginVersionInfo {
   const configResolution = resolveOpenCodeConfigPath("global")
   const configPath = existsSync(configResolution.path) ? configResolution.path : null
@@ -1094,6 +1128,8 @@ export function detectPluginVersionInfo(packageName: string): PluginVersionInfo 
   return {
     packageName,
     currentVersion: packageName === PACKAGE_NAME ? getCanonicalPackageVersion() : null,
+    packagedVersion: packageName === PACKAGE_NAME ? getCanonicalPackageVersion() : normalizeDependencyVersion(registeredEntry),
+    latestKnownVersion: null,
     registeredEntry,
     registeredVersion: normalizeDependencyVersion(registeredEntry),
     loadedVersion: loaded.version,
@@ -1119,12 +1155,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
   const plugins = omoPlugins.length > 0 ? omoPlugins : openCodePlugins
 
   const registeredCanonicalEntry = findPluginEntry(plugins, OMO_CANONICAL_PACKAGE_NAME)
-  const packageInfo = getOmoLoadedPackageInfo()
-  const staleOverrideWarning = buildStaleOverrideWarning({
-    packageName: packageInfo.packageNameUsed ?? OMO_CANONICAL_PACKAGE_NAME,
-    globalVersion: packageInfo.loadedSources.global.version,
-    cacheVersion: packageInfo.loadedSources.cache.version,
-  })
+  const packageInfo = getOmoLoadedPackageInfo(registeredCanonicalEntry)
   const freshness = registeredCanonicalEntry !== null
     ? detectOmoFreshnessInfo(resolveConfigManagerRuntimeContext().cwd)
     : null
@@ -1142,6 +1173,8 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
   return {
     packageName: OMO_CANONICAL_PACKAGE_NAME,
     currentVersion,
+    packagedVersion: normalizeDependencyVersion(registeredCanonicalEntry),
+    latestKnownVersion: freshness?.latestVersion ?? null,
     registeredEntry: registeredCanonicalEntry,
     registeredVersion: normalizeDependencyVersion(registeredCanonicalEntry),
     loadedVersion: packageInfo.loaded.version,
@@ -1151,7 +1184,7 @@ export function detectOmoVersionInfo(): PluginVersionInfo {
     loadedPackagePath: packageInfo.loaded.packagePath,
     registered: registeredCanonicalEntry !== null,
     loadedSources: packageInfo.loadedSources,
-    staleOverrideWarning,
+    staleOverrideWarning: null,
     versionSkewWarning,
     dualConfigWarning,
     freshness,
@@ -1981,7 +2014,6 @@ export function getNativeAgentFilePaths(scope: InstallScope): string[] {
 function getPackagedCommandFilePaths(): string[] {
   return WUNDERKIND_CANONICAL_MANIFEST.commands.static
     .map((command) => fileURLToPath(new URL(`../../../${command.sourcePath}`, import.meta.url)))
-    .filter((filePath) => existsSync(filePath))
 }
 
 function getPackagedCommandNames(): string[] {
@@ -2002,29 +2034,48 @@ function assertNoNativeCommandNameCollisions(packagedNames: readonly string[], g
   }
 }
 
-function removeStaleCommandFiles(targetDir: string, activeFileNames: readonly string[]): void {
-  if (!existsSync(targetDir)) return
+function removeStaleCommandFiles(targetDir: string, activeFileNames: readonly string[], ownedFiles: Record<string, string>): void {
+  if (!pathEntryExists(targetDir)) return
+
+  ensureNativeAssetDirectory(targetDir)
 
   const active = new Set(activeFileNames)
 
   for (const entry of readdirSync(targetDir)) {
     if (!entry.endsWith(".md")) continue
-    if (active.has(entry)) continue
-    rmSync(join(targetDir, entry), { force: true })
+    if (active.has(entry) || ownedFiles[entry] === undefined) continue
+    const target = join(targetDir, entry)
+    if (!isSafeRegularNativeAssetFile(targetDir, target)) {
+      throw new NativeAssetTrustError(target, "stale command is not a regular file beneath a non-symlinked asset root")
+    }
+    if (sha256FileBytes(readNativeAssetFile(targetDir, target)) === ownedFiles[entry]) rmSync(target, { force: true })
   }
 }
 
-function collectFilesRecursively(rootDir: string): string[] {
-  if (!existsSync(rootDir)) return []
+function collectFilesRecursively(rootDir: string, rejectSymbolicLinks = false): string[] {
+  if (!pathEntryExists(rootDir)) return []
+
+  const rootStat = lstatSync(rootDir)
+  if (rootStat.isSymbolicLink()) {
+    if (rejectSymbolicLinks) throw new NativeAssetTrustError(rootDir, "source directory is a symbolic link")
+    return []
+  }
+  if (!rootStat.isDirectory()) return []
 
   const results: string[] = []
   for (const entry of readdirSync(rootDir)) {
     const fullPath = join(rootDir, entry)
-    const stat = statSync(fullPath)
-    if (stat.isDirectory()) {
-      results.push(...collectFilesRecursively(fullPath))
-    } else {
+    const entryStat = lstatSync(fullPath)
+    if (entryStat.isSymbolicLink()) {
+      if (rejectSymbolicLinks) throw new NativeAssetTrustError(fullPath, "source file is a symbolic link")
+      continue
+    }
+    if (entryStat.isDirectory()) {
+      results.push(...collectFilesRecursively(fullPath, rejectSymbolicLinks))
+    } else if (entryStat.isFile()) {
       results.push(fullPath)
+    } else if (rejectSymbolicLinks) {
+      throw new NativeAssetTrustError(fullPath, "source entry is not a regular file")
     }
   }
   return results
@@ -2039,7 +2090,6 @@ function getPackagedSkillDirectories(): string[] {
     .map((skill) => fileURLToPath(new URL(`../../../${skill.sourcePath}`, import.meta.url)))
     .map((filePath) => dirname(filePath))
     .filter((dirPath, index, array) => array.indexOf(dirPath) === index)
-    .filter((dirPath) => existsSync(dirPath) && statSync(dirPath).isDirectory())
 }
 
 function getBlockedPackagedSkillIds(): string[] {
@@ -2053,17 +2103,124 @@ function getBlockedNativeSkillDirectories(): string[] {
   return getBlockedPackagedSkillIds().map((id) => join(dir, id))
 }
 
-function removeBlockedNativeSkillDirectories(): boolean {
+function removeBlockedNativeSkillDirectories(marker: NativeAssetMarker): { changed: boolean; heldPaths: readonly string[] } {
   let changed = false
+  const heldPaths: string[] = []
+  const targetRoot = getNativeSkillsDir()
 
   for (const skillDir of getBlockedNativeSkillDirectories()) {
-    if (existsSync(skillDir)) {
-      rmSync(skillDir, { recursive: true, force: true })
-      changed = true
+    if (!pathEntryExists(skillDir)) continue
+    if (!marker.valid || !isNativeAssetDirectoryOwned(targetRoot, skillDir, marker.files)) {
+      heldPaths.push(skillDir)
+      continue
     }
+
+    rmSync(skillDir, { recursive: true, force: true })
+    changed = true
   }
 
-  return changed
+  return { changed, heldPaths }
+}
+
+function isNativeAssetDirectoryOwned(
+  targetRoot: string,
+  skillDir: string,
+  receipt: Readonly<Record<string, string>>,
+): boolean {
+  try {
+    assertNativeAssetPath(targetRoot, skillDir)
+    if (!lstatSync(skillDir).isDirectory()) return false
+
+    const files = collectFilesRecursively(skillDir, true)
+    if (files.length === 0) return false
+
+    return files.every((filePath) => {
+      const relativePath = relative(targetRoot, filePath).split(sep).join("/")
+      const recordedHash = receipt[relativePath]
+      return recordedHash !== undefined && sha256FileBytes(readNativeAssetFile(targetRoot, filePath)) === recordedHash
+    })
+  } catch {
+    return false
+  }
+}
+
+type NativeAssetRemovalEntry = {
+  readonly path: string
+  readonly kind: "file" | "directory"
+}
+
+function isSafeNativeAssetRemovalRoot(targetRoot: string): boolean {
+  try {
+    assertNoSymbolicLinkAncestors(targetRoot, resolveConfigManagerRuntimeContext().home)
+    return !pathEntryExists(targetRoot) || lstatSync(targetRoot).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+function isNativeAssetFileOwned(
+  targetRoot: string,
+  filePath: string,
+  receipt: Readonly<Record<string, string>>,
+): boolean {
+  try {
+    assertNativeAssetPath(targetRoot, filePath)
+    if (!lstatSync(filePath).isFile()) return false
+    const relativePath = relative(targetRoot, filePath).split(sep).join("/")
+    const recordedHash = receipt[relativePath]
+    return recordedHash !== undefined && sha256FileBytes(readNativeAssetFile(targetRoot, filePath)) === recordedHash
+  } catch {
+    return false
+  }
+}
+
+function removeOwnedNativeAssetEntries(
+  targetRoot: string,
+  markerPath: string,
+  marker: NativeAssetMarker,
+  entries: readonly NativeAssetRemovalEntry[],
+): { changed: boolean; heldPaths: readonly string[] } {
+  let changed = false
+  const heldPaths: string[] = []
+
+  if (!isSafeNativeAssetRemovalRoot(targetRoot)) {
+    if (pathEntryExists(targetRoot)) heldPaths.push(targetRoot)
+    return { changed, heldPaths }
+  }
+
+  for (const entry of entries) {
+    if (!pathEntryExists(entry.path)) continue
+    const owned = marker.valid && (
+      entry.kind === "file"
+        ? isNativeAssetFileOwned(targetRoot, entry.path, marker.files)
+        : isNativeAssetDirectoryOwned(targetRoot, entry.path, marker.files)
+    )
+    if (!owned) {
+      heldPaths.push(entry.path)
+      continue
+    }
+
+    if (entry.kind === "file") {
+      rmSync(entry.path, { force: true })
+    } else {
+      rmSync(entry.path, { recursive: true, force: true })
+    }
+    changed = true
+  }
+
+  if (heldPaths.length === 0 && marker.valid && pathEntryExists(markerPath) && isSafeRegularNativeAssetFile(targetRoot, markerPath)) {
+    rmSync(markerPath, { force: true })
+    changed = true
+  } else if (pathEntryExists(markerPath) && (!marker.valid || !isSafeRegularNativeAssetFile(targetRoot, markerPath))) {
+    heldPaths.push(markerPath)
+  }
+
+  if (heldPaths.length === 0 && pathEntryExists(targetRoot) && readdirSync(targetRoot).length === 0) {
+    rmSync(targetRoot, { recursive: true, force: true })
+    changed = true
+  }
+
+  return { changed, heldPaths }
 }
 
 export function getNativeCommandFilePaths(): string[] {
@@ -2090,30 +2247,224 @@ function getNativeAssetVersionMarkerPath(kind: NativeAssetKind): string {
   return join(getNativeAssetDir(kind), NATIVE_ASSET_VERSION_MARKER_FILENAME)
 }
 
-function writeNativeAssetVersionMarker(targetDir: string, kind: NativeAssetKind): void {
+type NativeAssetMarker = {
+  readonly version: string | null
+  readonly files: Readonly<Record<string, string>>
+  readonly valid: boolean
+}
+
+class NativeAssetTrustError extends Error {
+  constructor(path: string, detail: string) {
+    super(`Refusing native asset operation for ${path}: ${detail}`)
+    this.name = "NativeAssetTrustError"
+  }
+}
+
+function sha256FileBytes(content: string): string {
+  return createHash("sha256").update(content, "utf8").digest("hex")
+}
+
+function pathEntryExists(path: string): boolean {
+  try {
+    lstatSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function assertNoSymbolicLinkAncestors(path: string, trustedRoot: string): void {
+  const absolutePath = resolve(path)
+  const absoluteTrustedRoot = resolve(trustedRoot)
+  const pathFromTrustedRoot = relative(absoluteTrustedRoot, absolutePath)
+  if (
+    pathFromTrustedRoot === ".." ||
+    pathFromTrustedRoot.startsWith(`..${sep}`) ||
+    isAbsolute(pathFromTrustedRoot)
+  ) {
+    throw new NativeAssetTrustError(path, "path escapes its trusted root")
+  }
+
+  let currentPath = absoluteTrustedRoot
+  const parts = pathFromTrustedRoot.split(sep).filter((part) => part !== "")
+
+  for (const part of parts) {
+    currentPath = join(currentPath, part)
+    if (!pathEntryExists(currentPath)) continue
+    if (lstatSync(currentPath).isSymbolicLink()) {
+      throw new NativeAssetTrustError(currentPath, "symbolic links are not trusted for native asset operations")
+    }
+  }
+}
+
+function assertNativeAssetPath(targetRoot: string, path: string): void {
+  const relativePath = relative(targetRoot, path)
+  if (
+    relativePath === "" ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${sep}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new NativeAssetTrustError(path, "path escapes its native asset root")
+  }
+  if (pathEntryExists(targetRoot) && lstatSync(targetRoot).isSymbolicLink()) {
+    throw new NativeAssetTrustError(targetRoot, "symbolic links are not trusted for native asset operations")
+  }
+  const home = resolveConfigManagerRuntimeContext().home
+  const pathFromHome = relative(home, targetRoot)
+  if (pathFromHome !== ".." && !pathFromHome.startsWith(`..${sep}`) && !isAbsolute(pathFromHome)) {
+    assertNoSymbolicLinkAncestors(targetRoot, home)
+  }
+  assertNoSymbolicLinkAncestors(path, targetRoot)
+}
+
+function ensureNativeAssetDirectory(directory: string): void {
+  const home = resolveConfigManagerRuntimeContext().home
+  const pathFromHome = relative(home, directory)
+  if (pathFromHome !== ".." && !pathFromHome.startsWith(`..${sep}`) && !isAbsolute(pathFromHome)) {
+    assertNoSymbolicLinkAncestors(directory, home)
+  } else {
+    assertNoSymbolicLinkAncestors(directory, dirname(directory))
+  }
+  mkdirSync(directory, { recursive: true })
+  if (pathFromHome !== ".." && !pathFromHome.startsWith(`..${sep}`) && !isAbsolute(pathFromHome)) {
+    assertNoSymbolicLinkAncestors(directory, home)
+  } else {
+    assertNoSymbolicLinkAncestors(directory, dirname(directory))
+  }
+  if (!lstatSync(directory).isDirectory()) {
+    throw new NativeAssetTrustError(directory, "asset directory is not a directory")
+  }
+}
+
+function isSafeRegularNativeAssetFile(targetRoot: string, path: string): boolean {
+  try {
+    assertNativeAssetPath(targetRoot, path)
+    return lstatSync(path).isFile()
+  } catch {
+    return false
+  }
+}
+
+function readNativeAssetFile(targetRoot: string, path: string): string {
+  assertNativeAssetPath(targetRoot, path)
+  if (!lstatSync(path).isFile()) {
+    throw new NativeAssetTrustError(path, "asset is not a regular file")
+  }
+  return readFileSync(path, "utf-8")
+}
+
+function writeNativeAssetFile(targetRoot: string, path: string, content: string): void {
+  ensureNativeAssetDirectory(dirname(path))
+  assertNativeAssetPath(targetRoot, path)
+
+  if (pathEntryExists(path) && !lstatSync(path).isFile()) {
+    throw new NativeAssetTrustError(path, "asset is not a regular file")
+  }
+
+  const descriptor = openSync(
+    path,
+    constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW,
+    0o600,
+  )
+  try {
+    writeFileSync(descriptor, content, "utf-8")
+  } finally {
+    closeSync(descriptor)
+  }
+}
+
+function isValidNativeAssetReceiptPath(path: string): boolean {
+  return (
+    path !== "" &&
+    !path.startsWith("/") &&
+    !path.includes("\\") &&
+    !path.split("/").some((part) => part === "" || part === "." || part === "..")
+  )
+}
+
+function writeNativeAssetVersionMarker(targetDir: string, kind: NativeAssetKind, files: Record<string, string>): void {
   const payload = {
     package: PACKAGE_NAME,
     kind,
     version: getCanonicalPackageVersion(),
+    files,
     writtenAt: new Date().toISOString(),
   }
 
-  writeFileSync(join(targetDir, NATIVE_ASSET_VERSION_MARKER_FILENAME), `${JSON.stringify(payload, null, 2)}
-`, "utf-8")
+  writeNativeAssetFile(
+    targetDir,
+    join(targetDir, NATIVE_ASSET_VERSION_MARKER_FILENAME),
+    `${JSON.stringify(payload, null, 2)}\n`,
+  )
 }
 
-function readNativeAssetVersionMarker(markerPath: string): { version: string | null } {
+function readNativeAssetVersionMarker(markerPath: string, kind: NativeAssetKind): NativeAssetMarker {
   try {
+    const targetDir = dirname(markerPath)
+    if (!isSafeRegularNativeAssetFile(targetDir, markerPath)) return { version: null, files: {}, valid: false }
     const parsed = JSON.parse(readFileSync(markerPath, "utf-8")) as unknown
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return { version: null }
+      return { version: null, files: {}, valid: false }
     }
 
-    const version = (parsed as Record<string, unknown>).version
-    return { version: typeof version === "string" ? version : null }
+    const record = parsed as Record<string, unknown>
+    if (record.package !== PACKAGE_NAME || record.kind !== kind) {
+      return { version: null, files: {}, valid: false }
+    }
+    const files: Record<string, string> = {}
+    if (record.files && typeof record.files === "object" && !Array.isArray(record.files)) {
+      for (const [path, hash] of Object.entries(record.files)) {
+        if (
+          typeof hash === "string" &&
+          /^[a-f0-9]{64}$/u.test(hash) &&
+          isValidNativeAssetReceiptPath(path)
+        ) {
+          assertNativeAssetPath(targetDir, join(targetDir, path))
+          files[path] = hash
+        } else {
+          return { version: null, files: {}, valid: false }
+        }
+      }
+    } else {
+      return { version: null, files: {}, valid: false }
+    }
+    const version = record.version
+    if (typeof version !== "string" || version.trim() === "") return { version: null, files: {}, valid: false }
+    return { version, files, valid: true }
   } catch {
-    return { version: null }
+    return { version: null, files: {}, valid: false }
   }
+}
+
+function nativeAssetOwnership(kind: NativeAssetKind): NativeAssetMarker {
+  return readNativeAssetVersionMarker(getNativeAssetVersionMarkerPath(kind), kind)
+}
+
+function writeNativeAssetIfOwned(
+  targetRoot: string,
+  path: string,
+  candidate: string,
+  recordedHash: string | undefined,
+): boolean {
+  ensureNativeAssetDirectory(dirname(path))
+  assertNativeAssetPath(targetRoot, path)
+  if (!pathEntryExists(path)) {
+    writeNativeAssetFile(targetRoot, path, candidate)
+    return true
+  }
+  if (!lstatSync(path).isFile()) {
+    throw new NativeAssetTrustError(path, "asset is not a regular file")
+  }
+  const existing = readNativeAssetFile(targetRoot, path)
+  if (existing === candidate) return true
+  if (recordedHash === undefined || sha256FileBytes(existing) !== recordedHash) return false
+  writeNativeAssetFile(targetRoot, path, candidate)
+  return true
+}
+
+function recordOwnedFile(files: Record<string, string>, relativePath: string, content: string): void {
+  files[relativePath] = sha256FileBytes(content)
 }
 
 export function detectNativeAssetVersion(kind: NativeAssetKind): {
@@ -2125,17 +2476,37 @@ export function detectNativeAssetVersion(kind: NativeAssetKind): {
   installedVersion: string | null
   currentVersion: string | null
   needsUpgrade: boolean
+  ownership: "wunderkind-owned" | "mixed" | "unknown"
 } {
   const dir = getNativeAssetDir(kind)
   const markerPath = getNativeAssetVersionMarkerPath(kind)
-  const dirPresent = existsSync(dir)
-  const markerPresent = existsSync(markerPath)
-  const installedVersion = markerPresent ? readNativeAssetVersionMarker(markerPath).version : null
+  const dirPresent = pathEntryExists(dir)
+  const markerPresent = pathEntryExists(markerPath)
+  const marker = markerPresent
+    ? readNativeAssetVersionMarker(markerPath, kind)
+    : { version: null, files: {}, valid: false }
+  const installedVersion = marker.version
   const currentVersion = getCanonicalPackageVersion()
+  const expectedPaths = getNativeAssetExpectedRelativePaths(kind)
+  const ownership =
+    !marker.valid || Object.keys(marker.files).length === 0
+      ? "unknown"
+      : expectedPaths.some((relativePath) => {
+            const filePath = join(dir, relativePath)
+            if (marker.files[relativePath] === undefined) return true
+            if (!isSafeRegularNativeAssetFile(dir, filePath)) return true
+            try {
+              return sha256FileBytes(readNativeAssetFile(dir, filePath)) !== marker.files[relativePath]
+            } catch {
+              return true
+            }
+          })
+        ? "mixed"
+        : "wunderkind-owned"
   const needsUpgrade =
     dirPresent &&
     currentVersion !== null &&
-    (!markerPresent || installedVersion === null || compareVersions(installedVersion, currentVersion) !== 0)
+    (!markerPresent || installedVersion === null || compareVersions(installedVersion, currentVersion) !== 0 || ownership !== "wunderkind-owned")
 
   return {
     kind,
@@ -2146,7 +2517,18 @@ export function detectNativeAssetVersion(kind: NativeAssetKind): {
     installedVersion,
     currentVersion,
     needsUpgrade,
+    ownership,
   }
+}
+
+function getNativeAssetExpectedRelativePaths(kind: NativeAssetKind): string[] {
+  if (kind === "agents") return WUNDERKIND_AGENT_IDS.map((id) => `${id}.md`)
+  if (kind === "commands") return getNativeCommandFilePaths().map((path) => basename(path))
+
+  const sourceRoot = fileURLToPath(new URL("../../../skills", import.meta.url))
+  return getPackagedSkillDirectories().flatMap((dir) =>
+    collectFilesRecursively(dir).map((path) => relative(sourceRoot, path)),
+  )
 }
 
 export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
@@ -2191,26 +2573,21 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
   }
 }
 
-function copyFileSet(sourceFiles: string[], sourceRoot: string, targetRoot: string): void {
-  mkdirSync(targetRoot, { recursive: true })
-  for (const sourceFile of sourceFiles) {
-    const relativePath = relative(sourceRoot, sourceFile)
-    const targetFile = join(targetRoot, relativePath)
-    mkdirSync(dirname(targetFile), { recursive: true })
-    writeFileSync(targetFile, readFileSync(sourceFile, "utf-8"), "utf-8")
-  }
-}
-
 export function writeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
   void scope
   const targetDir = getNativeAgentDir()
 
   try {
-    mkdirSync(targetDir, { recursive: true })
+    ensureNativeAssetDirectory(targetDir)
+    const previous = nativeAssetOwnership("agents")
+    const ownedFiles: Record<string, string> = {}
     for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
-      writeFileSync(join(targetDir, `${definition.id}.md`), renderNativeAgentMarkdown(definition), "utf-8")
+      const relativePath = `${definition.id}.md`
+      const candidate = renderNativeAgentMarkdown(definition)
+      const target = join(targetDir, relativePath)
+      if (writeNativeAssetIfOwned(targetDir, target, candidate, previous.files[relativePath])) recordOwnedFile(ownedFiles, relativePath, candidate)
     }
-    writeNativeAssetVersionMarker(targetDir, "agents")
+    writeNativeAssetVersionMarker(targetDir, "agents", ownedFiles)
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -2231,19 +2608,25 @@ export function writeNativeCommandFiles(): ConfigMergeResult {
 
   try {
     assertNoNativeCommandNameCollisions(packagedCommandNames, generatedCommandNames)
-    mkdirSync(targetDir, { recursive: true })
-    removeStaleCommandFiles(targetDir, activeFileNames)
-    copyFileSet(sourceFiles, sourceRoot, targetDir)
-
-    for (const command of generatedCommands) {
-      writeFileSync(
-        join(targetDir, `${command.name}.md`),
-        renderGeneratedRetainedNativeCommandMarkdown(command),
-        "utf-8",
-      )
+    ensureNativeAssetDirectory(targetDir)
+    const previous = nativeAssetOwnership("commands")
+    const ownedFiles: Record<string, string> = {}
+    removeStaleCommandFiles(targetDir, activeFileNames, previous.files)
+    for (const sourceFile of sourceFiles) {
+      const relativePath = relative(sourceRoot, sourceFile)
+      const candidate = readNativeAssetFile(sourceRoot, sourceFile)
+      const target = join(targetDir, relativePath)
+      if (writeNativeAssetIfOwned(targetDir, target, candidate, previous.files[relativePath])) recordOwnedFile(ownedFiles, relativePath, candidate)
     }
 
-    writeNativeAssetVersionMarker(targetDir, "commands")
+    for (const command of generatedCommands) {
+      const relativePath = `${command.name}.md`
+      const candidate = renderGeneratedRetainedNativeCommandMarkdown(command)
+      const target = join(targetDir, relativePath)
+      if (writeNativeAssetIfOwned(targetDir, target, candidate, previous.files[relativePath])) recordOwnedFile(ownedFiles, relativePath, candidate)
+    }
+
+    writeNativeAssetVersionMarker(targetDir, "commands", ownedFiles)
     return { success: true, configPath: targetDir }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
@@ -2257,11 +2640,23 @@ export function writeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   const sourceRoot = fileURLToPath(new URL("../../../skills", import.meta.url))
 
   try {
-    removeBlockedNativeSkillDirectories()
-    const sourceFiles = skillDirs.flatMap((skillDir) => collectFilesRecursively(skillDir))
-    copyFileSet(sourceFiles, sourceRoot, targetDir)
-    writeNativeAssetVersionMarker(targetDir, "skills")
-    return { success: true, configPath: targetDir }
+    ensureNativeAssetDirectory(targetDir)
+    const previous = nativeAssetOwnership("skills")
+    const sourceFiles = skillDirs.flatMap((skillDir) => collectFilesRecursively(skillDir, true))
+    const ownedFiles: Record<string, string> = {}
+    for (const sourceFile of sourceFiles) {
+      const relativePath = relative(sourceRoot, sourceFile)
+      const candidate = readNativeAssetFile(sourceRoot, sourceFile)
+      const target = join(targetDir, relativePath)
+      if (writeNativeAssetIfOwned(targetDir, target, candidate, previous.files[relativePath])) recordOwnedFile(ownedFiles, relativePath, candidate)
+    }
+    const retirement = removeBlockedNativeSkillDirectories(previous)
+    writeNativeAssetVersionMarker(targetDir, "skills", ownedFiles)
+    return {
+      success: true,
+      configPath: targetDir,
+      ...(retirement.heldPaths.length > 0 ? { heldPaths: retirement.heldPaths } : {}),
+    }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
   }
@@ -2311,25 +2706,18 @@ export function removeNativeAgentFiles(scope: InstallScope): ConfigMergeResult {
   const markerPath = getNativeAssetVersionMarkerPath("agents")
 
   try {
-    let changed = false
-    for (const filePath of filePaths) {
-      if (existsSync(filePath)) {
-        rmSync(filePath, { force: true })
-        changed = true
-      }
+    const removal = removeOwnedNativeAssetEntries(
+      targetDir,
+      markerPath,
+      nativeAssetOwnership("agents"),
+      filePaths.map((path) => ({ path, kind: "file" })),
+    )
+    return {
+      success: true,
+      configPath: targetDir,
+      changed: removal.changed,
+      ...(removal.heldPaths.length > 0 ? { heldPaths: removal.heldPaths } : {}),
     }
-
-    if (existsSync(markerPath)) {
-      rmSync(markerPath, { force: true })
-      changed = true
-    }
-
-    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
-      rmSync(targetDir, { recursive: true, force: true })
-      changed = true
-    }
-
-    return { success: true, configPath: targetDir, changed }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
   }
@@ -2341,25 +2729,18 @@ export function removeNativeCommandFiles(): ConfigMergeResult {
   const markerPath = getNativeAssetVersionMarkerPath("commands")
 
   try {
-    let changed = false
-    for (const filePath of filePaths) {
-      if (existsSync(filePath)) {
-        rmSync(filePath, { force: true })
-        changed = true
-      }
+    const removal = removeOwnedNativeAssetEntries(
+      targetDir,
+      markerPath,
+      nativeAssetOwnership("commands"),
+      filePaths.map((path) => ({ path, kind: "file" })),
+    )
+    return {
+      success: true,
+      configPath: targetDir,
+      changed: removal.changed,
+      ...(removal.heldPaths.length > 0 ? { heldPaths: removal.heldPaths } : {}),
     }
-
-    if (existsSync(markerPath)) {
-      rmSync(markerPath, { force: true })
-      changed = true
-    }
-
-    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
-      rmSync(targetDir, { recursive: true, force: true })
-      changed = true
-    }
-
-    return { success: true, configPath: targetDir, changed }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
   }
@@ -2371,29 +2752,20 @@ export function removeNativeSkillFiles(scope: InstallScope): ConfigMergeResult {
   const markerPath = getNativeAssetVersionMarkerPath("skills")
 
   try {
-    let changed = false
-    for (const skillDir of skillDirs) {
-      if (existsSync(skillDir)) {
-        rmSync(skillDir, { recursive: true, force: true })
-        changed = true
-      }
-    }
+    const previous = nativeAssetOwnership("skills")
+    const removal = removeOwnedNativeAssetEntries(
+      targetDir,
+      markerPath,
+      previous,
+      [...skillDirs, ...getBlockedNativeSkillDirectories()].map((path) => ({ path, kind: "directory" })),
+    )
 
-    if (removeBlockedNativeSkillDirectories()) {
-      changed = true
+    return {
+      success: true,
+      configPath: targetDir,
+      changed: removal.changed,
+      ...(removal.heldPaths.length > 0 ? { heldPaths: removal.heldPaths } : {}),
     }
-
-    if (existsSync(markerPath)) {
-      rmSync(markerPath, { force: true })
-      changed = true
-    }
-
-    if (existsSync(targetDir) && readdirSync(targetDir).length === 0) {
-      rmSync(targetDir, { recursive: true, force: true })
-      changed = true
-    }
-
-    return { success: true, configPath: targetDir, changed }
   } catch (err) {
     return { success: false, configPath: targetDir, error: String(err) }
   }

@@ -153,6 +153,13 @@ async function handleProjectStitchCleanup(
   }
 }
 
+function logHeldNativeAssetPaths(label: string, paths: readonly string[] | undefined): void {
+  if (paths === undefined) return
+  for (const path of paths) {
+    console.log(`${color.yellow("!")} Preserved ${label} pending ownership proof (${color.dim(path)})`)
+  }
+}
+
 export async function runUninstall(options: UninstallOptions): Promise<number> {
   try {
     const detected = detectCurrentConfig()
@@ -194,6 +201,7 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
         } else {
           console.log(`${color.dim("- ")}Global native agent files already absent (${color.dim(nativeAgentResult.configPath)})`)
         }
+        logHeldNativeAssetPaths("native agent file", nativeAgentResult.heldPaths)
 
         const nativeCommandResult = removeNativeCommandFiles()
         if (!nativeCommandResult.success) {
@@ -205,6 +213,7 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
         } else {
           console.log(`${color.dim("- ")}Global native command files already absent (${color.dim(nativeCommandResult.configPath)})`)
         }
+        logHeldNativeAssetPaths("native command file", nativeCommandResult.heldPaths)
 
         const nativeSkillResult = removeNativeSkillFiles(target)
         if (!nativeSkillResult.success) {
@@ -216,6 +225,7 @@ export async function runUninstall(options: UninstallOptions): Promise<number> {
         } else {
           console.log(`${color.dim("- ")}Global native skill files already absent (${color.dim(nativeSkillResult.configPath)})`)
         }
+        logHeldNativeAssetPaths("native skill directory", nativeSkillResult.heldPaths)
 
         const globalConfigResult = removeGlobalWunderkindConfig()
         if (!globalConfigResult.success) {

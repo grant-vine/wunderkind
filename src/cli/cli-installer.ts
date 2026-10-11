@@ -472,6 +472,11 @@ export async function runCliUpgrade(args: UpgradeArgs): Promise<number> {
   printSuccess(`Native agents refreshed ${SYMBOLS.arrow} ${color.dim(nativeAgentsResult.configPath)}`)
   printSuccess(`Global native commands refreshed ${SYMBOLS.arrow} ${color.dim(nativeCommandsResult.configPath)}`)
   printSuccess(`Native skills refreshed ${SYMBOLS.arrow} ${color.dim(nativeSkillsResult.configPath)}`)
+  if (nativeSkillsResult.heldPaths !== undefined) {
+    for (const heldPath of nativeSkillsResult.heldPaths) {
+      printInfo(`Preserved native skill directory pending ownership proof ${SYMBOLS.arrow} ${color.dim(heldPath)}`)
+    }
+  }
   printBox(
     [
       `  ${color.bold("Scope:")}               ${color.cyan(args.scope)}`,

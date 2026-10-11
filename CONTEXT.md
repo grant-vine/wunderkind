@@ -2,7 +2,7 @@
 
 Updated: 2026-09-08T00-00-00Z
 
-This repository is the source for **Wunderkind** `0.28.2`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The separate project-memory capability stays opt-in and starts a local worker only through an explicit lifecycle command. The current upstream baseline is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.32` and `oh-my-openagent` `5.0.0-beta.86`.
+This repository is the source for **Wunderkind** `0.28.4`, an OpenCode/oh-my-openagent plugin that injects six retained specialist agents (marketing, design, product, engineering, security, legal) into a project while keeping Wunderkind itself as a synchronous overlay with no long-running runtime process. The separate project-memory capability stays opt-in and starts a local worker only through an explicit lifecycle command. The reviewed target is `@opencode-ai/plugin`/`@opencode-ai/sdk` `1.18.35` and `oh-my-openagent` `5.1.29`; the audit base is `df863041f10028132b1e424e47a1a65783553865`, and the released comparison point is `0.27.9` at `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`.
 
 The repository also contains the Codex edition: six custom agents, eleven plugin skills, and the nested `wunderkind codex` lifecycle. It requires LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`) as its only hard dependency, keeps third-party companions optional and non-owned, and defers Codex prompt/token optimization to a later host-native design revisit.
 
@@ -10,7 +10,7 @@ The repository also contains the Codex edition: six custom agents, eleven plugin
 - **What it is**: A retained-agent overlay for OpenCode built around orchestrator-first routing, generated native markdown agents, static skills, and project-local bootstrap artifacts.
 - **Primary users**: Developers and product teams already using OpenCode and often oh-my-openagent who want opinionated, domain-specialized retained agents instead of generic coding helpers.
 - **Current success criteria**: Keep install/upgrade/doctor trustworthy, preserve compatibility with current OpenCode and oh-my-openagent surfaces, and make project-local workflow/context artifacts (`AGENTS.md`, `CONTEXT.md`, `.omo/`, docs-output, and runtime prompt reports) easy to bootstrap and maintain.
-- **Current beta compatibility contract**: Target `oh-my-openagent@5.0.0-beta.86`; keep `release-upgrade`, `platform-compatibility`, and `supportability-review`; reject `supportability-incident`; route standard/high-capability work through `openai/gpt-6-sol` and routine/background work through `openai/gpt-6-luna` in Wunderkind's managed template. The template contains no Astra category; `wunderkind codex doctor --apply-model-policy` is the explicit local repair path if a harness upgrade reintroduces an Astra assignment.
+- **Current stable-v5 compatibility contract**: Target `oh-my-openagent@5.1.29` and OpenCode plugin/SDK `1.18.35`; keep `release-upgrade`, `platform-compatibility`, and `supportability-review`; reject `supportability-incident`; route standard/high-capability work through `openai/gpt-6-sol` and routine/background work through `openai/gpt-6-luna`. Astra is explicit operator opt-in only. The public runtime floor is Node `>=22.12.0` or Bun `1+`; memory and team mode remain opt-in.
 
 ## Core workflows
 - Install Wunderkind into OpenCode globally or per-project.
@@ -38,16 +38,16 @@ The repository also contains the Codex edition: six custom agents, eleven plugin
 - **supportability-review**: the promoted `fullstack-wunderkind` route for observability review, rollback readiness, on-call ownership, and launch-blocker posture.
 
 ## Important constraints
-- Wunderkind remains a synchronous overlay at normal startup. Opt-in project memory may run one explicitly started, local Unix-socket worker; it has no scheduler, public listener, telemetry, or cloud sync.
+- Wunderkind remains a synchronous overlay at normal startup. Opt-in project memory may run one explicitly started, local Unix-socket worker; it has no scheduler, public listener, telemetry, or cloud sync. The standalone experimental System One adapter is not exported, not wired to memory, disabled by default, and has no production or benchmark claim.
 - Compatibility should use canonical `oh-my-openagent` naming only; any legacy `oh-my-opencode` mention is migration guidance for `wunderkind migrate` into `~/.omo/omo.jsonc` and must not imply active fallback execution.
-- The current compatibility wave intentionally tracks the OMO v5 beta stream and uses the supported GPT-6 Sol/Luna IDs. The shipped template does not assign Astra.
+- The current compatibility wave tracks OMO v5 stable `5.1.29` and uses the supported GPT-6 Sol/Luna IDs. The shipped template does not assign Astra.
 - Generated `agents/*.md` are build artifacts; `skills/` are source.
 - Docs output must stay project-local and respect the configured docs path/history mode.
 - The public product contract keeps prompt optimization **supplementary and default-off**; this repo's active/summary optimization settings are a local project override, not a product default.
 - `token-audit` remains audit-only with no live prompt packing, no model-token truth claims, no OpenToken dependency, and no public optimize command.
 - The security-safe baseline applies whenever optimization is enabled: redacted reporting, preserve/fallback enforcement, and no protected-content persistence drift.
 - The latest-user level excludes retained history, earlier user messages, SOUL overlays, and transcript-wide compaction content. Its passthrough reasons are runtime-report-only and not summary metadata guidance.
-- Opt-in project memory may retain redacted facts locally. Capture and bounded context injection remain independently default-off; configuration alone never starts the worker.
+- Opt-in project memory may retain redacted facts locally. Capture and bounded context injection remain independently default-off; configuration alone never starts the worker. Team specs are created only by explicit `team-bootstrap`.
 - Current resolved runtime context for this repo: region `Project Region`, industry `SaaS`, primary regulation `POPIA`, team culture `pragmatic-balanced`, org structure `flat`.
 
 ## Current repo-local operational posture
@@ -55,7 +55,7 @@ The repository also contains the Codex edition: six custom agents, eleven plugin
 - The project-local prompt optimization override is enabled with `promptOptimizationMode: active`, `promptOptimizationReportingMode: summary`, `promptOptimizationTokenBudget: 120000`, and `promptOptimizationByteBudget: 1200`.
 - `promptOptimizationLevel` is intentionally omitted in this repo-local override, so the current local posture resolves through the frozen legacy compatibility profile until an operator explicitly selects a concrete level.
 - Current latest-only runtime-report artifacts live at `.wunderkind/runtime/prompt-optimization/system-transform.latest.json` and `.wunderkind/runtime/prompt-optimization/session-compacting.latest.json`.
-- Current repo-head skill inventory truth is `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, and `public/deprecated total=28`; `release-upgrade`, `platform-compatibility`, and `supportability-review` are part of the current promoted surface while `supportability-incident` remains intentionally rejected in favor of `/supportability-review`, `/runbook`, and `/incident-response`.
+- Current repo-head truth is exactly six agents, eleven Codex skills, and `promoted=23`, `wunderkind-specific=4`, `deprecated=1`, `public/deprecated total=28`; `release-upgrade`, `platform-compatibility`, and `supportability-review` are promoted while `supportability-incident` remains rejected in favor of `/supportability-review`, `/runbook`, and `/incident-response`. Receipt-bound freshness distinguishes owned, held/mixed, and unknown state; remote catalog freshness is unknown without owner-supported proof.
 
 ## Open questions
 - Whether docs output should stay on `overwrite` for this repo long-term or move to `append-dated` for richer history.

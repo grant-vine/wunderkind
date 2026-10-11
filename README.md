@@ -37,7 +37,19 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The published baseline is Wunderkind `0.28.2`. The current source candidate targets OpenCode `1.18.33`, `oh-my-openagent` `5.1.1`, and LazyCodex `5.1.1`; it is not a released `0.28.3` claim. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation. Keep the Codex desktop bundle (`0.155.0-alpha.9.2` in the planning snapshot) separate from the optional standalone Codex CLI (`0.158.0` candidate); installing npm Codex does not update ChatGPT.app.
+Release `0.28.4` targets OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`, and preserves the public Node `>=22.12.0` or Bun `1+` floor. The audit base is `0.28.3` at `df863041f10028132b1e424e47a1a65783553865`; the earlier comparison point is `0.27.9` at commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.4
+
+- Reviewed stable-v5 dependencies and LazyCodex policy provenance for OMO `5.1.29`.
+- Receipt-bound native asset refresh and uninstall preserve edited, linked, and unverified files.
+- Doctor distinguishes loaded, packaged, and latest-known versions, ownership, and model-policy drift.
+- Experimental local Kev adapter validation remains disabled by default and outside the public runtime API. Astra, memory, and team mode remain explicit opt-in.
+
+- Managed routing defaults to `openai/gpt-6-sol` for standard/high-capability work and `openai/gpt-6-luna` for routine/background work. Astra is explicit operator opt-in and is never invoked by rollout smoke tests.
+- The surface remains exactly six retained agents, eleven Codex skills, and 28 OpenCode public/deprecated routes (`23 + 4 + 1`). `supportability-incident` remains rejected; use `/supportability-review`, `/runbook`, or `/incident-response`.
+- Memory, teams, and the standalone System One adapter remain opt-in/experimental. The adapter is not exported or wired to memory, is disabled by default, and has no production safety or published benchmark parity claim.
+- Native asset freshness and ownership are receipt-bound. Edited, linked, malformed, missing, mixed, or unknown state is held and reported; a current marker alone is not proof. Unknown remote catalog freshness is a hold, not “latest”.
 
 ## What's new in 0.28.1
 

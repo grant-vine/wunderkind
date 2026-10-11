@@ -7,10 +7,9 @@ import { sha256Bytes } from "./state.js"
 import { policySnapshot, PolicyTransactionError } from "./policy-transaction.js"
 import { CODEX_POLICY_ROLES } from "./policy-overrides.js"
 import { withoutPolicySettings } from "./policy-toml.js"
-export interface PolicyUpstream { readonly root: string; readonly bundle: string; readonly roles: ReadonlyMap<string, string>; readonly roleContent: ReadonlyMap<string, string> }
+export interface PolicyUpstream { readonly root: string; readonly version: string; readonly bundle: string; readonly artifacts: Readonly<Record<string, string>>; readonly roles: ReadonlyMap<string, string>; readonly roleContent: ReadonlyMap<string, string> }
 let rootForTests: string | undefined
 const TRUSTED_ARTIFACTS: Readonly<Record<string, string>> = {
-  "packages/omo-codex/scripts/install-dist/install-local.mjs": "1b318ef8b414c49d7467f9e6dffa345c11b71895fa8fec97cf76912ddb9ffd33",
   "packages/omo-codex/plugin/scripts/sync-skills.mjs": "f6bd3ecd47881881e3507f584bc724be6d94b338ecfda344eebad89cc596e13f",
   "packages/omo-codex/plugin/scripts/canonical-ultrawork-directive.mjs": "ea39c9a9a2a9ad7b4228cd41f0927d6242b2324b0fd05531b2685cc2a2355255",
   "packages/omo-codex/plugin/scripts/entry-guard.mjs": "44e7493bfad2cfdf510e1138f0c03f241985ebddfbf89f01a934c5a9262fa108",
@@ -29,14 +28,20 @@ const TRUSTED_ARTIFACTS: Readonly<Record<string, string>> = {
   "packages/omo-codex/plugin/components/ultrawork/agents/momus.toml": "f30de18782766252f7a04e5415a4bffdf9cbff66f15d045943e618a1624830a8",
   "packages/omo-codex/plugin/components/ultrawork/agents/plan.toml": "931a12b363de8915d3aabae7352b6ecbef95cb1ecc93628e38a3e48d34606c8b",
 }
+const TRUSTED_RELEASES: Readonly<Record<string, { readonly artifacts: Readonly<Record<string, string>> }>> = {
+  "5.1.1": { artifacts: { ...TRUSTED_ARTIFACTS, "packages/omo-codex/scripts/install-dist/install-local.mjs": "1b318ef8b414c49d7467f9e6dffa345c11b71895fa8fec97cf76912ddb9ffd33" } },
+  "5.1.29": { artifacts: { ...TRUSTED_ARTIFACTS, "packages/omo-codex/scripts/install-dist/install-local.mjs": "d72a76623343c8cdc0ec4e02be8eed925755ad8a8ade40a5de09491d1358ebe2" } },
+}
 export function __setPolicyUpstreamRootForTests(root: string | undefined): void { rootForTests = root }
 export function resolvePolicyUpstream(): PolicyUpstream {
   const root = rootForTests ?? resolve(dirname(fileURLToPath(import.meta.resolve("oh-my-openagent"))), "..")
   const bundle = join(root, "packages/omo-codex/scripts/install-dist/install-local.mjs")
   if (!existsSync(bundle)) throw new PolicyTransactionError("Supported LazyCodex installer bundle is unavailable; install the reviewed oh-my-openagent distribution before policy repair")
   const manifest: unknown = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
-  if (typeof manifest !== "object" || manifest === null || Reflect.get(manifest, "version") !== "5.1.1") throw new PolicyTransactionError("Model policy requires the reviewed LazyCodex 5.1.1 installer")
-  for (const [relative, digest] of Object.entries(TRUSTED_ARTIFACTS)) {
+  const version = typeof manifest === "object" && manifest !== null ? Reflect.get(manifest, "version") : undefined
+  const trusted = typeof version === "string" ? TRUSTED_RELEASES[version] : undefined
+  if (trusted === undefined) throw new PolicyTransactionError("Model policy requires a reviewed LazyCodex installer")
+  for (const [relative, digest] of Object.entries(trusted.artifacts)) {
     const snapshot = policySnapshot(join(root, relative))
     if (snapshot.digest !== digest) throw new PolicyTransactionError(`Untrusted policy synchronization executable: ${relative}`)
   }
@@ -54,12 +59,12 @@ export function resolvePolicyUpstream(): PolicyUpstream {
       const id = entry.name.slice(0, -5)
       if (roles.has(id)) throw new PolicyTransactionError(`Duplicate bundled role: ${id}`)
       const path = join(directory, entry.name); const snapshot = policySnapshot(path); const relative = `packages/omo-codex/plugin/components/${component.name}/agents/${entry.name}`
-      if (snapshot.bytes === undefined || snapshot.digest !== TRUSTED_ARTIFACTS[relative]) throw new PolicyTransactionError(`Untrusted bundled role: ${id}`)
+      if (snapshot.bytes === undefined || snapshot.digest !== trusted.artifacts[relative]) throw new PolicyTransactionError(`Untrusted bundled role: ${id}`)
       roles.set(id, path); roleContent.set(id, Buffer.from(snapshot.bytes).toString("utf8"))
     }
   }
   if (roles.size !== CODEX_POLICY_ROLES.length || CODEX_POLICY_ROLES.some((role) => !roles.has(role.id))) throw new PolicyTransactionError("Unreviewed LazyCodex role inventory; policy repair held")
-  return { root, bundle, roles, roleContent }
+  return { root, version, bundle, artifacts: trusted.artifacts, roles, roleContent }
 }
 export function assertRoleProvenance(installed: string, source: string): void {
   if (withoutPolicySettings(installed) !== withoutPolicySettings(source)) throw new PolicyTransactionError("Unrelated role customization or unknown source provenance; preserve the prompt and review the diff before repair")
@@ -102,7 +107,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 const bundlePath = ${JSON.stringify(input.upstream.bundle)};
-if (createHash("sha256").update(await readFile(bundlePath)).digest("hex") !== ${JSON.stringify(TRUSTED_ARTIFACTS["packages/omo-codex/scripts/install-dist/install-local.mjs"])}) throw new Error("Installer changed before invocation");
+if (createHash("sha256").update(await readFile(bundlePath)).digest("hex") !== ${JSON.stringify(input.upstream.artifacts["packages/omo-codex/scripts/install-dist/install-local.mjs"])}) throw new Error("Installer changed before invocation");
 const { installMarketplaceLocally } = await import(bundlePath);
 const cacheRoot = ${JSON.stringify(codexHome + "/plugins/cache/")};
 const commands = [];
@@ -119,17 +124,17 @@ const runCommand = async (command, args, options) => {
     await cp(${JSON.stringify(join(input.upstream.root, "packages/shared-skills"))}, destination, {recursive:true});
     const manifest = JSON.parse(await readFile(join(destination,"package.json"),"utf8"));
     if (manifest.name !== "@oh-my-opencode/shared-skills" || manifest.version !== "0.1.0" || manifest.dependencies !== undefined || manifest.exports?.["."]?.import !== "./index.mjs" || manifest.exports?.["./skill-source-filter"]?.import !== "./skill-source-filter.mjs") throw new Error("Stage dependency exports changed during copy");
-    for (const [file, digest] of ${JSON.stringify(Object.entries(TRUSTED_ARTIFACTS).filter(([path]) => path.startsWith("packages/shared-skills/")).map(([path, digest]) => [path.slice("packages/shared-skills/".length), digest]))}) {
+    for (const [file, digest] of ${JSON.stringify(Object.entries(input.upstream.artifacts).filter(([path]) => path.startsWith("packages/shared-skills/")).map(([path, digest]) => [path.slice("packages/shared-skills/".length), digest]))}) {
       if (createHash("sha256").update(await readFile(join(destination,file))).digest("hex") !== digest) throw new Error("Stage dependency changed during copy");
     }
     return;
   }
   if (signature === JSON.stringify(["run", "sync:skills"])) {
-    for (const [file,digest] of ${JSON.stringify(Object.entries(TRUSTED_ARTIFACTS).filter(([path]) => path.startsWith("packages/omo-codex/plugin/scripts/")).map(([path,digest]) => [path.slice("packages/omo-codex/plugin/".length),digest]))}) {
+    for (const [file,digest] of ${JSON.stringify(Object.entries(input.upstream.artifacts).filter(([path]) => path.startsWith("packages/omo-codex/plugin/scripts/")).map(([path,digest]) => [path.slice("packages/omo-codex/plugin/".length),digest]))}) {
       if (createHash("sha256").update(await readFile(join(cwd,file))).digest("hex") !== digest) throw new Error("Stage executable changed before invocation");
     }
     const executable = join(cwd,"scripts/sync-skills.mjs");
-    if (createHash("sha256").update(await readFile(executable)).digest("hex") !== ${JSON.stringify(TRUSTED_ARTIFACTS["packages/omo-codex/plugin/scripts/sync-skills.mjs"])}) throw new Error("Untrusted stage sync executable");
+    if (createHash("sha256").update(await readFile(executable)).digest("hex") !== ${JSON.stringify(input.upstream.artifacts["packages/omo-codex/plugin/scripts/sync-skills.mjs"])}) throw new Error("Untrusted stage sync executable");
     const child = spawnSync(process.execPath,[executable],{cwd,env:process.env,timeout:15000,killSignal:"SIGKILL",maxBuffer:1048576,encoding:"utf8"});
     if (child.error || child.status !== 0) throw new Error("Stage skill synchronization failed: " + (child.error?.message ?? child.stderr));
     return;

@@ -30,6 +30,54 @@ function readPackageJson(): Record<string, unknown> {
   return parsed
 }
 
+function readUpgradeContract(markdown: string): Record<string, unknown> {
+  const match = markdown.match(/<!-- wunderkind:upgrade-contract\n([\s\S]*?)\n-->/)
+
+  if (match?.[1] === undefined) {
+    throw new Error("Expected a structured upgrade contract in docs/upgrading.md")
+  }
+
+  const parsed: unknown = JSON.parse(match[1])
+  if (!isRecord(parsed)) {
+    throw new Error("Expected the structured upgrade contract to be an object")
+  }
+
+  return parsed
+}
+
+function hasStringField(record: Record<string, unknown>, key: string, expected: string): boolean {
+  return record[key] === expected
+}
+
+function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
+  const openCode = contract.openCode
+  const runtime = contract.runtime
+  const models = contract.models
+  const comparison = contract.comparison
+  const rejectedRoutes = contract.rejectedRoutes
+
+  return hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
+    && hasStringField(contract, "sourceCommit", "df863041f10028132b1e424e47a1a65783553865")
+    && isRecord(comparison)
+    && hasStringField(comparison, "version", "0.27.9")
+    && hasStringField(comparison, "commit", "d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec")
+    && isRecord(openCode)
+    && hasStringField(openCode, "plugin", "1.18.35")
+    && hasStringField(openCode, "sdk", "1.18.35")
+    && hasStringField(contract, "omo", "5.1.29")
+    && isRecord(runtime)
+    && hasStringField(runtime, "node", ">=22.12.0")
+    && hasStringField(runtime, "bun", "1+")
+    && isRecord(models)
+    && hasStringField(models, "standard", "openai/gpt-6-sol")
+    && hasStringField(models, "routine", "openai/gpt-6-luna")
+    && hasStringField(contract, "astra", "opt-in")
+    && contract.publicDeprecatedTotal === 28
+    && Array.isArray(rejectedRoutes)
+    && rejectedRoutes.length === 1
+    && rejectedRoutes[0] === "supportability-incident"
+}
+
 function getPublicSkillInventoryCounts(): {
   readonly promoted: number
   readonly wunderkindSpecific: number
@@ -106,9 +154,9 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.33")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.33")
-    expect(dependencies["oh-my-openagent"]).toBe("5.1.1")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.35")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.35")
+    expect(dependencies["oh-my-openagent"]).toBe("5.1.29")
   })
 
   it("keeps the canonical public inventory counts aligned with the 28-route repo surface", () => {
@@ -126,17 +174,28 @@ describe("manifest version sync", () => {
     expect(readmeBody).not.toContain("## Unreleased")
     expect(readmeBody).toContain("## What's new in 0.28.2")
     expect(readmeBody).toContain("## Current compatibility baseline")
-    expect(readmeBody).toContain("published baseline is Wunderkind `0.28.2`")
-    expect(readmeBody).toContain("source candidate targets OpenCode `1.18.33`")
-    expect(readmeBody).toContain("oh-my-openagent` `5.1.1`")
-    expect(readmeBody).toContain("it is not a released `0.28.3` claim")
-    expect(readmeBody).toContain("update the supported beta baseline to `@opencode-ai/plugin@1.18.32`")
     expect(readmeBody).toContain("openai/gpt-6-sol")
     expect(readmeBody).toContain("openai/gpt-6-luna")
     expect(readmeBody).toContain("release-upgrade")
     expect(readmeBody).toContain("platform-compatibility")
     expect(readmeBody).toContain("supportability-review")
     expect(readmeBody).toContain("public/deprecated total=28")
+  })
+
+  it("rejects stale upgrade-contract fixtures while accepting the current structured contract", () => {
+    const upgradeBody = readText(new URL("../../docs/upgrading.md", import.meta.url))
+    const contract = readUpgradeContract(upgradeBody)
+    expect(isCurrentUpgradeContract(contract)).toBe(true)
+
+    const stalePluginFixture = upgradeBody.replace('"plugin":"1.18.35"', '"plugin":"1.18.33"')
+    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.29"', '"omo":"5.0.0-beta.86"')
+    const unsupportedRouteFixture = upgradeBody
+      .replace('"astra":"opt-in"', '"astra":"default"')
+      .replace('"supportability-incident"', '"supportability-review"')
+
+    expect(isCurrentUpgradeContract(readUpgradeContract(stalePluginFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(staleOmoFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(unsupportedRouteFixture))).toBe(false)
   })
 })
 

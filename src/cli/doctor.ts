@@ -254,6 +254,9 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
 
     section("Version Status")
     line("wunderkind cli version:", color.cyan(wunderkindVersion.currentVersion ?? "unknown"))
+    line("wunderkind loaded version:", color.cyan(wunderkindVersion.loadedVersion ?? "unknown"))
+    line("wunderkind packaged version:", color.cyan(wunderkindVersion.packagedVersion ?? wunderkindVersion.currentVersion ?? "unknown"))
+    line("wunderkind latest-known version:", color.cyan(wunderkindVersion.latestKnownVersion ?? "unknown (offline/unverified)"))
     const wunderkindUpgrade = summarizeWunderkindUpgradeCommands({
       registrationScope: detected.registrationScope,
       globalOpenCodePath,
@@ -264,12 +267,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const nativeSkillVersion = detectNativeAssetVersion("skills")
     const nativeAgentMarkdownVersions = detectNativeAgentMarkdownVersions("global")
     const staleNativeAssets = [
-      { kind: "agents", needsUpgrade: nativeAgentVersion.needsUpgrade || !nativeAgentMarkdownVersions.allCurrent },
-      { kind: "commands", needsUpgrade: nativeCommandVersion.needsUpgrade },
-      { kind: "skills", needsUpgrade: nativeSkillVersion.needsUpgrade },
+      { kind: "agents", needsUpgrade: nativeAgentVersion.needsUpgrade || !nativeAgentMarkdownVersions.allCurrent, ownership: nativeAgentVersion.ownership },
+      { kind: "commands", needsUpgrade: nativeCommandVersion.needsUpgrade, ownership: nativeCommandVersion.ownership },
+      { kind: "skills", needsUpgrade: nativeSkillVersion.needsUpgrade, ownership: nativeSkillVersion.ownership },
     ]
-      .filter((asset) => asset.needsUpgrade)
-      .map((asset) => asset.kind)
+      .filter((asset) => asset.needsUpgrade || asset.ownership !== "wunderkind-owned")
+      .map((asset) => asset.ownership === "mixed" ? `${asset.kind}: mixed/held` : asset.ownership === "unknown" ? `${asset.kind}: ownership unknown` : asset.kind)
     line("wunderkind lifecycle:", color.dim(wunderkindUpgrade.lifecycle))
     line("wunderkind package refresh:", color.dim(wunderkindUpgrade.packageRefresh))
     line(
@@ -296,6 +299,8 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
         : color.dim("✗ not detected"),
     )
     line("oh-my-openagent loaded version:", color.cyan(omoVersion.loadedVersion ?? color.dim("unknown")))
+    line("oh-my-openagent packaged version:", color.cyan(omoVersion.packagedVersion ?? omoVersion.registeredVersion ?? "unknown"))
+    line("oh-my-openagent latest-known version:", color.cyan(omoVersion.latestKnownVersion ?? "unknown (offline/unverified)"))
     if (omoVersion.currentVersion) {
       line("oh-my-openagent reported current version:", color.cyan(omoVersion.currentVersion))
     }
@@ -358,6 +363,15 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
       const globalNativeCommands = detectNativeCommandFiles()
       const globalNativeSkills = detectNativeSkillFiles("global")
       line("global native agents dir:", `${status(globalNativeAgents.allPresent)} ${color.dim(globalNativeAgents.dir)}`)
+      const ownershipLabel = (ownership: ReturnType<typeof detectNativeAssetVersion>["ownership"]): string => {
+        if (ownership === "wunderkind-owned") return color.green("wunderkind-owned")
+        if (ownership === "mixed") return color.yellow("mixed/held (receipt does not cover all managed files)")
+        return color.yellow("unknown/unverified")
+      }
+      line(
+        "native asset catalog ownership:",
+        `agents=${ownershipLabel(nativeAgentVersion.ownership)} commands=${ownershipLabel(nativeCommandVersion.ownership)} skills=${ownershipLabel(nativeSkillVersion.ownership)}`,
+      )
       line("global native agents version:", `${color.cyan(nativeAgentVersion.installedVersion ?? color.dim("unknown"))} ${color.dim(`(${nativeAgentVersion.markerPresent ? "marker present" : "marker missing"})`)}`)
       line(
         "global native agent markdown versions:",

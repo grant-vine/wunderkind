@@ -1,61 +1,104 @@
-# Host upgrade and rollout runbook
+# Host upgrade and rollback runbook
 
-This runbook records the reviewed compatibility candidate as of 2026-09-29. The published baseline remains Wunderkind `0.28.2` from immutable source commit `ded480c5b4b73179361f1c6b603b6754cfc6fe55`. Candidate targets are Wunderkind `0.28.3` (only if the npm version is still unused at release time), OpenCode `1.18.33`, `@opencode-ai/plugin` and `@opencode-ai/sdk` `1.18.33`, OMO `5.1.1`, LazyCodex payload `5.1.1`, and `@types/node` `^26.6.3`. These are candidate targets, not a published release claim. Re-inventory registry versions and installed hosts immediately before rollout.
+This runbook accompanies release `0.28.4`. The audit base is commit `df863041f10028132b1e424e47a1a65783553865`; the earlier `0.27.9` comparison point is commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. The release synchronizes package/plugin metadata at `0.28.4`, targets OpenCode plugin/SDK `1.18.35`, OMO/LazyCodex `5.1.29`, and keeps the public runtime floor at Node `>=22.12.0` or Bun `1+`. Re-resolve versions and executable paths immediately before any consumer rollout.
 
-Wunderkind's CLI supports Node `22.12+` or Bun `1+`; the OpenCode plugin runtime and memory operations require Bun because the plugin imports `bun:sqlite`. The optional OMO Native experiment has a separate Node `24+` requirement. Native is an isolated optional experiment, not an automatic host migration or Wunderkind dependency.
+<!-- wunderkind:upgrade-contract
+{"candidate":"0.28.4","comparison":{"version":"0.27.9","commit":"d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec"},"sourceCommit":"df863041f10028132b1e424e47a1a65783553865","openCode":{"plugin":"1.18.35","sdk":"1.18.35"},"omo":"5.1.29","runtime":{"node":">=22.12.0","bun":"1+"},"models":{"standard":"openai/gpt-6-sol","routine":"openai/gpt-6-luna"},"astra":"opt-in","publicDeprecatedTotal":28,"rejectedRoutes":["supportability-incident"]}
+-->
 
-## Resolve which Codex is running
+The managed model policy is Sol for orchestration, planning, high-complexity work and review, and Luna for routine/default/background work. OpenCode uses `openai/gpt-6-sol` and `openai/gpt-6-luna` for those tiers. Astra is explicit operator opt-in only: retain and report an existing user-owned override, but do not invoke Astra in a rollout smoke test. Memory and team mode are also opt-in and are never enabled by install, upgrade, init, or doctor.
 
-Codex desktop and the standalone CLI are distinct installations. The planning snapshot found the ChatGPT desktop bundle at `0.155.0-alpha.9.2`, while `0.158.0` is an optional standalone CLI candidate. Installing `@openai/codex` with npm changes a standalone executable only; it does not replace or update the app bundle. Update desktop through its supported app distribution and record the bundle's actual version. For the standalone candidate, resolve and record the absolute executable (`command -v codex`, real path, and `codex --version`) before invoking it; PATH precedence can select either binary.
+## Resolve the installed hosts
 
-For the Codex plugin, record all three identities: marketplace registration, active plugin cache directory, and payload version/hash. `codex plugin list --json` and `codex plugin marketplace list --json` are the planned inventory commands; inspect the installed CLI help first and use its supported equivalent if the syntax differs. A new npm package or marketplace registration does not prove that the active cache contains the expected payload. Do not edit downloaded cache files or broadly delete caches. Correct a stale registration through the supported Codex plugin operation, then re-resolve the active cache and hash.
+Record absolute executable paths and versions before mutation:
 
-OpenCode has a separate server and TUI resolution path. Check both against the exact OMO plugin spec and package versions. Updating `oh-my-openagent` in a repository does not prove that either OpenCode process resolves that copy. Keep OMO beta.86 as the known-good rollback baseline and do not infer compatibility from the identical 1.18.32/1.18.33 plugin hook interface alone.
-
-## Preserve model intent before host migration
-
-The managed routing target is Codex root Sol; Sol for orchestration, planning, high-complexity work and review; Luna for routine/default/background work. The OpenCode category mapping remains `openai/gpt-6-sol` for high-capability work and `openai/gpt-6-luna` for routine/background work. Astra is not a managed default. If an operator intentionally uses Astra, retain and report that user-owned override; never invoke it as part of a rollout smoke test.
-
-OMO/LazyCodex 5.1.1 reads role overrides from the literal JSONC key `"[codex]"` in `~/.omo/omo.jsonc` and the active profile. The entries use unprefixed `model` and `reasoning` fields. This is separate from Codex's root model and selected profile in `config.toml`; do not put the role map in a TOML table or mistake a profile's model line for a role override. Example schema:
-
-```jsonc
-{
-  "[codex]": {
-    "agents": {
-      "lazycodex-worker-medium": { "model": "gpt-6-luna", "reasoning": "medium" },
-      "lazycodex-worker-high": { "model": "gpt-6-sol", "reasoning": "high" },
-      "metis": { "model": "gpt-6-sol", "reasoning": "high" },
-      "momus": { "model": "gpt-6-sol", "reasoning": "high" }
-    }
-  }
-}
+```sh
+command -v codex; codex --version
+command -v opencode; opencode --version
+command -v bun; bun --version
+command -v node; node --version
+codex plugin list --json
 ```
 
-The example is illustrative, not a complete policy file: use the reviewed full role matrix at execution. 5.1.1 still bundles Astra defaults for its roles, so the durable override must be established before the first upstream migration. The default role is derived from the synchronized medium worker and its receipt; repair it through the supported medium-worker path, never by hand-editing `default.toml` or synthesizing `.lazycodex-default.sha256`. Root and active-profile overrides must be backed up and checked independently.
+The last command is an installed-state receipt, not proof of remote freshness. If it reports a failed remote request or no owner-supported catalog comparison exists, record catalog freshness as `unknown` and hold the update. A package listing or registry version alone never proves the active cache, payload, or host process resolved the candidate.
 
-The source candidate exposes `wunderkind codex doctor --apply-model-policy` to seed absent reviewed durable keys and repair trusted managed roles while preserving operator overrides. Add `--reset-model-policy` only with `--apply-model-policy` to reclaim removed keys previously recorded as Wunderkind-managed; reset alone errors. Reset reclaims those removed managed keys only and does not overwrite existing or edited operator keys. The versioned ownership receipt lives at `~/.wunderkind/codex/model-policy.json`. Treat existing keys without a matching receipt as ambiguous/user-owned. An operator edit to a seeded value becomes user-owned. Role synchronization receipts are not proof of operator intent. Current `node bin/wunderkind.js codex doctor --help` output matches this grammar. Recheck help from the final release artifact before rollout; this snapshot does not establish global installation or full installation health.
+`omo-ai@5.1.29` is a separate native `omo` binary with a Node `>=24` engine declaration. It is not a Wunderkind dependency and must not be used to raise the public Node floor. The standalone System One adapter is experimental, not exported or memory-wired, disabled by default, and has no production or published benchmark claim. Its evaluation runner is only valid with the Task 14 Python Kev render/tokenizer preflight and a literal `--token-preflight` path.
 
-## Stage and execute a future rollout
+## Private pre-mutation backup
 
-These steps are for a separately authorized rollout after the release candidate, policy implementation, and final verification gates pass. They are not commands to run as part of documentation work.
+Use a private backup outside the repository. The reviewed receipt used `~/.wunderkind/backups/stack-20261010`, mode `700`, with files and manifest mode `600`; do not copy its contents into project evidence or logs. Capture exact existence, bytes, modes, SHA-256, and executable identities for:
 
-1. Inventory clean/dirty repository state, release ancestry, local executables and versions, registry availability, server/TUI OpenCode pins, Codex marketplace/cache/payload identities, and active profiles. Confirm the candidate's source includes the published `ded480c` lineage. Stop if the proposed npm version is already occupied.
-2. Make a dated private backup outside the package source. Inventory exact files and record bytes, modes, existence and SHA-256 for Codex root/profile configuration, OMO JSONC layers, every upstream bundled role TOML including any retired role scheduled for purge, `default.toml`, `.lazycodex-default.sha256`, `.lazycodex-agent-models.json`, registration/manifest files, Wunderkind policy receipt/state, marketplace/plugin registrations, and active cache identity. Keep secrets private; save only redacted evidence. Do not write over an existing backup.
-3. In a temporary consumer home, exercise model seeding, staged installer and shared-skills provisioning, upstream synchronization, two repeated upgrades and a cold restart. Verify root/profile values, every managed role, the Luna-derived default, intentional custom/Astra overrides, active cache path/version/hash, and unrelated role instructions. Stop on ambiguous ownership, missing receipts, modified role content, or partial-write failure; preserve files for review. A passing staged fixture does not establish global installation or full installation health.
-4. After authorized publication, verify registry metadata and tarball integrity against the tagged source. Install the exact published Wunderkind version using the documented package manager, run global `wunderkind upgrade --scope=global`, and run project upgrades only in initialized targets. Run `wunderkind doctor --verbose`; for Codex, run `wunderkind codex upgrade` and `wunderkind codex doctor --json`. Use only the model-policy action and arguments present in the final release's actual `--help` output. A successful exit alone is not evidence of resolved runtime versions.
-5. Restart OpenCode server and TUI plus the relevant Codex desktop/CLI host. Start a new Codex task so it loads refreshed agents and skills. Repeat version, marketplace, active cache, effective model and ownership checks after restart and after a second upgrade. Do not use paid model calls for this check; the local Ethara smoke uses startup/help/doctor and deterministic fake-provider paths only.
-6. For the authorized Ethara smoke, capture `git status --porcelain=v1 --untracked-files=all` and hashes of tracked and untracked files first. Read instructions and config without logging credentials. Preserve CodeGraph MCP, auth and project instructions. Run help/version, OpenCode startup, Wunderkind doctor and Codex doctor using supported help-derived commands. Do not trigger a model prompt or rebuild the graph. Stop only processes started by the smoke, then compare status and hashes byte-for-byte.
+- `~/.codex/config.toml`, `~/.codex/agents/`, and relevant Codex state/receipts
+- `~/.agents/.skill-lock.json` and `~/.agents/skills/`
+- `~/.config/opencode/opencode.json` or `.jsonc`
+- `~/.omo/omo.jsonc`
+- marketplace/plugin registration and the active payload/cache identity
 
-Record each command, exit status, resolved executable or payload hash, and concrete assertion in `.omo/evidence/upstream-upgrade-2026-09-29/task-7-rollout.md`. Record unresolved, dirty or ambiguous state explicitly; never report success based on a registry version alone.
+Create-only means an existing backup is never overwritten or recaptured. This disposable fixture exercises the restore path without reading or writing the real home directory:
+
+```sh
+set -eu
+fixture_home=$(mktemp -d "${TMPDIR:-/tmp}/wunderkind-rollback.XXXXXX")
+trap 'rm -rf "$fixture_home"' EXIT
+export HOME="$fixture_home/home"
+backup="$HOME/.wunderkind/backups/stack-20261010"
+umask 077
+mkdir -p "$HOME/.config/opencode" "$HOME/.wunderkind/owned" "$HOME/.wunderkind/backups"
+printf '%s\n' '{"plugins":["wunderkind"]}' > "$HOME/.config/opencode/opencode.json"
+printf '%s\n' 'owned-payload-v1' > "$HOME/.wunderkind/owned/agent.md"
+chmod 600 "$HOME/.config/opencode/opencode.json"
+chmod 640 "$HOME/.wunderkind/owned/agent.md"
+mkdir "$backup"
+chmod 700 "$backup"
+cp -p "$HOME/.config/opencode/opencode.json" "$backup/opencode.json"
+cp -p "$HOME/.wunderkind/owned/agent.md" "$backup/agent.md"
+printf '%s\n' "$(shasum -a 256 "$HOME/.config/opencode/opencode.json")" > "$backup/manifest.sha256"
+printf '%s\n' "$(shasum -a 256 "$HOME/.wunderkind/owned/agent.md")" >> "$backup/manifest.sha256"
+chmod 600 "$backup/manifest.sha256"
+printf '%s\n' '{"plugins":[]}' > "$HOME/.config/opencode/opencode.json"
+printf '%s\n' 'edited-payload' > "$HOME/.wunderkind/owned/agent.md"
+cp -p "$backup/opencode.json" "$HOME/.config/opencode/opencode.json"
+cp -p "$backup/agent.md" "$HOME/.wunderkind/owned/agent.md"
+cmp "$backup/opencode.json" "$HOME/.config/opencode/opencode.json"
+cmp "$backup/agent.md" "$HOME/.wunderkind/owned/agent.md"
+test "$(shasum -a 256 "$HOME/.config/opencode/opencode.json" | awk '{print $1}')" = "$(awk 'NR == 1 {print $1}' "$backup/manifest.sha256")"
+test "$(shasum -a 256 "$HOME/.wunderkind/owned/agent.md" | awk '{print $1}')" = "$(awk 'NR == 2 {print $1}' "$backup/manifest.sha256")"
+test "$(stat -f '%Lp' "$backup/opencode.json")" = "$(stat -f '%Lp' "$HOME/.config/opencode/opencode.json")"
+test "$(stat -f '%Lp' "$backup/agent.md")" = "$(stat -f '%Lp' "$HOME/.wunderkind/owned/agent.md")"
+if mkdir "$backup" 2>/dev/null; then
+  printf '%s\n' 'collision was not rejected' >&2
+  exit 1
+fi
+printf '%s\n' 'PASS temporary-home restore: hashes, modes, and collision rejection'
+```
+
+If `mkdir` reports that the path already exists, stop and compare the immutable manifest to the same untouched baseline. A collision, missing source, source mutation, or post-mutation retry is a hold; retain the original backup. Never reveal secrets in an evidence receipt.
+
+## Upgrade ownership and freshness
+
+Native agents, commands, and skills are refreshed only when a trusted receipt covers the exact package, asset kind, relative path, and unchanged live hash. A current marker alone is not authorization. The lifecycle preserves edited, linked, missing, malformed, mixed, held, and ownership-unknown content; it reports the hold and returns a recovery-oriented non-zero result where mutation cannot be trusted. Deprecated routes remain excluded from discovery and installation. The `design-an-interface` directory is retired only when exact receipt ownership and byte equality prove it is Wunderkind-owned; unreceipted or edited content survives.
+
+Codex payload changes use the same ownership boundary. An operator edit becomes user-owned; an absent or invalid receipt is unverified. Optional companions are advisory and non-owned. Do not manually edit downloaded caches, delete broad cache roots, or overwrite a user's custom config.
+
+## Staged rollout
+
+For a separately authorized rollout, first capture `git status --porcelain=v1 --untracked-files=all`, source identity, installed versions, and all receipts. Then use supported owner operations for OpenCode, OMO, Codex, and companion tools. Re-run `doctor --verbose` and `wunderkind codex doctor --json` after each mutation, after restart, and after a repeated upgrade. A zero exit is not a complete success claim when the report contains `HOLD`, `unknown`, `mixed`, or unverified ownership.
+
+The original pre-write evidence did not prove an owner-supported prior-payload rollback for the OpenCode Homebrew/tap binary, Codex app catalog, app-managed Codex channel, or Bun. That historical gap remains a gap: it must not be retroclaimed as pre-write proof or as full restoration. Subsequent exact-owner evidence did prove a narrower OpenCode operation: the retained `wunderkind/task19-incident-recovery` tap and `opencode@1.18.34` keg supported rollback to OpenCode `1.18.34`, followed by supported relink to `1.18.35`; those owner artifacts remain required for the proof.
+
+The incident library state remains held separately. Preexisting `libngtcp2 1.25.0` is currently absent because restoring it would also upgrade unrelated `pkgconf`; restore is held pending an exact owner operation that does not cross that boundary. `libnghttp3` prior ownership/version is unknown and it is also absent. The app catalog's prior payload, channel, and Node fan-out remain unknown; Bun's original pre-incident bytes remain unknown, with only the official post-baseline observation available. Treat these as `HOLD`/`unknown`, not as restored state, and do not use private backups or catalog files to manufacture rollback proof.
 
 ## Scoped rollback
 
-Known-good snapshot versions are Wunderkind `0.28.2` / `ded480c`, OpenCode `1.18.32`, OpenCode OMO `5.0.0-beta.86`, Codex LazyCodex payload `5.0.1`, and desktop bundle `0.155.0-alpha.9.2`. Before rollout, confirm those exact artifacts remain available and retain the backup described above.
+If startup, cache resolution, model selection, or data behavior regresses:
 
-If startup, cache resolution, model selection, or data behavior regresses, stop only hosts/workers started during the rollout. Restore only files still matching this operation's recorded outputs; if a concurrent edit occurred, stop and create a recovery note rather than overwriting it. Revert plugin pins/registrations using supported host operations and reinstall the known-good package versions. Restore deliberate user overrides and restart, then repeat the resolution/doctor checks. Do not clear global caches, run cleanup/uninstall, or delete `.wunderkind` data as a rollback shortcut.
+1. Stop only hosts/workers started by the rollout. Stop a memory worker before any SQLite backup and preserve WAL state; do not copy only a live database file.
+2. Re-check the live target bytes against the operation receipt. Restore only files whose bytes still match the recorded rollout output. On a concurrent edit, stop, preserve the edit, and write a recovery note rather than overwriting it.
+3. Restore configs and owned payloads from the private hash-bound backup, then compare SHA-256 and modes independently. Restore the known-good source/package through supported host operations; do not patch catalog caches or use cleanup/uninstall as rollback shortcuts.
+4. Restart the relevant host and repeat version, active-path, ownership, model-policy, and doctor checks. Report catalog/binary/app rollback as `HOLD` unless the owner-supported prior-payload operation itself succeeds.
 
-If a memory worker is running, stop it before making a database backup. Use a SQLite-consistent backup/export that accounts for WAL state; never copy only a live database file. No schema migration is part of this compatibility patch, so an unexpected migration is a stop condition. Preserve tombstones and restore the project snapshot only if required. Roll back desktop only through supported app distribution when the prior signed build is available; otherwise keep the current desktop and revert the separate plugin/CLI changes. A defective published package is superseded by a new patch; never rewrite its tag or history. Recheck Ethara's file inventory after rollback.
+The old beta stream (`oh-my-openagent@5.0.0-beta.*`, including `5.0.0-beta.86`) is rollback history, not the current target. The original released package `0.27.9` remains the comparison artifact; package/plugin version `0.28.4` is published through the authorized tag-triggered GitHub Actions workflow.
 
-## Offline packaging smoke limits
+## Evidence contract
 
-`bun tests/unit/helpers/run-codex-packed-smoke.mjs` checks the packed helper against its offline beta.62 fixture. It proves packaging and discovery for that fixture only; it does not certify a live LazyCodex 5.1.1 install, active marketplace cache, desktop bundle, or effective model selection.
+For every rollout or rollback attempt, retain the exact command, working directory, executable path/version, exit code, receipt/hash, and binary assertion in the current `.omo/evidence/` task lane. Keep private backup contents outside that lane. Distinguish `PASS`, `HOLD`, `unknown`, and `not_applicable`; never turn an unavailable catalog proof or a stale success string into a success claim.

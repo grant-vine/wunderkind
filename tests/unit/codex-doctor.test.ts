@@ -70,6 +70,13 @@ describe("Codex doctor", () => {
       expect(report.core.lazyCodex.status).toBe("enabled")
       expect(report.core.marketplace.status).toBe("enabled")
       expect(report.core.plugin.status).toBe("enabled")
+      expect(report.core.versions.packaged).toBe(PACKAGE_VERSION)
+      expect(report.core.versions.loaded).toBe(PACKAGE_VERSION)
+      expect(report.core.versions.latestKnown).toBe(null)
+      expect(report.core.catalogOwnership.agents).toBe("wunderkind-owned")
+      expect(report.core.catalogOwnership.skills).toBe("wunderkind-owned")
+      expect(report.core.reviewedUpstreamCompatibility).toBe("unverified")
+      expect(report.core.modelPolicyStatus).toBe("advisory")
       expect(Object.keys(report.core.agents)).toHaveLength(6)
       expect(Object.keys(report.core.skills)).toHaveLength(11)
       expect(report.paths).toBeUndefined()
@@ -91,6 +98,39 @@ describe("Codex doctor", () => {
       expect(report.core.healthy).toBe(true)
       expect(report.core.lazyCodex.version).toBe("5.0.0-beta.62+build.9")
       expect(report.remediation).toEqual([])
+    } finally {
+      cleanup(paths)
+    }
+  })
+
+  it("reports exact reviewed upstream support separately from model policy status", () => {
+    const paths = sandbox()
+    configure(paths, createFakeCodex({ lazyPlugin: createLazyCodexEnvelope("5.1.29") }))
+    try {
+      installCodexWunderkind()
+      const report = getCodexDoctorReport()
+      expect(report.core.reviewedUpstreamCompatibility).toBe("supported")
+      expect(report.core.modelPolicyStatus).toBe("advisory")
+    } finally {
+      cleanup(paths)
+    }
+  })
+
+  it("uses Codex available-plugin data for latest-known and marks missing receipts unverified", () => {
+    const paths = sandbox()
+    const fixture = createFakeCodex()
+    configure(paths, fixture)
+    try {
+      installCodexWunderkind()
+      if (!isRecord(fixture.lazyPlugin) || !Array.isArray(fixture.lazyPlugin["available"])) throw new Error("Expected available plugin fixture")
+      fixture.lazyPlugin["available"].push({ pluginId: "wunderkind@grant-vine", version: "0.29.0" })
+      const current = getCodexDoctorReport()
+      expect(current.core.versions.latestKnown).toBe("0.29.0")
+
+      rmSync(join(paths.wunderkindHome, "codex", "install-state.json"))
+      const missing = getCodexDoctorReport()
+      expect(missing.core.catalogOwnership.agents).toBe("unverified")
+      expect(missing.core.catalogOwnership.skills).toBe("unverified")
     } finally {
       cleanup(paths)
     }

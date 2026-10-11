@@ -1,7 +1,8 @@
 import { describe, expect, it, mock } from "bun:test"
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
+import { createHash } from "node:crypto"
 import { tmpdir } from "node:os"
-import { basename, join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { WUNDERKIND_CANONICAL_MANIFEST, isShippedCanonicalSkill } from "../../src/agents/canonical-manifest.js"
 import { collectGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
 
@@ -788,19 +789,28 @@ describe("config-manager coverage", () => {
     await withSandbox("version-detection", async (sandbox, mod) => {
       const customPackagePath = join(sandbox.globalConfigDir, "node_modules", "custom-plugin", "package.json")
       const omoGlobalPackagePath = join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent", "package.json")
-      const omoCachePackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-openagent", "package.json")
+      const omoSelectedPackagePath = join(
+        sandbox.homeDir,
+        ".cache",
+        "opencode",
+        "packages",
+        "oh-my-openagent@5.1.29",
+        "node_modules",
+        "oh-my-openagent",
+        "package.json",
+      )
 
       mkdirSync(join(sandbox.globalConfigDir, "node_modules", "custom-plugin"), { recursive: true })
       mkdirSync(join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent"), { recursive: true })
-      mkdirSync(join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-openagent"), { recursive: true })
+      mkdirSync(dirname(omoSelectedPackagePath), { recursive: true })
 
       writeFileSync(
         sandbox.globalOpenCodePath,
-        JSON.stringify({ plugin: ["custom-plugin@1.2.3-beta.4", "oh-my-openagent@3.12.2"] }),
+        JSON.stringify({ plugin: ["custom-plugin@1.2.3-beta.4", "oh-my-openagent@5.1.29"] }),
       )
       writeFileSync(customPackagePath, JSON.stringify({ version: "1.2.0" }))
-      writeFileSync(omoGlobalPackagePath, JSON.stringify({ version: "3.12.2" }))
-      writeFileSync(omoCachePackagePath, JSON.stringify({ version: "3.12.3" }))
+      writeFileSync(omoGlobalPackagePath, JSON.stringify({ version: "5.1.7" }))
+      writeFileSync(omoSelectedPackagePath, JSON.stringify({ version: "5.1.29" }))
 
       const pluginVersionInfo = mod.detectPluginVersionInfo("custom-plugin")
       expect(pluginVersionInfo.registered).toBe(true)
@@ -818,16 +828,91 @@ describe("config-manager coverage", () => {
       const omoVersionInfo = mod.detectOmoVersionInfo()
       expect(omoVersionInfo.packageName).toBe("oh-my-openagent")
       expect(omoVersionInfo.registered).toBe(true)
-      expect(omoVersionInfo.registeredEntry).toBe("oh-my-openagent@3.12.2")
-      expect(omoVersionInfo.registeredVersion).toBe("3.12.2")
-      expect(omoVersionInfo.loadedVersion).toBe("3.12.2")
-      expect(omoVersionInfo.loadedPackagePath).toBe(omoGlobalPackagePath)
-      expect(omoVersionInfo.loadedSources?.global.version).toBe("3.12.2")
-      expect(omoVersionInfo.loadedSources?.cache.version).toBe("3.12.3")
-      expect(omoVersionInfo.staleOverrideWarning).toBe(
-        "global oh-my-openagent 3.12.2 likely overrides newer cache 3.12.3",
-      )
+      expect(omoVersionInfo.registeredEntry).toBe("oh-my-openagent@5.1.29")
+      expect(omoVersionInfo.registeredVersion).toBe("5.1.29")
+      expect(omoVersionInfo.loadedVersion).toBe("5.1.29")
+      expect(omoVersionInfo.loadedPackagePath).toBe(omoSelectedPackagePath)
+      expect(omoVersionInfo.loadedSources?.global.version).toBe("5.1.7")
+      expect(omoVersionInfo.staleOverrideWarning).toBe(null)
       expect(omoVersionInfo.freshness).not.toBe(null)
+    })
+  })
+
+  it("reports an unpinned OMO package selection as unknown despite stale candidates", async () => {
+    await withSandbox("omo-unpinned-selection", async (sandbox, mod) => {
+      const globalPackagePath = join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent", "package.json")
+      const firstCachePackagePath = join(
+        sandbox.homeDir, ".cache", "opencode", "packages", "oh-my-openagent@5.1.29", "node_modules", "oh-my-openagent", "package.json",
+      )
+      const secondCachePackagePath = join(
+        sandbox.homeDir, ".cache", "opencode", "packages", "oh-my-openagent@5.1.30", "node_modules", "oh-my-openagent", "package.json",
+      )
+      mkdirSync(dirname(globalPackagePath), { recursive: true })
+      mkdirSync(dirname(firstCachePackagePath), { recursive: true })
+      mkdirSync(dirname(secondCachePackagePath), { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent"] }))
+      writeFileSync(globalPackagePath, JSON.stringify({ version: "5.1.7" }))
+      writeFileSync(firstCachePackagePath, JSON.stringify({ version: "5.1.29" }))
+      writeFileSync(secondCachePackagePath, JSON.stringify({ version: "5.1.30" }))
+
+      const versionInfo = mod.detectOmoVersionInfo()
+
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
+      expect(versionInfo.staleOverrideWarning).toBe(null)
+    })
+  })
+
+  it("rejects a selected modern OMO cache manifest whose version disagrees with the exact pin", async () => {
+    await withSandbox("omo-selected-version-mismatch", async (sandbox, mod) => {
+      const selectedPackagePath = join(
+        sandbox.homeDir, ".cache", "opencode", "packages", "oh-my-openagent@5.1.29", "node_modules", "oh-my-openagent", "package.json",
+      )
+      mkdirSync(dirname(selectedPackagePath), { recursive: true })
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@5.1.29"] }))
+      writeFileSync(selectedPackagePath, JSON.stringify({ version: "5.1.7" }))
+
+      const versionInfo = mod.detectOmoVersionInfo()
+
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
+    })
+  })
+
+  it("rejects a selected modern OMO cache package with an invalid manifest", async () => {
+    await withSandbox("omo-selected-invalid-manifest", async (sandbox, mod) => {
+      const selectedPackagePath = join(
+        sandbox.homeDir, ".cache", "opencode", "packages", "oh-my-openagent@5.1.29", "node_modules", "oh-my-openagent", "package.json",
+      )
+      mkdirSync(dirname(selectedPackagePath), { recursive: true })
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@5.1.29"] }))
+      writeFileSync(selectedPackagePath, "not-json")
+
+      const versionInfo = mod.detectOmoVersionInfo()
+
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
+    })
+  })
+
+  it("rejects a selected modern OMO cache package behind a symbolic link", async () => {
+    await withSandbox("omo-selected-symlink", async (sandbox, mod) => {
+      const packageCacheRoot = join(sandbox.homeDir, ".cache", "opencode", "packages")
+      const linkedPackageRoot = join(packageCacheRoot, "oh-my-openagent@5.1.29")
+      const trustedPackageRoot = join(sandbox.rootDir, "linked-package")
+      mkdirSync(join(trustedPackageRoot, "node_modules", "oh-my-openagent"), { recursive: true })
+      mkdirSync(packageCacheRoot, { recursive: true })
+      mkdirSync(sandbox.globalConfigDir, { recursive: true })
+      writeFileSync(sandbox.globalOpenCodePath, JSON.stringify({ plugin: ["oh-my-openagent@5.1.29"] }))
+      writeFileSync(join(trustedPackageRoot, "node_modules", "oh-my-openagent", "package.json"), JSON.stringify({ version: "5.1.29" }))
+      symlinkSync(trustedPackageRoot, linkedPackageRoot, "dir")
+
+      const versionInfo = mod.detectOmoVersionInfo()
+
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
     })
   })
 
@@ -851,7 +936,7 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("does not let a legacy OMO registration override the canonical package copy", async () => {
+  it("does not claim an unregistered canonical OMO package copy is active", async () => {
     await withSandbox("omo-registered-legacy-ignored", async (sandbox, mod) => {
       const canonicalPackagePath = join(sandbox.globalConfigDir, "node_modules", "oh-my-openagent", "package.json")
       const legacyPackagePath = join(sandbox.homeDir, ".cache", "opencode", "node_modules", "oh-my-opencode", "package.json")
@@ -866,8 +951,8 @@ describe("config-manager coverage", () => {
       const versionInfo = mod.detectOmoVersionInfo()
       expect(versionInfo.registeredEntry).toBe(null)
       expect(versionInfo.registered).toBe(false)
-      expect(versionInfo.loadedVersion).toBe("3.15.3")
-      expect(versionInfo.loadedPackagePath).toBe(canonicalPackagePath)
+      expect(versionInfo.loadedVersion).toBe(null)
+      expect(versionInfo.loadedPackagePath).toBe(null)
     })
   })
 
@@ -898,7 +983,7 @@ describe("config-manager coverage", () => {
       const readiness = mod.detectOmoInstallReadiness()
       expect(readiness.installed).toBe(false)
       expect(readiness.registered).toBe(false)
-      expect(readiness.loadedVersion).toBe("3.15.3")
+      expect(readiness.loadedVersion).toBe(null)
       expect(readiness.freshnessSummary.state).toBe("not-detected")
     })
   })
@@ -1114,7 +1199,7 @@ describe("config-manager coverage", () => {
     })
   })
 
-  it("writeNativeSkillFiles exposes only manifest-promoted public skills and excludes deprecated routes", async () => {
+  it("writeNativeSkillFiles excludes deprecated routes while preserving unreceipted directories", async () => {
     await withSandbox("native-skill-public-surface", async (_sandbox, mod) => {
       const staleBlockedDir = join(mod.getNativeSkillsDir(), "design-an-interface")
       const userSkillDir = join(mod.getNativeSkillsDir(), "user-private-skill")
@@ -1149,8 +1234,9 @@ describe("config-manager coverage", () => {
       }
 
       for (const skill of blockedSkills) {
-        expect(existsSync(join(mod.getNativeSkillsDir(), skill.id))).toBe(false)
+        expect(mod.getNativeSkillDirectories("global")).not.toContain(join(mod.getNativeSkillsDir(), skill.id))
       }
+      expect(existsSync(staleBlockedDir)).toBe(true)
 
       expect(existsSync(userSkillDir)).toBe(true)
 
@@ -1160,8 +1246,80 @@ describe("config-manager coverage", () => {
       const removeResult = mod.removeNativeSkillFiles("global")
       expect(removeResult.success).toBe(true)
       expect(removeResult.changed).toBe(true)
-      expect(existsSync(staleBlockedDir)).toBe(false)
+      expect(removeResult.heldPaths).toEqual([staleBlockedDir])
+      expect(existsSync(staleBlockedDir)).toBe(true)
       expect(existsSync(userSkillDir)).toBe(true)
+    })
+  })
+
+  it("removes an unchanged deprecated skill only when the skills receipt proves ownership", async () => {
+    await withSandbox("native-skill-retirement-receipt", async (_sandbox, mod) => {
+      const retiredDir = join(mod.getNativeSkillsDir(), "design-an-interface")
+      const retiredFile = join(retiredDir, "SKILL.md")
+      const retiredContent = "# Retired packaged skill\n"
+      mkdirSync(retiredDir, { recursive: true })
+      writeFileSync(retiredFile, retiredContent)
+      writeFileSync(join(mod.getNativeSkillsDir(), ".wunderkind-version.json"), JSON.stringify({
+        package: "@grant-vine/wunderkind",
+        kind: "skills",
+        version: "0.27.9",
+        files: { "design-an-interface/SKILL.md": createHash("sha256").update(retiredContent, "utf8").digest("hex") },
+      }))
+
+      const result = mod.removeNativeSkillFiles("global")
+
+      expect(result.success).toBe(true)
+      expect(result.heldPaths).toBeUndefined()
+      expect(existsSync(retiredDir)).toBe(false)
+    })
+  })
+
+  it("holds edited, invalid-receipt, and linked deprecated skill directories", async () => {
+    await withSandbox("native-skill-retirement-holds", async (_sandbox, mod) => {
+      const skillsDir = mod.getNativeSkillsDir()
+      const editedDir = join(skillsDir, "design-an-interface")
+      mkdirSync(editedDir, { recursive: true })
+      writeFileSync(join(editedDir, "SKILL.md"), "operator edit\n")
+      writeFileSync(join(skillsDir, ".wunderkind-version.json"), "not-json")
+      const invalidResult = mod.removeNativeSkillFiles("global")
+      expect(invalidResult.heldPaths).toEqual([editedDir, join(skillsDir, ".wunderkind-version.json")])
+      expect(readFileSync(join(editedDir, "SKILL.md"), "utf8")).toBe("operator edit\n")
+
+      const outsideDir = mkdtempSync(join(_sandbox.rootDir, "native-skill-outside-"))
+      const linkedDir = join(skillsDir, "design-an-interface")
+      rmSync(editedDir, { recursive: true, force: true })
+      symlinkSync(outsideDir, linkedDir, "dir")
+      const linkedResult = mod.removeNativeSkillFiles("global")
+      expect(linkedResult.heldPaths).toEqual([linkedDir, join(skillsDir, ".wunderkind-version.json")])
+      expect(existsSync(linkedDir)).toBe(true)
+      rmSync(outsideDir, { recursive: true, force: true })
+    })
+  })
+
+  it("holds a mixed retired directory when the receipt covers only its packaged file", async () => {
+    await withSandbox("native-skill-retirement-mixed-folder", async (_sandbox, mod) => {
+      const skillsDir = mod.getNativeSkillsDir()
+      const retiredDir = join(skillsDir, "design-an-interface")
+      const retiredFile = join(retiredDir, "SKILL.md")
+      const privateFile = join(retiredDir, "PRIVATE.md")
+      const retiredContent = "# Retired packaged skill\n"
+      const privateContent = "operator-private bytes\n"
+      mkdirSync(retiredDir, { recursive: true })
+      writeFileSync(retiredFile, retiredContent)
+      writeFileSync(privateFile, privateContent)
+      writeFileSync(join(skillsDir, ".wunderkind-version.json"), JSON.stringify({
+        package: "@grant-vine/wunderkind",
+        kind: "skills",
+        version: "0.27.9",
+        files: { "design-an-interface/SKILL.md": createHash("sha256").update(retiredContent, "utf8").digest("hex") },
+      }))
+
+      const result = mod.removeNativeSkillFiles("global")
+
+      expect(result.success).toBe(true)
+      expect(result.heldPaths).toEqual([retiredDir])
+      expect(readFileSync(retiredFile, "utf8")).toBe(retiredContent)
+      expect(readFileSync(privateFile, "utf8")).toBe(privateContent)
     })
   })
 
