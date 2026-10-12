@@ -1,9 +1,9 @@
 # Host upgrade and rollback runbook
 
-This runbook accompanies release `0.28.4`. The audit base is commit `df863041f10028132b1e424e47a1a65783553865`; the earlier `0.27.9` comparison point is commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. The release synchronizes package/plugin metadata at `0.28.4`, targets OpenCode plugin/SDK `1.18.35`, OMO/LazyCodex `5.1.29`, and keeps the public runtime floor at Node `>=22.12.0` or Bun `1+`. Re-resolve versions and executable paths immediately before any consumer rollout.
+This runbook accompanies release `0.28.5`. The audit base is commit `df863041f10028132b1e424e47a1a65783553865`; the earlier `0.27.9` comparison point is commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. The release synchronizes package/plugin metadata at `0.28.5`, targets OpenCode plugin/SDK `1.18.35`, OMO/LazyCodex `5.1.29`, and keeps the public runtime floor at Node `>=22.12.0` or Bun `1+`. Re-resolve versions and executable paths immediately before any consumer rollout.
 
 <!-- wunderkind:upgrade-contract
-{"candidate":"0.28.4","comparison":{"version":"0.27.9","commit":"d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec"},"sourceCommit":"df863041f10028132b1e424e47a1a65783553865","openCode":{"plugin":"1.18.35","sdk":"1.18.35"},"omo":"5.1.29","runtime":{"node":">=22.12.0","bun":"1+"},"models":{"standard":"openai/gpt-6-sol","routine":"openai/gpt-6-luna"},"astra":"opt-in","publicDeprecatedTotal":28,"rejectedRoutes":["supportability-incident"]}
+{"candidate":"0.28.5","comparison":{"version":"0.27.9","commit":"d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec"},"sourceCommit":"df863041f10028132b1e424e47a1a65783553865","openCode":{"plugin":"1.18.35","sdk":"1.18.35"},"omo":"5.1.29","runtime":{"node":">=22.12.0","bun":"1+"},"models":{"standard":"openai/gpt-6-sol","routine":"openai/gpt-6-luna"},"astra":"opt-in","publicDeprecatedTotal":28,"rejectedRoutes":["supportability-incident"]}
 -->
 
 The managed model policy is Sol for orchestration, planning, high-complexity work and review, and Luna for routine/default/background work. OpenCode uses `openai/gpt-6-sol` and `openai/gpt-6-luna` for those tiers. Astra is explicit operator opt-in only: retain and report an existing user-owned override, but do not invoke Astra in a rollout smoke test. Memory and team mode are also opt-in and are never enabled by install, upgrade, init, or doctor.
@@ -97,7 +97,7 @@ If startup, cache resolution, model selection, or data behavior regresses:
 3. Restore configs and owned payloads from the private hash-bound backup, then compare SHA-256 and modes independently. Restore the known-good source/package through supported host operations; do not patch catalog caches or use cleanup/uninstall as rollback shortcuts.
 4. Restart the relevant host and repeat version, active-path, ownership, model-policy, and doctor checks. Report catalog/binary/app rollback as `HOLD` unless the owner-supported prior-payload operation itself succeeds.
 
-The old beta stream (`oh-my-openagent@5.0.0-beta.*`, including `5.0.0-beta.86`) is rollback history, not the current target. The original released package `0.27.9` remains the comparison artifact; package/plugin version `0.28.4` is published through the authorized tag-triggered GitHub Actions workflow.
+The old beta stream (`oh-my-openagent@5.0.0-beta.*`, including `5.0.0-beta.86`) is rollback history, not the current target. The original released package `0.27.9` remains the comparison artifact; package/plugin version `0.28.5` is published through the authorized tag-triggered GitHub Actions workflow.
 
 ## Evidence contract
 

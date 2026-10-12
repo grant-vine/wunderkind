@@ -39,7 +39,14 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-Release `0.28.4` targets OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`, and preserves the public Node `>=22.12.0` or Bun `1+` floor. The audit base is `0.28.3` at `df863041f10028132b1e424e47a1a65783553865`; the earlier comparison point is `0.27.9` at commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+Release `0.28.5` targets OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`, and preserves the public Node `>=22.12.0` or Bun `1+` floor. The audit base is `0.28.3` at `df863041f10028132b1e424e47a1a65783553865`; the earlier comparison point is `0.27.9` at commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.5
+
+- `wunderkind codex repair` installs known missing supporting skills for detected Matt Pocock workflows from a pinned upstream source, preserves existing files, and verifies the result.
+- Doctor identifies unresolved companion skill dependencies and points to the built-in repair command; `--dry-run` previews without network access or writes.
+- Codex catalog discovery handles larger plugin listings without hiding companion diagnostics behind a subprocess buffer overflow.
+- The six-agent, eleven-Codex-skill inventory, dependency baseline, and ordinary upgrade ownership boundaries remain unchanged.
 
 ## What's new in 0.28.4
 
