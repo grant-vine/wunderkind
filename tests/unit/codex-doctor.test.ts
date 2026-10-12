@@ -340,6 +340,117 @@ describe("Codex doctor", () => {
     }
   })
 
+  it("reports missing supporting skills when Matt entry points are installed", () => {
+    const paths = sandbox()
+    const fake = createFakeCodex()
+    configure(paths, fake)
+    const originalLog = console.log
+    const lines: string[] = []
+    console.log = (...values: unknown[]): void => { lines.push(values.join(" ")) }
+    try {
+      installCodexWunderkind()
+      const sources: Readonly<Record<string, string>> = {
+        "improve-codebase-architecture": 'Call the Skill tool with "codebase-design".\nOnce selected, call the Skill tool with "grilling".\nCall the Skill tool with "domain-modeling".',
+        "grill-me": 'Call the Skill tool with "grilling".',
+      }
+      for (const name of CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills.filter((skill) => skill !== "codebase-design" && skill !== "grilling")) {
+        const directory = join(paths.codexHome, "skills", name)
+        mkdirSync(directory, { recursive: true })
+        writeFileSync(join(directory, "SKILL.md"), sources[name] ?? "---\nname: test\n---\n", "utf8")
+      }
+      const sourcePath = join(paths.codexHome, "skills", "improve-codebase-architecture", "SKILL.md")
+      const before = readFileSync(sourcePath, "utf8")
+      fake.calls.length = 0
+
+      const exitCode = runCodexDoctor()
+
+      expect(exitCode).toBe(0)
+      expect(lines.join("\n")).toContain("Matt installed")
+      expect(lines.join("\n")).toContain("improve-codebase-architecture: missing supporting skills codebase-design, grilling")
+      expect(lines.join("\n")).toContain("grill-me: missing supporting skills grilling")
+      expect(lines.join("\n")).toContain("wunderkind codex repair")
+      expect(readFileSync(sourcePath, "utf8")).toBe(before)
+      expect(existsSync(join(paths.codexHome, "skills", "grilling"))).toBe(false)
+      expect(fake.calls.every((argv) => argv[0] === "--version" || argv.includes("list"))).toBe(true)
+    } finally {
+      console.log = originalLog
+      cleanup(paths)
+    }
+  })
+
+  it("resolves supporting skills across safe roots and reports dependency gaps in JSON", () => {
+    const paths = sandbox()
+    configure(paths, createFakeCodex())
+    const originalLog = console.log
+    const lines: string[] = []
+    console.log = (...values: unknown[]): void => { lines.push(values.join(" ")) }
+    try {
+      installCodexWunderkind()
+      for (const name of CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills) {
+        const directory = name === "improve-codebase-architecture"
+          ? join(paths.codexHome, "skills", name)
+          : join(paths.root, ".agents", "skills", name)
+        mkdirSync(directory, { recursive: true })
+        writeFileSync(join(directory, "SKILL.md"), "---\nname: test\n---\n", "utf8")
+      }
+      writeFileSync(join(paths.codexHome, "skills", "improve-codebase-architecture", "SKILL.md"), 'Call the Skill tool with "codebase-design".\nCall the Skill tool with "grilling".', "utf8")
+
+      const exitCode = runCodexDoctor({ json: true })
+
+      expect(exitCode).toBe(0)
+      expect(lines).toHaveLength(1)
+      const output: unknown = JSON.parse(lines[0] ?? "")
+      if (!isRecord(output) || !isRecord(output["optional"])) throw new Error("Expected optional companion JSON")
+      expect(output["optional"]["matt"]).toBe("enabled")
+      expect(output["optional"]["missingSkillDependencies"]).toEqual([])
+      expect(lines[0]).not.toContain(paths.root)
+    } finally {
+      console.log = originalLog
+      cleanup(paths)
+    }
+  })
+
+  it("does not require supporting skills for a standalone Matt skill variant", () => {
+    const paths = sandbox()
+    configure(paths, createFakeCodex())
+    try {
+      const directory = join(paths.codexHome, "skills", "improve-codebase-architecture")
+      mkdirSync(directory, { recursive: true })
+      writeFileSync(join(directory, "SKILL.md"), "Architecture vocabulary and interview process are supplied inline.", "utf8")
+
+      const report = getCodexDoctorReport()
+
+      if ("unavailable" in report.optional) throw new Error("Expected companion report")
+      expect(report.optional.missingSkillDependencies).toEqual([])
+    } finally {
+      cleanup(paths)
+    }
+  })
+
+  it("reports each unresolved dependency once and rejects a linked supporting skill", () => {
+    const paths = sandbox()
+    configure(paths, createFakeCodex())
+    try {
+      const directory = join(paths.codexHome, "skills", "improve-codebase-architecture")
+      mkdirSync(directory, { recursive: true })
+      writeFileSync(join(directory, "SKILL.md"), 'Private prose sentinel.\nCall the Skill tool with "grilling".\nCall the Skill tool with "grilling".', "utf8")
+      const external = join(paths.root, "external-grilling.md")
+      writeFileSync(external, "Private supporting prose sentinel.", "utf8")
+      const supportingDirectory = join(paths.codexHome, "skills", "grilling")
+      mkdirSync(supportingDirectory, { recursive: true })
+      symlinkSync(external, join(supportingDirectory, "SKILL.md"))
+
+      const report = getCodexDoctorReport()
+
+      if ("unavailable" in report.optional) throw new Error("Expected companion report")
+      expect(report.optional.missingSkillDependencies).toEqual([{ skill: "improve-codebase-architecture", missingSkills: ["grilling"] }])
+      expect(JSON.stringify(report.optional)).not.toContain(paths.root)
+      expect(JSON.stringify(report.optional)).not.toContain("sentinel")
+    } finally {
+      cleanup(paths)
+    }
+  })
+
   it("does not count a symlinked companion SKILL.md as installed", () => {
     const paths = sandbox()
     configure(paths, createFakeCodex())

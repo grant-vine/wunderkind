@@ -24,7 +24,7 @@ describe("Codex CLI help", () => {
 
     // Then: every Codex lifecycle verb is discoverable as a nested command.
     expect(result.status).toBe(0)
-    for (const verb of ["install", "upgrade", "doctor", "uninstall", "init", "cleanup"]) {
+    for (const verb of ["install", "upgrade", "doctor", "repair", "uninstall", "init", "cleanup"]) {
       expect(result.output).toContain(verb)
     }
   })
@@ -53,7 +53,7 @@ describe("Codex CLI help", () => {
   it("renders help for each Codex lifecycle verb", () => {
     // Given: the installed Wunderkind CLI entry point.
     // When: every Codex lifecycle verb help page is requested.
-    const helpPages = ["install", "upgrade", "doctor", "uninstall", "init", "cleanup"].map((verb) => ({
+    const helpPages = ["install", "upgrade", "doctor", "repair", "uninstall", "init", "cleanup"].map((verb) => ({
       verb,
       result: runCli("codex", verb, "--help"),
     }))
@@ -63,6 +63,9 @@ describe("Codex CLI help", () => {
     const doctor = helpPages.find(({ verb }) => verb === "doctor")
     expect(doctor?.result.output).toContain("--json")
     expect(doctor?.result.output).toContain("--verbose")
+    const repair = helpPages.find(({ verb }) => verb === "repair")
+    expect(repair?.result.output).toContain("--dry-run")
+    expect(repair?.result.output).toContain("--json")
   })
 
   it("documents the released npx lifecycle while retaining the local packed equivalent", () => {

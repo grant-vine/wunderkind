@@ -239,7 +239,11 @@ export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
     console.log(`Project bootstrap: ${report.core.projectBootstrap.ready ? "ready" : "not attached"}`)
     for (const action of report.remediation) console.log(action)
     if ("unavailable" in report.optional) console.log("Optional companions: unavailable (advisory; doctor makes no changes).")
-    else console.log(`Optional companions: Matt ${report.optional.matt}; Supabase ${report.optional.supabasePack}; Vercel ${report.optional.vercelPack}; plugins ${Object.entries(report.optional.plugins).map(([id, status]) => `${id}=${status}`).join(", ")}. Advisory only; doctor makes no changes.`)
+    else {
+      console.log(`Optional companions: Matt ${report.optional.matt}; Supabase ${report.optional.supabasePack}; Vercel ${report.optional.vercelPack}; plugins ${Object.entries(report.optional.plugins).map(([id, status]) => `${id}=${status}`).join(", ")}. Advisory only; doctor makes no changes.`)
+      for (const dependency of report.optional.missingSkillDependencies) console.log(`- ${dependency.skill}: missing supporting skills ${dependency.missingSkills.join(", ")}`)
+      if (report.optional.missingSkillDependencies.length > 0) console.log("Run `wunderkind codex repair --dry-run` to preview, then `wunderkind codex repair` to install known missing supporting skills. Existing files are preserved; companions remain optional.")
+    }
   }
   return report.core.healthy && report.modelPolicy.status !== "unsafe" && report.modelPolicy.status !== "drifted" ? 0 : 1
 }

@@ -14,6 +14,7 @@ import { getCodexGlobalInstallReadiness, installCodexWunderkind } from "./codex/
 import { runCodexProjectCleanup, runCodexProjectInit } from "./codex/project-lifecycle.js"
 import { upgradeCodexWunderkind } from "./codex/upgrade.js"
 import { runCodexDoctor } from "./codex/doctor.js"
+import { runCodexCompanionRepair } from "./codex/companion-repair.js"
 import { uninstallCodexWunderkind } from "./codex/uninstall.js"
 import { addAiTracesToGitignore } from "./gitignore-manager.js"
 import { detectCurrentConfig } from "./config-manager/index.js"
@@ -741,6 +742,16 @@ codexProgram
   .option("--reset-model-policy", "Reclaim removed Wunderkind-managed keys (requires --apply-model-policy)")
   .action((opts: { json?: boolean | undefined; verbose?: boolean | undefined; applyModelPolicy?: boolean | undefined; resetModelPolicy?: boolean | undefined }) => runCodexCommand(
     () => runCodexDoctor({ json: opts.json === true, verbose: opts.verbose === true, applyModelPolicy: opts.applyModelPolicy === true, resetModelPolicy: opts.resetModelPolicy === true }),
+  ))
+
+codexProgram
+  .command("repair")
+  .description("Install known missing Matt Pocock supporting skills without overwriting existing files.")
+  .option("--dry-run", "Preview missing supporting skills without downloading or writing files")
+  .option("--json", "Print the machine-readable repair result")
+  .addHelpText("after", "\nUses a pinned upstream source. Installs only missing codebase-design, grilling, or domain-modeling dependencies into the active Codex skills directory. Start a new Codex task after repair.")
+  .action((opts: { dryRun?: boolean; json?: boolean }) => runCodexCommand(
+    () => runCodexCompanionRepair({ dryRun: opts.dryRun === true, json: opts.json === true }),
   ))
 
 codexProgram

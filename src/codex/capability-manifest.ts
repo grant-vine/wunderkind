@@ -135,7 +135,7 @@ export const CODEX_CAPABILITY_MANIFEST: CodexCapabilityManifest = {
   staticCommands: EXPECTED_STATIC_COMMAND_DISPOSITIONS,
   generatedCommands: EXPECTED_GENERATED_COMMAND_DISPOSITIONS,
   optionalCompanions: {
-    mattSkills: ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling"],
+    mattSkills: ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling", "codebase-design", "grilling"],
     skillPacks: ["supabase/agent-skills", "vercel-labs/agent-skills"],
     supabaseSkills: ["supabase", "supabase-postgres-best-practices"],
     vercelSkills: [
@@ -192,7 +192,7 @@ export function validateCodexCapabilityManifest(manifest: CodexCapabilityManifes
   if (manifest.marketplace.id !== "grant-vine" || manifest.plugin.id !== "wunderkind") throw new CodexCapabilityValidationError("Expected frozen marketplace and plugin IDs")
   if (manifest.lazyCodex.pluginId !== "omo@sisyphuslabs" || manifest.lazyCodex.versionRange !== ">=5.0.0-beta.62 <6") throw new CodexCapabilityValidationError("Expected frozen LazyCodex requirement")
   ensureExactIds("deferred capability", manifest.deferredCapabilities, ["codex-prompt-token-optimization-revisit", "no-token-audit-port"])
-  ensureExactIds("optional Matt skill", manifest.optionalCompanions.mattSkills, ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling"])
+  ensureExactIds("optional Matt skill", manifest.optionalCompanions.mattSkills, ["grill-me", "grill-with-docs", "improve-codebase-architecture", "tdd", "triage", "to-spec", "to-tickets", "domain-modeling", "codebase-design", "grilling"])
   ensureExactIds("optional skill pack", manifest.optionalCompanions.skillPacks, ["supabase/agent-skills", "vercel-labs/agent-skills"])
   ensureExactIds("optional Supabase skill", manifest.optionalCompanions.supabaseSkills, ["supabase", "supabase-postgres-best-practices"])
   ensureExactIds("optional Vercel skill", manifest.optionalCompanions.vercelSkills, [

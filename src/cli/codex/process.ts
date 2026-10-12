@@ -26,9 +26,10 @@ export class CodexProcessError extends Error {
 
 let processRunner: CodexProcessRunner | undefined
 export const CODEX_PROCESS_TIMEOUT_MS = 15_000
+const CODEX_PROCESS_MAX_BUFFER_BYTES = 8 * 1024 * 1024
 
 function defaultRunner(argv: readonly string[]): CodexProcessResult {
-  const result = spawnSync("codex", argv, { encoding: "utf8", shell: false, timeout: CODEX_PROCESS_TIMEOUT_MS })
+  const result = spawnSync("codex", argv, { encoding: "utf8", shell: false, timeout: CODEX_PROCESS_TIMEOUT_MS, maxBuffer: CODEX_PROCESS_MAX_BUFFER_BYTES })
   return {
     status: result.status,
     stdout: result.stdout ?? "",

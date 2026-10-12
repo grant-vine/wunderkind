@@ -5,6 +5,8 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 > [!NOTE]
 > **Codex edition.** Wunderkind also ships a separate nested `wunderkind codex` lifecycle for Codex plus LazyCodex. It does not change the existing OpenCode product. The documented path is `npx @grant-vine/wunderkind codex <verb>`; local packed QA uses `node package/bin/wunderkind.js codex <verb>`. See [Codex edition capabilities](docs/codex-capabilities.md) for its exact six-agent, eleven-skill boundary, ownership model, and optional companion routes. Codex prompt/token optimization is deferred for a future host-native design revisit.
 
+If doctor reports missing supporting skills for an installed Matt Pocock workflow, run `wunderkind codex repair --dry-run` to preview and `wunderkind codex repair` to install them. Repair uses a pinned upstream source, preserves existing files, and verifies that the missing dependencies have been resolved. Start a new Codex task afterward.
+
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
 > [!IMPORTANT]

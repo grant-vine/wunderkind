@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync } from "node:fs"
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative, resolve, sep } from "node:path"
 import { CODEX_CAPABILITY_MANIFEST } from "../../codex/capability-manifest.js"
 import { resolveCodexPaths } from "./paths.js"
@@ -11,6 +11,10 @@ export interface CodexCompanionReport {
   readonly matt: CodexCompanionStatus
   readonly supabasePack: CodexCompanionStatus
   readonly vercelPack: CodexCompanionStatus
+  readonly missingSkillDependencies: readonly {
+    readonly skill: string
+    readonly missingSkills: readonly string[]
+  }[]
 }
 
 export class CodexCompanionError extends Error {
@@ -58,7 +62,7 @@ function rootContainsSkill(root: string, skill: string): boolean {
   return isSafeDirectory(candidate) && existsSync(skillFile) && !lstatSync(skillFile).isSymbolicLink() && lstatSync(skillFile).isFile()
 }
 
-function installedSkillNames(): readonly string[] {
+function installedSkillFiles(): readonly { readonly name: string; readonly path: string }[] {
   const paths = resolveCodexPaths()
   const roots = [
     confinedSkillsRoot(paths.codexHome, ["skills"]),
@@ -67,8 +71,25 @@ function installedSkillNames(): readonly string[] {
   ]
   return roots.flatMap((root) => {
     if (root === undefined) return []
-    return readdirSync(root).filter((entry) => rootContainsSkill(root, entry))
+    return readdirSync(root).filter((entry) => rootContainsSkill(root, entry)).map((name) => ({ name, path: join(root, name, "SKILL.md") }))
   })
+}
+
+function missingMattDependencies(files: ReturnType<typeof installedSkillFiles>): CodexCompanionReport["missingSkillDependencies"] {
+  const names = new Set(files.map((file) => file.name))
+  const missing = new Map<string, Set<string>>()
+  for (const file of files) {
+    if (!CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills.includes(file.name)) continue
+    const content = readFileSync(file.path, "utf8")
+    for (const match of content.matchAll(/\bcall\s+the\s+skill\s+tool\s+with\s+["`]([a-z][a-z0-9-]*)["`]/gi)) {
+      const dependency = match[1]
+      if (dependency === undefined || names.has(dependency)) continue
+      const dependencies = missing.get(file.name) ?? new Set<string>()
+      dependencies.add(dependency)
+      missing.set(file.name, dependencies)
+    }
+  }
+  return [...missing].sort(([left], [right]) => left.localeCompare(right)).map(([skill, dependencies]) => ({ skill, missingSkills: [...dependencies].sort() }))
 }
 
 function skillPackStatus(names: readonly string[], expected: readonly string[]): CodexCompanionStatus {
@@ -76,14 +97,21 @@ function skillPackStatus(names: readonly string[], expected: readonly string[]):
   return expected.some((skill) => names.includes(skill)) ? "installed" : "absent"
 }
 
+export function getMissingCodexSkillDependencies(): CodexCompanionReport["missingSkillDependencies"] {
+  return missingMattDependencies(installedSkillFiles())
+}
+
 export function getCodexCompanionReport(): CodexCompanionReport {
   const discovered = requireCodexJson(["plugin", "list", "--available", "--json"], "codex plugin list --available")
   const plugins = Object.fromEntries(CODEX_CAPABILITY_MANIFEST.optionalCompanions.plugins.map((id) => [id, pluginStatus(discovered, id)]))
-  const skillNames = installedSkillNames()
+  const skillFiles = installedSkillFiles()
+  const skillNames = skillFiles.map((file) => file.name)
+  const missingSkillDependencies = missingMattDependencies(skillFiles)
   return {
     plugins,
-    matt: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills),
+    matt: missingSkillDependencies.length > 0 ? "installed" : skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.mattSkills),
     supabasePack: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.supabaseSkills),
     vercelPack: skillPackStatus(skillNames, CODEX_CAPABILITY_MANIFEST.optionalCompanions.vercelSkills),
+    missingSkillDependencies,
   }
 }

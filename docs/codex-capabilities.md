@@ -17,11 +17,12 @@ Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wun
 | `wunderkind codex install` | Validates Codex and LazyCodex, adds only the Wunderkind marketplace/plugin through the Codex CLI, and installs six hash-recorded custom agents. |
 | `wunderkind codex upgrade` | Refreshes only hash-owned Wunderkind agents and payloads; modified or unowned files are preserved and reported. |
 | `wunderkind codex doctor` | Is read-only by default; reports core readiness, six agents, eleven skills, project readiness, advisory companions, receipt-backed ownership, and model-policy drift. Use `--json` for the versioned report or `--verbose` for additional sanitized detail. `--apply-model-policy` is the explicit repair path for reviewed managed role values and preserves existing user overrides. |
+| `wunderkind codex repair` | Installs known missing supporting skills for detected Matt Pocock companion workflows into the active Codex skills directory. Uses a pinned upstream source and preserves existing files. `--dry-run` previews without network or writes; `--json` reports the result. |
 | `wunderkind codex uninstall` | Removes only hash-matching Wunderkind agents, payload/state, plugin, and marketplace registration when it is exclusively owned. It never removes LazyCodex or companions. |
 | `wunderkind codex init` | Requires a healthy global Codex installation, reuses the host-neutral project artifacts, and creates only `.wunderkind/codex-project.json` plus Codex runtime guidance. |
 | `wunderkind codex cleanup` | Removes only hash-owned Codex project marker/runtime files. It preserves shared Wunderkind config, `AGENTS.md`, `CONTEXT.md`, `.omo/`, docs output, OpenCode state, and companion assets. |
 
-Start a new Codex task after `install` or `upgrade`: Codex loads custom agents and plugin skills at task start.
+Start a new Codex task after `install`, `upgrade`, or `repair`: Codex loads custom agents and skills at task start.
 
 ## Lean response mode
 
@@ -79,16 +80,30 @@ Only static `docs-index` is adapted as a skill. `workflow-sync` remains CLI beha
 
 ## Optional companions
 
-These are advisory integrations, not requirements. Every command below is optional, user-run, and non-owned: Wunderkind does not execute, authenticate, update, remove, or vendor any of them.
+These are advisory integrations, not requirements. The companion commands below remain optional and user-run. Ordinary Wunderkind lifecycle commands do not install, authenticate, update, remove, or vendor these companions. The explicit `wunderkind codex repair` command is a narrow installation path for known missing Matt supporting skills; it does not take ownership of existing companion files.
 
 | Optional companion | User-run, non-owned command | Intended coverage |
 | --- | --- | --- |
-| Matt Pocock skills | **Optional, user-run, non-owned:** `npx skills@latest add mattpocock/skills` | Selectively add `grill-me`, `grill-with-docs`, `improve-codebase-architecture`, `tdd`, `triage`, `to-spec`, `to-tickets`, or `domain-modeling` as needed. |
+| Matt Pocock skills | **Optional, user-run, non-owned:** `npx skills@latest add mattpocock/skills` | Selectively add `grill-me`, `grill-with-docs`, `improve-codebase-architecture`, `tdd`, `triage`, `to-spec`, `to-tickets`, or `domain-modeling` as needed, including their supporting skills: `codebase-design` and `grilling`. |
 | Supabase skill pack | **Optional, user-run, non-owned:** `npx skills@latest add supabase/agent-skills` | `supabase` and `supabase-postgres-best-practices`. |
 | Vercel skill pack | **Optional, user-run, non-owned:** `npx skills@latest add vercel-labs/agent-skills` | Vercel deployment and platform workflows. |
 | OpenAI-curated plugin | **Optional, user-run, non-owned:** `codex plugin add <plugin>@openai-curated` | Replace `<plugin>` with an available companion such as `github`, `figma`, `vercel`, `sentry`, `codex-security`, `posthog`, or `mixpanel`. |
 
 `wunderkind codex doctor` may report whether these companions are installed, enabled, available, or absent. Its report is advisory and never changes their state.
+
+Install companion workflows with their supporting skills in the same Codex scope. The upstream `improve-codebase-architecture` workflow calls `codebase-design` for architecture vocabulary, `grilling` after a candidate is selected, and `domain-modeling` for domain updates. `grill-me` also calls `grilling`; installing the entry point alone leaves that workflow incomplete. These are separate from Wunderkind's OpenCode adaptations, which supply their own vocabulary and process.
+
+Doctor checks explicit `Call the Skill tool with "<name>"` references in detected Matt companion files and reports unresolved targets in text and JSON (`optional.missingSkillDependencies`). It holds the Matt pack status at `installed` while these dependencies are missing. This is a file-level advisory check, not proof that Codex has loaded the skills, and does not change core health or the exit code.
+
+Repair a reported gap through Wunderkind:
+
+```bash
+wunderkind codex repair --dry-run
+wunderkind codex repair
+wunderkind codex doctor
+```
+
+Repair installs only missing `codebase-design`, `grilling`, and `domain-modeling` dependencies referenced by already-detected Matt companion skills. It downloads complete supporting Markdown and agent metadata, the upstream MIT license, and a source record from `mattpocock/skills` at pinned commit `49dd158d1076134a641b33efb035946536778336`. Downloads finish before installation begins; repair verifies the downloaded skill identity and checks for remaining dependency gaps before reporting success. An existing destination, including an incomplete directory or link, is held for operator resolution; unknown dependencies are reported rather than fetched arbitrarily. Normal install, upgrade, cleanup, and uninstall do not modify these third-party files. The skills remain editable and outside Wunderkind's eleven-skill payload; start a new Codex task after repair.
 
 ## Ownership and safety
 
