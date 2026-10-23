@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { parse } from "yaml"
 import { WUNDERKIND_AGENT_DEFINITIONS } from "../../src/agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../src/agents/render-markdown.js"
 import { RETAINED_AGENT_SLASH_COMMANDS, renderGeneratedRetainedNativeCommandMarkdown, getGeneratedRetainedNativeCommands } from "../../src/agents/slash-commands.js"
@@ -27,6 +28,14 @@ function renderAgentMarkdown(agentId: (typeof WUNDERKIND_AGENT_DEFINITIONS)[numb
 }
 
 describe("build-agents script", () => {
+  it("gives every native specialist explicit model and reasoning settings", () => {
+    for (const definition of WUNDERKIND_AGENT_DEFINITIONS) {
+      const markdown = renderNativeAgentMarkdown(definition)
+      const frontmatter: unknown = parse(markdown.split("---")[1] ?? "")
+      if (typeof frontmatter !== "object" || frontmatter === null) throw new Error("Expected agent frontmatter")
+      expect([Reflect.get(frontmatter, "model"), Reflect.get(frontmatter, "variant")]).toEqual(["openai/gpt-6.1-sol", "high"])
+    }
+  })
   it("regenerates every shipped agent markdown file from the manifest", async () => {
     const backups = new Map<string, string>()
     const messages: string[] = []

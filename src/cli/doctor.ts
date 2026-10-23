@@ -39,7 +39,7 @@ export interface DoctorOptions {
 }
 
 export const MODEL_ROUTING_ADVISORY =
-  "template defaults: quick=Haiku; unspecified-low=openai/gpt-6-luna; unspecified-high=openai/gpt-6-sol (high); writing/visual-engineering unchanged; Astra is absent unless an operator adds it in a user-owned OMO override; doctor does not modify user-owned OMO overrides"
+  "Wunderkind-managed template: quick=openai/gpt-6-luna; unspecified-low=openai/gpt-6-luna; unspecified-high=openai/gpt-6-sol (high); six retained specialists=openai/gpt-6.1-sol (high); Astra is not a managed default. These assignments do not prove the effective OpenCode/OMO route. Run standalone `omo doctor --models --json` for resolved OMO routing; `exclude_models` is an operator-owned OMO option only on schemas that support it, and Wunderkind does not apply it."
 
 interface OpenCodeConfig {
   mcp?: Record<string, unknown>
@@ -266,6 +266,12 @@ export async function runDoctorWithOptions(options: DoctorOptions): Promise<numb
     const nativeCommandVersion = detectNativeAssetVersion("commands")
     const nativeSkillVersion = detectNativeAssetVersion("skills")
     const nativeAgentMarkdownVersions = detectNativeAgentMarkdownVersions("global")
+    line("native specialist model policy:", nativeAgentMarkdownVersions.modelPolicyCurrent === true
+      ? color.green("GPT-6.1 Sol/high defaults present")
+      : nativeAgentMarkdownVersions.modelPolicyCurrent === false
+        ? color.yellow(`review or upgrade recommended (${nativeAgentMarkdownVersions.modelPolicyDriftAgentIds.join(", ")}); edited/operator-owned assets are preserved`)
+        : color.dim("unverified"))
+    if ((nativeAgentMarkdownVersions.astraAgentIds ?? []).length > 0) line("native specialist Astra assignments:", color.yellow(nativeAgentMarkdownVersions.astraAgentIds.join(", ")))
     const staleNativeAssets = [
       { kind: "agents", needsUpgrade: nativeAgentVersion.needsUpgrade || !nativeAgentMarkdownVersions.allCurrent, ownership: nativeAgentVersion.ownership },
       { kind: "commands", needsUpgrade: nativeCommandVersion.needsUpgrade, ownership: nativeCommandVersion.ownership },

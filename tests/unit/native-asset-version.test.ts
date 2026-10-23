@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test"
+import { createHash } from "node:crypto"
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -31,6 +32,48 @@ async function withSandbox(
 }
 
 describe("native asset version markers", () => {
+  it("refreshes receipt-owned inherited model settings at the same package version", async () => {
+    await withSandbox("wk-native-model-policy-", async (_sandbox, mod) => {
+      const written = mod.writeNativeAgentFiles("global")
+      const markerPath = join(written.configPath, ".wunderkind-version.json")
+      const marker: unknown = JSON.parse(readFileSync(markerPath, "utf8"))
+      if (typeof marker !== "object" || marker === null) throw new Error("Expected native receipt")
+      const files: unknown = Reflect.get(marker, "files")
+      if (typeof files !== "object" || files === null) throw new Error("Expected native receipt files")
+      for (const agent of mod.detectNativeAgentMarkdownVersions("global").agents) {
+        const legacy = readFileSync(agent.filePath, "utf8").replace(/^(?:model|variant):[^\n]*\n/gmu, "")
+        writeFileSync(agent.filePath, legacy)
+        Reflect.set(files, `${agent.id}.md`, createHash("sha256").update(legacy).digest("hex"))
+      }
+      writeFileSync(markerPath, JSON.stringify(marker))
+      expect(mod.detectNativeAssetVersion("agents").ownership).toBe("wunderkind-owned")
+      expect(mod.detectNativeAssetVersion("agents").needsUpgrade).toBe(true)
+      expect(mod.detectNativeAgentMarkdownVersions("global").modelPolicyDriftAgentIds).toHaveLength(6)
+
+      expect(mod.writeNativeAgentFiles("global").success).toBe(true)
+
+      const policy = mod.detectNativeAgentMarkdownVersions("global")
+      expect(policy.modelPolicyCurrent).toBe(true)
+      expect(policy.agents.map((agent) => [agent.model, agent.variant])).toEqual(Array.from({ length: 6 }, () => ["openai/gpt-6.1-sol", "high"]))
+      expect(mod.detectNativeAssetVersion("agents").ownership).toBe("wunderkind-owned")
+      expect(mod.detectNativeAssetVersion("agents").needsUpgrade).toBe(false)
+    })
+  })
+
+  it("preserves an operator Astra selection during model-default refresh", async () => {
+    await withSandbox("wk-native-model-opt-in-", async (_sandbox, mod) => {
+      const written = mod.writeNativeAgentFiles("global")
+      const file = join(written.configPath, "ciso.md")
+      const chosen = readFileSync(file, "utf8").replace("model: openai/gpt-6.1-sol", "model: openai/gpt-6-astra")
+      writeFileSync(file, chosen)
+
+      mod.writeNativeAgentFiles("global")
+
+      expect(readFileSync(file, "utf8")).toBe(chosen)
+      expect(mod.detectNativeAgentMarkdownVersions("global").astraAgentIds).toEqual(["ciso"])
+      expect(mod.detectNativeAssetVersion("agents").ownership).toBe("mixed")
+    })
+  })
   it("writes and detects version markers for native assets", async () => {
     await withSandbox("wk-native-assets-", async (_sandbox, mod) => {
       const agentWrite = mod.writeNativeAgentFiles("global")

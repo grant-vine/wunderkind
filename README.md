@@ -39,7 +39,14 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-Release `0.28.5` targets OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`, and preserves the public Node `>=22.12.0` or Bun `1+` floor. The audit base is `0.28.3` at `df863041f10028132b1e424e47a1a65783553865`; the earlier comparison point is `0.27.9` at commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.6` release candidate targets OpenCode plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`, preserving the public Node `>=22.12.0` or Bun `1+` floor. Six retained specialists explicitly use GPT-6.1 Sol/high in OpenCode native agents and Codex TOML; Sol/Luna category defaults remain in place and Astra stays operator opt-in. The previous released version is `0.28.5` at `5727b5f7200f5fb6f58ae827fbebdf51774d8cd0`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.6
+
+- Updated OpenCode plugin/SDK and OMO pins, with exact artifact trust for the reviewed 5.1.44 Codex policy repair path.
+- Doctor reports version compatibility separately from policy repair trust and checks retained specialist model settings.
+- Six Codex agent prompts and two workflow skills have updated guidance. The 0.28.5 companion repair remains available.
+- The experimental TypeSafe adapter keeps SDK 0.6.0 while the Bun response reader issue in 0.7.0 remains unresolved.
 
 ## What's new in 0.28.5
 

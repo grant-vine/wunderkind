@@ -155,6 +155,10 @@ describe("shipped cost routing", () => {
     expect(template.agents["wunderkind:product-wunderkind"].category).toBe("unspecified-high")
     expect(template.agents["wunderkind:legal-counsel"].category).toBe("unspecified-high")
     for (const agent of WUNDERKIND_CANONICAL_MANIFEST.agents) expect(template.agents[`wunderkind:${agent.id}`].category).toBe(agent.omoCategory)
+    for (const agent of WUNDERKIND_CANONICAL_MANIFEST.agents) {
+      const route = template.agents[`wunderkind:${agent.id}`]
+      expect([route.model, route.variant]).toEqual(["openai/gpt-6.1-sol", "high"])
+    }
   })
 })
 

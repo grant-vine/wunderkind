@@ -97,7 +97,7 @@ describe("memory contract", () => {
       new URL("../../node_modules/@opencode-ai/plugin/dist/index.d.ts", import.meta.url),
       "utf8",
     )
-    expect(installedPluginPackage.version).toBe("1.18.35")
+    expect(installedPluginPackage.version).toBe("1.19.4")
     expect(installedPluginDeclaration).toContain('"chat.message"?: (input:')
     expect(MEMORY_AUTOMATIC_CAPTURE_CONTRACT).toEqual({
       mode: "chat.message",

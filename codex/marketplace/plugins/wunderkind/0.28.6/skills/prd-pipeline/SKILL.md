@@ -29,6 +29,8 @@ Do not use for a small implementation with already-complete acceptance criteria.
 2. Shape acceptance criteria and risks with the relevant specialists.
 3. Hand off execution through OMO planning and work lanes.
 
+Only enter this planning workflow when the user asks for product requirements, a PRD, or an implementation plan. For an ordinary authorized implementation request with clear acceptance criteria, proceed to the requested work without requiring a plan or approval gate. When handing work to Codex agents, use native delegation with an exact installed role and a self-contained task message; see the `wunderkind` workflow skill for the current tool fields.
+
 ## Hard rules
 
 Filesystem workflow state stays authoritative unless the project explicitly selects a tracker projection.

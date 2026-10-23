@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, wr
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { validateCodexCapabilityManifest, type CodexCapabilityManifest } from "./capability-manifest.js"
 import { renderCodexAgentToml } from "./render-agent-toml.js"
+import { CODEX_SPECIALIST_MODEL_DEFAULTS } from "./agent-model-defaults.js"
 
 const BUILT_IN_AGENT_NAMES = new Set(["default", "worker", "explorer"])
 const SUPPORTED_PLUGIN_MANIFEST_FIELDS = new Set([
@@ -201,7 +202,7 @@ export function buildCodexPayload(options: CodexPayloadBuildOptions): CodexPaylo
   rmSync(stagingRoot, { recursive: true, force: true })
   try {
     for (const agent of agentSources) {
-      writeGeneratedFile(stagingRoot, `agents/${agent.id}.toml`, renderCodexAgentToml(agent.parsed), entries)
+      writeGeneratedFile(stagingRoot, `agents/${agent.id}.toml`, renderCodexAgentToml({ ...agent.parsed, ...CODEX_SPECIALIST_MODEL_DEFAULTS }), entries)
     }
     writeMutableMarketplaceDescriptor(stagingRoot, marketplace(options.packageVersion))
     const pluginRoot = `marketplace/plugins/wunderkind/${options.packageVersion}`

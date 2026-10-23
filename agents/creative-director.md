@@ -1,8 +1,10 @@
 ---
 description: >
   Creative Director — Brand and UI/UX lead for design systems, visuals, and product experience.
-wunderkind_version: "0.28.5"
+wunderkind_version: "0.28.6"
 mode: all
+model: openai/gpt-6.1-sol
+variant: high
 temperature: 0.4
 permission:
   write: deny

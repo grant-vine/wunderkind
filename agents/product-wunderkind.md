@@ -1,8 +1,10 @@
 ---
 description: >
   Product Wunderkind — Default orchestrator and front door for all Wunderkind requests. Routes, clarifies, and synthesizes across specialists. VP Product authority for strategy, roadmaps, PRDs, OKRs, issue intake, acceptance review, and decomposition.
-wunderkind_version: "0.28.5"
+wunderkind_version: "0.28.6"
 mode: all
+model: openai/gpt-6.1-sol
+variant: high
 temperature: 0.2
 permission:
   write: deny

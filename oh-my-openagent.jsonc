@@ -48,6 +48,8 @@
     // ── Marketing ──────────────────────────────────────────────────────────────
     // CMO-calibre: go-to-market, brand, community, developer advocacy, docs-led launches, analytics
     "wunderkind:marketing-wunderkind": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "writing",
       "color": "#FF6B35",
@@ -57,6 +59,8 @@
     // ── Design ─────────────────────────────────────────────────────────────────
     // Creative Director: brand identity, design systems, UI/UX, accessibility
     "wunderkind:creative-director": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "visual-engineering",
       "color": "#A855F7",
@@ -66,6 +70,8 @@
     // ── Product ─────────────────────────────────────────────────────────────────
     // VP Product-calibre: roadmaps, OKRs, PRDs, sprint planning, task decomposition
     "wunderkind:product-wunderkind": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "unspecified-high",
       "color": "#3B82F6",
@@ -75,6 +81,8 @@
     // ── Engineering ─────────────────────────────────────────────────────────────
     // CTO-calibre: full-stack, DB, Vercel/Next.js, architecture, code review, AI
     "wunderkind:fullstack-wunderkind": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "unspecified-high",
       "color": "#10B981",
@@ -84,6 +92,8 @@
     // ── Security ────────────────────────────────────────────────────────────────
     // CISO: security architecture, OWASP, threat modelling, compliance, pen testing
     "wunderkind:ciso": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "unspecified-high",
       "color": "#EF4444",
@@ -93,6 +103,8 @@
     // ── Legal ────────────────────────────────────────────────────────────────────
     // OSS licensing, TOS, privacy policy, DPAs, CLAs, contract review, GDPR/CCPA obligations
     "wunderkind:legal-counsel": {
+      "model": "openai/gpt-6.1-sol",
+      "variant": "high",
       "mode": "primary",
       "category": "unspecified-high",
       "color": "#6366F1",

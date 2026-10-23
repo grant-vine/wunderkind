@@ -9,6 +9,8 @@ import { resolveCodexPaths } from "./paths.js"
 import { resolveCodexProjectMarker } from "./project-marker.js"
 import { runCodex } from "./process.js"
 import { readCodexInstallState, requireCanonicalCodexInstallState, sha256File, type CodexInstallState } from "./state.js"
+import { resolvePolicyUpstream } from "./policy-upstream.js"
+import { PolicyTransactionError } from "./policy-transaction.js"
 
 export interface CodexDoctorOptions { readonly json?: boolean; readonly verbose?: boolean; readonly applyModelPolicy?: boolean; readonly resetModelPolicy?: boolean }
 export type CodexAgentHealth = "current" | "missing" | "stale-owned" | "modified-unowned"
@@ -31,6 +33,7 @@ export interface CodexDoctorReport {
     readonly versions: { readonly loaded: string | undefined; readonly packaged: string; readonly latestKnown: string | null }
     readonly catalogOwnership: { readonly agents: "wunderkind-owned" | "mixed" | "unverified"; readonly skills: "wunderkind-owned" | "mixed" | "unverified" }
     readonly reviewedUpstreamCompatibility: ReviewedUpstreamCompatibility
+    readonly policyRepairTrust: { readonly status: "verified" | "held"; readonly reason: string }
     readonly modelPolicyStatus: CodexModelPolicyReport["status"]
   }
   readonly optional: CodexCompanionReport | { readonly unavailable: true }
@@ -64,9 +67,23 @@ function latestKnownPluginVersion(value: unknown, pluginId: string): string | nu
 }
 
 function reviewedUpstreamCompatibility(version: string | undefined): ReviewedUpstreamCompatibility {
-  if (version === "5.1.29") return "supported"
+  if (version === "5.1.29" || version === "5.1.44") return "supported"
   if (version === undefined || isCompatibleLazyCodexVersion(version)) return "unverified"
   return "incompatible"
+}
+
+function policyRepairTrust(version: string | undefined): CodexDoctorReport["core"]["policyRepairTrust"] {
+  if (version === undefined) return { status: "held", reason: "LazyCodex version is unavailable" }
+  try {
+    const upstream = resolvePolicyUpstream()
+    if (upstream.version !== version) return { status: "held", reason: "Installed LazyCodex version does not match the locally verified artifact graph" }
+    return { status: "verified", reason: "Exact installed LazyCodex artifact graph is verified; doctor did not stage or apply policy repair" }
+  } catch (error) {
+    if (error instanceof PolicyTransactionError) return { status: "held", reason: error.message }
+    if (error instanceof SyntaxError) return { status: "held", reason: "LazyCodex artifact metadata is invalid" }
+    if (error instanceof Error) return { status: "held", reason: "Could not verify LazyCodex artifact graph" }
+    throw error
+  }
 }
 
 function marketplaceHealth(value: unknown, expectedRoot: string): CodexPluginHealth {
@@ -214,7 +231,7 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   }
   const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
   const remediation = remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion, modelPolicy)
-  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap, versions: { loaded: plugin.version, packaged: currentPackageVersion, latestKnown: latestKnownPluginVersion(availablePlugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`) }, catalogOwnership, reviewedUpstreamCompatibility: reviewedUpstreamCompatibility(lazyCodex.version), modelPolicyStatus: modelPolicy.status }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
+  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap, versions: { loaded: plugin.version, packaged: currentPackageVersion, latestKnown: latestKnownPluginVersion(availablePlugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`) }, catalogOwnership, reviewedUpstreamCompatibility: reviewedUpstreamCompatibility(lazyCodex.version), policyRepairTrust: policyRepairTrust(lazyCodex.version), modelPolicyStatus: modelPolicy.status }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
 }
 
 export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
@@ -230,6 +247,7 @@ export function runCodexDoctor(options: CodexDoctorOptions = {}): number {
     console.log(`Versions: loaded=${report.core.versions.loaded ?? "unknown"}; packaged=${report.core.versions.packaged}; latest-known=${report.core.versions.latestKnown ?? "unknown (offline/unverified)"}`)
     console.log(`Catalog ownership: agents=${report.core.catalogOwnership.agents}; skills=${report.core.catalogOwnership.skills}`)
     console.log(`Reviewed upstream compatibility: ${report.core.reviewedUpstreamCompatibility}`)
+    console.log(`Policy repair trust: ${report.core.policyRepairTrust.status} (${report.core.policyRepairTrust.reason})`)
     console.log(`Model policy status: ${report.core.modelPolicyStatus}`)
     const modelPolicyDetail = report.modelPolicy.astraAssignments.length > 0 ? `; Astra assigned to ${report.modelPolicy.astraAssignments.join(", ")}` : ""
     console.log(`Model policy: ${report.modelPolicy.status}${modelPolicyDetail}`)

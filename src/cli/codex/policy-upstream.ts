@@ -31,6 +31,13 @@ const TRUSTED_ARTIFACTS: Readonly<Record<string, string>> = {
 const TRUSTED_RELEASES: Readonly<Record<string, { readonly artifacts: Readonly<Record<string, string>> }>> = {
   "5.1.1": { artifacts: { ...TRUSTED_ARTIFACTS, "packages/omo-codex/scripts/install-dist/install-local.mjs": "1b318ef8b414c49d7467f9e6dffa345c11b71895fa8fec97cf76912ddb9ffd33" } },
   "5.1.29": { artifacts: { ...TRUSTED_ARTIFACTS, "packages/omo-codex/scripts/install-dist/install-local.mjs": "d72a76623343c8cdc0ec4e02be8eed925755ad8a8ade40a5de09491d1358ebe2" } },
+  "5.1.44": { artifacts: {
+    ...TRUSTED_ARTIFACTS,
+    "packages/omo-codex/scripts/install-dist/install-local.mjs": "04e217a49b604687d71c60c798a21dcfb110683fc4e87cb80196d3a7ee53bef2",
+    "packages/omo-codex/plugin/package.json": "9d77de655138a987e31f0da7e8d2c74412a21c1834a8d1852fd65c5a2586d915",
+    "packages/omo-codex/plugin/scripts/sync-skills.mjs": "a8fe60cd8ce556f850f1ace963fd75d7288fbad51221bcbe7803773d887e4dbc",
+    "packages/shared-skills/package.json": "16f67075c7c3b9ef10690eba5ea33c610607580d545b6b6f073bf997e933a552",
+  } },
 }
 export function __setPolicyUpstreamRootForTests(root: string | undefined): void { rootForTests = root }
 export function resolvePolicyUpstream(): PolicyUpstream {
@@ -145,7 +152,7 @@ const result = await installMarketplaceLocally({ repoRoot: ${JSON.stringify(inpu
 console.log(JSON.stringify({installed:result.installed,commands}));
 `)
 
-    const env = { ...(input.profile === undefined ? {} : { OMO_PROFILE: input.profile }), PATH: process.env["PATH"], HOME: home, USERPROFILE: home, CODEX_HOME: codexHome, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: join(home, ".cache"), TMPDIR: temporary, TEMP: temporary, TMP: temporary, OMO_DISABLE_POSTHOG: "1", OMO_CODEX_DISABLE_POSTHOG: "1", OMO_SEND_ANONYMOUS_TELEMETRY: "0", OMO_CODEX_SEND_ANONYMOUS_TELEMETRY: "0" }
+    const env = { ...(input.profile === undefined ? {} : { OMO_PROFILE: input.profile }), PATH: process.env["PATH"], HOME: home, USERPROFILE: home, CODEX_HOME: codexHome, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: join(home, ".cache"), XDG_DATA_HOME: join(home, ".local", "share"), TMPDIR: temporary, TEMP: temporary, TMP: temporary, DO_NOT_TRACK: "1", OMO_DISABLE_TELEMETRY: "1", OMO_DISABLE_POSTHOG: "1", OMO_CODEX_DISABLE_POSTHOG: "1", OMO_SEND_ANONYMOUS_TELEMETRY: "0", OMO_CODEX_SEND_ANONYMOUS_TELEMETRY: "0" }
     const result = spawnSync("node", [runner], { cwd: project, env, timeout: 45_000, killSignal: "SIGKILL", maxBuffer: 1_048_576, encoding: "utf8" })
     if (result.error !== undefined || result.status !== 0) throw new PolicyTransactionError(`Isolated LazyCodex synchronization failed: ${result.error?.message ?? result.stderr.slice(-3000)}`)
     const files = new Map<string, Uint8Array>()

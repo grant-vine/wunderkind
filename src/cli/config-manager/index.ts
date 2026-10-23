@@ -12,7 +12,7 @@ import {
 } from "../../agents/canonical-manifest.js"
 import { WUNDERKIND_AGENT_IDS, WUNDERKIND_AGENT_DEFINITIONS } from "../../agents/manifest.js"
 import { renderNativeAgentMarkdown } from "../../agents/render-markdown.js"
-import { getCanonicalPackageVersion, readWunderkindAgentMarkdownVersion } from "../../agents/versioning.js"
+import { getCanonicalPackageVersion, readWunderkindAgentMarkdownVersion, readNativeAgentModelSettings } from "../../agents/versioning.js"
 import {
   getGeneratedRetainedNativeCommands,
   renderGeneratedRetainedNativeCommandMarkdown,
@@ -2506,7 +2506,7 @@ export function detectNativeAssetVersion(kind: NativeAssetKind): {
   const needsUpgrade =
     dirPresent &&
     currentVersion !== null &&
-    (!markerPresent || installedVersion === null || compareVersions(installedVersion, currentVersion) !== 0 || ownership !== "wunderkind-owned")
+    (!markerPresent || installedVersion === null || compareVersions(installedVersion, currentVersion) !== 0 || ownership !== "wunderkind-owned" || (kind === "agents" && !detectNativeAgentMarkdownVersions("global").modelPolicyCurrent))
 
   return {
     kind,
@@ -2539,10 +2539,16 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
     filePresent: boolean
     installedVersion: string | null
     matchesCurrent: boolean
+    model: string | null
+    variant: string | null
+    matchesModelPolicy: boolean
   }>
   staleAgentIds: string[]
   missingVersionAgentIds: string[]
   allCurrent: boolean
+  modelPolicyCurrent: boolean
+  modelPolicyDriftAgentIds: string[]
+  astraAgentIds: string[]
 } {
   void scope
 
@@ -2552,6 +2558,9 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
     const filePresent = existsSync(filePath)
     const installedVersion = filePresent ? readWunderkindAgentMarkdownVersion(filePath) : null
     const matchesCurrent = currentVersion !== null && installedVersion === currentVersion
+    const settings = readNativeAgentModelSettings(isSafeRegularNativeAssetFile(getNativeAgentDir(), filePath) ? readNativeAssetFile(getNativeAgentDir(), filePath) : "")
+    const routing = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists
+    const matchesModelPolicy = settings.model === routing.model && settings.variant === routing.variant
 
     return {
       id: definition.id,
@@ -2559,6 +2568,8 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
       filePresent,
       installedVersion,
       matchesCurrent,
+      ...settings,
+      matchesModelPolicy,
     }
   })
 
@@ -2570,6 +2581,9 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
     staleAgentIds: staleAgents.map((agent) => agent.id),
     missingVersionAgentIds: staleAgents.filter((agent) => agent.installedVersion === null).map((agent) => agent.id),
     allCurrent: staleAgents.length === 0,
+    modelPolicyCurrent: agents.every((agent) => agent.matchesModelPolicy),
+    modelPolicyDriftAgentIds: agents.filter((agent) => !agent.matchesModelPolicy).map((agent) => agent.id),
+    astraAgentIds: agents.filter((agent) => agent.model === "openai/gpt-6-astra").map((agent) => agent.id),
   }
 }
 

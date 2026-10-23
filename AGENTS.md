@@ -1,9 +1,9 @@
 # PROJECT KNOWLEDGE BASE — wunderkind
 
-**Package:** `@grant-vine/wunderkind` v0.28.4
-**Stack:** TypeScript · Bun · ESM (`"type": "module"`) · `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.18.35 · `oh-my-openagent` 5.1.29
+**Package:** `@grant-vine/wunderkind` v0.28.6
+**Stack:** TypeScript · Bun · ESM (`"type": "module"`) · current source target `@opencode-ai/plugin`/`@opencode-ai/sdk` 1.19.4 · `oh-my-openagent`/LazyCodex 5.1.44
 
-> **Codex edition status:** a nested `wunderkind codex` surface ships alongside the unchanged OpenCode edition. It has exactly six Codex agents and eleven skills, requires LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`), keeps Sol/Luna as managed defaults with Astra explicit opt-in, and defers Codex prompt/token optimization to a future host-native design pass. See `docs/codex-capabilities.md`.
+> **Codex edition status:** a nested `wunderkind codex` surface ships alongside the unchanged OpenCode edition. It has exactly six Codex agents and eleven skills, requires LazyCodex (`omo@sisyphuslabs >=5.0.0-beta.62 <6`), targets 5.1.44 in this source pass, keeps Sol/Luna managed defaults and six explicit GPT-6.1 Sol/high specialist defaults with Astra as operator opt-in, and defers Codex prompt/token optimization to a future host-native design pass. See `docs/codex-capabilities.md`.
 
 oh-my-openagent addon that acts as a retained-agent overlay for OpenCode. It injects 6 retained specialist AI agents (marketing, design, product, engineering, security, legal), keeps `product-wunderkind` as the default front door, and anchors workflow state in `.omo`, docs output, and lifecycle commands instead of acting as a generic skills marketplace.
 
@@ -256,15 +256,15 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 
 ---
 
-## CURRENT STABLE-V5 COMPATIBILITY CONTRACT
+## CURRENT SOURCE COMPATIBILITY TARGET
 
-- Reviewed target for the current compatibility wave: OpenCode plugin/SDK `1.18.35` and `oh-my-openagent` `5.1.29`.
-- OMO v5 stable is active; the old beta values are rollback history only.
+- Release candidate target: Wunderkind `0.28.6`, OpenCode plugin/SDK `1.19.4`, and `oh-my-openagent`/LazyCodex `5.1.44`. Publication requires the authorized release workflow.
+- OMO v5 stable `5.1.44` is the current source target; older stable and beta pins are dated release/rollback history.
 - Add `release-upgrade` under `product-wunderkind`.
 - Add `platform-compatibility` under `fullstack-wunderkind`.
 - Add `supportability-review` under `fullstack-wunderkind`.
 - Reject `supportability-incident` as a standalone skill; overlap avoidance is intentional, so keep supportability/incident execution routed through `/supportability-review`, `/runbook`, and `/incident-response`.
-- Preserve existing OpenCode category IDs while Wunderkind's managed template routes standard/high-capability work through `openai/gpt-6-sol` and routine/background work through `openai/gpt-6-luna`. Astra is explicit operator opt-in only; routine lifecycle commands do not select it.
+- Preserve existing OpenCode category IDs while the managed template routes standard/high-capability work through `openai/gpt-6-sol`, routine/background work through `openai/gpt-6-luna`, and six retained specialists through explicit `openai/gpt-6.1-sol` with high reasoning. Astra is explicit operator opt-in only; routine lifecycle commands do not select it.
 - Public runtime floor remains Node.js `>=22.12.0` or Bun `1+`. `omo-ai` is a separate Node `>=24` native binary and is not a Wunderkind runtime dependency.
 - Project memory and team mode remain opt-in and are never enabled by install, upgrade, init, or doctor.
 
@@ -283,9 +283,10 @@ node bin/wunderkind.js gitignore     # add .wunderkind/, AGENTS.md, .omo/, .open
 - **Legacy `wunderkind.config.jsonc` at project root** causes an error + `exit 1`. Move it to `.wunderkind/wunderkind.config.jsonc`. There is no auto-migration.
 - **OpenCode config path** is `~/.config/opencode/opencode.json` or `opencode.jsonc`. Legacy `config.json` and `config.jsonc` paths are detected only for doctor warnings and are not used.
 - **oh-my-openagent must be installed before wunderkind** — upstream uses `oh-my-openagent` for plugin entries, config basenames, and public install commands. Wunderkind centralizes this readiness check via `detectOmoInstallReadiness()`: the TUI auto-runs `bunx oh-my-openagent install` when possible if OMO is absent, while the non-interactive CLI and `upgrade` exit early with instructions instead. Legacy `oh-my-opencode` config files are migration inputs for `wunderkind migrate` only.
-- **Wunderkind never writes agent model config** — `writeWunderkindAgentConfig()` was removed in an earlier pre-1.0 release. Agent categories are configured via the shipped OMO config template at build time; each agent inherits its model from the category definition in that file.
+- **Model policy writes are host-scoped** — the OpenCode plugin does not write user agent model config; managed category defaults come from the shipped OMO template. Codex has a separate, explicit `wunderkind codex doctor --apply-model-policy` action for receipt-owned specialist TOML. That path is trust-gated to the reviewed, hash-bound OMO 5.1.44 artifact graph and preserves user edits and explicit Astra overrides.
 - **OMO detection uses `detectOmoVersionInfo()` / `detectOmoInstallReadiness()`** — unified `~/.omo/omo.jsonc` is the active upstream config chain. Legacy `oh-my-openagent.{json,jsonc}` and `oh-my-opencode.{json,jsonc}` files are migration/detection surfaces only, with `wunderkind migrate` merging missing legacy OMO config keys into `~/.omo/omo.jsonc`.
-- **Release baseline vs current stable-v5 release** — the audit base is `df863041f10028132b1e424e47a1a65783553865`; the comparison point is package `0.27.9` at `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`; the current release is package/plugin `0.28.4` with OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`. The managed template uses `openai/gpt-6-sol`/`openai/gpt-6-luna` cost tiers without an Astra category. Doctor reports actual local policy drift and only writes an override when the operator supplies the explicit policy action.
+- **Published release history vs current candidate** — the released `0.28.5` commit is `5727b5f7200f5fb6f58ae827fbebdf51774d8cd0`; it used OpenCode plugin/SDK `1.18.35` and OMO `5.1.29`. The `0.28.6` candidate targets plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`. The managed template uses Sol/Luna tiers, explicit GPT-6.1 Sol/high specialist defaults, and no Astra category.
+- **Codex model-policy trust** — 5.1.44 version compatibility and exact artifact trust are separate. Only the reviewed, hash-bound 5.1.44 installer graph with the verified disposable stage can authorize the explicit Codex `--apply-model-policy` path; unknown versions, changed bytes, added roles, concurrent edits, and user-owned overrides remain held.
 - **Team-mode entry stays upstream-compatible** — `/wunderkind-team` checks canonical `oh-my-openagent` config paths and `team_mode.enabled`; missing/disabled/unavailable states fall back to solo `product-wunderkind` orchestration instead of unsupported retained-agent team members.
 - **Project config is intentionally sparse** — `.wunderkind/wunderkind.config.jsonc` should only contain values that differ from inherited defaults. Missing baseline fields are expected and should render as inherited in `wunderkind doctor --verbose`.
 - **PRD pipeline mode lives in project config** — `prdPipelineMode` is set during `wunderkind init`; use `filesystem` by default, and only use `github` when `gh` is installed and the repo is GitHub-ready. Legacy configs without this field should continue to resolve to `filesystem`.

@@ -125,6 +125,7 @@ describe("canonical manifest drift guards", () => {
     expect(Object.values(categories).map((category) => category.model)).not.toContain("openai/gpt-6-astra")
     const manifestEntries = new Map(Object.entries(WUNDERKIND_CANONICAL_MANIFEST))
     expect(manifestEntries.get("modelRouting")).toEqual({
+      retainedSpecialists: { model: "openai/gpt-6.1-sol", variant: "high" },
       managedDefaults: {
         standardAndHigh: "openai/gpt-6-sol",
         routineAndBackground: "openai/gpt-6-luna",

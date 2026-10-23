@@ -1,12 +1,16 @@
 # Host upgrade and rollback runbook
 
-This runbook accompanies release `0.28.5`. The audit base is commit `df863041f10028132b1e424e47a1a65783553865`; the earlier `0.27.9` comparison point is commit `d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec`. The release synchronizes package/plugin metadata at `0.28.5`, targets OpenCode plugin/SDK `1.18.35`, OMO/LazyCodex `5.1.29`, and keeps the public runtime floor at Node `>=22.12.0` or Bun `1+`. Re-resolve versions and executable paths immediately before any consumer rollout.
+This runbook accompanies the `0.28.6` release candidate built from released `0.28.5` at `5727b5f7200f5fb6f58ae827fbebdf51774d8cd0`. It targets OpenCode plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`, keeping the public runtime floor at Node `>=22.12.0` or Bun `1+`. Re-resolve versions and executable paths immediately before any consumer rollout.
 
 <!-- wunderkind:upgrade-contract
-{"candidate":"0.28.5","comparison":{"version":"0.27.9","commit":"d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec"},"sourceCommit":"df863041f10028132b1e424e47a1a65783553865","openCode":{"plugin":"1.18.35","sdk":"1.18.35"},"omo":"5.1.29","runtime":{"node":">=22.12.0","bun":"1+"},"models":{"standard":"openai/gpt-6-sol","routine":"openai/gpt-6-luna"},"astra":"opt-in","publicDeprecatedTotal":28,"rejectedRoutes":["supportability-incident"]}
+{"candidate":"0.28.6","comparison":{"version":"0.28.5","commit":"5727b5f7200f5fb6f58ae827fbebdf51774d8cd0"},"sourceCommit":"5727b5f7200f5fb6f58ae827fbebdf51774d8cd0","openCode":{"plugin":"1.19.4","sdk":"1.19.4"},"omo":"5.1.44","codexPolicy":{"version":"5.1.44","trust":"verified-hash-bound-disposable-stage","sourceRoles":12,"stagedRoles":13},"runtime":{"node":">=22.12.0","bun":"1+"},"models":{"standard":"openai/gpt-6-sol","routine":"openai/gpt-6-luna","retainedSpecialists":"openai/gpt-6.1-sol","specialistReasoning":"high"},"astra":"opt-in","publicDeprecatedTotal":28,"rejectedRoutes":["supportability-incident"]}
 -->
 
-The managed model policy is Sol for orchestration, planning, high-complexity work and review, and Luna for routine/default/background work. OpenCode uses `openai/gpt-6-sol` and `openai/gpt-6-luna` for those tiers. Astra is explicit operator opt-in only: retain and report an existing user-owned override, but do not invoke Astra in a rollout smoke test. Memory and team mode are also opt-in and are never enabled by install, upgrade, init, or doctor.
+The managed model policy is Sol for orchestration, planning, high-complexity work and review, and Luna for routine/default/background work. OpenCode uses `openai/gpt-6-sol` and `openai/gpt-6-luna` for those tiers; six retained specialists explicitly use `openai/gpt-6.1-sol` with high reasoning. Astra is operator opt-in only: retain and report an existing user-owned override. Memory and team mode are also opt-in and are never enabled by install, upgrade, init, or doctor.
+
+The separate `@typesafe-ai/sdk` 0.7.0 adapter upgrade remains on hold. Under Bun 1.4.3, its response buffering releases the original reader before body parsing and valid JSON responses can fail with `TypeError: Body already used`. Node fixture success does not resolve the supported Bun failure. The experimental adapter retains SDK 0.6.0; no public runtime or Node floor change follows from this hold.
+
+Codex doctor reports LazyCodex version compatibility separately from exact policy repair trust. The explicit `wunderkind codex doctor --apply-model-policy` path is verified only for the reviewed, hash-bound 5.1.44 artifact graph and disposable stage. Unknown versions, changed bytes, extra roles, concurrent edits, and user-owned overrides remain held without mutation.
 
 ## Resolve the installed hosts
 

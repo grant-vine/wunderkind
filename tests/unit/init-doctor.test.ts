@@ -784,7 +784,13 @@ describe("runDoctor", () => {
       expect(messages.some((m) => m.includes("effective scope:"))).toBe(true)
       expect(messages.some((m) => m.includes("Resolved Paths"))).toBe(false)
       expect(messages.some((m) => m.includes("Active Configuration"))).toBe(false)
-      expect(messages.some((m) => m.includes("model routing advisory:") && m.includes("unspecified-low=openai/gpt-6-luna") && m.includes("Astra is absent unless an operator adds it"))).toBe(true)
+      expect(messages.some((m) => m.includes("model routing advisory:")
+        && m.includes("Wunderkind-managed template:")
+        && m.includes("six retained specialists=openai/gpt-6.1-sol")
+        && m.includes("do not prove the effective OpenCode/OMO route")
+        && m.includes("standalone `omo doctor --models --json`")
+        && m.includes("`exclude_models` is an operator-owned OMO option only on schemas that support it")
+        && m.includes("Wunderkind does not apply it"))).toBe(true)
     } finally {
       console.log = originalLog
       console.error = originalError

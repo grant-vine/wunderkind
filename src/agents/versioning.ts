@@ -32,6 +32,10 @@ export function readOwnPackageVersion(): string | null {
   return readJsonVersion(fileURLToPath(new URL("../../package.json", import.meta.url)))
 }
 
+export function readNativeAgentModelSettings(markdown: string): { readonly model: string | null; readonly variant: string | null } {
+  return { model: readFrontmatterValue(markdown, "model"), variant: readFrontmatterValue(markdown, "variant") }
+}
+
 export function getCanonicalPackageVersion(): string {
   return WUNDERKIND_CANONICAL_MANIFEST.package.version
 }

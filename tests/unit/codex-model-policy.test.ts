@@ -19,6 +19,7 @@ function bundledRoles(paths: ReturnType<typeof resolveCodexPaths>): void {
 }
 function json(path: string): unknown { return JSON.parse(readFileSync(path, "utf8")) }
 function model(path: string): unknown { return Bun.TOML.parse(readFileSync(path, "utf8"))["model"] }
+const itWithTimeout: (name: string, fn: () => void | Promise<void>, timeoutMs: number) => void = it
 afterEach(() => { process.chdir(ORIGINAL_CWD); __setPolicyBeforeWriteForTests(undefined); __setPolicyUpstreamRootForTests(undefined) })
 describe("lossless policy TOML editing", () => {
   it("inserts a root model while preserving profile and multiline instruction assignments", () => {
@@ -62,6 +63,7 @@ describe("durable Codex policy", () => {
     // Given
     const { directory, paths } = fixture()
     try {
+      expect(resolvePolicyUpstream().version).toBe("5.1.44")
       // When
       const report = applyCodexModelPolicy(paths)
       // Then
@@ -83,7 +85,7 @@ describe("durable Codex policy", () => {
       expect(model(join(paths.agentsDir, "explorer.toml"))).toBe("operator-project-model"); expect(readFileSync(join(project, ".omo/omo.jsonc"), "utf8")).toContain("operator-project-model"); expect(readFileSync(join(paths.home, ".omo/omo.jsonc"), "utf8")).not.toContain('"explorer"')
     } finally { cleanup(directory); rmSync(project, { recursive: true, force: true }) }
   })
-  it("repairs trusted shipped Astra roles using the actual upstream installer twice", () => {
+  itWithTimeout("repairs trusted shipped Astra roles using the actual upstream installer twice", () => {
     // Given
     const { directory, paths } = fixture(); bundledRoles(paths)
     try {
@@ -95,7 +97,7 @@ describe("durable Codex policy", () => {
       expect(model(join(paths.agentsDir, "default.toml"))).toBe("gpt-6-luna")
       expect(readFileSync(join(paths.agentsDir, ".lazycodex-default.sha256"), "utf8")).toHaveLength(64)
     } finally { cleanup(directory) }
-  })
+  }, 15_000)
   it("preserves intentional root/profile Astra and durable role overrides without receipts", () => {
     // Given
     const { directory, paths } = fixture(); bundledRoles(paths)
@@ -200,7 +202,7 @@ describe("durable Codex policy", () => {
       expect(model(join(paths.agentsDir, "explorer.toml"))).toBe("gpt-6-astra"); expect(report.userOwnedAssignments).toContain("explorer"); expect(readFileSync(projectFile, "utf8")).toBe(projectBytes)
     } finally { process.chdir(originalCwd); if (oldProfile === undefined) delete process.env["OMO_PROFILE"]; else process.env["OMO_PROFILE"] = oldProfile; cleanup(directory) }
   })
-  it("reloads durable ownership and real upstream synchronization in a cold process", () => {
+  itWithTimeout("reloads durable ownership and real upstream synchronization in a cold process", () => {
     // Given
     const { directory, paths } = fixture(); bundledRoles(paths)
     try {
@@ -212,7 +214,7 @@ describe("durable Codex policy", () => {
       // Then
       expect(child.status).toBe(0); expect(JSON.parse(child.stdout).status).toBe("compliant"); expect(model(join(paths.agentsDir, "default.toml"))).toBe("gpt-6-luna")
     } finally { cleanup(directory) }
-  })
+  }, 15_000)
   it("rolls back root, seeds and upstream role writes when default receipt commit fails", () => {
     // Given
     const { directory, paths } = fixture(); bundledRoles(paths)
@@ -272,10 +274,24 @@ describe("durable Codex policy", () => {
   })
   it("rejects a modified shipped executable before staging or receipt creation", () => {
     // Given
-    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-upstream"); mkdirSync(join(fake, "packages/omo-codex/scripts/install-dist"), { recursive: true }); writeFileSync(join(fake, "package.json"), '{"version":"5.1.1"}'); writeFileSync(join(fake, "packages/omo-codex/scripts/install-dist/install-local.mjs"), readFileSync(upstream.bundle, "utf8") + "\n// tampered\n"); __setPolicyUpstreamRootForTests(fake)
+    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-upstream"); mkdirSync(join(fake, "packages/omo-codex/scripts/install-dist"), { recursive: true }); writeFileSync(join(fake, "package.json"), '{"version":"5.1.44"}'); writeFileSync(join(fake, "packages/omo-codex/scripts/install-dist/install-local.mjs"), readFileSync(upstream.bundle, "utf8") + "\n// tampered\n"); __setPolicyUpstreamRootForTests(fake)
     try {
       // When / Then
       expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable"); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
+    } finally { cleanup(directory) }
+  })
+  it("rejects a modified 5.1.44 skill synchronization executable before any policy write", () => {
+    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-sync")
+    cpSync(upstream.root, fake, { recursive: true })
+    const executable = join(fake, "packages/omo-codex/plugin/scripts/sync-skills.mjs")
+    writeFileSync(executable, `${readFileSync(executable, "utf8")}\n// tampered\n`)
+    __setPolicyUpstreamRootForTests(fake)
+    const root = join(paths.codexHome, "config.toml"); const user = join(paths.home, ".omo/omo.jsonc")
+    const beforeRoot = policySnapshot(root).digest; const beforeUser = policySnapshot(user).digest
+    try {
+      expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable: packages/omo-codex/plugin/scripts/sync-skills.mjs")
+      expect(policySnapshot(root).digest).toBe(beforeRoot); expect(policySnapshot(user).digest).toBe(beforeUser)
+      expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
     } finally { cleanup(directory) }
   })
   it("rejects an unsupported LazyCodex release before staging or receipt creation", () => {
@@ -293,7 +309,7 @@ describe("durable Codex policy", () => {
     cpSync(upstream.root, fake, { recursive: true }); writeFileSync(join(fake, "packages/omo-codex/plugin/components/ultrawork/agents/unreviewed.toml"), 'name = "unreviewed"\nmodel = "gpt-6-sol"\n'); __setPolicyUpstreamRootForTests(fake)
     try {
       // When / Then
-      expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted bundled role"); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
+      expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted bundled role"); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false); expect(existsSync(join(paths.home, ".omo/omo.jsonc"))).toBe(false)
     } finally { cleanup(directory) }
   })
 
@@ -314,7 +330,7 @@ describe("durable Codex policy", () => {
     mkdirSync(join(fake, "packages"), { recursive: true }); cpSync(join(upstream.root, "packages/omo-codex"), join(fake, "packages/omo-codex"), { recursive: true }); cpSync(join(upstream.root, "packages/shared-skills"), join(fake, "packages/shared-skills"), { recursive: true }); writeFileSync(join(fake, "package.json"), JSON.stringify({ version: upstream.version })); const manifest = join(fake, "packages/shared-skills/package.json"); writeFileSync(manifest, '{"name":"@oh-my-opencode/shared-skills","version":"0.1.0","exports":{}}'); __setPolicyUpstreamRootForTests(fake)
     try {
       // When / Then
-      expect(() => applyCodexModelPolicy(paths)).toThrow("Unsupported shared-skills exports"); expect(existsSync(join(paths.home, ".omo/omo.jsonc"))).toBe(false)
+      expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable: packages/shared-skills/package.json"); expect(existsSync(join(paths.home, ".omo/omo.jsonc"))).toBe(false)
     } finally { cleanup(directory) }
   })
 

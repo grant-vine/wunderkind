@@ -102,8 +102,8 @@ describe("Codex payload build", () => {
         expect(toml).toContain(`name = \"${agent.id}\"`)
         expect(toml).toContain("description = ")
         expect(toml).toContain("developer_instructions = ")
-        expect(toml).not.toContain("model =")
-        expect(toml).not.toContain("reasoning_effort =")
+        expect(parsedToml["model"]).toBe("gpt-6.1-sol")
+        expect(parsedToml["model_reasoning_effort"]).toBe("high")
       }
 
       for (const skill of CODEX_CAPABILITY_MANIFEST.skills) {

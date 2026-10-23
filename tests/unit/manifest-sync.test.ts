@@ -53,24 +53,32 @@ function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
   const openCode = contract.openCode
   const runtime = contract.runtime
   const models = contract.models
+  const codexPolicy = contract.codexPolicy
   const comparison = contract.comparison
   const rejectedRoutes = contract.rejectedRoutes
 
   return hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    && hasStringField(contract, "sourceCommit", "df863041f10028132b1e424e47a1a65783553865")
+    && hasStringField(contract, "sourceCommit", "5727b5f7200f5fb6f58ae827fbebdf51774d8cd0")
     && isRecord(comparison)
-    && hasStringField(comparison, "version", "0.27.9")
-    && hasStringField(comparison, "commit", "d2d8aa581f0a30edf5f8733f7a422efc7c8c41ec")
+    && hasStringField(comparison, "version", "0.28.5")
+    && hasStringField(comparison, "commit", "5727b5f7200f5fb6f58ae827fbebdf51774d8cd0")
     && isRecord(openCode)
-    && hasStringField(openCode, "plugin", "1.18.35")
-    && hasStringField(openCode, "sdk", "1.18.35")
-    && hasStringField(contract, "omo", "5.1.29")
+    && hasStringField(openCode, "plugin", "1.19.4")
+    && hasStringField(openCode, "sdk", "1.19.4")
+    && hasStringField(contract, "omo", "5.1.44")
+    && isRecord(codexPolicy)
+    && hasStringField(codexPolicy, "version", "5.1.44")
+    && hasStringField(codexPolicy, "trust", "verified-hash-bound-disposable-stage")
+    && codexPolicy.sourceRoles === 12
+    && codexPolicy.stagedRoles === 13
     && isRecord(runtime)
     && hasStringField(runtime, "node", ">=22.12.0")
     && hasStringField(runtime, "bun", "1+")
     && isRecord(models)
     && hasStringField(models, "standard", "openai/gpt-6-sol")
     && hasStringField(models, "routine", "openai/gpt-6-luna")
+    && hasStringField(models, "retainedSpecialists", "openai/gpt-6.1-sol")
+    && hasStringField(models, "specialistReasoning", "high")
     && hasStringField(contract, "astra", "opt-in")
     && contract.publicDeprecatedTotal === 28
     && Array.isArray(rejectedRoutes)
@@ -144,7 +152,7 @@ describe("manifest version sync", () => {
     expect(packageBody).not.toContain("12 professional agents")
   })
 
-  it("keeps the release dependency pins aligned with the canonical upstream baseline", () => {
+  it("keeps package metadata on the existing version and dependencies on the current source targets", () => {
     const packageJson = readPackageJson()
     const dependencies = packageJson.dependencies
 
@@ -154,9 +162,9 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.18.35")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.18.35")
-    expect(dependencies["oh-my-openagent"]).toBe("5.1.29")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.19.4")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.19.4")
+    expect(dependencies["oh-my-openagent"]).toBe("5.1.44")
   })
 
   it("keeps the canonical public inventory counts aligned with the 28-route repo surface", () => {
@@ -182,19 +190,21 @@ describe("manifest version sync", () => {
     expect(readmeBody).toContain("public/deprecated total=28")
   })
 
-  it("rejects stale upgrade-contract fixtures while accepting the current structured contract", () => {
+  it("rejects stale source-target fixtures while accepting the current structured contract", () => {
     const upgradeBody = readText(new URL("../../docs/upgrading.md", import.meta.url))
     const contract = readUpgradeContract(upgradeBody)
     expect(isCurrentUpgradeContract(contract)).toBe(true)
 
-    const stalePluginFixture = upgradeBody.replace('"plugin":"1.18.35"', '"plugin":"1.18.33"')
-    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.29"', '"omo":"5.0.0-beta.86"')
+    const stalePluginFixture = upgradeBody.replace('"plugin":"1.19.4"', '"plugin":"1.19.3"')
+    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.44"', '"omo":"5.1.43"')
+    const untrustedPolicyFixture = upgradeBody.replace('"trust":"verified-hash-bound-disposable-stage"', '"trust":"held"')
     const unsupportedRouteFixture = upgradeBody
       .replace('"astra":"opt-in"', '"astra":"default"')
       .replace('"supportability-incident"', '"supportability-review"')
 
     expect(isCurrentUpgradeContract(readUpgradeContract(stalePluginFixture))).toBe(false)
     expect(isCurrentUpgradeContract(readUpgradeContract(staleOmoFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(untrustedPolicyFixture))).toBe(false)
     expect(isCurrentUpgradeContract(readUpgradeContract(unsupportedRouteFixture))).toBe(false)
   })
 })

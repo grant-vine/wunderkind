@@ -8,6 +8,7 @@ import { editPolicyToml, policyTomlString, removePolicyTomlTable, scanPolicyToml
 import { applyPolicyTransaction, policySnapshot, type PolicyDelta } from "./policy-transaction.js"
 import { activePolicyProfile, CODEX_POLICY_ROLES, readPolicyLayers, readPolicyReceipt, receiptForKey, resolvePolicyKey, seedPolicyLayer, splitPolicyModel, type PolicyKeyReceipt } from "./policy-overrides.js"
 import { assertRoleProvenance, resolvePolicyUpstream, stageUpstreamPolicy } from "./policy-upstream.js"
+import { inspectSpecialistModelPolicy, stageSpecialistModelPolicy } from "./specialist-model-policy.js"
 export type CodexModelPolicyStatus = "compliant" | "advisory" | "drifted" | "unsafe"
 export interface CodexModelPolicyReport {
   readonly status: CodexModelPolicyStatus
@@ -32,6 +33,11 @@ export function inspectCodexModelPolicy(paths = resolveCodexPaths()): CodexModel
   const astraAssignments: string[] = []; const driftedAssignments: string[] = []; const userOwnedAssignments: string[] = []; const missingAssignments: string[] = []; const disabledAssignments: string[] = []; const unknownAssignments: string[] = []; const holds: string[] = []
   try {
     const { receipt, layers, profile } = policyContext(paths)
+    const specialists = inspectSpecialistModelPolicy(paths)
+    astraAssignments.push(...specialists.astraAssignments)
+    driftedAssignments.push(...specialists.driftedAssignments)
+    userOwnedAssignments.push(...specialists.userOwnedAssignments)
+    holds.push(...specialists.holds)
     const rootPath = join(paths.codexHome, "config.toml"); const root = policySnapshot(rootPath)
     const rootDocument = root.bytes === undefined ? undefined : scanPolicyToml(Buffer.from(root.bytes).toString("utf8"))
     const rootModel = rootDocument === undefined ? undefined : policyTomlString(rootDocument, "model")
@@ -93,7 +99,7 @@ export function inspectCodexModelPolicy(paths = resolveCodexPaths()): CodexModel
     const installedRoles = roles.length - missingAssignments.filter((id) => id !== "root").length - disabledAssignments.length
     const status = holds.length > 0 || driftedAssignments.length > 0 ? "drifted" : missingAssignments.length > 0 || userOwnedAssignments.length > 0 || unknownAssignments.length > 0 ? "advisory" : "compliant"
     // Missing upstream installation is reported independently from Wunderkind core health.
-    return { status: installedRoles === 0 && holds.length === 0 ? "advisory" : status, astraAssignments, driftedAssignments: [...new Set(driftedAssignments)], userOwnedAssignments, missingAssignments, disabledAssignments, unknownAssignments, holds }
+    return { status: installedRoles === 0 && holds.length === 0 && specialists.driftedAssignments.length === 0 ? "advisory" : status, astraAssignments, driftedAssignments: [...new Set(driftedAssignments)], userOwnedAssignments, missingAssignments, disabledAssignments, unknownAssignments, holds }
   } catch (error) {
     if (!(error instanceof Error)) throw error
     return { status: "unsafe", astraAssignments, driftedAssignments, userOwnedAssignments, missingAssignments, disabledAssignments, unknownAssignments, holds: [error.message] }
@@ -103,6 +109,8 @@ export function applyCodexModelPolicy(paths = resolveCodexPaths(), options: Code
   try {
     const upstream = resolvePolicyUpstream(); const { receipt, layers, profile } = policyContext(paths)
     const deltas: PolicyDelta[] = []; const newReceipts: PolicyKeyReceipt[] = [...receipt.keys]
+    const specialists = stageSpecialistModelPolicy(paths)
+    deltas.push(...specialists.deltas)
     const userLayer = layers[0]
     if (userLayer === undefined) throw new CodexModelPolicyError("Missing canonical OMO user layer")
     const seeds: { readonly key: readonly string[]; readonly value: string }[] = []
@@ -261,7 +269,7 @@ export function applyCodexModelPolicy(paths = resolveCodexPaths(), options: Code
     deltas.push({ before: policyReceipt, bytes: Buffer.from(`${JSON.stringify({ schemaVersion: 1, policyVersion: 1, keys: newReceipts }, null, 2)}\n`) })
     // Guard every read layer even if no write is planned. This catches operator changes during staging.
     for (const layer of layers) if (policySnapshot(layer.snapshot.path).digest !== layer.snapshot.digest) throw new CodexModelPolicyError(`Concurrent OMO layer change: ${layer.snapshot.path}`)
-    applyPolicyTransaction(deltas, join(paths.ownershipRoot, "model-policy-recovery.json"), [rootSnapshot, policyReceipt, ...layers.map((layer) => layer.snapshot), ...snapshots.values(), ...manifestSnapshots])
+    applyPolicyTransaction(deltas, join(paths.ownershipRoot, "model-policy-recovery.json"), [rootSnapshot, policyReceipt, ...layers.map((layer) => layer.snapshot), ...snapshots.values(), ...manifestSnapshots, ...specialists.guards])
     return inspectCodexModelPolicy(paths)
   } catch (error) {
     if (error instanceof Error) throw new CodexModelPolicyError(error.message)

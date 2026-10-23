@@ -1,14 +1,16 @@
 # Codex edition capabilities
 
-The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex; it does not replace the existing OpenCode edition. The reviewed current package candidate is `0.28.5` with OpenCode plugin/SDK `1.18.35` and OMO/LazyCodex `5.1.29`; this does not claim publication or a host upgrade.
+The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.6` release candidate targets OpenCode plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`; it does not claim publication or a host upgrade.
 
 ## Prerequisites and lifecycle
 
-LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; the reviewed current target is OMO/LazyCodex `5.1.29`, while `5.0.0-beta.*` is rollback history only. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
+LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; `5.1.44` is the reviewed target. Exact 5.1.44 Codex policy repair artifacts are hash-bound and exercised through a disposable installer stage; doctor reports version compatibility separately from artifact trust. Unknown or changed installer graphs remain held. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
 
 The public Wunderkind CLI floor remains Node `>=22.12.0` or Bun `1+`; this does not imply that a separate native `omo-ai` binary is supported on Node 22.
 
 Managed model defaults remain Sol for orchestration and high-capability work and Luna for routine/background work (`gpt-6-sol` and `gpt-6-luna`). Astra is explicit operator opt-in only and is never selected by routine lifecycle commands.
+
+The six retained specialists explicitly select `gpt-6.1-sol` with `high` reasoning in custom-agent TOML. `wunderkind codex doctor --apply-model-policy` repairs unchanged, receipt-owned legacy specialist files in the same transaction as their ownership hashes. Edited files and explicit Astra selections are held for operator review. Root model and reasoning selections remain user-owned. Doctor checks installed configuration; verify a fresh specialist run's host model metadata after repair.
 
 Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). Maintainer packed QA can still use the extracted-package equivalent `node package/bin/wunderkind.js codex <verb>`.
 
