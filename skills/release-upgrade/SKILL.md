@@ -51,6 +51,7 @@ Do **not** use this skill for:
 2. **Separate source-of-truth from mirrors.** Identify which files own version or compatibility truth and which files merely restate it.
 3. **Synthesize the upgrade surface.** Summarize release-note-worthy changes, breaking or cautionary edges, compatibility checks, and operator impact in one compact frame.
 4. **Sequence the work.** Order the version bump, skill/routing updates, docs sync, generated-surface refresh, and verification so later steps cannot drift from earlier truth.
+   Review bundled OpenCode skills under `skills/` and the separate Codex sources under `codex-src/skills/`; an agent-model update does not refresh their instructions. Compare relevant upstream skill changes at an exact revision, adapt only useful changes, and record what was adopted or held. Optional third-party companions belong to their own installer and must be checked separately.
 5. **Make rollback posture explicit.** Name what would be risky to partially land, what verification proves readiness, and what should block a publish/tag decision.
 6. **Hand off adjacent execution clearly.** Route generic docs drafting to `technical-writer`, technical implementation to `fullstack-wunderkind`, and explicit git execution to `git-master` instead of stretching this skill past planning and release-shaping.
 
@@ -61,6 +62,7 @@ Do **not** use this skill for:
 3. Never perform autonomous commit, push, tag, or publish actions from this skill.
 4. Prefer filesystem-first repo artifacts and explicit verification surfaces over hand-wavy release prose.
 5. Distinguish source-of-truth files from mirrored files before recommending any edit order.
+6. Keep bundled adaptations separate from fetched companions. Package upgrades refresh only receipt-owned assets; missing-only companion repair is not an update mechanism for existing third-party skills.
 
 ## Review gate
 

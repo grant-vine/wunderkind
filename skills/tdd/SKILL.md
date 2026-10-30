@@ -29,7 +29,7 @@ This skill reads the changed implementation plus its nearest test surface and ma
 ## Runtime context
 
 - Test runner: `bun test tests/unit/`
-- Typecheck: `npx tsc --noEmit`
+- Typecheck: `bun run tsc --noEmit`
 - Build and generator checks: `bun run build`, plus `bun run dist/build-agents.js` when validating the agent build pipeline directly
 - Language mode: strict TypeScript with `exactOptionalPropertyTypes: true`, `noUncheckedIndexedAccess: true`, `noUnusedLocals`, and `noUnusedParameters`
 - Repo bias: test public behavior first; avoid implementation-coupled tests
@@ -57,7 +57,7 @@ Do not trigger this skill for:
 1. Pick one observable behavior and write the failing test first.
 2. Run `bun test tests/unit/` and confirm the failure is for the expected reason.
 3. Write the minimum production code needed to make that test pass.
-4. Run the targeted tests again, then run `npx tsc --noEmit`.
+4. Run the targeted tests again, then run `bun run tsc --noEmit`.
 5. Refactor only after green, keeping the tests locked to the public contract.
 6. If the change touches the agent build pipeline, rerun `bun run dist/build-agents.js` or `bun run build` before declaring the slice complete.
 
@@ -83,7 +83,7 @@ Do not trigger this skill for:
 1. One failing test at a time; no horizontal batches of speculative tests.
 2. Tests must describe behavior through public interfaces, not private helpers.
 3. Do not weaken types or strictness to make tests easier to write.
-4. Always rerun `bun test tests/unit/` and `npx tsc --noEmit` before declaring green.
+4. Always rerun `bun test tests/unit/` and `bun run tsc --noEmit` before declaring green.
 5. If the test reveals a structural boundary problem, hand off to `improve-codebase-architecture` or direct `fullstack-wunderkind` judgement instead of papering over it.
 
 ## Review gate

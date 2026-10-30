@@ -64,6 +64,7 @@ Use these terms consistently in your analysis:
 
 1. Read the project language first: `AGENTS.md`, `.omo/glossary.md`, and any relevant ADR/RFC history.
 2. Explore the codebase organically and note where understanding one concept requires bouncing across too many shallow modules.
+   When delegating an independent exploration or alternative design, use a fresh context with source pointers and the specific design constraint, rather than a prior reviewer's conclusions. Do not add delegation when direct inspection is sufficient.
 3. Apply the **deletion test** to suspected shallow modules: if deleting the module simply moves the same complexity into every caller, it was earning its keep; if complexity vanishes, it was probably a pass-through.
 4. Present a numbered list of deepening opportunities. For each candidate include:
    - files or modules involved

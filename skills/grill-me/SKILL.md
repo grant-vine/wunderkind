@@ -22,6 +22,7 @@ Use this skill when the user has an idea, feature request, plan, or architecture
 3. If the answer could be learned from the repo, inspect the repo instead of asking.
 4. Keep going until the tradeoffs, scope boundaries, and success criteria are explicit.
 5. Summarize back the emerging shape of the problem every few turns.
+6. Where a recommendation is appropriate, phrase the question so a clear "yes" accepts it. Treat that answer as settling the decision instead of asking for the same confirmation again.
 
 ## What to uncover
 
@@ -38,6 +39,7 @@ Use this skill when the user has an idea, feature request, plan, or architecture
 - If a PRD or plan file already exists in `.omo/`, interrogate that artifact directly.
 - If a decision is still unresolved, suggest capturing it in `.omo/notepads/` or the active PRD.
 - Product discovery usually starts here before escalating into PRD, plan, or issue generation.
+- If independent exploration is delegated, start it with fresh context and the minimum relevant repo pointers. Continue questions that do not depend on its findings; wait for evidence before settling dependent decisions. This does not require delegation for ordinary discovery.
 
 ## Hard rules
 

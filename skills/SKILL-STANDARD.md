@@ -250,6 +250,12 @@ None in this release. No additional skill names may be removed without explicit 
 
 ## Upgrade and rollback documentation contract
 
+### Distribution and upstream review
+
+OpenCode receives the bundled `skills/` adaptations from the published Wunderkind package. Install/upgrade copies receipt-owned native files; it does not fetch Matt Pocock's current repository. Codex builds its separate eleven-skill payload from `codex-src/skills/`. Optional Matt, Vercel and Supabase companions are separate installations, not Wunderkind-owned bundled skills. Codex companion repair fetches known missing dependencies from a pinned Matt revision and preserves existing destinations; it does not update an installed companion.
+
+During a supporting-tool or model upgrade, review affected skill sources explicitly. Record the upstream repository/revision, relevant changes and adoption/hold decisions. Adapt useful ideas into retained owners and `.omo` artifacts; do not replace bundled skills wholesale or add upstream inventory by implication. Inspect tool names and behavioral instructions as well as version strings. No model-specific instruction is needed when the workflow contract is unchanged.
+
 Upgrade-facing skills and docs must describe the current package/runtime target separately from historical baselines. State the public Node `>=22.12.0` or Bun `1+` floor, the Sol/Luna managed defaults, Astra as explicit opt-in, and the unchanged six-agent/eleven-Codex-skill/28-route inventory when those facts are relevant.
 
 Freshness and ownership claims must be receipt-based: a marker or package version alone cannot authorize refresh or deletion. Document edited, linked, malformed, missing, mixed, held, and unknown states, and label remote catalog freshness `unknown` unless an owner-supported proof exists. Rollback guidance must use a private hash-bound backup, preserve user edits, require supported owner operations for catalog/binary rollback, and never expose secrets in `.omo/evidence/`.

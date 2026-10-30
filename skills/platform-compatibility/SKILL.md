@@ -52,6 +52,7 @@ Do **not** use this skill for:
 2. **Separate source-of-truth from symptoms.** Identify which file or runtime contract actually defines the current platform expectation and which surfaces merely reflect it.
 3. **Check the retained-overlay boundary.** Decide whether the upstream/platform change belongs inside Wunderkind now, should stay out of scope, or should remain detection-only.
 4. **Map blast radius.** List which repo surfaces would need alignment: manifest, templates, CLI flows, docs, tests, or generated assets.
+   For model changes, verify the host's actual request route and supported parameters, then inspect relevant skill instructions and available tool names. Model catalog visibility is not request-path proof. Keep upstream host fixes distinct from Wunderkind-owned changes.
 5. **Recommend the smallest compatibility-safe move.** Prefer narrow truth-sync updates over broad architectural churn.
 6. **Hand off adjacent work explicitly.** Route ordinary debugging to `diagnose`, normal architecture work to `improve-codebase-architecture`, and release sequencing to `release-upgrade` instead of stretching this skill beyond platform compatibility.
 

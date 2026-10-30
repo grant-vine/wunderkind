@@ -65,17 +65,7 @@ task(
 
 ## Optional delegations
 
-Visual asset generation:
-
-```typescript
-task(
-  category="visual-engineering",
-  load_skills=["frontend-ui-ux"],
-  description="Generate social media graphics for [topic]",
-  prompt="Create visual templates/concepts for [topic] using current design trends.",
-  run_in_background=false
-)
-```
+For visual assets, use the host's available image-generation or frontend capability as appropriate to the requested format. Inspect available skills rather than assuming the legacy `frontend-ui-ux` name; preserve the approved brand system and deliver reviewable artifacts.
 
 Competitor analysis:
 

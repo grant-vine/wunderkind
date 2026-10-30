@@ -7,6 +7,8 @@ Wunderkind is a retained-agent overlay for OpenCode. It adds 6 specialist agents
 
 If doctor reports missing supporting skills for an installed Matt Pocock workflow, run `wunderkind codex repair --dry-run` to preview and `wunderkind codex repair` to install them. Repair uses a pinned upstream source, preserves existing files, and verifies that the missing dependencies have been resolved. Start a new Codex task afterward.
 
+**Skill distribution:** OpenCode receives Wunderkind's bundled adaptations from `skills/` through the package's receipt-aware install/upgrade flow; it does not fetch Matt Pocock's latest skills. Codex has a separate eleven-skill payload. Optional Matt companions remain separate installations, and missing-only companion repair does not update an existing skill. Review upstream changes and adapt them deliberately rather than installing over Wunderkind-owned skill paths. See [the skill standard](skills/SKILL-STANDARD.md#distribution-and-upstream-review).
+
 **Requires [OpenCode](https://opencode.ai) and [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent).** This package cannot be used standalone.
 
 > [!IMPORTANT]
@@ -39,7 +41,13 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.7` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`, from published `0.28.6` at `c7fd11ee87aa0c2dbe17443d93b31d347b99105b`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.8` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`, from published `0.28.6` at `c7fd11ee87aa0c2dbe17443d93b31d347b99105b`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.8
+
+- Reviews bundled skills alongside the Terra upgrade: WCAG 2.2 AA and real interaction checks, available host tools, project-token preservation, scoped discovery questions, fresh-context architecture exploration, and Bun-native typechecks.
+- Makes distribution explicit: OpenCode gets bundled Wunderkind adaptations; Codex has a separate eleven-skill payload and optional third-party companions. Missing-only Matt companion repair does not update existing skills.
+- Keeps the same six agents, eleven Codex skills, model policy and 28 public/deprecated routes. This follow-up builds on published `0.28.7` at `7b7dfb59700ec5886c5f3bcd22cc9db50248ee22`.
 
 ## What's new in 0.28.7
 

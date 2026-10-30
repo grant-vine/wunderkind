@@ -47,9 +47,7 @@ const db = drizzle(sql);
 
 ### `/validate-page <url>`
 
-```typescript
-task(category="unspecified-low", load_skills=["agent-browser"], description="Validate page [url]", prompt="Navigate to [url], waitUntil: networkidle. Then run accessibility, CWV, console, broken-link, and screenshot checks.", run_in_background=false)
-```
+Use the host's available browser capability to inspect the actual URL, including keyboard interaction, accessibility, console errors, links and responsive states. Use measured performance evidence when available; a screenshot alone cannot establish Core Web Vitals or WCAG conformance. Do not assume the legacy `agent-browser` skill is installed.
 
 ### `/bundle-analyze`
 
