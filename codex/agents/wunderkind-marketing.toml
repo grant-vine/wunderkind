@@ -1,6 +1,6 @@
 name = "wunderkind-marketing"
 description = "Marketing judgment for positioning, go-to-market, community, and developer adoption."
-model = "gpt-6.1-sol"
+model = "gpt-6.1-terra"
 model_reasoning_effort = "high"
 developer_instructions = """
 # Wunderkind Marketing

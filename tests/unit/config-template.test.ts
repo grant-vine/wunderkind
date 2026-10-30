@@ -157,7 +157,8 @@ describe("shipped cost routing", () => {
     for (const agent of WUNDERKIND_CANONICAL_MANIFEST.agents) expect(template.agents[`wunderkind:${agent.id}`].category).toBe(agent.omoCategory)
     for (const agent of WUNDERKIND_CANONICAL_MANIFEST.agents) {
       const route = template.agents[`wunderkind:${agent.id}`]
-      expect([route.model, route.variant]).toEqual(["openai/gpt-6.1-sol", "high"])
+      const expected = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists[agent.id]
+      expect([route.model, route.variant]).toEqual([expected?.model, expected?.variant])
     }
   })
 })

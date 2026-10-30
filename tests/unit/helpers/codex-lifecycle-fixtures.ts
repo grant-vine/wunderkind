@@ -20,6 +20,7 @@ export interface FakeCodex {
   readonly marketplaceRemoveOutput: unknown
   readonly pluginRemoveOutput: unknown
   readonly lazyPlugin: unknown
+  readonly globalPluginListUnavailable: boolean
   readonly marketplaces: unknown[]
   readonly onRun?: (argv: readonly string[]) => void
 }
@@ -70,6 +71,7 @@ export function createFakeCodex(overrides: Partial<Omit<FakeCodex, "calls">> = {
     marketplaceRemoveOutput: overrides.marketplaceRemoveOutput ?? { marketplaceName: "grant-vine", installedRoot: null },
     pluginRemoveOutput: overrides.pluginRemoveOutput ?? { pluginId: "wunderkind@grant-vine", name: "wunderkind", marketplaceName: "grant-vine" },
     lazyPlugin: overrides.lazyPlugin ?? { installed: [{ pluginId: "omo@sisyphuslabs", version: "5.0.0-beta.62", installed: true, enabled: true, marketplaceSource: "sisyphuslabs" }], available: [] },
+    globalPluginListUnavailable: overrides.globalPluginListUnavailable ?? false,
     marketplaces: Array.isArray(overrides.marketplaces) ? [...overrides.marketplaces] : [],
     ...(overrides.onRun === undefined ? {} : { onRun: overrides.onRun }),
   }
@@ -81,7 +83,12 @@ function installRunner(fake: FakeCodex): void {
       fake.calls.push([...argv])
       fake.onRun?.(argv)
       if (argv.join("\u0000") === "--version") return result("codex 1.0.0\n")
-      if (argv.join("\u0000") === "plugin\u0000list\u0000--json" || argv.join("\u0000") === "plugin\u0000list\u0000--available\u0000--json") return result(json(fake.lazyPlugin))
+      if (argv.join("\u0000") === "plugin\u0000list\u0000--json" || argv.join("\u0000") === "plugin\u0000list\u0000--available\u0000--json") return fake.globalPluginListUnavailable ? result("remote catalog unavailable", 1) : result(json(fake.lazyPlugin))
+      if (argv[0] === "plugin" && argv[1] === "list" && argv[2] === "--marketplace" && (argv[4] === "--json" || (argv[4] === "--available" && argv[5] === "--json"))) {
+        if (!isRecord(fake.lazyPlugin) || !Array.isArray(fake.lazyPlugin["installed"]) || !Array.isArray(fake.lazyPlugin["available"])) return result(json(fake.lazyPlugin))
+        const suffix = `@${argv[3]}`
+        return result(json({ installed: fake.lazyPlugin["installed"].filter((entry) => isRecord(entry) && typeof entry["pluginId"] === "string" && entry["pluginId"].endsWith(suffix)), available: argv[4] === "--available" ? fake.lazyPlugin["available"].filter((entry) => isRecord(entry) && typeof entry["pluginId"] === "string" && entry["pluginId"].endsWith(suffix)) : [] }))
+      }
       if (argv.join("\u0000") === "plugin\u0000marketplace\u0000list\u0000--json") return result(json({ marketplaces: fake.marketplaces }))
       if (argv[0] === "plugin" && argv[1] === "marketplace" && argv[2] === "add") {
         const root = argv[3]

@@ -38,6 +38,15 @@ const TRUSTED_RELEASES: Readonly<Record<string, { readonly artifacts: Readonly<R
     "packages/omo-codex/plugin/scripts/sync-skills.mjs": "a8fe60cd8ce556f850f1ace963fd75d7288fbad51221bcbe7803773d887e4dbc",
     "packages/shared-skills/package.json": "16f67075c7c3b9ef10690eba5ea33c610607580d545b6b6f073bf997e933a552",
   } },
+  "5.1.51": { artifacts: {
+    ...TRUSTED_ARTIFACTS,
+    "packages/omo-codex/scripts/install-dist/install-local.mjs": "091b2006f08d0e05c3823f7bf679eee1074a74b60c24f5379459b0ab363e4f88",
+    "packages/omo-codex/plugin/package.json": "26bced97158551e78ccda70eb34435e906e74e1ce5c335221d2b8936436baf2b",
+    "packages/omo-codex/plugin/scripts/sync-skills.mjs": "35c4b06df38aa9e35d1cbe4b79d8262ad94c24b8e1bd29fdd989149295337e1d",
+    "packages/shared-skills/package.json": "16f67075c7c3b9ef10690eba5ea33c610607580d545b6b6f073bf997e933a552",
+    "packages/shared-skills/skill-source-filter.mjs": "a147956e51b42a21e140f6fba81c06dfaf943df0a784495f51415936ea470215",
+    "packages/omo-codex/plugin/components/ultrawork/agents/lazycodex-gate-reviewer.toml": "dd009fc6246e07fe6ac868d2b1150b3b39a74ae4c410a2085208c51b4a948919",
+  } },
 }
 export function __setPolicyUpstreamRootForTests(root: string | undefined): void { rootForTests = root }
 export function resolvePolicyUpstream(): PolicyUpstream {

@@ -52,7 +52,7 @@ function safeVersion(stdout: string): string {
 }
 
 function pluginHealth(value: unknown, pluginId: string): { readonly status: CodexPluginHealth; readonly version?: string } {
-  if (!isRecord(value) || !Array.isArray(value["installed"])) return { status: "unavailable" }
+  if (!isRecord(value) || !Array.isArray(value["installed"]) || !Array.isArray(value["available"])) return { status: "unavailable" }
   const entry = value["installed"].find((candidate) => isRecord(candidate) && candidate["pluginId"] === pluginId)
   if (entry === undefined) return { status: "missing" }
   if (typeof entry["version"] !== "string" || typeof entry["installed"] !== "boolean" || typeof entry["enabled"] !== "boolean") return { status: "unavailable" }
@@ -67,7 +67,7 @@ function latestKnownPluginVersion(value: unknown, pluginId: string): string | nu
 }
 
 function reviewedUpstreamCompatibility(version: string | undefined): ReviewedUpstreamCompatibility {
-  if (version === "5.1.29" || version === "5.1.44") return "supported"
+  if (version === "5.1.29" || version === "5.1.44" || version === "5.1.51") return "supported"
   if (version === undefined || isCompatibleLazyCodexVersion(version)) return "unverified"
   return "incompatible"
 }
@@ -205,17 +205,17 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   } catch { stateStatus = "invalid" }
   const version = runCodex(["--version"])
   const codex = version.status === 0 ? { status: "enabled" as const, version: safeVersion(version.stdout) } : { status: "unavailable" as const }
-  const pluginsResult = runCodex(["plugin", "list", "--json"])
-  const plugins = pluginsResult.status === 0 ? parsedJson(pluginsResult.stdout) : undefined
-  const availablePluginsResult = runCodex(["plugin", "list", "--available", "--json"])
-  const availablePlugins = availablePluginsResult.status === 0 ? parsedJson(availablePluginsResult.stdout) : undefined
+  const lazyCodexResult = runCodex(["plugin", "list", "--marketplace", "sisyphuslabs", "--json"])
+  const lazyCodexPlugins = lazyCodexResult.status === 0 ? parsedJson(lazyCodexResult.stdout) : undefined
+  const wunderkindResult = runCodex(["plugin", "list", "--marketplace", "grant-vine", "--available", "--json"])
+  const wunderkindPlugins = wunderkindResult.status === 0 ? parsedJson(wunderkindResult.stdout) : undefined
   const marketplacesResult = runCodex(["plugin", "marketplace", "list", "--json"])
   const marketplaces = marketplacesResult.status === 0 ? parsedJson(marketplacesResult.stdout) : undefined
   const agents = inspectAgents(state, paths.agentsDir)
   const pluginManifest = inspectPluginManifest(paths.ownershipRoot, state)
   const skills = inspectSkills(paths.ownershipRoot, state)
-  const lazyCodex = pluginHealth(plugins, CODEX_CAPABILITY_MANIFEST.lazyCodex.pluginId)
-  const plugin = pluginHealth(plugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`)
+  const lazyCodex = pluginHealth(lazyCodexPlugins, CODEX_CAPABILITY_MANIFEST.lazyCodex.pluginId)
+  const plugin = pluginHealth(wunderkindPlugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`)
   const marketplace = { status: marketplaceHealth(marketplaces, state?.marketplace.root ?? paths.marketplaceRoot) }
   const projectBootstrap = { ready: resolveCodexProjectMarker(join(process.cwd(), ".wunderkind", "codex-project.json")).kind === "ready" }
   let optional: CodexCompanionReport | { readonly unavailable: true }
@@ -231,7 +231,7 @@ export function getCodexDoctorReport(options: CodexDoctorOptions = {}): CodexDoc
   }
   const healthy = stateStatus === "present" && state?.packageVersion === currentPackageVersion && codex.status === "enabled" && lazyCodex.status === "enabled" && isCompatibleLazyCodexVersion(lazyCodex.version) && plugin.status === "enabled" && plugin.version === state?.plugin.version && marketplace.status === "enabled" && Object.values(agents).every((status) => status === "current") && pluginManifest === "current" && Object.values(skills).every((status) => status === "current")
   const remediation = remediationFor(stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, state?.plugin.version, currentPackageVersion, modelPolicy)
-  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap, versions: { loaded: plugin.version, packaged: currentPackageVersion, latestKnown: latestKnownPluginVersion(availablePlugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`) }, catalogOwnership, reviewedUpstreamCompatibility: reviewedUpstreamCompatibility(lazyCodex.version), policyRepairTrust: policyRepairTrust(lazyCodex.version), modelPolicyStatus: modelPolicy.status }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
+  return { schemaVersion: 1, core: { healthy, state: stateStatus, codex, lazyCodex, marketplace, plugin, agents, pluginManifest, skills, projectBootstrap, versions: { loaded: plugin.version, packaged: currentPackageVersion, latestKnown: latestKnownPluginVersion(wunderkindPlugins, `${CODEX_CAPABILITY_MANIFEST.plugin.id}@${CODEX_CAPABILITY_MANIFEST.marketplace.id}`) }, catalogOwnership, reviewedUpstreamCompatibility: reviewedUpstreamCompatibility(lazyCodex.version), policyRepairTrust: policyRepairTrust(lazyCodex.version), modelPolicyStatus: modelPolicy.status }, optional, modelPolicy, remediation, ...(options.verbose ? { paths: { codexHome: paths.codexHome, ownershipRoot: paths.ownershipRoot } } : {}) }
 }
 
 export function runCodexDoctor(options: CodexDoctorOptions = {}): number {

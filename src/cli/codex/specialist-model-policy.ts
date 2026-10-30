@@ -1,4 +1,4 @@
-import { CODEX_SPECIALIST_MODEL_DEFAULTS } from "../../codex/agent-model-defaults.js"
+import { codexSpecialistModelDefaults } from "../../codex/agent-model-defaults.js"
 import type { CodexPaths } from "./paths.js"
 import { editPolicyToml, policyTomlString, scanPolicyToml, PolicyTomlError } from "./policy-toml.js"
 import { policySnapshot, type PolicyDelta, type PolicySnapshot, PolicyTransactionError } from "./policy-transaction.js"
@@ -27,8 +27,9 @@ export function inspectSpecialistModelPolicy(paths: CodexPaths) {
       const document = scanPolicyToml(Buffer.from(snapshot.bytes).toString("utf8"))
       const model = policyTomlString(document, "model")
       if (model === "gpt-6-astra") astraAssignments.push(agent.name)
-      if (model !== CODEX_SPECIALIST_MODEL_DEFAULTS.model) driftedAssignments.push(agent.name)
-      if (policyTomlString(document, "model_reasoning_effort") !== CODEX_SPECIALIST_MODEL_DEFAULTS.modelReasoningEffort) driftedAssignments.push(`${agent.name}:reasoning`)
+      const route = codexSpecialistModelDefaults(agent.name)
+      if (model !== route.model) driftedAssignments.push(agent.name)
+      if (policyTomlString(document, "model_reasoning_effort") !== route.modelReasoningEffort) driftedAssignments.push(`${agent.name}:reasoning`)
     }
   }
   return { driftedAssignments, astraAssignments, userOwnedAssignments, holds }
@@ -51,9 +52,10 @@ export function stageSpecialistModelPolicy(paths: CodexPaths): { readonly deltas
       throw new PolicyTransactionError(`Specialist role is missing or modified and was preserved: ${agent.name}`)
     }
     const source = Buffer.from(before.bytes).toString("utf8")
+    const route = codexSpecialistModelDefaults(agent.name)
     const next = editPolicyToml(source, {
-      model: CODEX_SPECIALIST_MODEL_DEFAULTS.model,
-      model_reasoning_effort: CODEX_SPECIALIST_MODEL_DEFAULTS.modelReasoningEffort,
+      model: route.model,
+      model_reasoning_effort: route.modelReasoningEffort,
     })
     if (next !== source) deltas.push({ before, bytes: Buffer.from(next) })
     records.push({ ...agent, sha256: sha256Bytes(next) })

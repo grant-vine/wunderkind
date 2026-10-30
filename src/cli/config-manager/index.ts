@@ -2559,7 +2559,8 @@ export function detectNativeAgentMarkdownVersions(scope: InstallScope): {
     const installedVersion = filePresent ? readWunderkindAgentMarkdownVersion(filePath) : null
     const matchesCurrent = currentVersion !== null && installedVersion === currentVersion
     const settings = readNativeAgentModelSettings(isSafeRegularNativeAssetFile(getNativeAgentDir(), filePath) ? readNativeAssetFile(getNativeAgentDir(), filePath) : "")
-    const routing = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists
+    const routing = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists[definition.id]
+    if (routing === undefined) throw new Error(`Unknown Wunderkind specialist: ${definition.id}`)
     const matchesModelPolicy = settings.model === routing.model && settings.variant === routing.variant
 
     return {

@@ -66,7 +66,12 @@ export function isCompatibleLazyCodexVersion(version: string | undefined): boole
 }
 
 export function discoverCodexPlugins(): readonly CodexPluginRecord[] {
-  return parsePlugins(requireCodexJson(["plugin", "list", "--json"], "codex plugin list"))
+  const lazyCodex = parsePlugins(requireCodexJson(["plugin", "list", "--marketplace", "sisyphuslabs", "--json"], "codex plugin list --marketplace sisyphuslabs"))
+  const wunderkind = parsePlugins(requireCodexJson(["plugin", "list", "--marketplace", "grant-vine", "--json"], "codex plugin list --marketplace grant-vine"))
+  return [
+    ...lazyCodex.filter((plugin) => plugin.pluginId === CODEX_CAPABILITY_MANIFEST.lazyCodex.pluginId),
+    ...wunderkind.filter((plugin) => plugin.pluginId === "wunderkind@grant-vine"),
+  ]
 }
 
 export function requireCompatibleLazyCodex(plugins: readonly CodexPluginRecord[]): void {

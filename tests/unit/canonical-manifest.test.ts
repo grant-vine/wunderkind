@@ -125,7 +125,14 @@ describe("canonical manifest drift guards", () => {
     expect(Object.values(categories).map((category) => category.model)).not.toContain("openai/gpt-6-astra")
     const manifestEntries = new Map(Object.entries(WUNDERKIND_CANONICAL_MANIFEST))
     expect(manifestEntries.get("modelRouting")).toEqual({
-      retainedSpecialists: { model: "openai/gpt-6.1-sol", variant: "high" },
+      retainedSpecialists: {
+        "marketing-wunderkind": { model: "openai/gpt-6.1-terra", variant: "high" },
+        "creative-director": { model: "openai/gpt-6.1-terra", variant: "high" },
+        "product-wunderkind": { model: "openai/gpt-6.1-sol", variant: "high" },
+        "fullstack-wunderkind": { model: "openai/gpt-6.1-sol", variant: "high" },
+        ciso: { model: "openai/gpt-6.1-sol", variant: "high" },
+        "legal-counsel": { model: "openai/gpt-6.1-sol", variant: "high" },
+      },
       managedDefaults: {
         standardAndHigh: "openai/gpt-6-sol",
         routineAndBackground: "openai/gpt-6-luna",
@@ -179,6 +186,7 @@ describe("canonical manifest drift guards", () => {
       }
 
       const markdown = renderNativeAgentMarkdown(definition)
+      expect(markdown).not.toMatch(/^temperature:/mu)
 
       expect(markdown).toContain(`description: >\n  ${agent.roleLabel} — ${agent.summary}`)
       expect(markdown).toContain(

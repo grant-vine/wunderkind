@@ -39,7 +39,15 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.6` release candidate targets OpenCode plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`, preserving the public Node `>=22.12.0` or Bun `1+` floor. Six retained specialists explicitly use GPT-6.1 Sol/high in OpenCode native agents and Codex TOML; Sol/Luna category defaults remain in place and Astra stays operator opt-in. The previous released version is `0.28.5` at `5727b5f7200f5fb6f58ae827fbebdf51774d8cd0`. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.7` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`, from published `0.28.6` at `c7fd11ee87aa0c2dbe17443d93b31d347b99105b`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.7
+
+- Targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`; validates on Bun `1.4.4`, updates Node type definitions to `26.6.6`, and verifies the hash-bound 5.1.51 Codex policy-repair stage.
+- Sets marketing and creative-direction specialists to GPT-6.1 Terra/high, with the other four retained specialists on GPT-6.1 Sol/high. Terra requires a Responses-capable route; host model catalog presence alone is not proof that this route is available.
+- Treats OMO `5.1.51` recovery, task fallback/steering, and upstream frontend WCAG 2.2 AA/keyboard work as host changes. The creative direction role can apply relevant accessibility guidance; this candidate does not claim those host changes as Wunderkind implementation or add upstream skills.
+- Keeps the six-agent, eleven-Codex-skill, and 28-route surfaces unchanged. Memory and team mode remain opt-in. TypeSafe SDK `0.7.0` still fails on Bun `1.4.4` with `Body already used`; retain the experimental adapter's SDK `0.6.0` pin and disabled status.
+- The [D3 decision-model review](docs/d3-decision-model-review.md) defines a future bounded evaluation only; it does not authorize downloads, inference, provider wiring, or adoption.
 
 ## What's new in 0.28.6
 

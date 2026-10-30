@@ -6,7 +6,7 @@ import { getCodexDoctorReport, runCodexDoctor } from "../../src/cli/codex/doctor
 import { installCodexWunderkind } from "../../src/cli/codex/install.js"
 import { __setCodexProcessRunnerForTests } from "../../src/cli/codex/process.js"
 import { sha256File } from "../../src/cli/codex/state.js"
-import { PACKAGE_VERSION, cleanup, configure, createFakeCodex, createLazyCodexEnvelope, sandbox } from "./helpers/codex-lifecycle-fixtures.js"
+import { PACKAGE_VERSION, captureError, cleanup, configure, createFakeCodex, createLazyCodexEnvelope, hasCall, sandbox } from "./helpers/codex-lifecycle-fixtures.js"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -33,6 +33,47 @@ function removeInstalledPlugin(fixture: ReturnType<typeof createFakeCodex>, plug
 }
 
 describe("Codex doctor", () => {
+  it("installs and reports local core plugins healthy when unfiltered catalog discovery is unavailable", () => {
+    const paths = sandbox()
+    const fake = createFakeCodex({ globalPluginListUnavailable: true })
+    configure(paths, fake)
+    try {
+      expect(installCodexWunderkind().packageVersion).toBe(PACKAGE_VERSION)
+      const report = getCodexDoctorReport()
+      expect(report.core.healthy).toBe(true)
+      expect(report.core.lazyCodex.status).toBe("enabled")
+      expect(report.core.plugin.status).toBe("enabled")
+      expect(report.core.versions.latestKnown).toBe(null)
+      expect(hasCall(fake.calls, ["plugin", "list", "--marketplace", "sisyphuslabs", "--json"])).toBe(true)
+      expect(hasCall(fake.calls, ["plugin", "list", "--marketplace", "grant-vine", "--json"])).toBe(true)
+      expect(hasCall(fake.calls, ["plugin", "list", "--marketplace", "grant-vine", "--available", "--json"])).toBe(true)
+      expect(hasCall(fake.calls, ["plugin", "list", "--json"])).toBe(false)
+    } finally {
+      cleanup(paths)
+    }
+  })
+
+  it("holds missing or malformed scoped LazyCodex discovery even when the remote catalog is unavailable", () => {
+    const cases: readonly unknown[] = [
+      { installed: [], available: [] },
+      { installed: [{ pluginId: "omo@sisyphuslabs", version: 5, installed: true, enabled: true }], available: [] },
+      { installed: "invalid", available: [] },
+    ]
+    for (const [index, lazyPlugin] of cases.entries()) {
+      const paths = sandbox()
+      configure(paths, createFakeCodex({ globalPluginListUnavailable: true, lazyPlugin }))
+      try {
+        expect(captureError(() => installCodexWunderkind()) instanceof Error).toBe(true)
+        expect(existsSync(join(paths.wunderkindHome, "codex", "install-state.json"))).toBe(false)
+        const report = getCodexDoctorReport()
+        expect(report.core.healthy).toBe(false)
+        expect(report.core.lazyCodex.status).toBe(index === 0 ? "missing" : "unavailable")
+      } finally {
+        cleanup(paths)
+      }
+    }
+  })
+
   it("reports an unreceipted operator root assignment as advisory", () => {
     const paths = sandbox()
     configure(paths, createFakeCodex())
@@ -106,7 +147,7 @@ describe("Codex doctor", () => {
   })
 
   it("reports exact reviewed upstream releases separately from model policy status", () => {
-    for (const version of ["5.1.29", "5.1.44"] as const) {
+    for (const version of ["5.1.29", "5.1.44", "5.1.51"] as const) {
       const paths = sandbox()
       configure(paths, createFakeCodex({ lazyPlugin: createLazyCodexEnvelope(version) }))
       try {

@@ -1,6 +1,16 @@
 import { describe, it, expect } from "bun:test"
 import { readFileSync, statSync } from "node:fs"
 import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
+import { specialistModelDefaultsForCodex } from "../../src/agents/specialist-model-defaults.js"
+
+const EXPECTED_SPECIALIST_MODELS = {
+  "marketing-wunderkind": { codexId: "wunderkind-marketing", openCodeModel: "openai/gpt-6.1-terra", codexModel: "gpt-6.1-terra", reasoning: "high" },
+  "creative-director": { codexId: "wunderkind-creative-director", openCodeModel: "openai/gpt-6.1-terra", codexModel: "gpt-6.1-terra", reasoning: "high" },
+  "product-wunderkind": { codexId: "wunderkind-product", openCodeModel: "openai/gpt-6.1-sol", codexModel: "gpt-6.1-sol", reasoning: "high" },
+  "fullstack-wunderkind": { codexId: "wunderkind-architecture", openCodeModel: "openai/gpt-6.1-sol", codexModel: "gpt-6.1-sol", reasoning: "high" },
+  ciso: { codexId: "wunderkind-ciso", openCodeModel: "openai/gpt-6.1-sol", codexModel: "gpt-6.1-sol", reasoning: "high" },
+  "legal-counsel": { codexId: "wunderkind-legal", openCodeModel: "openai/gpt-6.1-sol", codexModel: "gpt-6.1-sol", reasoning: "high" },
+} as const
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -49,6 +59,17 @@ function hasStringField(record: Record<string, unknown>, key: string, expected: 
   return record[key] === expected
 }
 
+function matchesSpecialistModels(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  return Object.entries(EXPECTED_SPECIALIST_MODELS).every(([role, expected]) => {
+    const route = value[role]
+    return isRecord(route)
+      && hasStringField(route, "model", expected.openCodeModel)
+      && hasStringField(route, "codexModel", expected.codexModel)
+      && hasStringField(route, "reasoning", expected.reasoning)
+  })
+}
+
 function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
   const openCode = contract.openCode
   const runtime = contract.runtime
@@ -56,29 +77,44 @@ function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
   const codexPolicy = contract.codexPolicy
   const comparison = contract.comparison
   const rejectedRoutes = contract.rejectedRoutes
+  const optionalHostTools = contract.optionalHostTools
+  const typeSafeSdk = contract.typeSafeSdk
 
-  return hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    && hasStringField(contract, "sourceCommit", "5727b5f7200f5fb6f58ae827fbebdf51774d8cd0")
+  return hasStringField(contract, "candidate", "0.28.7")
+    && hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
+    && hasStringField(contract, "sourceCommit", "c7fd11ee87aa0c2dbe17443d93b31d347b99105b")
     && isRecord(comparison)
-    && hasStringField(comparison, "version", "0.28.5")
-    && hasStringField(comparison, "commit", "5727b5f7200f5fb6f58ae827fbebdf51774d8cd0")
+    && hasStringField(comparison, "version", "0.28.6")
+    && hasStringField(comparison, "commit", "c7fd11ee87aa0c2dbe17443d93b31d347b99105b")
     && isRecord(openCode)
-    && hasStringField(openCode, "plugin", "1.19.4")
-    && hasStringField(openCode, "sdk", "1.19.4")
-    && hasStringField(contract, "omo", "5.1.44")
+    && hasStringField(openCode, "plugin", "1.19.5")
+    && hasStringField(openCode, "sdk", "1.19.5")
+    && hasStringField(contract, "omo", "5.1.51")
     && isRecord(codexPolicy)
-    && hasStringField(codexPolicy, "version", "5.1.44")
+    && hasStringField(codexPolicy, "version", "5.1.51")
     && hasStringField(codexPolicy, "trust", "verified-hash-bound-disposable-stage")
-    && codexPolicy.sourceRoles === 12
-    && codexPolicy.stagedRoles === 13
+    && hasStringField(codexPolicy, "artifactGraph", "exact-tarball-sri-and-12-role-executable-hashes")
+    && hasStringField(codexPolicy, "disposableStage", "53/53")
     && isRecord(runtime)
     && hasStringField(runtime, "node", ">=22.12.0")
     && hasStringField(runtime, "bun", "1+")
+    && hasStringField(runtime, "bunHost", "1.4.4")
+    && hasStringField(runtime, "nodeTypes", "26.6.6")
+    && isRecord(optionalHostTools)
+    && hasStringField(optionalHostTools, "ollama", "0.40.13")
+    && isRecord(typeSafeSdk)
+    && hasStringField(typeSafeSdk, "candidate", "0.7.0")
+    && hasStringField(typeSafeSdk, "active", "0.6.0")
+    && hasStringField(typeSafeSdk, "status", "held-body-already-used")
     && isRecord(models)
     && hasStringField(models, "standard", "openai/gpt-6-sol")
     && hasStringField(models, "routine", "openai/gpt-6-luna")
-    && hasStringField(models, "retainedSpecialists", "openai/gpt-6.1-sol")
-    && hasStringField(models, "specialistReasoning", "high")
+    && matchesSpecialistModels(models.specialists)
+    && Array.isArray(models.responsesRequiredFor)
+    && models.responsesRequiredFor.length === 2
+    && models.responsesRequiredFor[0] === "marketing-wunderkind"
+    && models.responsesRequiredFor[1] === "creative-director"
+    && models.catalogAvailabilityIsBenchmarkProof === false
     && hasStringField(contract, "astra", "opt-in")
     && contract.publicDeprecatedTotal === 28
     && Array.isArray(rejectedRoutes)
@@ -152,9 +188,10 @@ describe("manifest version sync", () => {
     expect(packageBody).not.toContain("12 professional agents")
   })
 
-  it("keeps package metadata on the existing version and dependencies on the current source targets", () => {
+  it("keeps package version synchronized and current source-target dependencies exact", () => {
     const packageJson = readPackageJson()
     const dependencies = packageJson.dependencies
+    const devDependencies = packageJson.devDependencies
 
     expect(isRecord(dependencies)).toBe(true)
     if (!isRecord(dependencies)) {
@@ -162,9 +199,15 @@ describe("manifest version sync", () => {
     }
 
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    expect(dependencies["@opencode-ai/plugin"]).toBe("1.19.4")
-    expect(dependencies["@opencode-ai/sdk"]).toBe("1.19.4")
-    expect(dependencies["oh-my-openagent"]).toBe("5.1.44")
+    expect(dependencies["@opencode-ai/plugin"]).toBe("1.19.5")
+    expect(dependencies["@opencode-ai/sdk"]).toBe("1.19.5")
+    expect(dependencies["oh-my-openagent"]).toBe("5.1.51")
+    expect(isRecord(devDependencies)).toBe(true)
+    if (!isRecord(devDependencies)) {
+      throw new Error("Expected package.json devDependencies to be a record")
+    }
+    expect(devDependencies["@types/node"]).toBe("^26.6.6")
+    expect(devDependencies["@typesafe-ai/sdk"]).toBe("0.6.0")
   })
 
   it("keeps the canonical public inventory counts aligned with the 28-route repo surface", () => {
@@ -195,9 +238,12 @@ describe("manifest version sync", () => {
     const contract = readUpgradeContract(upgradeBody)
     expect(isCurrentUpgradeContract(contract)).toBe(true)
 
-    const stalePluginFixture = upgradeBody.replace('"plugin":"1.19.4"', '"plugin":"1.19.3"')
-    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.44"', '"omo":"5.1.43"')
-    const untrustedPolicyFixture = upgradeBody.replace('"trust":"verified-hash-bound-disposable-stage"', '"trust":"held"')
+    const stalePluginFixture = upgradeBody.replace('"plugin":"1.19.5"', '"plugin":"1.19.4"')
+    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.51"', '"omo":"5.1.50"')
+    const untrustedPolicyFixture = upgradeBody.replace('"trust":"verified-hash-bound-disposable-stage"', '"trust":"unverified"')
+    const incompleteArtifactFixture = upgradeBody.replace('"disposableStage":"53/53"', '"disposableStage":"52/53"')
+    const staleSpecialistFixture = upgradeBody.replace('"model":"openai/gpt-6.1-terra","codexModel":"gpt-6.1-terra"', '"model":"openai/gpt-6.1-sol","codexModel":"gpt-6.1-sol"')
+    const unsupportedSdkFixture = upgradeBody.replace('"status":"held-body-already-used"', '"status":"supported"')
     const unsupportedRouteFixture = upgradeBody
       .replace('"astra":"opt-in"', '"astra":"default"')
       .replace('"supportability-incident"', '"supportability-review"')
@@ -205,7 +251,19 @@ describe("manifest version sync", () => {
     expect(isCurrentUpgradeContract(readUpgradeContract(stalePluginFixture))).toBe(false)
     expect(isCurrentUpgradeContract(readUpgradeContract(staleOmoFixture))).toBe(false)
     expect(isCurrentUpgradeContract(readUpgradeContract(untrustedPolicyFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(incompleteArtifactFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(staleSpecialistFixture))).toBe(false)
+    expect(isCurrentUpgradeContract(readUpgradeContract(unsupportedSdkFixture))).toBe(false)
     expect(isCurrentUpgradeContract(readUpgradeContract(unsupportedRouteFixture))).toBe(false)
+  })
+
+  it("keeps structured specialist model defaults aligned with the source helper", () => {
+    for (const expected of Object.values(EXPECTED_SPECIALIST_MODELS)) {
+      expect(specialistModelDefaultsForCodex(expected.codexId)).toEqual({
+        model: expected.codexModel,
+        modelReasoningEffort: expected.reasoning,
+      })
+    }
   })
 })
 

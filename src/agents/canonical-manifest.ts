@@ -1,4 +1,4 @@
-import { WUNDERKIND_SPECIALIST_MODEL_DEFAULTS } from "./specialist-model-defaults.js"
+import { WUNDERKIND_SPECIALIST_MODEL_DEFAULTS, specialistModelDefaultsForOpenCode } from "./specialist-model-defaults.js"
 
 type OmoCategoryId = "quick" | "unspecified-low" | "unspecified-high" | "writing" | "visual-engineering" | "deep-low" | "deep-high" | "ultrabrain" | "git"
 
@@ -74,7 +74,7 @@ export interface CanonicalDocsOutputEntry {
 export const WUNDERKIND_CANONICAL_MANIFEST = {
   package: {
     name: "@grant-vine/wunderkind",
-    version: "0.28.6",
+    version: "0.28.7",
     description: "Wunderkind — specialist AI agent addon for OpenCode with 6 retained specialist agents for any software product team",
     agentVersionFrontmatterKey: "wunderkind_version",
     keywords: ["oh-my-openagent", "oh-my-opencode", "opencode", "plugin", "wunderkind", "agents", "ai-agents"],
@@ -838,10 +838,9 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     ],
   },
   modelRouting: {
-    retainedSpecialists: {
-      model: `openai/${WUNDERKIND_SPECIALIST_MODEL_DEFAULTS.model}`,
-      variant: WUNDERKIND_SPECIALIST_MODEL_DEFAULTS.modelReasoningEffort,
-    },
+    retainedSpecialists: Object.fromEntries(
+      Object.keys(WUNDERKIND_SPECIALIST_MODEL_DEFAULTS).map((id) => [id, specialistModelDefaultsForOpenCode(id)]),
+    ),
     managedDefaults: {
       standardAndHigh: "openai/gpt-6-sol",
       routineAndBackground: "openai/gpt-6-luna",
@@ -901,7 +900,7 @@ export const WUNDERKIND_CANONICAL_MANIFEST = {
     }[]
   }
   readonly modelRouting: {
-    readonly retainedSpecialists: { readonly model: string; readonly variant: string }
+    readonly retainedSpecialists: Readonly<Record<string, { readonly model: string; readonly variant: string }>>
     readonly managedDefaults: {
       readonly standardAndHigh: string
       readonly routineAndBackground: string
@@ -948,7 +947,7 @@ export function renderCanonicalOhMyOpenagentTemplate(): string {
       {
         mode: agent.omoMode,
         category: agent.omoCategory,
-        ...WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists,
+        ...specialistModelDefaultsForOpenCode(agent.id),
         color: agent.omoColor,
         description: agent.omoDescription,
       },

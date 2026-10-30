@@ -33,7 +33,7 @@ describe("Codex lifecycle install", () => {
 
       expect(first.packageVersion).toBe(PACKAGE_VERSION)
       expect(second.packageVersion).toBe(PACKAGE_VERSION)
-      expect(fake.calls).toEqual([["--version"], ["plugin", "list", "--json"], ["plugin", "marketplace", "list", "--json"], ["plugin", "marketplace", "add", join(paths.wunderkindHome, "codex", "marketplace"), "--json"], ["plugin", "add", "wunderkind@grant-vine", "--json"], ["--version"], ["plugin", "list", "--json"], ["plugin", "marketplace", "list", "--json"], ["plugin", "add", "wunderkind@grant-vine", "--json"]])
+      expect(fake.calls).toEqual([["--version"], ["plugin", "list", "--marketplace", "sisyphuslabs", "--json"], ["plugin", "list", "--marketplace", "grant-vine", "--json"], ["plugin", "marketplace", "list", "--json"], ["plugin", "marketplace", "add", join(paths.wunderkindHome, "codex", "marketplace"), "--json"], ["plugin", "add", "wunderkind@grant-vine", "--json"], ["--version"], ["plugin", "list", "--marketplace", "sisyphuslabs", "--json"], ["plugin", "list", "--marketplace", "grant-vine", "--json"], ["plugin", "marketplace", "list", "--json"], ["plugin", "add", "wunderkind@grant-vine", "--json"]])
       expect(existsSync(join(paths.codexHome, "config.toml"))).toBe(false)
       expect(CODEX_PROCESS_TIMEOUT_MS).toBe(15_000)
       const state: unknown = JSON.parse(readFileSync(join(paths.wunderkindHome, "codex", "install-state.json"), "utf8"))

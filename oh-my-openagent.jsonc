@@ -48,7 +48,7 @@
     // ── Marketing ──────────────────────────────────────────────────────────────
     // CMO-calibre: go-to-market, brand, community, developer advocacy, docs-led launches, analytics
     "wunderkind:marketing-wunderkind": {
-      "model": "openai/gpt-6.1-sol",
+      "model": "openai/gpt-6.1-terra",
       "variant": "high",
       "mode": "primary",
       "category": "writing",
@@ -59,7 +59,7 @@
     // ── Design ─────────────────────────────────────────────────────────────────
     // Creative Director: brand identity, design systems, UI/UX, accessibility
     "wunderkind:creative-director": {
-      "model": "openai/gpt-6.1-sol",
+      "model": "openai/gpt-6.1-terra",
       "variant": "high",
       "mode": "primary",
       "category": "visual-engineering",

@@ -54,7 +54,14 @@ describe("native asset version markers", () => {
 
       const policy = mod.detectNativeAgentMarkdownVersions("global")
       expect(policy.modelPolicyCurrent).toBe(true)
-      expect(policy.agents.map((agent) => [agent.model, agent.variant])).toEqual(Array.from({ length: 6 }, () => ["openai/gpt-6.1-sol", "high"]))
+      expect(policy.agents.map((agent) => [agent.model, agent.variant])).toEqual([
+        ["openai/gpt-6.1-terra", "high"],
+        ["openai/gpt-6.1-terra", "high"],
+        ["openai/gpt-6.1-sol", "high"],
+        ["openai/gpt-6.1-sol", "high"],
+        ["openai/gpt-6.1-sol", "high"],
+        ["openai/gpt-6.1-sol", "high"],
+      ])
       expect(mod.detectNativeAssetVersion("agents").ownership).toBe("wunderkind-owned")
       expect(mod.detectNativeAssetVersion("agents").needsUpgrade).toBe(false)
     })

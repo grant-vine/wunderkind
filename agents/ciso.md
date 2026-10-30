@@ -1,11 +1,10 @@
 ---
 description: >
   CISO — Security and compliance lead for threat modeling, controls, and risk decisions.
-wunderkind_version: "0.28.6"
+wunderkind_version: "0.28.7"
 mode: all
 model: openai/gpt-6.1-sol
 variant: high
-temperature: 0.1
 permission:
   write: deny
   edit: deny

@@ -51,7 +51,8 @@ describe("Codex specialist model policy", () => {
       for (const agent of state.agents) {
         const document: unknown = parse(readFileSync(agent.path, "utf8"))
         if (typeof document !== "object" || document === null || Array.isArray(document)) throw new Error("Expected agent TOML")
-        expect([Reflect.get(document, "model"), Reflect.get(document, "model_reasoning_effort")]).toEqual(["gpt-6.1-sol", "high"])
+        const expected = ["wunderkind-marketing", "wunderkind-creative-director"].includes(agent.name) ? "gpt-6.1-terra" : "gpt-6.1-sol"
+        expect([Reflect.get(document, "model"), Reflect.get(document, "model_reasoning_effort")]).toEqual([expected, "high"])
         expect(sha256File(agent.path)).toBe(agent.sha256)
       }
       expect(getCodexDoctorReport().modelPolicy.driftedAssignments).toEqual([])
@@ -93,5 +94,26 @@ describe("Codex specialist model policy", () => {
       expect(state.agents.map((agent) => readFileSync(agent.path, "utf8"))).toEqual(before)
       expect(readFileSync(paths.installState, "utf8")).toBe(stateBefore)
     } finally { __setPolicyBeforeWriteForTests(undefined); cleanup(fixture) }
+  })
+
+  it("refuses a concurrent specialist edit before writing any staged role", () => {
+    // Given
+    const { fixture, paths } = legacyInstall()
+    const plan = stageSpecialistModelPolicy(paths)
+    const marketing = join(paths.agentsDir, "wunderkind-marketing.toml")
+    const creative = join(paths.agentsDir, "wunderkind-creative-director.toml")
+    const creativeBefore = readFileSync(creative, "utf8")
+    const receiptBefore = readFileSync(paths.installState, "utf8")
+    writeFileSync(marketing, `${readFileSync(marketing, "utf8")}# operator edit\n`)
+    const editedMarketing = readFileSync(marketing, "utf8")
+    try {
+      // When
+      const error = expectedError(() => applyPolicyTransaction(plan.deltas, join(paths.ownershipRoot, "model-policy-recovery.json"), plan.guards))
+      // Then
+      expect(error.message).toContain("Concurrent")
+      expect(readFileSync(marketing, "utf8")).toBe(editedMarketing)
+      expect(readFileSync(creative, "utf8")).toBe(creativeBefore)
+      expect(readFileSync(paths.installState, "utf8")).toBe(receiptBefore)
+    } finally { cleanup(fixture) }
   })
 })

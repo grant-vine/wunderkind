@@ -1,16 +1,18 @@
 # Codex edition capabilities
 
-The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.6` release candidate targets OpenCode plugin/SDK `1.19.4` and OMO/LazyCodex `5.1.44`; it does not claim publication or a host upgrade.
+The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.7` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`, from published `0.28.6` at `c7fd11ee87aa0c2dbe17443d93b31d347b99105b`; it does not claim publication or a consumer host upgrade.
 
 ## Prerequisites and lifecycle
 
-LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; `5.1.44` is the reviewed target. Exact 5.1.44 Codex policy repair artifacts are hash-bound and exercised through a disposable installer stage; doctor reports version compatibility separately from artifact trust. Unknown or changed installer graphs remain held. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
+LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; `5.1.51` is the current target. Doctor reports version compatibility separately from artifact trust. The reviewed 5.1.51 policy-repair graph binds the exact tarball SRI and 12 role executable hashes and passed its 53-case disposable-stage tamper/rollback/override gate. Unknown or changed installer graphs remain held. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
 
 The public Wunderkind CLI floor remains Node `>=22.12.0` or Bun `1+`; this does not imply that a separate native `omo-ai` binary is supported on Node 22.
 
-Managed model defaults remain Sol for orchestration and high-capability work and Luna for routine/background work (`gpt-6-sol` and `gpt-6-luna`). Astra is explicit operator opt-in only and is never selected by routine lifecycle commands.
+Managed model defaults remain Sol for orchestration and high-capability work and Luna for routine/background work (`gpt-6-sol` and `gpt-6-luna`). Astra is explicit operator opt-in only and is never selected by routine lifecycle commands. The model catalog listing a model does not establish that the configured host route can serve it or that it meets a benchmark.
 
-The six retained specialists explicitly select `gpt-6.1-sol` with `high` reasoning in custom-agent TOML. `wunderkind codex doctor --apply-model-policy` repairs unchanged, receipt-owned legacy specialist files in the same transaction as their ownership hashes. Edited files and explicit Astra selections are held for operator review. Root model and reasoning selections remain user-owned. Doctor checks installed configuration; verify a fresh specialist run's host model metadata after repair.
+The six retained specialists select GPT-6.1 with `high` reasoning in custom-agent TOML: `wunderkind-marketing` and `wunderkind-creative-director` use `gpt-6.1-terra`; `wunderkind-product`, `wunderkind-architecture`, `wunderkind-ciso`, and `wunderkind-legal` use `gpt-6.1-sol`. The two Terra roles require a Responses-capable host route; catalog visibility is not proof of route availability. `wunderkind codex doctor --apply-model-policy` repairs only unchanged, receipt-owned legacy specialist files in the same transaction as their ownership hashes. The verified 5.1.51 path still holds unknown, changed, or user-owned files. Edited files and explicit Astra selections are held for operator review. Root model and reasoning selections remain user-owned. Doctor checks installed configuration; verify a fresh specialist run's host model metadata after repair.
+
+OMO 5.1.51 includes upstream task recovery/fallback/steering, a frontend skill that requires WCAG 2.2 AA results, and omo.dev accessibility/keyboard fixes. Those changes belong to the host; this package does not implement them. The creative-director role may apply targeted accessibility guidance, but this release does not import upstream skills.
 
 Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). Maintainer packed QA can still use the extracted-package equivalent `node package/bin/wunderkind.js codex <verb>`.
 

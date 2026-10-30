@@ -26,7 +26,8 @@ function renderPermissionBlock(permission: AgentConfig["permission"]): string[] 
 }
 
 export function renderNativeAgentMarkdown(definition: WunderkindAgentDefinition): string {
-  const routing = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists
+  const routing = WUNDERKIND_CANONICAL_MANIFEST.modelRouting.retainedSpecialists[definition.id]
+  if (routing === undefined) throw new Error(`Unknown Wunderkind specialist: ${definition.id}`)
   const config = definition.factory(routing.model)
   const ownVersion = getCanonicalPackageVersion()
   const frontmatter = [
@@ -37,7 +38,7 @@ export function renderNativeAgentMarkdown(definition: WunderkindAgentDefinition)
     `mode: ${definition.factory.mode}`,
     `model: ${routing.model}`,
     `variant: ${routing.variant}`,
-    ...(typeof config.temperature === "number" ? [`temperature: ${config.temperature}`] : []),
+    ...(routing.variant === "none" && typeof config.temperature === "number" ? [`temperature: ${config.temperature}`] : []),
     ...renderPermissionBlock(config.permission),
     "---",
     "",

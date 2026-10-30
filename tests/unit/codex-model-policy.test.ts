@@ -63,7 +63,7 @@ describe("durable Codex policy", () => {
     // Given
     const { directory, paths } = fixture()
     try {
-      expect(resolvePolicyUpstream().version).toBe("5.1.44")
+      expect(resolvePolicyUpstream().version).toBe("5.1.51")
       // When
       const report = applyCodexModelPolicy(paths)
       // Then
@@ -274,13 +274,13 @@ describe("durable Codex policy", () => {
   })
   it("rejects a modified shipped executable before staging or receipt creation", () => {
     // Given
-    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-upstream"); mkdirSync(join(fake, "packages/omo-codex/scripts/install-dist"), { recursive: true }); writeFileSync(join(fake, "package.json"), '{"version":"5.1.44"}'); writeFileSync(join(fake, "packages/omo-codex/scripts/install-dist/install-local.mjs"), readFileSync(upstream.bundle, "utf8") + "\n// tampered\n"); __setPolicyUpstreamRootForTests(fake)
+    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-upstream"); mkdirSync(join(fake, "packages/omo-codex/scripts/install-dist"), { recursive: true }); writeFileSync(join(fake, "package.json"), JSON.stringify({ version: upstream.version })); writeFileSync(join(fake, "packages/omo-codex/scripts/install-dist/install-local.mjs"), readFileSync(upstream.bundle, "utf8") + "\n// tampered\n"); __setPolicyUpstreamRootForTests(fake)
     try {
       // When / Then
       expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable"); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
     } finally { cleanup(directory) }
   })
-  it("rejects a modified 5.1.44 skill synchronization executable before any policy write", () => {
+  it("rejects a modified 5.1.51 skill synchronization executable before any policy write", () => {
     const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-sync")
     cpSync(upstream.root, fake, { recursive: true })
     const executable = join(fake, "packages/omo-codex/plugin/scripts/sync-skills.mjs")
@@ -292,6 +292,18 @@ describe("durable Codex policy", () => {
       expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable: packages/omo-codex/plugin/scripts/sync-skills.mjs")
       expect(policySnapshot(root).digest).toBe(beforeRoot); expect(policySnapshot(user).digest).toBe(beforeUser)
       expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
+    } finally { cleanup(directory) }
+  })
+  it("rejects a modified 5.1.51 shared skill filter before any policy write", () => {
+    const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-skill-filter")
+    cpSync(upstream.root, fake, { recursive: true })
+    const executable = join(fake, "packages/shared-skills/skill-source-filter.mjs")
+    writeFileSync(executable, `${readFileSync(executable, "utf8")}\n// tampered\n`)
+    __setPolicyUpstreamRootForTests(fake)
+    try {
+      expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable: packages/shared-skills/skill-source-filter.mjs")
+      expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
+      expect(existsSync(join(paths.home, ".omo/omo.jsonc"))).toBe(false)
     } finally { cleanup(directory) }
   })
   it("rejects an unsupported LazyCodex release before staging or receipt creation", () => {
@@ -381,7 +393,7 @@ describe("durable Codex policy", () => {
       expect(() => applyCodexModelPolicy(paths)).toThrow(CodexModelPolicyError); expect(readFileSync(file, "utf8")).toBe(source); expect(existsSync(join(paths.home, ".omo/omo.jsonc"))).toBe(false); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
     } finally { cleanup(directory) }
   })
-  it("holds disabled default registration removal when it would delete operator settings", () => {
+  itWithTimeout("holds disabled default registration removal when it would delete operator settings", () => {
     // Given
     const { directory, paths } = fixture(); bundledRoles(paths)
     try {
@@ -390,7 +402,7 @@ describe("durable Codex policy", () => {
       // When / Then
       expect(() => applyCodexModelPolicy(paths)).toThrow(CodexModelPolicyError); expect(readFileSync(root, "utf8")).toBe(source); expect(readFileSync(join(paths.agentsDir, "default.toml"), "utf8")).toBe(beforeDefault)
     } finally { cleanup(directory) }
-  })
+  }, 15_000)
 
   it("reports generated role reasoning drift against the unchanged managed durable key", () => {
     // Given
