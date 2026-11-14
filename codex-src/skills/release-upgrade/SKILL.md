@@ -34,6 +34,8 @@ Do not use for an isolated refactor with no release implication.
 
 Do not publish, tag, or change release metadata without explicit authorization.
 
+Report publication and default-branch integration separately. A pushed release tag does not prove the release branch was merged.
+
 ## Review gate
 
 The release path names compatibility checks and a viable rollback posture.

@@ -1,5 +1,29 @@
 # D3 decision model review
 
+## Availability refresh: 2026-11-14
+
+Small native decision workers are more plausible candidates now, but none has been measured against Wunderkind routing. This review does not resume Kev or authorize downloads, service startup, inference, or production routing. The October proposal below is historical design context, not a current hardware admission result.
+
+| Candidate | Verified distribution | Local evaluation disposition |
+| --- | --- | --- |
+| Tev1 0.8B | Ollama `tev1:0.8b`; catalog download variants834MB–1.5GB; typed `/v1/systemone` answers | First small native protocol-smoke candidate. Pin a quantized tag/digest and measure its loaded memory before a larger comparison. |
+| Strands Decider 2B | Apple-Silicon MLX; default2GB MXFP8, optional1.3GB NVFP4;4K context | Second native candidate. Published timings are from an M5 Pro/64GiB, not this host; verify quantization support locally. |
+| D3 2B/4B | Ollama;3.1–3.2GB/5.6–5.8GB downloads | Keep as quality/capacity controls after a smaller candidate passes smoke. Context limit is unresolved: the same official page advertises256K in its catalog and4K in its README. |
+| D3 Edge | Publisher checkpoint594,321,600 parameters; Apache2.0; revision `bee5e872f75b9c5d1405767bf244a6948b95c0af` | Track as a smaller future candidate. Hugging Face availability does not prove an Ollama package or Apple Silicon runtime; custom-code/runtime review is still needed. |
+| Nimble v3 9B | Ollama;9.3–9.5GB downloads | Defer from the first comparison because of its larger footprint; availability alone does not justify extra host disruption. |
+
+Sources checked November14: [Tev1](https://ollama.com/library/tev1), [Strands Decider](https://ollama.com/library/strands-decider), [D3](https://registry.ollama.com/library/d3), [D3 Edge publisher](https://huggingface.co/vllm-sr/d3-edge), [Nimble v3](https://ollama.com/library/nimble-v3). Download sizes are not loaded allocations. Score/probability semantics and calibration must be verified per model, despite the shared endpoint vocabulary.
+
+Ollama0.40.16 is the current stable host target. Its Responses endpoint now respects explicit truncation settings, and its empty model list uses an array. Neither change establishes the System One token-admission contract. The SDK0.7/Bun response-buffering hold is separate: an eventual native Ollama experiment should use a small, fixture-tested HTTP adapter rather than making an unrelated SDK migration a prerequisite. [Ollama release](https://github.com/ollama/ollama/releases/tag/v0.40.16)
+
+### Smallest useful next experiment
+
+Start with a frozen text-only route/defer schema and a deterministic rules baseline, then at most ten Tev1 development cases through one isolated model at a bounded4K request budget. That budget is a test setting, not proof of any model's supported maximum. Resolve exact token counting, truncation and overflow behavior before requests; missing admission proof is a hold. Follow with Strands and D3 only if protocol, memory pressure and latency meet predeclared limits. Keep held-out examples separate from prompts, report safety misses and invalid outputs, and compare case-level results with a reproducible rules baseline. Do not make hosted baseline availability a prerequisite for learning whether the local protocol works; a hosted quality comparison can remain explicitly unavailable.
+
+Readiness first uses static package information and read-only host pressure probes; do not load a model merely to discover whether it fits. After an authorized admitted smoke starts, capture actual loaded allocation. Distinguish reclaimable Docker/cache memory from non-reclaimable workload use, do not treat Docker's configured reservation as resident consumption, and stop on sustained pressure or interference with unrelated services. Leave the host's current services running. No claimed accuracy or latency improvement follows from this availability review.
+
+## October 2026 review and original proposal
+
 **Disposition:** D3 is worth a bounded, local decision-worker evaluation. It is not ready to replace the experimental Kev adapter or to become a memory provider. Keep the current Jev/Kev interfaces disabled and the broader Kev comparison paused. If a later, separately authorized evaluation passes, D3 could replace the *decision-model candidate* in a future comparison; it cannot replace Wunderkind's six generative specialists.
 
 ## What D3 is

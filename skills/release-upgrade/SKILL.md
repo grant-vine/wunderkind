@@ -63,6 +63,7 @@ Do **not** use this skill for:
 4. Prefer filesystem-first repo artifacts and explicit verification surfaces over hand-wavy release prose.
 5. Distinguish source-of-truth files from mirrored files before recommending any edit order.
 6. Keep bundled adaptations separate from fetched companions. Package upgrades refresh only receipt-owned assets; missing-only companion repair is not an update mechanism for existing third-party skills.
+7. Treat a published tag/package and a merged default branch as separate outcomes. Verify and report both; publishing from a release branch does not establish that the work was merged.
 
 ## Review gate
 

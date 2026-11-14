@@ -3,13 +3,13 @@ import { dirname, join, resolve } from "node:path"
 import { lstatOrMissing, sha256Bytes } from "./state.js"
 import { policySnapshot, PolicyTransactionError, type PolicySnapshot } from "./policy-transaction.js"
 export const CODEX_POLICY_ROLES = [
-  { id: "lazycodex-worker-high", model: "gpt-6-sol", reasoning: "high" },
-  { id: "lazycodex-code-reviewer", model: "gpt-6-sol", reasoning: "high" },
-  { id: "lazycodex-clone-fidelity-reviewer", model: "gpt-6-sol", reasoning: "high" },
-  { id: "metis", model: "gpt-6-sol", reasoning: "high" },
-  { id: "momus", model: "gpt-6-sol", reasoning: "high" },
-  { id: "lazycodex-gate-reviewer", model: "gpt-6-sol", reasoning: "medium" },
-  { id: "plan", model: "gpt-6-sol", reasoning: "high" },
+  { id: "lazycodex-worker-high", model: "gpt-6.1-sol", reasoning: "high" },
+  { id: "lazycodex-code-reviewer", model: "gpt-6.1-sol", reasoning: "high" },
+  { id: "lazycodex-clone-fidelity-reviewer", model: "gpt-6.1-sol", reasoning: "high" },
+  { id: "metis", model: "gpt-6.1-sol", reasoning: "high" },
+  { id: "momus", model: "gpt-6.1-sol", reasoning: "high" },
+  { id: "lazycodex-gate-reviewer", model: "gpt-6.1-sol", reasoning: "medium" },
+  { id: "plan", model: "gpt-6.1-sol", reasoning: "high" },
   { id: "lazycodex-worker-low", model: "gpt-6-luna", reasoning: "low" },
   { id: "lazycodex-worker-medium", model: "gpt-6-luna", reasoning: "medium" },
   { id: "explorer", model: "gpt-6-luna", reasoning: "medium" },

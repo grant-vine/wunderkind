@@ -48,10 +48,10 @@ describe("durable Codex policy", () => {
   it("uses the independently reviewed model and reasoning targets for every shipped role", () => {
     // Given: exact execution-plan role matrix
     const expected = [
-      ["lazycodex-worker-high", "gpt-6-sol", "high"], ["lazycodex-code-reviewer", "gpt-6-sol", "high"],
-      ["lazycodex-clone-fidelity-reviewer", "gpt-6-sol", "high"], ["metis", "gpt-6-sol", "high"],
-      ["momus", "gpt-6-sol", "high"], ["lazycodex-gate-reviewer", "gpt-6-sol", "medium"],
-      ["plan", "gpt-6-sol", "high"], ["lazycodex-worker-low", "gpt-6-luna", "low"],
+      ["lazycodex-worker-high", "gpt-6.1-sol", "high"], ["lazycodex-code-reviewer", "gpt-6.1-sol", "high"],
+      ["lazycodex-clone-fidelity-reviewer", "gpt-6.1-sol", "high"], ["metis", "gpt-6.1-sol", "high"],
+      ["momus", "gpt-6.1-sol", "high"], ["lazycodex-gate-reviewer", "gpt-6.1-sol", "medium"],
+      ["plan", "gpt-6.1-sol", "high"], ["lazycodex-worker-low", "gpt-6-luna", "low"],
       ["lazycodex-worker-medium", "gpt-6-luna", "medium"], ["explorer", "gpt-6-luna", "medium"],
       ["librarian", "gpt-6-luna", "medium"], ["lazycodex-qa-executor", "gpt-6-luna", "medium"],
     ]
@@ -63,11 +63,11 @@ describe("durable Codex policy", () => {
     // Given
     const { directory, paths } = fixture()
     try {
-      expect(resolvePolicyUpstream().version).toBe("5.1.51")
+      expect(resolvePolicyUpstream().version).toBe("5.1.70")
       // When
       const report = applyCodexModelPolicy(paths)
       // Then
-      expect(process.cwd()).toBe(paths.home); expect(report.missingAssignments).toContain("default"); expect(model(join(paths.codexHome, "config.toml"))).toBe("gpt-6-sol")
+      expect(process.cwd()).toBe(paths.home); expect(report.missingAssignments).toContain("default"); expect(model(join(paths.codexHome, "config.toml"))).toBe("gpt-6.1-sol")
       const config = json(join(paths.home, ".omo/omo.jsonc")); expect(typeof config).toBe("object")
       const text = readFileSync(join(paths.home, ".omo/omo.jsonc"), "utf8")
       for (const role of CODEX_POLICY_ROLES) expect(text).toContain(`"${role.id}"`)
@@ -115,7 +115,7 @@ describe("durable Codex policy", () => {
     const { directory, paths } = fixture()
     try {
       applyCodexModelPolicy(paths); const file = join(paths.home, ".omo/omo.jsonc"); const before = readFileSync(file, "utf8")
-      const changed = before.replace('"model": "gpt-6-sol"', '"model": "intentional-high"'); writeFileSync(file, changed)
+      const changed = before.replace('"model": "gpt-6.1-sol"', '"model": "intentional-high"'); writeFileSync(file, changed)
       // When
       applyCodexModelPolicy(paths)
       // Then
@@ -280,7 +280,7 @@ describe("durable Codex policy", () => {
       expect(() => applyCodexModelPolicy(paths)).toThrow("Untrusted policy synchronization executable"); expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
     } finally { cleanup(directory) }
   })
-  it("rejects a modified 5.1.51 skill synchronization executable before any policy write", () => {
+  it("rejects a modified 5.1.70 skill synchronization executable before any policy write", () => {
     const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-sync")
     cpSync(upstream.root, fake, { recursive: true })
     const executable = join(fake, "packages/omo-codex/plugin/scripts/sync-skills.mjs")
@@ -294,7 +294,7 @@ describe("durable Codex policy", () => {
       expect(existsSync(join(paths.ownershipRoot, "model-policy.json"))).toBe(false)
     } finally { cleanup(directory) }
   })
-  it("rejects a modified 5.1.51 shared skill filter before any policy write", () => {
+  it("rejects a modified 5.1.70 shared skill filter before any policy write", () => {
     const { directory, paths } = fixture(); const upstream = resolvePolicyUpstream(); const fake = join(paths.home, "modified-skill-filter")
     cpSync(upstream.root, fake, { recursive: true })
     const executable = join(fake, "packages/shared-skills/skill-source-filter.mjs")

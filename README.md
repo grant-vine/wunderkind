@@ -41,9 +41,18 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.8` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.51`, from published `0.28.6` at `c7fd11ee87aa0c2dbe17443d93b31d347b99105b`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.9` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.70`, from published `0.28.8` at `38a12d12250272f2d33afe4beab11c3dc18a5371`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.9
+
+- Targets OMO/LazyCodex `5.1.70`, Clack `1.9.0` and Commander `15.1.0`; OpenCode plugin/SDK remains `1.19.5`. The exact reviewed installer graph passes disposable tamper/rollback checks.
+- Advances managed standard/high Sol defaults to `openai/gpt-6.1-sol` (`gpt-6.1-sol` in Codex). Terra remains the marketing/creative default, Luna remains the routine tier, and operator overrides and Astra opt-in are preserved.
+- Fixes setup-skill YAML discovery and verifies every bundled skill's machine-consumed frontmatter. Clack's accessible spinner mode is available through `ACCESSIBLE=true`.
+- Refreshes [local decision-model availability](docs/d3-decision-model-review.md): Tev1 0.8B, Strands Decider 2B and D3 Edge are candidates, with D3 context limits explicitly unresolved. No model is enabled or downloaded by this release.
+- Updates release/experiment skills to distinguish published tags from merged branches and protocol smoke from a held-out quality comparison. The six-agent/eleven-Codex-skill/28-route inventory is unchanged.
 
 ## What's new in 0.28.8
+
 
 - Reviews bundled skills alongside the Terra upgrade: WCAG 2.2 AA and real interaction checks, available host tools, project-token preservation, scoped discovery questions, fresh-context architecture exploration, and Bun-native typechecks.
 - Makes distribution explicit: OpenCode gets bundled Wunderkind adaptations; Codex has a separate eleven-skill payload and optional third-party companions. Missing-only Matt companion repair does not update existing skills.
@@ -993,7 +1002,7 @@ Project memory is a separate, default-off capability. When enabled, each project
 - `memory capture` is the bounded synchronous fallback. The v1 extractor is loopback-only Ollama with an explicit model and bounded queue/response limits; there is no provider install step.
 - Query-aware context injection is separately enabled; memory injection is separately enabled from capture, bounded, source-attributed, and fail-closed. It never replaces the normal system prompt when disabled or when the ledger is unavailable.
 - redaction precedes every downstream interface. Raw excerpts expire after 30 days; fact/source deletion writes non-rebuild tombstones; exports contain redacted facts and provenance, never raw excerpts. Treat stored values as untrusted data and never persist secrets or instruction-like content.
-- Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-6-sol`, routine/background work uses `openai/gpt-6-luna`, and Astra is absent from the managed template unless an operator configures it in a user-owned OMO override.
+- Jev/Kev are eval-only interfaces, not installed providers. They do not change Wunderkind's managed model-routing policy: standard/high-capability OpenCode work uses `openai/gpt-6.1-sol`, routine/background work uses `openai/gpt-6-luna`, and Astra is absent from the managed template unless an operator configures it in a user-owned OMO override.
 - `wunderkind migrate` migrates legacy OMO configuration into `~/.omo/omo.jsonc`; wunderkind migrate does not import memory ledgers, `.sisyphus/` artifacts, or provider/cloud state. Back up or export a project ledger explicitly before any project-local cleanup.
 - Stop the worker before a consistent SQLite backup, preserving WAL state as appropriate. Project cleanup removes `.wunderkind/` and its memory data after the worker stops; project uninstall retains that data. Neither operation proceeds when worker shutdown fails. Use a scoped backup and package/config restore for rollback rather than cleanup.
 

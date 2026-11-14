@@ -62,6 +62,7 @@ Do **not** use this skill for:
 2. Do not become a generic docs-lookup route, generic debugging lane, or normal architecture lane.
 3. Distinguish canonical compatibility truth from mirrored/operator-facing surfaces before recommending edits.
 4. Prefer explicit compatibility boundaries and adoption/rejection decisions over vague “should work” language.
+   Match documentation to the installed major/version and package namespace. A development branch's hook examples or catalog models do not establish compatibility with the released SDK or actual request route.
 5. If the issue is really a release-orchestration problem, route it to `release-upgrade`; if it is really a code defect, route it to `diagnose` or direct engineering execution.
 
 ## Review gate

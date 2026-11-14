@@ -51,7 +51,7 @@ export function inspectCodexModelPolicy(paths = resolveCodexPaths()): CodexModel
     if (rootModel === undefined) missingAssignments.push("root")
     else if (rootModel === "gpt-6-astra") astraAssignments.push("root")
     if (rootModel !== undefined && rootReceipt?.value !== rootModel) userOwnedAssignments.push("root")
-    else if (rootModel !== "gpt-6-sol") driftedAssignments.push("root")
+    else if (rootModel !== "gpt-6.1-sol") driftedAssignments.push("root")
     const rootReasoning = rootDocument === undefined ? undefined : policyTomlString(rootDocument, "model_reasoning_effort")
     const rootReasoningReceipt = receiptForKey(receipt, rootPath, ["model_reasoning_effort"])
     if (rootReasoning === undefined && rootReasoningReceipt !== undefined) holds.push("Withdrawn managed root reasoning")
@@ -157,7 +157,7 @@ export function applyCodexModelPolicy(paths = resolveCodexPaths(), options: Code
     const oldReasoning = receiptForKey(receipt, rootPath, ["model_reasoning_effort"])
     if (rootReasoning === undefined && oldReasoning !== undefined && options.resetManagedKeys !== true) throw new CodexModelPolicyError("Removed managed root reasoning; use explicit --reset-model-policy to reclaim")
     const reasoningManaged = rootManaged && (rootReasoning === undefined || oldReasoning?.value === rootReasoning)
-    let nextRoot = editPolicyToml(rootText, { ...(rootManaged ? { model: "gpt-6-sol" } : {}), ...(reasoningManaged ? { model_reasoning_effort: "medium" } : {}) })
+    let nextRoot = editPolicyToml(rootText, { ...(rootManaged ? { model: "gpt-6.1-sol" } : {}), ...(reasoningManaged ? { model_reasoning_effort: "medium" } : {}) })
     const agents = new Map<string, Uint8Array>(); const snapshots = new Map<string, ReturnType<typeof policySnapshot>>()
     const agentNames = [...CODEX_POLICY_ROLES.map((role) => `${role.id}.toml`), "default.toml", ".lazycodex-default.sha256", ".lazycodex-agent-models.json", "codex-ultrawork-reviewer.toml"]
     for (const name of agentNames) { const snapshot = policySnapshot(join(paths.codexHome, "agents", name)); snapshots.set(name, snapshot); if (snapshot.bytes !== undefined) agents.set(name, snapshot.bytes) }
@@ -260,7 +260,7 @@ export function applyCodexModelPolicy(paths = resolveCodexPaths(), options: Code
     }
     scanPolicyToml(nextRoot)
     if (nextRoot !== rootText) deltas.unshift({ before: rootSnapshot, bytes: Buffer.from(nextRoot) })
-    for (const [key, value, managed] of [["model", "gpt-6-sol", rootManaged], ["model_reasoning_effort", "medium", reasoningManaged]] as const) {
+    for (const [key, value, managed] of [["model", "gpt-6.1-sol", rootManaged], ["model_reasoning_effort", "medium", reasoningManaged]] as const) {
       if (!managed) continue
       const entry: PolicyKeyReceipt = { file: rootPath, scope: "root", profile: null, key: [key], value, preWriteDigest: rootSnapshot.digest ?? null, lastWriteDigest: sha256Bytes(nextRoot) }
       const index = newReceipts.findIndex((item) => item.file === rootPath && item.key.length === 1 && item.key[0] === key); if (index >= 0) newReceipts.splice(index, 1); newReceipts.push(entry)

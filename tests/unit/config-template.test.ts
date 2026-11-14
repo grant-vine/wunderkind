@@ -131,10 +131,10 @@ describe("shipped cost routing", () => {
       explore: ["luna", "medium"], librarian: ["luna", "medium"],
     }
     for (const [id, [model, variant]] of Object.entries(categories)) {
-      expect(template.categories[id]).toEqual({ model: `openai/gpt-6-${model}`, ...(variant ? { variant } : {}) })
+      expect(template.categories[id]).toEqual({ model: `openai/gpt-${model === "sol" ? "6.1" : "6"}-${model}`, ...(variant ? { variant } : {}) })
     }
     for (const [id, [model, variant]] of Object.entries(roles)) {
-      expect(template.agents[id]).toEqual({ model: `openai/gpt-6-${model}`, variant })
+      expect(template.agents[id]).toEqual({ model: `openai/gpt-${model === "sol" ? "6.1" : "6"}-${model}`, variant })
     }
     expect(WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.builtinAgents).toHaveLength(Object.keys(roles).length)
     for (const { id, model, variant } of WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.builtinAgents) {
@@ -145,7 +145,7 @@ describe("shipped cost routing", () => {
   it("resolves retained specialist categories to the approved models in the parsed template", () => {
     // Given
     const template = parse(readFileSync(new URL("../../oh-my-openagent.jsonc", import.meta.url), "utf8"))
-    const expected: Readonly<Record<string, string>> = { quick: "openai/gpt-6-luna", "unspecified-low": "openai/gpt-6-luna", "unspecified-high": "openai/gpt-6-sol", writing: "openai/gpt-6-luna", "visual-engineering": "openai/gpt-6-sol", "deep-low": "openai/gpt-6-sol", "deep-high": "openai/gpt-6-sol", ultrabrain: "openai/gpt-6-sol", git: "openai/gpt-6-luna" }
+    const expected: Readonly<Record<string, string>> = { quick: "openai/gpt-6-luna", "unspecified-low": "openai/gpt-6-luna", "unspecified-high": "openai/gpt-6.1-sol", writing: "openai/gpt-6-luna", "visual-engineering": "openai/gpt-6.1-sol", "deep-low": "openai/gpt-6.1-sol", "deep-high": "openai/gpt-6.1-sol", ultrabrain: "openai/gpt-6.1-sol", git: "openai/gpt-6-luna" }
     // When / Then: check both generated metadata and the independently shipped template
     for (const category of WUNDERKIND_CANONICAL_MANIFEST.omoTemplates.categories) {
       expect(template.categories[category.id].model).toBe(expected[category.id])

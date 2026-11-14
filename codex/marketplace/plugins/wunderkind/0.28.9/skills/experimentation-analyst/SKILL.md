@@ -31,6 +31,8 @@ Do not use for instrumentation implementation or generic analytics setup.
 
 ## Hard rules
 
+For local model comparisons, pin model identity and the request/answer contract, resolve context limits before inference, and separate development cases from held-out families. Include abstention, invalid outputs, safety misses, latency and memory pressure; publisher scores do not establish local quality. Use a reproducible rules control when hosted controls are unavailable, and obtain execution authorization before downloading or calling a model.
+
 Do not claim causal certainty beyond the design and observed evidence.
 
 ## Review gate

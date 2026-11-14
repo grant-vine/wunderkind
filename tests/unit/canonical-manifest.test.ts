@@ -119,9 +119,9 @@ describe("canonical manifest drift guards", () => {
 
     expect(categories.quick).toEqual({ id: "quick", model: "openai/gpt-6-luna", variant: "low" })
     expect(categories["unspecified-low"]).toEqual({ id: "unspecified-low", model: "openai/gpt-6-luna", variant: "low" })
-    expect(categories["unspecified-high"]).toEqual({ id: "unspecified-high", model: "openai/gpt-6-sol", variant: "high" })
+    expect(categories["unspecified-high"]).toEqual({ id: "unspecified-high", model: "openai/gpt-6.1-sol", variant: "high" })
     expect(categories.writing).toEqual({ id: "writing", model: "openai/gpt-6-luna", variant: "medium" })
-    expect(categories["visual-engineering"]).toEqual({ id: "visual-engineering", model: "openai/gpt-6-sol", variant: "medium" })
+    expect(categories["visual-engineering"]).toEqual({ id: "visual-engineering", model: "openai/gpt-6.1-sol", variant: "medium" })
     expect(Object.values(categories).map((category) => category.model)).not.toContain("openai/gpt-6-astra")
     const manifestEntries = new Map(Object.entries(WUNDERKIND_CANONICAL_MANIFEST))
     expect(manifestEntries.get("modelRouting")).toEqual({
@@ -134,7 +134,7 @@ describe("canonical manifest drift guards", () => {
         "legal-counsel": { model: "openai/gpt-6.1-sol", variant: "high" },
       },
       managedDefaults: {
-        standardAndHigh: "openai/gpt-6-sol",
+        standardAndHigh: "openai/gpt-6.1-sol",
         routineAndBackground: "openai/gpt-6-luna",
       },
       astraRequiresExplicitUserConfiguration: true,

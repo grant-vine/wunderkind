@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { createLegalCounselAgent } from "../../src/agents/legal-counsel.js"
+import { WUNDERKIND_CANONICAL_MANIFEST } from "../../src/agents/canonical-manifest.js"
 
 const PROJECT_ROOT = new URL("../../", import.meta.url).pathname
 
@@ -15,6 +16,22 @@ const THIN_CORE_SKILLS = [
 ] as const
 
 describe("thin-core skill surfaces", () => {
+  it("publishes parseable YAML skill identities and descriptions for host discovery", () => {
+    // Given the actual published skill inventory, including detection-only routes.
+    for (const skill of WUNDERKIND_CANONICAL_MANIFEST.skills) {
+      const content = readFileSync(join(PROJECT_ROOT, skill.sourcePath), "utf8")
+      const header = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(content)?.[1]
+      // When the host parses the machine-consumed frontmatter.
+      if (header === undefined) throw new Error(`Missing skill frontmatter: ${skill.sourcePath}`)
+      const metadata: unknown = Bun.YAML.parse(header)
+      // Then both required discovery fields survive YAML decoding.
+      expect(typeof metadata).toBe("object")
+      expect(metadata).not.toBeNull()
+      if (typeof metadata !== "object" || metadata === null) throw new Error(`Invalid skill metadata: ${skill.sourcePath}`)
+      expect(typeof Reflect.get(metadata, "name")).toBe("string")
+      expect(typeof Reflect.get(metadata, "description")).toBe("string")
+    }
+  })
   for (const skillName of THIN_CORE_SKILLS) {
     it(`${skillName} keeps a sibling REFERENCE.md and points to it from SKILL.md`, () => {
       const skillPath = join(PROJECT_ROOT, "skills", skillName, "SKILL.md")

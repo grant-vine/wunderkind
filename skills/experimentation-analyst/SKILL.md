@@ -36,6 +36,8 @@ Key fields:
 
 ## Experiment Design Framework
 
+For a local decision-model comparison, freeze artifact/digest, quantization, endpoint schema and context/truncation behavior before inference. Catalog limits that disagree with runtime documentation are unresolved prerequisites, not evidence to select the larger limit. Compare serially against a reproducible rules baseline, keep development cases separate from held-out families, and report abstention, invalid outputs, safety misses, latency and resource pressure alongside accuracy. Model probability outputs require calibration checks; publisher benchmark scores are not local package results. Start with the smallest useful protocol smoke rather than blocking all local learning on a hosted baseline. Experiment design alone does not authorize model downloads, paid calls or stopping unrelated services.
+
 ### Step 1: Hypothesis
 - **Format**: "If we [change X], then [metric Y] will [increase/decrease] by [Z%] because [mechanism]."
 - **Null hypothesis**: the change has no effect on the primary metric.
