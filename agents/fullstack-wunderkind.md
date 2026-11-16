@@ -1,7 +1,7 @@
 ---
 description: >
   Fullstack Wunderkind — CTO-calibre engineer for architecture, implementation, and systems tradeoffs.
-wunderkind_version: "0.28.11"
+wunderkind_version: "0.28.12"
 mode: all
 model: openai/gpt-6.1-sol
 variant: high

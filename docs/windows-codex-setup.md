@@ -1,5 +1,7 @@
 # Windows Codex setup
 
+Live model-policy repair is currently held pending the [0.28.12 dual-graph Windows gate](windows-policy-gate.md). A standalone CLI smoke does not satisfy that gate. Follow that test handoff before executing any live repair instructions in the older setup prompt.
+
 Native Windows policy-repair and LazyCodex doctor-launcher findings, the 0.28.11 fix, disposable test gate, telemetry defaults and recovery steps are tracked in [Windows policy repair](windows-policy-repair.md). Versions 0.28.9 and 0.28.10 do not include that fix; native Windows acceptance is operator-run on the target machine.
 
 Use the Codex edition of Wunderkind, not its OpenCode installer. Native Windows and WSL have separate executable resolution, homes, and plugin installations. Install into the environment that runs the Codex task. This release has macOS validation; it does not claim native Windows execution or Windows policy-repair validation.

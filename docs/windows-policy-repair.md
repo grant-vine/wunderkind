@@ -1,5 +1,7 @@
 # Native Windows policy repair investigation
 
+The 0.28.11 Windows gate subsequently timed out; its earlier Mac results are not native acceptance. Use the [0.28.12 dual-graph timeout follow-up and handoff](windows-policy-gate.md). Live repair, including the historical commands below, remains on hold until native Windows acceptance is reviewed.
+
 Status: fix targets 0.28.11 with portable/disposable validation; the operator will perform native Windows acceptance on the remote machine after release. Versions 0.28.9 and 0.28.10 do not contain this fix. The development host is macOS; PowerShell on macOS is not a substitute.
 
 ## Root causes and changes

@@ -1,7 +1,7 @@
 ---
 description: >
   Legal Counsel — Legal and regulatory advisor for contracts, licensing, and compliance posture.
-wunderkind_version: "0.28.11"
+wunderkind_version: "0.28.12"
 mode: all
 model: openai/gpt-6.1-sol
 variant: high

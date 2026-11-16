@@ -41,7 +41,13 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.11` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.10` at `328ca9c2ef6bf9ab4e5bdc45989756fa39656569`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.16` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.12` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.11` at `eeff9c776b6a6d031457319c728c15c4808ae42e`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.16` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.12
+
+- Aligns Windows disposable test/CLI envelopes to 90 seconds while retaining the product's 45-second installer and 15-second sync deadlines.
+- Adds opt-in phase/subprocess timings and verifies injected conflicts are reached, preventing an unrelated staging failure from satisfying a conflict test.
+- Gates both exact reviewed LazyCodex 5.1.70 (historical regression) and 5.1.72 (current package) with retained transcripts. See the [Windows test handoff](docs/windows-policy-gate.md). Native Windows acceptance is pending; live repair remains held.
 
 ## What's new in 0.28.11
 

@@ -1,4 +1,5 @@
 import { policyManifestRoles } from "./policy-manifest.js"
+import { policyTrace } from "./policy-trace.js"
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, readdirSync, readlinkSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -112,6 +113,8 @@ export function assertRoleProvenance(installed: string, source: string): void {
 }
 export interface StagedPolicy { readonly changes: readonly { readonly path: string; readonly before: string | null; readonly after: string | null }[]; readonly manifestRoles: readonly string[]; readonly files: ReadonlyMap<string, Uint8Array>; readonly inventory: readonly string[] }
 export function stageUpstreamPolicy(input: { readonly upstream: PolicyUpstream; readonly agents: ReadonlyMap<string, Uint8Array>; readonly root: string; readonly overrides: Readonly<Record<string, unknown>>; readonly layers?: readonly { readonly scope: "user" | "project"; readonly bytes: Uint8Array }[]; readonly profile?: string }): StagedPolicy {
+  const stageStarted = performance.now()
+  policyTrace("stage.begin", { version: input.upstream.version })
   const temporary = mkdtempSync(join(realpathSync(tmpdir()), "wunderkind-policy-stage-"))
   try {
     const home = join(temporary, "home"); const codexHome = join(home, ".codex"); let project = join(home, "project")
@@ -148,6 +151,8 @@ import { join, resolve, relative, isAbsolute, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+const trace = (event, fields = {}) => { if (process.env.WUNDERKIND_POLICY_TRACE === "1") process.stderr.write(JSON.stringify({policyTrace:event,...fields}) + "\\n"); };
+trace("installer.begin", {pid:process.pid});
 const bundlePath = ${JSON.stringify(input.upstream.bundle)};
 if (createHash("sha256").update(await readFile(bundlePath)).digest("hex") !== ${JSON.stringify(input.upstream.artifacts["packages/omo-codex/scripts/install-dist/install-local.mjs"])}) throw new Error("Installer changed before invocation");
 const { installMarketplaceLocally } = await import(pathToFileURL(bundlePath).href);
@@ -178,19 +183,30 @@ const runCommand = async (command, args, options) => {
     }
     const executable = join(cwd,"scripts/sync-skills.mjs");
     if (createHash("sha256").update(await readFile(executable)).digest("hex") !== ${JSON.stringify(input.upstream.artifacts["packages/omo-codex/plugin/scripts/sync-skills.mjs"])}) throw new Error("Untrusted stage sync executable");
+    const started = performance.now(); trace("sync.begin", {timeoutMs:15000});
     const child = spawnSync(process.execPath,[executable],{cwd,env:process.env,timeout:15000,killSignal:"SIGKILL",maxBuffer:1048576,encoding:"utf8"});
-    if (child.error || child.status !== 0) throw new Error("Stage skill synchronization failed: " + (child.error?.message ?? child.stderr));
+    const outcome = {pid:child.pid,status:child.status,signal:child.signal,errorCode:child.error?.code ?? null,elapsedMs:Math.round(performance.now()-started)};
+    trace("sync.end", outcome);
+    if (child.error || child.status !== 0) throw new Error("Stage skill synchronization failed: " + JSON.stringify(outcome) + " " + (child.error?.message ?? child.stderr));
     return;
   }
   throw new Error("Unexpected subprocess: " + command + " " + args.join(" "));
 };
 const result = await installMarketplaceLocally({ repoRoot: ${JSON.stringify(input.upstream.root)}, codexHome: ${JSON.stringify(codexHome)}, binDir: ${JSON.stringify(join(home, "bin"))}, projectDirectory: ${JSON.stringify(project)}, env: process.env, autonomousPermissions: false, astGrepInstaller: async () => ({kind: "failed", reason: "Outside policy-only regeneration scope"}), runCommand });
+trace("installer.end", {pid:process.pid});
 console.log(JSON.stringify({installed:result.installed,commands}));
 `)
 
-    const env = { ...(input.profile === undefined ? {} : { OMO_PROFILE: input.profile }), PATH: process.env["PATH"], HOME: home, USERPROFILE: home, CODEX_HOME: codexHome, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: join(home, ".cache"), XDG_DATA_HOME: join(home, ".local", "share"), TMPDIR: temporary, TEMP: temporary, TMP: temporary, DO_NOT_TRACK: "1", OMO_DISABLE_TELEMETRY: "1", OMO_DISABLE_POSTHOG: "1", OMO_CODEX_DISABLE_POSTHOG: "1", OMO_SEND_ANONYMOUS_TELEMETRY: "0", OMO_CODEX_SEND_ANONYMOUS_TELEMETRY: "0" }
+    const env = { WUNDERKIND_POLICY_TRACE: process.env["WUNDERKIND_POLICY_TRACE"] === "1" ? "1" : "0", ...(input.profile === undefined ? {} : { OMO_PROFILE: input.profile }), PATH: process.env["PATH"], HOME: home, USERPROFILE: home, CODEX_HOME: codexHome, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: join(home, ".cache"), XDG_DATA_HOME: join(home, ".local", "share"), TMPDIR: temporary, TEMP: temporary, TMP: temporary, DO_NOT_TRACK: "1", OMO_DISABLE_TELEMETRY: "1", OMO_DISABLE_POSTHOG: "1", OMO_CODEX_DISABLE_POSTHOG: "1", OMO_SEND_ANONYMOUS_TELEMETRY: "0", OMO_CODEX_SEND_ANONYMOUS_TELEMETRY: "0" }
+    const runnerStarted = performance.now()
+    policyTrace("runner.begin", { timeoutMs: 45_000 })
     const result = spawnSync("node", [runner], { cwd: project, env, timeout: 45_000, killSignal: "SIGKILL", maxBuffer: 1_048_576, encoding: "utf8" })
-    if (result.error !== undefined || result.status !== 0) throw new PolicyTransactionError(`Isolated LazyCodex synchronization failed: ${result.error?.message ?? result.stderr.slice(-3000)}`)
+    if (process.env["WUNDERKIND_POLICY_TRACE"] === "1") for (const line of result.stderr?.split(/\r?\n/u) ?? []) {
+      if (line.startsWith('{"policyTrace":')) process.stderr.write(line + "\n")
+    }
+    const outcome = { elapsedMs: Math.round(performance.now() - runnerStarted), pid: result.pid, status: result.status, signal: result.signal, errorCode: result.error === undefined ? null : String(Reflect.get(result.error, "code") ?? "unknown") }
+    policyTrace("runner.end", outcome)
+    if (result.error !== undefined || result.status !== 0) throw new PolicyTransactionError(`Isolated LazyCodex synchronization failed (${JSON.stringify(outcome)}): ${result.error?.message ?? result.stderr.slice(-3000)}`)
     const files = new Map<string, Uint8Array>()
     for (const entry of readdirSync(join(codexHome, "agents"), { withFileTypes: true })) {
       if (!entry.isFile()) throw new PolicyTransactionError("Unexpected staged agent type")
@@ -208,5 +224,9 @@ console.log(JSON.stringify({installed:result.installed,commands}));
     const agentPaths: unknown = Reflect.get(manifest, "agents")
     const manifestRoles = policyManifestRoles(codexHome, agentPaths)
     return { files, inventory, manifestRoles, changes }
-  } finally { rmSync(temporary, { recursive: true, force: true }) }
+  } finally {
+    policyTrace("stage.cleanup.begin")
+    rmSync(temporary, { recursive: true, force: true })
+    policyTrace("stage.end", { elapsedMs: Math.round(performance.now() - stageStarted) })
+  }
 }

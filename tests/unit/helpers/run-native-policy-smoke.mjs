@@ -50,8 +50,11 @@ writeFileSync(manifest,JSON.stringify({agents:[...upstream.roles.keys()].map(id=
 process.argv=[process.execPath,join(root,"bin/wunderkind.js"),"codex","doctor","--apply-model-policy","--json"];
 await import(${JSON.stringify(pathToFileURL(join(projectRoot, "dist/cli/index.js")).href)});
 `, { flag: "wx" })
-  const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: temporary, USERPROFILE: temporary, CODEX_HOME: join(temporary, ".codex"), TEMP: temporary, TMP: temporary, TMPDIR: temporary, DO_NOT_TRACK: "1", OMO_DISABLE_TELEMETRY: "1", OMO_DISABLE_POSTHOG: "1" }
-  const result = spawnSync(process.execPath, [runner], { cwd: temporary, env, encoding: "utf8", timeout: 60_000, maxBuffer: 2_000_000 })
+  const env = { WUNDERKIND_POLICY_TRACE: process.env.WUNDERKIND_POLICY_TRACE === "1" ? "1" : "0", PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: temporary, USERPROFILE: temporary, CODEX_HOME: join(temporary, ".codex"), TEMP: temporary, TMP: temporary, TMPDIR: temporary, DO_NOT_TRACK: "1", OMO_DISABLE_TELEMETRY: "1", OMO_DISABLE_POSTHOG: "1" }
+  const started = performance.now()
+  const result = spawnSync(process.execPath, [runner], { cwd: temporary, env, encoding: "utf8", timeout: 90_000, maxBuffer: 2_000_000 })
+  if (env.WUNDERKIND_POLICY_TRACE === "1") process.stderr.write(result.stderr ?? "")
+  console.error(JSON.stringify({ policySmoke: "subprocess.end", elapsedMs: Math.round(performance.now() - started), pid: result.pid, status: result.status, signal: result.signal, errorCode: result.error?.code ?? null }))
   assert.equal(result.error, undefined)
   assert.equal(result.status, 0, result.stderr + result.stdout)
   const report = JSON.parse(result.stdout.trim().split(/\r?\n/u).at(-1))
