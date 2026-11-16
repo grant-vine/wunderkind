@@ -80,12 +80,12 @@ function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
   const optionalHostTools = contract.optionalHostTools
   const typeSafeSdk = contract.typeSafeSdk
 
-  return hasStringField(contract, "candidate", "0.28.10")
+  return hasStringField(contract, "candidate", "0.28.11")
     && hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    && hasStringField(contract, "sourceCommit", "fc94c638c1da306e0afebcfffb4accadc6a2aceb")
+    && hasStringField(contract, "sourceCommit", "328ca9c2ef6bf9ab4e5bdc45989756fa39656569")
     && isRecord(comparison)
-    && hasStringField(comparison, "version", "0.28.9")
-    && hasStringField(comparison, "commit", "fc94c638c1da306e0afebcfffb4accadc6a2aceb")
+    && hasStringField(comparison, "version", "0.28.10")
+    && hasStringField(comparison, "commit", "328ca9c2ef6bf9ab4e5bdc45989756fa39656569")
     && isRecord(openCode)
     && hasStringField(openCode, "plugin", "1.19.5")
     && hasStringField(openCode, "sdk", "1.19.5")

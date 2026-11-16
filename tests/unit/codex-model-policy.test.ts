@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process"
 import { afterEach, describe, expect, it } from "bun:test"
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { applyCodexModelPolicy, CodexModelPolicyError, inspectCodexModelPolicy } from "../../src/cli/codex/model-policy.js"
 import { resolveCodexPaths } from "../../src/cli/codex/paths.js"
 import { CODEX_POLICY_ROLES } from "../../src/cli/codex/policy-overrides.js"
@@ -247,7 +247,7 @@ describe("durable Codex policy", () => {
       // When
       applyCodexModelPolicy(paths)
       // Then
-      const config = JSON.parse(readFileSync(manifest, "utf8")); expect(config.agents).toContain(join(paths.agentsDir, "default.toml")); expect(config.agents.every((path: string) => path.startsWith(paths.agentsDir + "/"))).toBe(true); expect(readFileSync(manifest, "utf8")).not.toContain("wunderkind-policy-stage-")
+      const config = JSON.parse(readFileSync(manifest, "utf8")); expect(config.agents).toContain(join(paths.agentsDir, "default.toml")); expect(config.agents.every((path: string) => dirname(path) === paths.agentsDir)).toBe(true); expect(readFileSync(manifest, "utf8")).not.toContain("wunderkind-policy-stage-")
     } finally { cleanup(directory) }
   })
   it("distinguishes disabled optional roles from missing required roles", () => {

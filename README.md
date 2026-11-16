@@ -41,7 +41,13 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.10` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.9` at `fc94c638c1da306e0afebcfffb4accadc6a2aceb`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.16` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.11` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.10` at `328ca9c2ef6bf9ab4e5bdc45989756fa39656569`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.16` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.11
+
+- Fixes Windows drive-path handling in Codex model-policy source/cache/staged manifests and the isolated installer runner, preserving exact artifact trust, role provenance, ownership receipts and rollback guards.
+- Adds Windows path/traversal regressions, disposable policy transaction tests, a real CLI policy-action smoke with fixture host metadata, and a SHA-512-pinned PowerShell gate for LazyCodex 5.1.70.
+- Documents the separate upstream LazyCodex `codex.cmd` launcher issue, telemetry opt-out, hook review, and [safe Windows recovery](docs/windows-policy-repair.md). Native Windows execution is deferred to the operator's remote machine; macOS checks do not establish it passed.
 
 ## What's new in 0.28.10
 

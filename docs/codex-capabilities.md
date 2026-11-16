@@ -1,6 +1,6 @@
 # Codex edition capabilities
 
-The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.10` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.9` at `fc94c638c1da306e0afebcfffb4accadc6a2aceb`; it does not claim publication or a consumer host upgrade.
+The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.11` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.10` at `328ca9c2ef6bf9ab4e5bdc45989756fa39656569`; it does not claim publication or a consumer host upgrade.
 
 ## Prerequisites and lifecycle
 

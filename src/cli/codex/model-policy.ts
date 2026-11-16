@@ -1,8 +1,8 @@
+import { policyManifestSnapshots } from "./policy-manifest.js"
 import { readdirSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { findNodeAtLocation, getNodeValue } from "jsonc-parser"
-import type { CodexPaths } from "./paths.js"
-import { resolveCodexPaths } from "./paths.js"
+import { resolveCodexPaths, type CodexPaths } from "./paths.js"
 import { lstatOrMissing, sha256Bytes } from "./state.js"
 import { editPolicyToml, policyTomlString, removePolicyTomlTable, scanPolicyToml } from "./policy-toml.js"
 import { applyPolicyTransaction, policySnapshot, type PolicyDelta } from "./policy-transaction.js"
@@ -180,28 +180,7 @@ export function applyCodexModelPolicy(paths = resolveCodexPaths(), options: Code
       if (!defaultDisabled) throw new CodexModelPolicyError("Unowned default role preserved; resolve conflict or explicitly disable upstream default")
       // Disabled user default is preserved; upstream handles it without overwriting.
     }
-    const manifestSnapshots: ReturnType<typeof policySnapshot>[] = []
-    const cacheRoot = join(paths.codexHome, "plugins/cache/sisyphuslabs/omo")
-    if (lstatOrMissing(cacheRoot) !== undefined) {
-      policySnapshot(join(cacheRoot, ".path-probe"))
-      for (const version of readdirSync(cacheRoot, { withFileTypes: true })) {
-        if (!version.isDirectory()) throw new CodexModelPolicyError("Unsafe upstream plugin cache entry")
-        const manifestPath = join(cacheRoot, version.name, ".installed-agents.json")
-        const manifest = policySnapshot(manifestPath)
-        if (manifest.bytes === undefined) continue
-        const previous: unknown = JSON.parse(Buffer.from(manifest.bytes).toString("utf8"))
-        const entries: unknown = typeof previous === "object" && previous !== null ? Reflect.get(previous, "agents") : undefined
-        if (!Array.isArray(entries) || !entries.every((path: unknown) => typeof path === "string" && path.startsWith(`${paths.codexHome}/agents/`) && /^[A-Za-z0-9-]+\.toml$/u.test(path.slice(`${paths.codexHome}/agents/`.length)))) throw new CodexModelPolicyError("Unsafe upstream agent manifest; review before policy repair")
-        manifestSnapshots.push(manifest)
-      }
-    }
-    const sourceManifest = policySnapshot(join(paths.codexHome, ".tmp/marketplaces/sisyphuslabs/plugins/omo/.installed-agents.json"))
-    if (sourceManifest.bytes !== undefined) {
-      const previous: unknown = JSON.parse(Buffer.from(sourceManifest.bytes).toString("utf8"))
-      const entries: unknown = typeof previous === "object" && previous !== null ? Reflect.get(previous, "agents") : undefined
-      if (!Array.isArray(entries) || !entries.every((path: unknown) => typeof path === "string" && path.startsWith(`${paths.codexHome}/agents/`) && /^[A-Za-z0-9-]+\.toml$/u.test(path.slice(`${paths.codexHome}/agents/`.length)))) throw new CodexModelPolicyError("Unsafe upstream source manifest")
-      manifestSnapshots.push(sourceManifest)
-    }
+    const manifestSnapshots = policyManifestSnapshots(paths.codexHome)
     if (CODEX_POLICY_ROLES.some((role) => agents.has(`${role.id}.toml`))) {
     const staged = stageUpstreamPolicy({ upstream, agents, root: nextRoot, overrides, layers: layers.map((layer) => ({ scope: layer.scope, bytes: layer === userLayer ? seeded.bytes : layer.snapshot.bytes ?? Buffer.from("{}") })), ...(profile === undefined ? {} : { profile }) })
     for (const role of CODEX_POLICY_ROLES) {

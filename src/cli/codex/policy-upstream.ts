@@ -1,3 +1,4 @@
+import { policyManifestRoles } from "./policy-manifest.js"
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, readdirSync, readlinkSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -143,17 +144,19 @@ export function stageUpstreamPolicy(input: { readonly upstream: PolicyUpstream; 
     const runner = join(temporary, "runner.mjs")
     writeFileSync(runner, `
 import { cp, mkdir, readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, resolve, relative, isAbsolute, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 const bundlePath = ${JSON.stringify(input.upstream.bundle)};
 if (createHash("sha256").update(await readFile(bundlePath)).digest("hex") !== ${JSON.stringify(input.upstream.artifacts["packages/omo-codex/scripts/install-dist/install-local.mjs"])}) throw new Error("Installer changed before invocation");
-const { installMarketplaceLocally } = await import(bundlePath);
-const cacheRoot = ${JSON.stringify(codexHome + "/plugins/cache/")};
+const { installMarketplaceLocally } = await import(pathToFileURL(bundlePath).href);
+const cacheRoot = ${JSON.stringify(join(codexHome, "plugins/cache"))};
 const commands = [];
 const runCommand = async (command, args, options) => {
   const cwd = resolve(options.cwd);
-  if (!cwd.startsWith(cacheRoot) || command !== "npm") throw new Error("Unexpected subprocess: " + command + " " + args.join(" "));
+  const childPath = relative(cacheRoot, cwd);
+  if (!childPath || childPath === ".." || childPath.startsWith(".." + sep) || isAbsolute(childPath) || command !== "npm") throw new Error("Unexpected subprocess: " + command + " " + args.join(" "));
   const signature = JSON.stringify(args); commands.push({ command, args, cwd });
   if (signature === JSON.stringify(["install", "--omit=dev", "--no-audit", "--no-fund"]) || signature === JSON.stringify(["ci", "--omit=dev"])) {
     // Role regeneration uses the bundled installer. Skill synchronization needs only this
@@ -203,8 +206,7 @@ console.log(JSON.stringify({installed:result.installed,commands}));
     const manifest: unknown = JSON.parse(readFileSync(join(home, manifestPath), "utf8"))
     if (typeof manifest !== "object" || manifest === null) throw new PolicyTransactionError("Invalid staged upstream manifest")
     const agentPaths: unknown = Reflect.get(manifest, "agents")
-    if (!Array.isArray(agentPaths) || !agentPaths.every((path: unknown) => typeof path === "string" && path.startsWith(`${codexHome}/agents/`) && /^[A-Za-z0-9-]+\.toml$/u.test(path.slice(`${codexHome}/agents/`.length)))) throw new PolicyTransactionError("Unsafe staged upstream manifest paths")
-    const manifestRoles = agentPaths.filter((path): path is string => typeof path === "string").map((path) => path.slice(`${codexHome}/agents/`.length))
+    const manifestRoles = policyManifestRoles(codexHome, agentPaths)
     return { files, inventory, manifestRoles, changes }
   } finally { rmSync(temporary, { recursive: true, force: true }) }
 }
