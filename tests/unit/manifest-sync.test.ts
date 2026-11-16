@@ -80,18 +80,18 @@ function isCurrentUpgradeContract(contract: Record<string, unknown>): boolean {
   const optionalHostTools = contract.optionalHostTools
   const typeSafeSdk = contract.typeSafeSdk
 
-  return hasStringField(contract, "candidate", "0.28.9")
+  return hasStringField(contract, "candidate", "0.28.10")
     && hasStringField(contract, "candidate", WUNDERKIND_CANONICAL_MANIFEST.package.version)
-    && hasStringField(contract, "sourceCommit", "38a12d12250272f2d33afe4beab11c3dc18a5371")
+    && hasStringField(contract, "sourceCommit", "fc94c638c1da306e0afebcfffb4accadc6a2aceb")
     && isRecord(comparison)
-    && hasStringField(comparison, "version", "0.28.8")
-    && hasStringField(comparison, "commit", "38a12d12250272f2d33afe4beab11c3dc18a5371")
+    && hasStringField(comparison, "version", "0.28.9")
+    && hasStringField(comparison, "commit", "fc94c638c1da306e0afebcfffb4accadc6a2aceb")
     && isRecord(openCode)
     && hasStringField(openCode, "plugin", "1.19.5")
     && hasStringField(openCode, "sdk", "1.19.5")
-    && hasStringField(contract, "omo", "5.1.70")
+    && hasStringField(contract, "omo", "5.1.72")
     && isRecord(codexPolicy)
-    && hasStringField(codexPolicy, "version", "5.1.70")
+    && hasStringField(codexPolicy, "version", "5.1.72")
     && hasStringField(codexPolicy, "trust", "verified-hash-bound-disposable-stage")
     && hasStringField(codexPolicy, "artifactGraph", "exact-tarball-sri-and-12-role-executable-hashes")
     && hasStringField(codexPolicy, "disposableStage", "53/53")
@@ -201,7 +201,7 @@ describe("manifest version sync", () => {
     expect(packageJson.version).toBe(WUNDERKIND_CANONICAL_MANIFEST.package.version)
     expect(dependencies["@opencode-ai/plugin"]).toBe("1.19.5")
     expect(dependencies["@opencode-ai/sdk"]).toBe("1.19.5")
-    expect(dependencies["oh-my-openagent"]).toBe("5.1.70")
+    expect(dependencies["oh-my-openagent"]).toBe("5.1.72")
     expect(isRecord(devDependencies)).toBe(true)
     if (!isRecord(devDependencies)) {
       throw new Error("Expected package.json devDependencies to be a record")
@@ -239,7 +239,7 @@ describe("manifest version sync", () => {
     expect(isCurrentUpgradeContract(contract)).toBe(true)
 
     const stalePluginFixture = upgradeBody.replace('"plugin":"1.19.5"', '"plugin":"1.19.4"')
-    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.70"', '"omo":"5.1.50"')
+    const staleOmoFixture = upgradeBody.replace('"omo":"5.1.72"', '"omo":"5.1.50"')
     const untrustedPolicyFixture = upgradeBody.replace('"trust":"verified-hash-bound-disposable-stage"', '"trust":"unverified"')
     const incompleteArtifactFixture = upgradeBody.replace('"disposableStage":"53/53"', '"disposableStage":"52/53"')
     const staleSpecialistFixture = upgradeBody.replace('"model":"openai/gpt-6.1-terra","codexModel":"gpt-6.1-terra"', '"model":"openai/gpt-6.1-sol","codexModel":"gpt-6.1-sol"')

@@ -53,6 +53,7 @@ Do **not** use this skill for:
 4. **Sequence the work.** Order the version bump, skill/routing updates, docs sync, generated-surface refresh, and verification so later steps cannot drift from earlier truth.
    Review bundled OpenCode skills under `skills/` and the separate Codex sources under `codex-src/skills/`; an agent-model update does not refresh their instructions. Compare relevant upstream skill changes at an exact revision, adapt only useful changes, and record what was adopted or held. Optional third-party companions belong to their own installer and must be checked separately.
 5. **Make rollback posture explicit.** Name what would be risky to partially land, what verification proves readiness, and what should block a publish/tag decision.
+   Check host-owned persistent schema changes and background services separately. An older package may not read an upgraded remote-session store. Installing Wunderkind does not authorize enabling remote services; native Windows and WSL require their own validation evidence.
 6. **Hand off adjacent execution clearly.** Route generic docs drafting to `technical-writer`, technical implementation to `fullstack-wunderkind`, and explicit git execution to `git-master` instead of stretching this skill past planning and release-shaping.
 
 ## Hard rules

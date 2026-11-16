@@ -63,7 +63,7 @@ describe("durable Codex policy", () => {
     // Given
     const { directory, paths } = fixture()
     try {
-      expect(resolvePolicyUpstream().version).toBe("5.1.70")
+      expect(resolvePolicyUpstream().version).toBe("5.1.72")
       // When
       const report = applyCodexModelPolicy(paths)
       // Then

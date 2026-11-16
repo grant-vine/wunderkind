@@ -67,7 +67,7 @@ function latestKnownPluginVersion(value: unknown, pluginId: string): string | nu
 }
 
 function reviewedUpstreamCompatibility(version: string | undefined): ReviewedUpstreamCompatibility {
-  if (version === "5.1.29" || version === "5.1.44" || version === "5.1.51" || version === "5.1.70") return "supported"
+  if (version === "5.1.29" || version === "5.1.44" || version === "5.1.51" || version === "5.1.70" || version === "5.1.72") return "supported"
   if (version === undefined || isCompatibleLazyCodexVersion(version)) return "unverified"
   return "incompatible"
 }

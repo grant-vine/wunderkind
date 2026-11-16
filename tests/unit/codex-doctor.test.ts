@@ -147,7 +147,7 @@ describe("Codex doctor", () => {
   })
 
   it("reports exact reviewed upstream releases separately from model policy status", () => {
-    for (const version of ["5.1.29", "5.1.44", "5.1.51", "5.1.70"] as const) {
+    for (const version of ["5.1.29", "5.1.44", "5.1.51", "5.1.70", "5.1.72"] as const) {
       const paths = sandbox()
       configure(paths, createFakeCodex({ lazyPlugin: createLazyCodexEnvelope(version) }))
       try {

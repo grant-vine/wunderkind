@@ -1,18 +1,18 @@
 # Codex edition capabilities
 
-The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.9` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.70`, from published `0.28.8` at `38a12d12250272f2d33afe4beab11c3dc18a5371`; it does not claim publication or a consumer host upgrade.
+The Codex edition ships in `@grant-vine/wunderkind` `0.27.0` and later. It complements Codex and LazyCodex. The `0.28.10` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.9` at `fc94c638c1da306e0afebcfffb4accadc6a2aceb`; it does not claim publication or a consumer host upgrade.
 
 ## Prerequisites and lifecycle
 
-LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; `5.1.70` is the current target. Doctor reports version compatibility separately from artifact trust. The reviewed 5.1.70 policy-repair graph binds the exact tarball SRI and 12 role executable hashes and passed its 53-case disposable-stage tamper/rollback/override gate. Unknown or changed installer graphs remain held. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
+LazyCodex (`omo@sisyphuslabs` version `>=5.0.0-beta.62 <6`) is the sole hard dependency; `5.1.72` is the current target. Doctor reports version compatibility separately from artifact trust. The reviewed 5.1.72 policy-repair graph binds the exact tarball SRI and 12 role executable hashes and passed its 53-case disposable-stage tamper/rollback/override gate. Unknown or changed installer graphs remain held. Codex must be on `PATH`. See [the upgrade runbook](upgrading.md) for separate desktop, standalone CLI, marketplace, and payload-cache resolution. Wunderkind does not update the desktop application.
 
 The public Wunderkind CLI floor remains Node `>=22.12.0` or Bun `1+`; this does not imply that a separate native `omo-ai` binary is supported on Node 22.
 
 Managed model defaults use Sol6.1 for orchestration and high-capability work and Luna for routine/background work (`gpt-6.1-sol` and `gpt-6-luna`). Astra is explicit operator opt-in only and is never selected by routine lifecycle commands. Existing user-owned assignments are preserved. The model catalog listing a model does not establish that the configured host route can serve it or that it meets a benchmark.
 
-The six retained specialists select GPT-6.1 with `high` reasoning in custom-agent TOML: `wunderkind-marketing` and `wunderkind-creative-director` use `gpt-6.1-terra`; `wunderkind-product`, `wunderkind-architecture`, `wunderkind-ciso`, and `wunderkind-legal` use `gpt-6.1-sol`. The two Terra roles require a Responses-capable host route; catalog visibility is not proof of route availability. `wunderkind codex doctor --apply-model-policy` repairs only unchanged, receipt-owned legacy specialist files in the same transaction as their ownership hashes. The verified 5.1.70 path still holds unknown, changed, or user-owned files. Edited files and explicit Astra selections are held for operator review. Root model and reasoning selections remain user-owned. Doctor checks installed configuration; verify a fresh specialist run's host model metadata after repair.
+The six retained specialists select GPT-6.1 with `high` reasoning in custom-agent TOML: `wunderkind-marketing` and `wunderkind-creative-director` use `gpt-6.1-terra`; `wunderkind-product`, `wunderkind-architecture`, `wunderkind-ciso`, and `wunderkind-legal` use `gpt-6.1-sol`. The two Terra roles require a Responses-capable host route; catalog visibility is not proof of route availability. `wunderkind codex doctor --apply-model-policy` repairs only unchanged, receipt-owned legacy specialist files in the same transaction as their ownership hashes. The verified 5.1.72 path still holds unknown, changed, or user-owned files. Edited files and explicit Astra selections are held for operator review. Root model and reasoning selections remain user-owned. Doctor checks installed configuration; verify a fresh specialist run's host model metadata after repair.
 
-OMO 5.1.70 includes upstream task recovery/fallback/steering, a frontend skill that requires WCAG 2.2 AA results, and omo.dev accessibility/keyboard fixes. Those changes belong to the host; this package does not implement them. The creative-director role may apply targeted accessibility guidance, but this release does not import upstream skills.
+OMO 5.1.70 introduced upstream task recovery/fallback/steering, a frontend skill that requires WCAG 2.2 AA results, and omo.dev accessibility/keyboard fixes. Those changes belong to the host; this package does not implement them. The creative-director role may apply targeted accessibility guidance, but this release does not import upstream skills.
 
 Use `npx @grant-vine/wunderkind codex <verb>` (for example, `npx @grant-vine/wunderkind codex install`). Maintainer packed QA can still use the extracted-package equivalent `node package/bin/wunderkind.js codex <verb>`.
 
@@ -83,6 +83,8 @@ The package provides exactly six global custom agents and exactly eleven plugin 
 Only static `docs-index` is adapted as a skill. `workflow-sync` remains CLI behavior; `dream` and `design-md` route to specialist agents; `wunderkind-team` delegates to OMO `$teammode`; and all 39 generated OpenCode command aliases are excluded rather than promoted. `token-audit` and all Codex prompt/token optimization are explicitly deferred to a future Codex-native design revisit.
 
 ## Optional companions
+
+For native Windows versus WSL discovery, companion installation, and target-machine verification, see [Windows Codex setup](windows-codex-setup.md). macOS validation does not establish native Windows support.
 
 These are advisory integrations, not requirements. The companion commands below remain optional and user-run. Ordinary Wunderkind lifecycle commands do not install, authenticate, update, remove, or vendor these companions. The explicit `wunderkind codex repair` command is a narrow installation path for known missing Matt supporting skills; it does not take ownership of existing companion files.
 

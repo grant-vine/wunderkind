@@ -49,6 +49,7 @@ Do **not** use this skill for:
 ## Process
 
 1. **Name the compatibility seam.** State whether the drift is in OpenCode, OMO, plugin wiring, config-chain behavior, generated assets, or operator lifecycle commands.
+   For Windows onboarding, distinguish native PowerShell from WSL, resolve the actual executable and user home, and verify subprocess/plugin behavior there. POSIX validation does not establish native Windows support; do not change environments implicitly.
 2. **Separate source-of-truth from symptoms.** Identify which file or runtime contract actually defines the current platform expectation and which surfaces merely reflect it.
 3. **Check the retained-overlay boundary.** Decide whether the upstream/platform change belongs inside Wunderkind now, should stay out of scope, or should remain detection-only.
 4. **Map blast radius.** List which repo surfaces would need alignment: manifest, templates, CLI flows, docs, tests, or generated assets.

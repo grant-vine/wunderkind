@@ -27,6 +27,7 @@ Do not use for an isolated refactor with no release implication.
 
 1. Identify compatibility surface and affected users.
 2. Define sequencing, validation, and rollback conditions.
+   Separate native Windows and WSL evidence from POSIX checks. Remote-session wake and device-service schema upgrades belong to the host; enabling remote services is a separate operator action and may limit rollback to an older host.
    Include the bundled skill sources as well as agent defaults. Review optional companion changes through their upstream owner; a missing-dependency repair does not refresh existing companions. Preserve edited or unverified files.
 3. Route engineering, security, and legal concerns to the relevant specialists.
 

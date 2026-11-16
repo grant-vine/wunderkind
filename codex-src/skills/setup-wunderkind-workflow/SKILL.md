@@ -26,6 +26,7 @@ Do not use for generic repository initialization or implementation work.
 ## Process
 
 1. Inspect existing project artifacts.
+   On Windows, identify native PowerShell versus WSL and use the active Codex home and executable in that environment. Do not install into both homes or switch environments implicitly. Verify host/plugin support before treating a macOS or Linux setup as portable.
 2. Preserve established conventions and choose the sparse workflow settings.
 3. Record only the durable context and lane decisions needed by the project.
 

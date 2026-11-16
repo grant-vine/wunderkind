@@ -256,6 +256,8 @@ OpenCode receives the bundled `skills/` adaptations from the published Wunderkin
 
 During a supporting-tool or model upgrade, review affected skill sources explicitly. Record the upstream repository/revision, relevant changes and adoption/hold decisions. Adapt useful ideas into retained owners and `.omo` artifacts; do not replace bundled skills wholesale or add upstream inventory by implication. Inspect tool names and behavioral instructions as well as version strings. No model-specific instruction is needed when the workflow contract is unchanged.
 
+November 16, 2026: Matt remains at reviewed revision `5863806dd4e15c63174bee4e7515a4256792ecfa`; no upstream delta was imported. The 0.28.10 setup, compatibility, and release updates distinguish native Windows from WSL and host-owned remote-service/schema behavior. Inventory and ownership buckets are unchanged. Validate the target environment rather than treating POSIX test results as Windows support.
+
 Upgrade-facing skills and docs must describe the current package/runtime target separately from historical baselines. State the public Node `>=22.12.0` or Bun `1+` floor, the Sol/Luna managed defaults, Astra as explicit opt-in, and the unchanged six-agent/eleven-Codex-skill/28-route inventory when those facts are relevant.
 
 Freshness and ownership claims must be receipt-based: a marker or package version alone cannot authorize refresh or deletion. Document edited, linked, malformed, missing, mixed, held, and unknown states, and label remote catalog freshness `unknown` unless an owner-supported proof exists. Rollback guidance must use a private hash-bound backup, preserve user edits, require supported owner operations for catalog/binary rollback, and never expose secrets in `.omo/evidence/`.

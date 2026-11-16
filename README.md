@@ -41,7 +41,14 @@ Wunderkind `0.28.2` makes the no-Astra-by-default policy observable and repairab
 
 ## Current compatibility baseline
 
-The `0.28.9` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.70`, from published `0.28.8` at `38a12d12250272f2d33afe4beab11c3dc18a5371`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.13` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+The `0.28.10` release candidate targets OpenCode plugin/SDK `1.19.5` and OMO/LazyCodex `5.1.72`, from published `0.28.9` at `fc94c638c1da306e0afebcfffb4accadc6a2aceb`. The public CLI floor remains Node `>=22.12.0` or Bun `1+`; validation uses Bun `1.4.4` and `@types/node` `26.6.6`. Ollama `0.40.16` is an optional local host tool, not a package dependency. Four retained specialists use GPT-6.1 Sol/high; marketing and creative direction use GPT-6.1 Terra/high and require a Responses-capable host route. Model catalog visibility does not prove request-path availability, quality, or benchmark performance. Sol/Luna category defaults remain in place and Astra stays operator opt-in. Review [the host upgrade and rollout runbook](docs/upgrading.md) before changing a consumer installation.
+
+## What's new in 0.28.10
+
+- Reviews OMO/LazyCodex `5.1.72` and verifies its exact policy-repair graph with 53 disposable tamper/rollback/override scenarios. Other supported dependencies remain current; TypeSafe `0.7.0` remains held.
+- Adds [Windows Codex onboarding](docs/windows-codex-setup.md), including native Windows versus WSL discovery, separate Matt companion installation, and fresh-task verification. Native Windows execution still requires validation on the target machine.
+- Refreshes setup, compatibility, and release skills for environment boundaries and host-owned remote-session schema/rollback changes. Matt's reviewed upstream revision is unchanged; edited Vercel companions remain preserved.
+- Keeps the six agents, eleven Codex skills, model defaults, and 28 public/deprecated OpenCode routes unchanged. Remote services and local decision-model experiments are not enabled by this release.
 
 ## What's new in 0.28.9
 

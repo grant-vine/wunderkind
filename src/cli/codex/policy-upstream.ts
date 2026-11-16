@@ -29,6 +29,18 @@ const TRUSTED_ARTIFACTS: Readonly<Record<string, string>> = {
   "packages/omo-codex/plugin/components/ultrawork/agents/plan.toml": "931a12b363de8915d3aabae7352b6ecbef95cb1ecc93628e38a3e48d34606c8b",
 }
 const TRUSTED_RELEASES: Readonly<Record<string, { readonly artifacts: Readonly<Record<string, string>> }>> = {
+  "5.1.72": { artifacts: {
+    ...TRUSTED_ARTIFACTS,
+    "packages/omo-codex/scripts/install-dist/install-local.mjs": "b6efc87b061e0be0e901f9aa7042fc489fc834d269295bc72c39dc22695a055e",
+    "packages/omo-codex/plugin/package.json": "d6f618a3c93d6578dcb2f05fb244107e622b6e7eeb5f48e893791f06cfc4991d",
+    "packages/omo-codex/plugin/scripts/sync-skills.mjs": "af43bd52ef779eeca8e369559624bdeab40853c1f75061cc940dade534c6227d",
+    "packages/omo-codex/plugin/scripts/canonical-ultrawork-directive.mjs": "0012747bc4c5d0e3e6d586fc07c671383f0f27058269a5f96948de75c66c301f",
+    "packages/omo-codex/plugin/scripts/entry-guard.mjs": "223f4c59fdf618020589eb57a488ee2cf9e6609875bc60cea16529ce817eab7e",
+    "packages/shared-skills/package.json": "16f67075c7c3b9ef10690eba5ea33c610607580d545b6b6f073bf997e933a552",
+    "packages/shared-skills/index.mjs": "88f73b2452919f77037c28c4cee1c88f2afc304afda3ce3f77db74bef858da06",
+    "packages/shared-skills/skill-source-filter.mjs": "824cdc815846d28b478bcf46735708599a6308bf16431b0b9f9b2810df9181f5",
+    "packages/omo-codex/plugin/components/ultrawork/agents/lazycodex-gate-reviewer.toml": "dd009fc6246e07fe6ac868d2b1150b3b39a74ae4c410a2085208c51b4a948919",
+  } },
   "5.1.70": { artifacts: {
     ...TRUSTED_ARTIFACTS,
     "packages/omo-codex/scripts/install-dist/install-local.mjs": "f68ecbb8ee55639a406837aec9f586421eddca338c5154b39b645253a2bb8c4e",
